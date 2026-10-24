@@ -22,26 +22,17 @@ export const INTENTS = ["explaining", "stuck", "asking_for_answer", "off_topic",
 export type Intent = (typeof INTENTS)[number];
 
 /**
- * Step 1 of a turn: the judge. Cold, fast, temperature 0.
- * It has to QUOTE the student's words for every idea it credits. Code then checks
- * the quote is real, so a small model can't hallucinate progress.
+ * Step 1 of a turn: the judge. Cold and fast (temperature 0).
+ * Code picks which ideas a message might be about; the model answers one focused question per idea.
+ * An explicit choice ("TRUE"/"WRONG"/"NEITHER") is much more reliable for small models than a yes/no "correct" flag.
  */
-export function judgeSchema(conceptIds: readonly [string, ...string[]]) {
-  return z.object({
-    intent: z.enum(INTENTS),
-    ideas: z
-      .array(
-        z.object({
-          id: z.enum(conceptIds),
-          quote: z.string().max(300),
-          correct: z.boolean(),
-          gaveReason: z.boolean(),
-        }),
-      )
-      .max(conceptIds.length),
-  });
-}
-export type Judgement = z.infer<ReturnType<typeof judgeSchema>>;
+export const conceptCheckSchema = z.object({
+  matches: z.enum(["TRUE", "WRONG", "NEITHER"]),
+  gaveReason: z.boolean(),
+});
+export type ConceptCheck = z.infer<typeof conceptCheckSchema>;
+
+export const intentSchema = z.object({ intent: z.enum(INTENTS) });
 
 /** Step 2 of a turn: Gloam performs the beat the director picked. */
 export const performSchema = z.object({

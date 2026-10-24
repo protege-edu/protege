@@ -1,10 +1,11 @@
 import { chatJSON, type ChatMessage } from "./client";
 import { gloamSystemPrompt, gloamTurnMessage } from "./prompts/gloam";
-import { judgeSystemPrompt, judgeUserMessage } from "./prompts/judge";
+import { conceptCheckMessage, conceptCheckPrompt, intentMessage, intentPrompt } from "./prompts/judge";
 import { checkSafety } from "./safety";
-import { judgeSchema, performSchema, type Emotion, type Intent, type Judgement, type Quality } from "./schemas";
+import { conceptCheckSchema, intentSchema, performSchema, type Emotion, type Intent, type Quality } from "./schemas";
 import { currentBeliefs, directBeat } from "@/lib/companion/director";
-import { gradeIdeas } from "@/lib/companion/grade";
+import { candidateConcepts, gradeCheck } from "@/lib/companion/grade";
+import type { z } from "zod";
 import { applyProgress, type Understanding } from "@/lib/companion/progress";
 import type { LessonBlueprint } from "@/lib/lesson/types";
 
@@ -64,31 +65,26 @@ export async function runTurn(input: TurnInput, hooks: { onJudged?: (e: JudgedEv
     };
   }
 
-  // 2. Judge
-  const ids = lesson.concepts.map((c) => c.id) as [string, ...string[]];
-  const lastGloam = [...history].reverse().find((m) => m.from === "gloam")?.text ?? lesson.opener;
-  let judgement: Judgement = { intent: "chatting", ideas: [] };
-  for (let attempt = 0; attempt < 2; attempt++) {
-    const res = await chatJSON({
-      name: "judge",
-      schema: judgeSchema(ids),
-      temperature: 0,
-      messages: [
-        { role: "system", content: judgeSystemPrompt(lesson) },
-        { role: "user", content: judgeUserMessage(lastGloam, message) },
-      ],
-    });
-    if (res.ok) {
-      judgement = res.data;
-      break;
-    }
-    if (res.reason === "unreachable") return offline(understanding, start);
+  // 2. Judge: code picks the ideas this message could be about, the model checks each one
+  const judged: { id: string; quality: Quality }[] = [];
+  for (const concept of candidateConcepts(lesson, message)) {
+    const res = await ask(conceptCheckSchema, "concept_check", conceptCheckPrompt(concept), conceptCheckMessage(message));
+    if (res === "offline") return offline(understanding, start);
+    const quality = res ? gradeCheck(message, res) : null;
+    if (quality) judged.push({ id: concept.id, quality });
   }
-  const judged = judgement.intent === "explaining" ? gradeIdeas(lesson, message, judgement.ideas) : [];
+  let intent: Intent = "explaining";
+  if (judged.length === 0) {
+    const res = await ask(intentSchema, "intent", intentPrompt(lesson), intentMessage(message));
+    if (res === "offline") return offline(understanding, start);
+    intent = res?.intent ?? "chatting";
+    // It says "explaining" but nothing matched an idea: treat it as a vague attempt, not a lesson point
+    if (intent === "explaining") intent = "chatting";
+  }
 
   // 3. Progress + director
   const progress = applyProgress(understanding, judged);
-  const beat = directBeat({ lesson, before: understanding, progress, intent: judgement.intent, judged, turn });
+  const beat = directBeat({ lesson, before: understanding, progress, intent, judged, turn });
   hooks.onJudged?.({ understanding: progress.understanding, improved: progress.improved, clicked: progress.clicked, emotion: beat.emotion });
 
   // 4. Perform
@@ -144,12 +140,22 @@ export async function runTurn(input: TurnInput, hooks: { onJudged?: (e: JudgedEv
     judged,
     emotion: beat.emotion,
     reply: reply ?? beat.fallback,
-    intent: judgement.intent,
-    onTopic: judgement.intent !== "off_topic",
+    intent,
+    onTopic: intent !== "off_topic",
     finished: beat.finished,
     source: reply ? "ai" : "fallback",
     ms: Date.now() - start,
   };
+}
+
+/** One small judge question. Returns null if the model gave nonsense twice, "offline" if it isn't running. */
+async function ask<T>(schema: z.ZodType<T>, name: string, system: string, user: string): Promise<T | null | "offline"> {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const res = await chatJSON({ name, schema, temperature: 0, maxTokens: 40, messages: [{ role: "system", content: system }, { role: "user", content: user }] });
+    if (res.ok) return res.data;
+    if (res.reason === "unreachable") return "offline";
+  }
+  return null;
 }
 
 function offline(understanding: Understanding, start: number): TurnOutput {
@@ -193,7 +199,10 @@ function tidy(reply: string): string {
     .replace(/\s{2,}/g, " ")
     .trim();
   // Small models ramble. Keep it to the first 3 sentences, and drop a dangling "So…" at the end.
-  let sentences: string[] = text.match(/[^.!?…]+[.!?…]+["')]*|[^.!?…]+$/g) ?? [text];
+  // "vs." and "e.g." are not the end of a sentence
+  // (swap their dots for a look-alike "one dot leader" character so the splitter ignores them)
+  const safe = text.replace(/\b(vs|e\.g|i\.e|etc)\./gi, (m) => m.replace(/\./g, "․"));
+  let sentences: string[] = safe.match(/[^.!?…]+[.!?…]+["')]*|[^.!?…]+$/g) ?? [safe];
   if (sentences.length > 3) sentences = sentences.slice(0, 3);
   const dangling = (s: string) => s.trim().split(/\s+/).length <= 2 && !/[!?]["')]*$/.test(s.trim()) && /(\.\.\.|…|[^.!?…"')])$/.test(s.trim());
   while (sentences.length > 1 && dangling(sentences[sentences.length - 1])) sentences.pop();

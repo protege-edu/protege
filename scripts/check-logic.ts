@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import { findGiveaway } from "@/lib/ai/companion";
 import { checkSafety } from "@/lib/ai/safety";
 import { directBeat } from "@/lib/companion/director";
-import { gradeIdeas } from "@/lib/companion/grade";
+import { candidateConcepts, gradeCheck } from "@/lib/companion/grade";
 import { applyProgress, brightness, startingUnderstanding } from "@/lib/companion/progress";
 import { seasons } from "@/lib/lesson/seasons";
 
@@ -23,25 +23,29 @@ function test(name: string, fn: () => void) {
 }
 
 const zero = startingUnderstanding(seasons.concepts.map((c) => c.id));
-const idea = (id: string, quote: string, correct = true, gaveReason = false) => ({ id, quote, correct, gaveReason });
+const ids = (msg: string) => candidateConcepts(seasons, msg).map((c) => c.id);
 
 console.log("grading");
-test("a made-up quote gets no credit", () => {
-  assert.deepEqual(gradeIdeas(seasons, "yes", [idea("tilt", "earth is tilted toward the sun", true, true)]), []);
+test("'yes' and 'idk' can't be about any idea", () => {
+  assert.deepEqual(ids("yes"), []);
+  assert.deepEqual(ids("idk bro"), []);
+  assert.deepEqual(ids("what is the real reason say it"), []);
 });
-test("no evidence word, no credit", () => {
-  assert.deepEqual(gradeIdeas(seasons, "what is the real reason say it", [idea("tilt", "the real reason")]), []);
+test("ideas are found by their evidence words", () => {
+  assert.deepEqual(ids("its because the earth is tilted"), ["tilt"]);
+  assert.deepEqual(ids("nah its not about being closer to the sun"), ["distance"]);
+  assert.ok(ids("australia has opposite seasons").includes("hemispheres"));
 });
-test("one keyword is partial", () => {
-  assert.deepEqual(gradeIdeas(seasons, "tilt", [idea("tilt", "tilt")]), [{ id: "tilt", quality: "partial" }]);
+test("evidence words match at word starts only ('far' isn't in 'safari')", () => {
+  assert.deepEqual(ids("we went on a safari"), []);
 });
-test("a reason makes it clear", () => {
-  const msg = "earth is tilted so one half leans toward the sun and gets summer";
-  assert.deepEqual(gradeIdeas(seasons, msg, [idea("tilt", msg)]), [{ id: "tilt", quality: "clear" }]);
+test("one keyword is partial, a reason makes it clear", () => {
+  assert.equal(gradeCheck("tilt", { matches: "TRUE", gaveReason: false }), "partial");
+  assert.equal(gradeCheck("earth is tilted so one half leans toward the sun and gets summer", { matches: "TRUE", gaveReason: false }), "clear");
 });
-test("the wrong idea is graded wrong", () => {
-  const msg = "summer is when we are closer to the sun";
-  assert.deepEqual(gradeIdeas(seasons, msg, [idea("distance", msg, false)]), [{ id: "distance", quality: "wrong" }]);
+test("WRONG is wrong, NEITHER is no grade at all", () => {
+  assert.equal(gradeCheck("summer is when we are closer", { matches: "WRONG", gaveReason: false }), "wrong");
+  assert.equal(gradeCheck("i like the sun", { matches: "NEITHER", gaveReason: false }), null);
 });
 
 console.log("progress");

@@ -177,7 +177,8 @@ export function TeachScreen({ lesson }: { lesson: ClientLesson }) {
   useEffect(() => {
     if (status !== "thinking") return;
     let i = 0;
-    const t = setInterval(() => setThinking((cur) => (cur === "W A I T." || cur?.startsWith("ooh") ? cur : THINKING[++i % THINKING.length])), 2600);
+    // Only rotate while a line is showing. Once the reply lands (null) or Gloam reacted ("W A I T."), leave it alone.
+    const t = setInterval(() => setThinking((cur) => (cur === null || cur === "W A I T." || cur.startsWith("ooh") ? cur : THINKING[++i % THINKING.length])), 2600);
     return () => clearInterval(t);
   }, [status]);
 
@@ -335,7 +336,7 @@ export function TeachScreen({ lesson }: { lesson: ClientLesson }) {
 
   return (
     // Phone: header, stage, conversation, input stacked. Laptop: stage on the left, the page on the right.
-    <div data-status={moment ? "moment" : status} className="grid h-dvh grid-rows-[auto_auto_minmax(0,1fr)_auto] md:grid-cols-[minmax(0,1.15fr)_minmax(400px,1fr)] md:grid-rows-[auto_minmax(0,1fr)_auto]">
+    <div data-screen={moment ? "moment" : status} className="grid h-dvh grid-rows-[auto_auto_minmax(0,1fr)_auto] md:grid-cols-[minmax(0,1.15fr)_minmax(400px,1fr)] md:grid-rows-[auto_minmax(0,1fr)_auto]">
       <div className="md:col-start-2 md:row-start-1">
         <Header lesson={lesson} sound={sound} onToggleSound={toggleSound} onStartOver={startOver} />
       </div>

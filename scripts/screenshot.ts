@@ -28,11 +28,11 @@ const VIEWPORTS = [
   { name: "phone", width: 390, height: 844 },
 ];
 
-const status = (page: Page) => page.locator("[data-status]").getAttribute("data-status");
+const status = (page: Page) => page.locator("[data-screen]").getAttribute("data-screen");
 
 async function waitForStatus(page: Page, want: string[], timeout = 240_000) {
   await page.waitForFunction(
-    (w) => w.includes(document.querySelector("[data-status]")?.getAttribute("data-status") ?? ""),
+    (w) => w.includes(document.querySelector("[data-screen]")?.getAttribute("data-screen") ?? ""),
     want,
     { timeout, polling: 100 },
   );

@@ -67,7 +67,7 @@ export const seasons: LessonBlueprint = {
         "Does the number of daylight hours change anything about temperature?",
       ],
       giveaways: ["longer days", "days are longer", "more hours of", "shorter days", "days are shorter"],
-      evidence: ["longer", "shorter", "hours", "day length", "daylight", "night", "dark"],
+      evidence: ["longer", "shorter", "hours", "day length", "daylight", "night", "dark", "same length", "length", "12 hours", "twelve hours"],
       recap:
         "In summer the days are longer, so the ground gets more hours of sun to warm up and fewer hours of night to cool down. In winter it's the other way around.",
     },
@@ -124,7 +124,7 @@ export const seasons: LessonBlueprint = {
         "What season is it in Australia during our winter?",
       ],
       giveaways: ["opposite season", "seasons are opposite", "southern hemisphere", "other half"],
-      evidence: ["hemisphere", "opposite", "australia", "south", "north", "other half", "other side", "bottom half", "top half", "equator"],
+      evidence: ["hemisphere", "opposite", "australia", "south", "north", "other half", "other side", "bottom half", "top half", "equator", "everywhere", "same time", "whole planet", "whole world", "everyone"],
       recap:
         "The northern and southern hemispheres have opposite seasons. When one half leans toward the sun, the other half leans away, so it's summer in Australia during our winter.",
     },

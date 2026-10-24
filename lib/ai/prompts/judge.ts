@@ -1,45 +1,40 @@
-import type { LessonBlueprint } from "@/lib/lesson/types";
+import type { Concept, LessonBlueprint } from "@/lib/lesson/types";
 
 /**
- * The judge reads ONE student message and reports what it explained.
- * It never talks to the student. This prompt never changes during a lesson,
- * so Ollama can reuse its cache and answer faster.
+ * The judge never talks to the student. It answers small, focused questions,
+ * because small models are much more reliable at "A or B?" than at juggling a whole lesson.
  */
-export function judgeSystemPrompt(lesson: LessonBlueprint): string {
-  const concepts = lesson.concepts
-    .map((c) => `- "${c.id}"\n  TRUE: ${c.truth}\n  COMMON WRONG IDEA: ${c.misconception}`)
-    .join("\n");
-  return `You check what a grade 9 student explained in ONE message, for the lesson "${lesson.title}".
 
-THE IDEAS
-${concepts}
+/** "Which version of THIS idea does the student agree with?" One idea at a time. */
+export function conceptCheckPrompt(concept: Concept): string {
+  return `You check one thing: which version of an idea a grade 9 student's message agrees with.
 
-Return JSON with:
+TRUE version: ${concept.truth}
+WRONG version: ${concept.misconception}
 
-intent (pick one):
-- "explaining": trying to explain something about the lesson, even if wrong
-- "stuck": "idk", "no idea", "i'm confused", giving up
-- "asking_for_answer": wants the answer told to them
-- "off_topic": not about the lesson at all
-- "chatting": greetings, "ok", "yes", "lol", short reactions
-
-ideas: one entry for each idea the message actually talks about (usually 0 or 1, sometimes 2).
-- quote: copy the student's EXACT words about that idea
-- correct: true if it matches TRUE, false if the student BELIEVES the COMMON WRONG IDEA.
-  Careful: saying the wrong idea is false ("it's NOT distance", "it's not because we're closer") is CORRECT.
-  Slang, typos and short answers can still be correct.
-- gaveReason: true only if they also said WHY or HOW (words like because, so, which means, that's why)
-If intent isn't "explaining", ideas must be [].
-
-EXAMPLES
-"tilt" → {"intent":"explaining","ideas":[{"id":"tilt","quote":"tilt","correct":true,"gaveReason":false}]}
-"its cuz earth is tilted so one half faces the sun more" → {"intent":"explaining","ideas":[{"id":"tilt","quote":"earth is tilted so one half faces the sun more","correct":true,"gaveReason":true}]}
-"summer is when we're closer to the sun" → {"intent":"explaining","ideas":[{"id":"distance","quote":"summer is when we're closer to the sun","correct":false,"gaveReason":false}]}
-"it's not distance, we're actually closest to the sun in january" → {"intent":"explaining","ideas":[{"id":"distance","quote":"it's not distance, we're actually closest to the sun in january","correct":true,"gaveReason":true}]}
-"yes" → {"intent":"chatting","ideas":[]}
-"just tell me" → {"intent":"asking_for_answer","ideas":[]}`;
+Return JSON:
+- matches: "TRUE" if the message agrees with the TRUE version. Saying the WRONG version is false (like "it's NOT that") also counts as TRUE.
+           "WRONG" if the message agrees with the WRONG version.
+           "NEITHER" if the message isn't really about this idea, or you can't tell.
+  Slang, typos and short answers can still be TRUE.
+- gaveReason: true only if the message also says WHY or HOW (because, so, which means, that's why).`;
 }
 
-export function judgeUserMessage(lastGloamLine: string, message: string): string {
-  return `(Gloam just said: "${lastGloamLine}")\n\nSTUDENT'S MESSAGE: "${message}"`;
+export function conceptCheckMessage(message: string): string {
+  return `STUDENT'S MESSAGE: "${message}"`;
+}
+
+/** For messages that don't mention any idea: what is the student doing? */
+export function intentPrompt(lesson: LessonBlueprint): string {
+  return `A grade 9 student is chatting with a character while learning "${lesson.title}". Say what their message is doing.
+
+- "explaining": trying to explain something about the lesson, even if wrong
+- "stuck": "idk", "no idea", "i'm confused", giving up
+- "asking_for_answer": wants the answer told to them ("just tell me", "what's the answer", "you explain it")
+- "off_topic": not about the lesson at all (games, food, people, other subjects, random stuff)
+- "chatting": greetings, "ok", "yes", "lol", short reactions, being mean`;
+}
+
+export function intentMessage(message: string): string {
+  return `STUDENT'S MESSAGE: "${message}"`;
 }
