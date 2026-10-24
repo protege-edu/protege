@@ -28,7 +28,8 @@
   /* Derived shades (used sparingly, always from the six above) */
   --color-moss-deep: #1b3324;
   --color-rosehip-deep: #a83a50; /* button text-safe on mist */
-  --color-mist-dim: #d5ddd0;
+  --color-rosehip-ink: #8e2f45; /* pressed / hover */
+  --color-mist-dim: #d5ddd0;  --color-ember: #c8682a; /* the one spark before Gloam understands anything */
 
   --font-voice: var(--font-shantell), "Comic Sans MS", system-ui, sans-serif;
   --font-body: var(--font-atkinson), system-ui, sans-serif;

@@ -70,6 +70,24 @@ export async function chatJSON<T>(opts: {
   }
 }
 
+/**
+ * Is the model running? Also "warms it up" (loads it into memory) so the
+ * student's first message doesn't wait for a cold start.
+ */
+export async function checkBrain(): Promise<{ online: boolean; model: string }> {
+  try {
+    const res = await fetch(`${aiConfig.baseUrl}/chat/completions`, {
+      method: "POST",
+      signal: AbortSignal.timeout(60_000),
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${aiConfig.apiKey}` },
+      body: JSON.stringify({ model: aiConfig.model, messages: [{ role: "user", content: "hi" }], max_tokens: 1 }),
+    });
+    return { online: res.ok, model: aiConfig.model };
+  } catch {
+    return { online: false, model: aiConfig.model };
+  }
+}
+
 function safeJSON(text: string): unknown {
   try {
     return JSON.parse(text);

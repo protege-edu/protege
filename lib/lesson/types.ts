@@ -32,6 +32,15 @@ export interface Concept {
   evidence: string[];
 }
 
+/** What the browser gets: no answers, so nobody can peek in dev tools */
+export type ClientConcept = Pick<Concept, "id" | "name" | "beliefs">;
+export interface ClientLesson {
+  id: string;
+  title: string;
+  concepts: ClientConcept[];
+  storyBeats: string[];
+}
+
 export interface LessonBlueprint {
   id: string;
   title: string;

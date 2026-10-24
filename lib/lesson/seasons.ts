@@ -29,7 +29,7 @@ export const seasons: LessonBlueprint = {
     },
     {
       id: "angle",
-      name: "Direct vs. slanted light",
+      name: "Sun angle",
       truth:
         "When sunlight hits the ground more directly (sun high in the sky), the same energy is packed into a smaller area, so it heats more. Slanted light spreads the same energy over a bigger area, so it heats less.",
       misconception: "Sunlight is sunlight. It doesn't matter what angle it comes in at.",
@@ -48,7 +48,7 @@ export const seasons: LessonBlueprint = {
     },
     {
       id: "daylight",
-      name: "Longer days",
+      name: "Day length",
       truth:
         "In summer the days are longer, so the ground gets more hours of sunlight to heat up and fewer hours of night to cool down. In winter it's the opposite.",
       misconception: "Days are always the same length. Twelve hours, done.",
@@ -67,7 +67,7 @@ export const seasons: LessonBlueprint = {
     },
     {
       id: "distance",
-      name: "It's not distance",
+      name: "Not distance",
       truth:
         "Distance from the sun is NOT the reason for seasons. Earth's orbit is almost a circle, and Earth is actually closest to the sun in early January, which is winter in the northern hemisphere.",
       misconception: "Summer happens because Earth gets closer to the sun.",
@@ -86,7 +86,7 @@ export const seasons: LessonBlueprint = {
     },
     {
       id: "hemispheres",
-      name: "Opposite halves",
+      name: "Two halves",
       truth:
         "The northern and southern hemispheres have opposite seasons at the same time, because when one half leans toward the sun the other half leans away.",
       misconception: "The whole planet has the same season at the same time.",
