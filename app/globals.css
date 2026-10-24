@@ -1,0 +1,107 @@
+@import "tailwindcss";
+
+/*
+  Protégé design tokens.
+  We wipe Tailwind's default theme (--*: initial) so nothing "stock" can leak in.
+  Every color, size and font in the app comes from this list.
+*/
+@theme {
+  --*: initial;
+
+  --spacing: 0.25rem;
+
+  --breakpoint-sm: 40rem;
+  --breakpoint-md: 56rem;
+  --breakpoint-lg: 80rem;
+  --breakpoint-xl: 110rem;
+
+  /* The six named colors of Gloam's valley */
+  --color-mist: #e8ede3; /* paper */
+  --color-moss: #23402f; /* ink + night */
+  --color-lichen: #8faf8a; /* quiet UI */
+  --color-lantern: #f4b740; /* ONLY means "understood" */
+  --color-rosehip: #d4596e; /* Gloam + the teach action */
+  --color-soot: #16211b; /* deepest dark */
+  --color-transparent: transparent;
+  --color-current: currentColor;
+
+  /* Derived shades (used sparingly, always from the six above) */
+  --color-moss-deep: #1b3324;
+  --color-rosehip-deep: #a83a50; /* button text-safe on mist */
+  --color-mist-dim: #d5ddd0;
+
+  --font-voice: var(--font-shantell), "Comic Sans MS", system-ui, sans-serif;
+  --font-body: var(--font-atkinson), system-ui, sans-serif;
+
+  /* Type scale: 14 / 16 / 21 / 28 / 38 / 50 */
+  --text-xs: 0.875rem;
+  --text-xs--line-height: 1.35;
+  --text-sm: 1rem;
+  --text-sm--line-height: 1.5;
+  --text-md: 1.3125rem;
+  --text-md--line-height: 1.4;
+  --text-lg: 1.75rem;
+  --text-lg--line-height: 1.2;
+  --text-xl: 2.375rem;
+  --text-xl--line-height: 1.1;
+  --text-2xl: 3.125rem;
+  --text-2xl--line-height: 1.05;
+
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-bold: 700;
+
+  --radius-sm: 0.375rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1.25rem;
+  --radius-full: 9999px;
+
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--color-mist);
+  color: var(--color-moss);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Visible, on-brand keyboard focus everywhere */
+:focus-visible {
+  outline: 3px solid var(--color-rosehip-deep);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+::selection {
+  background: var(--color-moss);
+  color: var(--color-mist);
+}
+
+/* Gloam's handwriting can bounce: the BNCE axis of Shantell Sans */
+.voice {
+  font-family: var(--font-voice);
+  font-variation-settings: "BNCE" var(--bounce, 0), "INFM" var(--informal, 40);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
