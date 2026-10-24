@@ -3,7 +3,9 @@
  *   npm run test:logic
  */
 import assert from "node:assert/strict";
-import { findGiveaway } from "@/lib/ai/companion";
+import { findGiveaway, voice } from "@/lib/ai/companion";
+import { AGE_STYLES } from "@/lib/age-styles";
+import { quickIntent } from "@/lib/companion/intent";
 import { checkSafety } from "@/lib/ai/safety";
 import { directBeat } from "@/lib/companion/director";
 import { candidateConcepts, gradeCheck } from "@/lib/companion/grade";
@@ -81,48 +83,84 @@ test("'lean' doesn't fire on 'clean'", () => {
   assert.equal(findGiveaway(seasons, zero, "I need a clean start", ""), null);
 });
 
-console.log("safety");
-test("censored swears are caught", () => assert.equal(checkSafety("this is f***ing boring", "x").kind, "redirect"));
-test("normal science talk passes", () => assert.equal(checkSafety("the sun hits the northern hemisphere more directly", "x").kind, "ok"));
-test("innocent words like 'fork' and 'Scunthorpe' don't trip it", () => {
-  assert.equal(checkSafety("I ate with a fork", "x").kind, "ok");
-  assert.equal(checkSafety("my cousin lives in Scunthorpe", "x").kind, "ok");
+console.log("safety (high school style)");
+const hs = AGE_STYLES.senior;
+test("censored swears are blocked", () => assert.equal(checkSafety("this is f***ing boring", hs), "blocked"));
+test("normal science talk passes", () => assert.equal(checkSafety("the sun hits the northern hemisphere more directly", hs), "ok"));
+test("innocent words don't trip it (fork, Scunthorpe, class, assume)", () => {
+  for (const m of ["I ate with a fork", "my cousin lives in Scunthorpe", "in class we learned this", "i assume its the tilt"]) assert.equal(checkSafety(m, hs), "ok", m);
 });
-test("being mean to Gloam gets a good-natured shrug", () => {
-  assert.equal(checkSafety("you're stupid", "x").kind, "shrug");
-  assert.equal(checkSafety("shut up gloam", "x").kind, "shrug");
-  assert.equal(checkSafety("the sun is not stupid it's tilted", "x").kind, "ok");
+test("real teen insults get a comeback, not a weird AI reply", () => {
+  for (const m of ["yo shut the hell up", "you're stupid", "ur so dumb", "stfu", "this sucks", "who asked", "L", "you're actually useless"]) assert.equal(checkSafety(m, hs), "insulted", m);
+});
+test("a student in distress gets care, not jokes", () => {
+  for (const m of ["honestly i want to die", "i wanna die", "kms"]) assert.equal(checkSafety(m, hs), "care", m);
+});
+test("younger kids get a stricter filter", () => {
+  assert.equal(checkSafety("that's damn hard", AGE_STYLES.little), "blocked");
+  assert.equal(checkSafety("that's damn hard", hs), "ok");
 });
 test("curly apostrophes can't sneak a giveaway past the check", () => {
   assert.equal(findGiveaway(seasons, zero, "Earth doesn’t get closer to the sun!", ""), "doesn't get closer");
 });
-test("a student in distress gets care, not jokes", () => assert.equal(checkSafety("honestly i want to die", "x").kind, "care"));
 
-console.log("director");
+console.log("real teen messages (no AI needed)");
+test("'yea', 'hey', 'ok', 'lol', 'bruh' are just chatting", () => {
+  for (const m of ["yea!", "hey!", "ok", "lol", "bruh", "yeah", "fr"]) assert.equal(quickIntent(m), "chatting", m);
+});
+test("every way of asking for the answer is caught", () => {
+  for (const m of ["JS TELL ME THE ANSWER", "just tell me", "whats the answer", "can u tell me the answer", "you explain it", "just say it"]) assert.equal(quickIntent(m), "asking_for_answer", m);
+});
+test("'idk' and friends mean stuck", () => {
+  for (const m of ["idk", "i dont know", "no idea", "dunno", "im confused", "wdym"]) assert.equal(quickIntent(m), "stuck", m);
+});
+
+console.log("director (high school style)");
+const said: string[] = [];
+const beatFor = (intent: Parameters<typeof directBeat>[0]["intent"], seed = 0.3) =>
+  directBeat({ lesson: seasons, style: hs, before: zero, progress: applyProgress(zero, []), intent, judged: [], gloamSaid: said, seed });
+test("non-explanations get instant hand-written lines (no AI)", () => {
+  for (const i of ["chatting", "stuck", "asking_for_answer", "off_topic"] as const) assert.equal(beatFor(i).kind, "line", i);
+});
+test("hand-written lines and questions never give anything away", () => {
+  for (const i of ["chatting", "stuck", "asking_for_answer", "off_topic"] as const)
+    for (const seed of [0, 0.2, 0.4, 0.6, 0.8, 0.99]) assert.equal(findGiveaway(seasons, zero, beatFor(i, seed).line, ""), null, beatFor(i, seed).line);
+});
+test("Gloam doesn't repeat itself when you keep saying 'yea'", () => {
+  const history: string[] = [];
+  for (let i = 0; i < 4; i++) {
+    const b = directBeat({ lesson: seasons, style: hs, before: zero, progress: applyProgress(zero, []), intent: "chatting", judged: [], gloamSaid: history, seed: i / 4 });
+    assert.ok(!history.includes(b.line), b.line);
+    history.push(b.line);
+  }
+});
 test("a click is always a eureka", () => {
   const before = { ...zero, tilt: 2 as const };
   const progress = applyProgress(before, [{ id: "tilt", quality: "clear" }]);
-  assert.equal(directBeat({ lesson: seasons, before, progress, intent: "explaining", judged: [{ id: "tilt", quality: "clear" }], turn: 1 }).emotion, "eureka");
-});
-test("asking for the answer never gives it", () => {
-  const progress = applyProgress(zero, []);
-  const beat = directBeat({ lesson: seasons, before: zero, progress, intent: "asking_for_answer", judged: [], turn: 0 });
-  assert.equal(beat.emotion, "sheepish");
-  assert.equal(findGiveaway(seasons, zero, beat.fallback, ""), null);
+  assert.equal(directBeat({ lesson: seasons, style: hs, before, progress, intent: "explaining", judged: [{ id: "tilt", quality: "clear" }], gloamSaid: [] }).emotion, "eureka");
 });
 test("the last candle triggers the finale", () => {
   const before = Object.fromEntries(seasons.concepts.map((c) => [c.id, 3])) as typeof zero;
   before.hemispheres = 2;
   const progress = applyProgress(before, [{ id: "hemispheres", quality: "clear" }]);
-  assert.equal(directBeat({ lesson: seasons, before, progress, intent: "explaining", judged: [{ id: "hemispheres", quality: "clear" }], turn: 9 }).finished, true);
+  assert.equal(directBeat({ lesson: seasons, style: hs, before, progress, intent: "explaining", judged: [{ id: "hemispheres", quality: "clear" }], gloamSaid: [] }).finished, true);
 });
-test("after the finale, Gloam takes a victory lap instead of asking questions", () => {
+test("after the finale, Gloam takes a victory lap", () => {
   const all = Object.fromEntries(seasons.concepts.map((c) => [c.id, 3])) as typeof zero;
-  const beat = directBeat({ lesson: seasons, before: all, progress: applyProgress(all, []), intent: "chatting", judged: [], turn: 12 });
+  const beat = directBeat({ lesson: seasons, style: hs, before: all, progress: applyProgress(all, []), intent: "chatting", judged: [], gloamSaid: [] });
   assert.equal(beat.emotion, "proud");
 });
 test("every scripted question is giveaway-free", () => {
   for (const c of seasons.concepts) for (const q of c.questions) assert.equal(findGiveaway(seasons, zero, q, ""), null, q);
+});
+
+console.log("voice");
+test("high school Gloam is lowercase but keeps SHOUTED words", () => {
+  assert.equal(voice("Fine. FINE. You're right. I hate this!!", hs), "fine. FINE. you're right. i hate this!");
+});
+test("every age style has every line bank filled", () => {
+  for (const st of Object.values(AGE_STYLES))
+    for (const [k, v] of Object.entries(st.lines)) assert.ok(typeof v === "string" ? v.length > 0 : v.length > 0, `${st.id}.${k}`);
 });
 
 console.log(`\n${passed} passed${process.exitCode ? ", some FAILED" : ""}`);

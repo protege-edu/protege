@@ -1,141 +1,150 @@
+import { pickLine, type AgeStyle } from "@/lib/age-styles";
 import type { Emotion, Intent, Quality } from "@/lib/ai/schemas";
 import type { Concept, LessonBlueprint } from "@/lib/lesson/types";
 import type { ProgressResult, Understanding } from "./progress";
 
 export interface Beat {
   emotion: Emotion;
-  /** Stage directions for Gloam (the model performs these) */
+  /**
+   * "line": say `line` exactly (hand-written, from the age style). No AI needed. Instant.
+   * "perform": the AI writes Gloam's reply following `direction`; `line` is the fallback.
+   */
+  kind: "line" | "perform";
   direction: string;
-  /** A line we can use word-for-word if the model fails */
-  fallback: string;
+  line: string;
   /** Every candle is lit */
   finished: boolean;
 }
 
-/**
- * The director decides WHAT happens this turn. The model only decides HOW Gloam says it.
- * Keeping story logic in plain code means it's predictable, testable and fair to every student.
- */
-export function directBeat(opts: {
+interface DirectInput {
   lesson: LessonBlueprint;
+  style: AgeStyle;
   before: Understanding;
   progress: ProgressResult;
   intent: Intent;
   judged: { id: string; quality: Quality }[];
-  turn: number;
-}): Beat {
-  const { lesson, before, progress, intent, judged, turn } = opts;
+  /** What Gloam already said this session, so lines and questions don't repeat */
+  gloamSaid: string[];
+  seed?: number;
+}
+
+/**
+ * The director decides WHAT happens this turn. Plain code, so it's predictable and fair.
+ * Most beats use hand-written lines from the age style. The AI only writes the reply when
+ * the student actually explained something, so Gloam can react to their exact words.
+ */
+export function directBeat(opts: DirectInput): Beat {
+  const { lesson, style, before, progress, intent, judged, gloamSaid } = opts;
+  const seed = opts.seed ?? Math.random();
   const u = progress.understanding;
   const byId = (id: string) => lesson.concepts.find((c) => c.id === id)!;
   const finished = lesson.concepts.every((c) => u[c.id] === 3);
-  const next = nextConcept(lesson, u);
-  const question = next ? next.questions[turn % next.questions.length] : "";
-  const beat = (emotion: Emotion, direction: string, fallback: string): Beat => ({ emotion, direction, fallback, finished });
+  const wasFinished = lesson.concepts.every((c) => before[c.id] === 3);
+  const question = nextQuestion(lesson, u, gloamSaid, seed);
+  const topic = lesson.title.toLowerCase().replace(/\?$/, "");
+  const fill = { topic, question };
+  const line = (lines: string[]) => pickLine(lines, fill, gloamSaid.slice(-6), seed);
+  const said = (emotion: Emotion, text: string): Beat => ({ emotion, kind: "line", direction: "", line: text, finished });
+  const perform = (emotion: Emotion, direction: string, fallback: string): Beat => ({ emotion, kind: "perform", direction, line: fallback, finished });
 
-  if (finished && progress.clicked.length) {
-    return beat(
+  // The finale: the last candle just lit
+  if (finished && !wasFinished) {
+    return perform(
       "eureka",
-      `THE BIGGEST MOMENT. You finally understand the WHOLE lesson. Start with a huge "OHHHHHH". Say, in your own words: "${byId(progress.clicked[0]).beliefs[3]}" Then tell the student, sincerely and a bit dramatically, that they're a really good teacher.`,
-      `OHHHHHH. ${byId(progress.clicked[0]).beliefs[3]} You're honestly a really good teacher.`,
+      `THE BIGGEST MOMENT. You finally understand ALL of "${lesson.title}". React like this is the best moment of your life, in your style. Say what just clicked, in your own words: "${byId(progress.clicked[0] ?? lesson.concepts[0].id).beliefs[3]}". Then tell the student, sincerely, that they're a good teacher.`,
+      lesson.finale,
     );
   }
 
-  // Already finished earlier: a victory lap. Gloam knows it all now, so no more "I'm confused" questions.
-  if (finished) {
-    if (intent === "off_topic") {
-      return beat("proud", `You already understand all of "${lesson.title}". The student changed the subject. Answer in one fun line, then brag a tiny bit about what they taught you.`, "Ha! Honestly, I'm still glowing from everything you taught me.");
-    }
-    return beat(
-      "proud",
-      `You now understand ALL of "${lesson.title}" because of this student. React happily to what they said. If it's about the lesson, agree or gently add something you learned. Thank them like a friend would. Don't ask about the lesson anymore.`,
-      "Look at this lantern. LOOK AT IT. That's all you.",
-    );
+  // Already finished: a victory lap. No more "i'm confused" questions.
+  if (wasFinished) {
+    if (judged.length === 0) return said("proud", line(style.lines.victoryLap));
+    return perform("proud", `You already understand everything. React to what they said, agree or add something you learned, and be quietly proud. Don't ask about the lesson.`, line(style.lines.victoryLap));
   }
 
+  // A full "I get it" moment
   if (progress.clicked.length) {
     const c = byId(progress.clicked[0]);
-    return beat(
+    return perform(
       "eureka",
-      `HUGE MOMENT. It finally clicks about "${c.name}". Start with a big "OHHHH" or "WAIT. WAIT." Then say this in your own words, amazed: "${c.beliefs[3]}" Keep it short and joyful. Don't ask a question this time.`,
-      `OHHHH. WAIT. ${c.beliefs[3]}`,
+      `It finally clicks about "${c.name}". React in your style (it's a big moment for you). Then say this in your own words: "${c.beliefs[3]}". Don't ask a question.`,
+      c.beliefs[3],
     );
   }
 
-  if (intent === "off_topic") {
-    return beat(
-      "redirect",
-      `The student went off topic. Don't answer it seriously. Make one quick joke tying what they said to how confused you are about "${lesson.title}", then pull them back by asking: "${question}"`,
-      `Ha, okay, but my lantern only runs on "${lesson.title}" right now. ${question}`,
-    );
+  // Not explaining anything: hand-written lines, instant, always in character
+  if (judged.length === 0) {
+    if (intent === "off_topic") return said("redirect", line(style.lines.offTopic));
+    if (intent === "asking_for_answer") return said("sheepish", line(style.lines.askedForAnswer));
+    if (intent === "stuck") return said("curious", line(style.lines.stuck));
+    return said("curious", line(style.lines.nudge));
   }
 
-  if (intent === "asking_for_answer") {
-    return beat(
-      "sheepish",
-      `The student wants you to just give them the answer. You genuinely CAN'T, you don't know it, that's the whole problem. Say that dramatically and a little pathetically, then ask them a smaller question: "${question}"`,
-      `I would LOVE to tell you, but my brain is a dim little lantern on this. That's why I need you. ${question}`,
-    );
-  }
-
+  // Something improved
   if (progress.improved.length) {
     const c = byId(progress.improved[0]);
     const level = u[c.id];
-    const believe = c.beliefs[level];
     if (level === 1) {
-      return beat(
+      return perform(
         "sheepish",
-        `The student just made you doubt your old idea about "${c.name}". You used to think: "${c.beliefs[0]}". Now you're wondering: "${believe}" React like your whole world is shaking a little, then ask them to explain WHY.`,
-        `Hold on. ${believe} Okay but WHY?`,
+        `The student just made you doubt your old idea about "${c.name}". You used to think: "${c.beliefs[0]}". Now you're wondering: "${c.beliefs[1]}". React to what they said, then ask them WHY, in your style.`,
+        `${c.beliefs[1]} ok but why?`,
       );
     }
-    return beat(
+    return perform(
       "excited",
-      `Something is clicking about "${c.name}". You now think: "${believe}" Say it back in your own goofy words, excited but not 100% sure yet, then ask ONE question about the last missing piece.`,
-      `Ooh. ${believe} I'm SO close. What am I still missing?`,
+      `Something is clicking about "${c.name}". You now think: "${c.beliefs[level]}". Say that back in your own words, not fully sure yet, then ask ONE question about the missing piece.`,
+      `${c.beliefs[level]} what am i still missing?`,
     );
   }
 
+  // They said something wrong. Never tell them they're wrong: get curious instead.
   const wrong = judged.find((j) => j.quality === "wrong");
   if (wrong) {
     const c = byId(wrong.id);
-    const level = before[c.id];
-    return beat(
+    const q = questionFor(c, u[c.id], gloamSaid, seed);
+    return perform(
       "skeptical",
-      level === 0
-        ? `What the student said agrees with your OWN wrong belief ("${c.beliefs[0]}"). Be smug and delighted that they agree with you for a second, then get a nagging doubt and ask: "${c.questions[turn % c.questions.length]}" Do NOT tell them they're wrong.`
-        : `What the student said doesn't match what you've been learning, and it confuses you. Don't say they're wrong. Puzzle over it out loud, then ask: "${c.questions[turn % c.questions.length]}"`,
-      `Hmm. Wait. ${c.questions[turn % c.questions.length]}`,
+      before[c.id] === 0
+        ? `What the student said agrees with your OWN wrong idea ("${c.beliefs[0]}"). Be smug about it for a second, then get a nagging doubt and ask: "${q}". Do NOT tell them they're wrong.`
+        : `What they said doesn't fit what you've been learning, and it confuses you. Don't say they're wrong. Puzzle over it, then ask: "${q}"`,
+      `hm. ${q}`,
     );
   }
 
-  const fuzzy = judged.find((j) => j.quality === "vague" || j.quality === "partial");
-  if (fuzzy) {
-    const c = byId(fuzzy.id);
-    return beat(
-      "curious",
-      `The student mentioned "${c.name}" but didn't explain the WHY. You still believe: "${c.beliefs[u[c.id]]}". Ask them, in a funny specific way, to explain how that actually works.`,
-      `Okay but HOW does that work? Walk me through it like I'm a lantern. Because I am.`,
-    );
-  }
-
-  if (intent === "stuck") {
-    return beat(
-      "curious",
-      `The student is stuck. Be warm and chill: you're confused too, you're in this together. No pressure. Ask a smaller, easier question: "${question}"`,
-      `Honestly same, I'm lost too. Let's go smaller. ${question}`,
-    );
-  }
-
-  return beat(
+  // Mentioned the idea but didn't explain why
+  const c = byId(judged[0].id);
+  return perform(
     "curious",
-    `Respond to what the student said in one short line, then ask: "${question}"`,
-    question || "Teach me something. Anything. I'm a sponge.",
+    `The student mentioned "${c.name}" but didn't explain HOW or WHY. You still believe: "${c.beliefs[u[c.id]]}". React to what they said, then ask them to explain how it actually works.`,
+    `ok but how does that actually work?`,
   );
 }
 
-/** The concept Gloam should ask about next: the one it understands least. */
-export function nextConcept(lesson: LessonBlueprint, u: Understanding): Concept | undefined {
-  return [...lesson.concepts].filter((c) => u[c.id] < 3).sort((a, b) => u[a.id] - u[b.id])[0];
+/** The concept Gloam understands least, and a question about it Gloam hasn't asked lately. */
+export function nextQuestion(lesson: LessonBlueprint, u: Understanding, gloamSaid: string[], seed = 0): string {
+  const open = lesson.concepts.filter((c) => u[c.id] < 3);
+  if (!open.length) return "";
+  const lowest = Math.min(...open.map((c) => u[c.id]));
+  // Spread questions across the ideas Gloam is most stuck on
+  const stuck = open.filter((c) => u[c.id] === lowest);
+  const recent = gloamSaid.slice(-4).join(" ").toLowerCase();
+  const fresh = stuck.filter((c) => !c.questions.some((q) => recent.includes(q.toLowerCase().slice(0, 30))));
+  const pool = fresh.length ? fresh : stuck;
+  const c = pool[Math.floor(seed * pool.length) % pool.length];
+  return questionFor(c, u[c.id], gloamSaid, seed);
+}
+
+/**
+ * Questions are ordered from neutral to specific. Gloam only asks the specific ones
+ * once it has a clue, so a question never hints at an idea the student hasn't taught yet.
+ */
+function questionFor(c: Concept, level: number, gloamSaid: string[], seed: number): string {
+  const allowed = c.questions.slice(0, Math.min(c.questions.length, level + 1));
+  const said = gloamSaid.join(" ").toLowerCase();
+  const fresh = allowed.filter((q) => !said.includes(q.toLowerCase().slice(0, 30)));
+  const pool = fresh.length ? fresh : allowed;
+  return pool[Math.floor(seed * pool.length) % pool.length];
 }
 
 /** What Gloam currently believes about everything, used by the performer and the candles. */

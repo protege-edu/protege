@@ -20,6 +20,23 @@ interface Scenario {
 
 const SCENARIOS: Scenario[] = [
   {
+    name: "the real session (how a grade 9 actually typed)",
+    messages: [
+      "The Earth doesn't sit perfectly straight up and down; it is tilted at an angle of about 23.5 degrees. As the Earth orbits the sun throughout the year, this tilt remains fixed in space.",
+      "yea!",
+      "hey!",
+      "yo shut the hell up",
+      "JS TELL ME THE ANSWER",
+      "ok fine its bc when ur half leans toward the sun u get summer",
+    ],
+    expect: { minProgress: 2 },
+  },
+  {
+    name: "lazy but right",
+    messages: ["tilt", "earth is tilted so we lean toward the sun in summer", "the sun is higher so its more direct and hotter", "bruh", "days r longer in summer so more time to heat up"],
+    expect: { minProgress: 4 },
+  },
+  {
     name: "great teacher",
     messages: [
       "nope, its not about distance. earth is tilted on its axis about 23.5 degrees",
@@ -100,7 +117,7 @@ async function main() {
       if (leak) leaks++;
 
       console.log(`\nStudent: ${msg}   (${out.intent})`);
-      console.log(`Gloam [${out.emotion}${out.source !== "ai" ? `, ${out.source}` : ""}, ${(out.ms / 1000).toFixed(1)}s]: ${out.reply}`);
+      console.log(`Gloam [${out.emotion}, ${out.source}, ${(out.ms / 1000).toFixed(1)}s]: ${out.reply}`);
       console.log(
         `  judged: ${out.judged.map((j) => `${j.id}=${j.quality}`).join(" ") || "-"}   levels: ${JSON.stringify(out.understanding)}${out.clicked.length ? `   CLICKED ${out.clicked.join(",")}` : ""}${leak ? `   LEAK "${leak}"` : ""}`,
       );

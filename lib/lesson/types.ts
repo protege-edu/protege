@@ -1,3 +1,5 @@
+import type { AgeStyleId } from "@/lib/age-styles/types";
+
 /**
  * A lesson blueprint is everything Gloam needs to "not get" a lesson.
  * In Phase 1 we hand-write one. In Phase 2 the AI generates one from a
@@ -55,6 +57,10 @@ export interface ClientLesson {
 
 export interface LessonBlueprint {
   id: string;
+  /** The age style this blueprint's Gloam lines are written for (the class's grade picks it) */
+  ageStyle: AgeStyleId;
+  /** The class's grade, 0 = kindergarten */
+  grade: number;
   title: string;
   subject: string;
   /** Gloam's very first line */

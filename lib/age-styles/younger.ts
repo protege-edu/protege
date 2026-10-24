@@ -1,0 +1,126 @@
+import type { AgeStyle } from "./types";
+
+/**
+ * The younger age styles. They exist so nothing in the app is hard-wired to high school,
+ * but they are NOT polished yet (polished: false). Phase 1 only polishes "senior".
+ */
+
+const storybookCopy = (big: boolean): AgeStyle["copy"] => ({
+  appName: "Protégé",
+  titleCta: big ? "Let's play!" : "Start teaching",
+  titleHelp: big ? "What do I do?" : "How this works",
+  chapter: (n) => `Chapter ${n}`,
+  introNext: "Next",
+  introDone: big ? "Let's go!" : "Let's start",
+  introSkip: "Skip",
+  intro: (topic, candles) => [
+    { mood: "sheepish", text: big ? "Oh! Hi! I'm Gloam. I was napping." : "Oh! Hi. I'm Gloam. Sorry, I was asleep. I do that a lot." },
+    { mood: "confused", text: big ? "See my lantern? It glows when I learn things. Right now it's dark." : "See the lantern on my head? It glows when I understand stuff. Right now it's... not glowing." },
+    { mood: "skeptical", text: big ? `Today we learn about "${topic}". I have some ideas. They might be wrong!` : `Today's thing is "${topic}". I have some theories. They might be bad.` },
+    { mood: "excited", text: big ? `You teach me! Every time I learn something, a candle lights up. There are ${candles}!` : `So here's the deal: YOU teach ME. Every idea I get lights one of the ${candles} candles.` },
+  ],
+  inputPlaceholder: big ? "Tell Gloam…" : "Explain it to Gloam in your own words…",
+  inputLabel: "Explain it to Gloam",
+  sendButton: big ? "Tell Gloam" : "Teach Gloam",
+  inputHint: big ? "" : "Press Enter to send. Shift+Enter adds a new line.",
+  firstHint: big ? "Is Gloam right? Tell it why!" : "Not sure how to start? Tell Gloam if its theory is right, and why.",
+  log: "Conversation",
+  pause: "Pause",
+  resume: "Keep going",
+  howItWorksTitle: "You're the teacher!",
+  howItWorks: (topic, candles) => [
+    `Gloam is mixed up about "${topic}". Help it understand by explaining in your own words.`,
+    `When Gloam understands something, a candle lights up. Light all ${candles}!`,
+    "There are no wrong turns. If you're stuck, tell Gloam. It's stuck too.",
+  ],
+  sound: (on) => `Sound: ${on ? "on" : "off"}`,
+  startOver: "Start over",
+  startOverConfirm: "Yes, start over",
+  candleLabel: "What Gloam understands",
+  gloamThinks: "Gloam thinks:",
+  levelWords: ["Not lit yet", "A little spark", "Flickering", "Lit"],
+  eurekaWord: "OHHHH!",
+  finaleWord: "THE WHOLE VALLEY!",
+  credit: (concept) => `You taught Gloam: ${concept.toLowerCase()}!`,
+  finaleCredit: "You taught Gloam everything!",
+  skip: "Skip",
+  recapTitle: "What you taught Gloam",
+  recapIntro: "Here are the big ideas:",
+  teachAgain: "Teach Gloam again",
+  backToTitle: "Back to the start",
+  offlineTitle: "Gloam fell asleep.",
+  offlineBody: "Gloam's brain (the AI) isn't running. Ask your teacher to start Ollama, then press Try again.",
+  offlineRetryBody: (tries) => `Still asleep (tried ${tries} ${tries === 1 ? "time" : "times"}). Ask your teacher to check Ollama.`,
+  retry: "Try again",
+});
+
+const storybookLines = (simple: boolean): AgeStyle["lines"] => ({
+  thinking: simple ? ["Hmm…", "Thinking…", "Let me think!"] : ["hmm…", "thinking so hard my stalk hurts", "processing… processing… ow."],
+  almost: ["Ooh?", "Wait…"],
+  clicking: ["WAIT.", "Ooh ooh ooh!"],
+  nudge: ["Okay! {question}", "Ooh, tell me more! {question}", "I'm listening! {question}"],
+  stuck: ["That's okay! I'm stuck too. {question}", "Let's try an easier one. {question}"],
+  askedForAnswer: ["I don't know it! That's why I need you. {question}", "If I knew, my lantern would glow! {question}"],
+  offTopic: ["Ha! Back to {topic}? {question}", "That sounds fun! But I'm still stuck on {topic}. {question}"],
+  insulted: ["Hey, that's not nice! But I still need your help. {question}", "Ouch! I forgive you. {question}"],
+  blocked: ["Let's keep it school-friendly! {question}", "Hmm, let's talk about {topic} instead. {question}"],
+  care: "That sounds really hard. Please tell your teacher or a grown-up you trust how you're feeling. They want to help.",
+  victoryLap: ["Look how bright my lantern is! You did that!", "I understand it now, because of you!"],
+  brainGlitch: ["Oops, I got mixed up. Can you say that again?"],
+});
+
+export const little: AgeStyle = {
+  id: "little",
+  label: "Grades K–2",
+  grades: [0, 2],
+  polished: false,
+  voice: {
+    persona: "You are Gloam, a small, round, friendly creature with a lantern on your head. You are silly, playful and gentle, like a funny friend in a picture book.",
+    rules: ["use very short, simple words a 6 year old knows.", "1 or 2 very short sentences, under 15 words.", "be warm, silly and kind.", "never mock the student."],
+    banned: ["stupid", "dumb", "hate"],
+    maxWords: 15,
+    lowercase: false,
+  },
+  lines: storybookLines(true),
+  copy: storybookCopy(true),
+  look: { theme: "little", gloamSkin: "storybook", motion: 1, voiceAxis: "bounce" },
+  celebrate: { style: "big", particles: 60 },
+  safety: { level: "strict" },
+  input: { modes: ["type", "choices", "voice"], targetScale: 1.4, readAloud: true },
+};
+
+export const junior: AgeStyle = {
+  ...little,
+  id: "junior",
+  label: "Grades 3–5",
+  grades: [3, 5],
+  voice: {
+    persona: "You are Gloam, a small, round creature with a lantern on your head. You are playful, curious and a bit silly.",
+    rules: ["use simple words a 9 year old knows.", "1 to 2 short sentences, under 22 words.", "be funny and kind.", "never mock the student."],
+    banned: ["stupid", "dumb", "hate"],
+    maxWords: 22,
+    lowercase: false,
+  },
+  look: { theme: "junior", gloamSkin: "storybook", motion: 1, voiceAxis: "bounce" },
+  input: { modes: ["type", "choices"], targetScale: 1.2, readAloud: true },
+};
+
+export const middle: AgeStyle = {
+  id: "middle",
+  label: "Grades 6–8",
+  grades: [6, 8],
+  polished: false,
+  voice: {
+    persona: "You are Gloam: a small, round, dramatic creature with a lantern on your head. You are goofy, theatrical and confidently wrong, and you love your own bad theories.",
+    rules: ["talk like a 12 year old: casual, short sentences, some CAPS for drama.", "1 to 3 short sentences, under 40 words.", "never mock the student.", "never say you're an AI."],
+    banned: ["cat in a sunbeam", "hoodie", "burnt toast"],
+    maxWords: 40,
+    lowercase: false,
+  },
+  lines: storybookLines(false),
+  copy: storybookCopy(false),
+  look: { theme: "middle", gloamSkin: "storybook", motion: 1, voiceAxis: "bounce" },
+  celebrate: { style: "big", particles: 40 },
+  safety: { level: "standard" },
+  input: { modes: ["type"], targetScale: 1, readAloud: false },
+};
