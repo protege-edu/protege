@@ -73,7 +73,7 @@ async function main() {
       for (const [n, msg] of messages.entries()) {
         const step = String(n + 1).padStart(2, "0");
         await page.getByLabel("Explain it to Gloam").fill(msg);
-        await page.getByRole("button", { name: "Teach Gloam" }).click();
+        await page.getByRole("button", { name: "Teach Gloam", exact: true }).click();
         await page.waitForTimeout(1200);
         await shot(`t${step}-a-thinking`);
         await waitForStatus(page, ["ready", "moment", "offline"]);
@@ -86,6 +86,12 @@ async function main() {
         await shot(`t${step}-c-reply`);
         console.log(`  turn ${step}: ${await status(page)}`);
       }
+    }
+    const recap = page.getByRole("heading", { name: "What you taught Gloam" });
+    if (await recap.count()) {
+      await recap.scrollIntoViewIfNeeded();
+      await page.waitForTimeout(600);
+      await shot("99-recap");
     }
     if (errors.length) console.log(`  console errors:\n  - ${errors.join("\n  - ")}`);
     await context.close();

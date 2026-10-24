@@ -1,6 +1,7 @@
 "use client";
 
-import { motion, useReducedMotion } from "motion/react";
+import { useCalmMotion } from "@/lib/useCalmMotion";
+import { motion } from "motion/react";
 
 /**
  * Something Gloam says, in its own handwriting.
@@ -8,7 +9,7 @@ import { motion, useReducedMotion } from "motion/react";
  * as Gloam's mood: the Shantell Sans BNCE axis goes from flat (confused) to wild (eureka).
  */
 export function GloamLine({ text, bounce, animate, current, big = false }: { text: string; bounce: number; animate: boolean; current: boolean; big?: boolean }) {
-  const reduced = useReducedMotion() ?? false;
+  const reduced = useCalmMotion();
   const words = text.split(/\s+/);
   const play = animate && !reduced;
 

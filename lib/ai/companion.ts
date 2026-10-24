@@ -56,7 +56,7 @@ export async function runTurn(input: TurnInput, hooks: { onJudged?: (e: JudgedEv
       clicked: [],
       judged: [],
       reply: safety.reply,
-      emotion: safety.kind === "care" ? "curious" : "redirect",
+      emotion: safety.kind === "care" ? "curious" : safety.kind === "shrug" ? "skeptical" : "redirect",
       intent: "off_topic",
       onTopic: false,
       finished: false,
@@ -178,8 +178,11 @@ function offline(understanding: Understanding, start: number): TurnOutput {
  * Did Gloam use an "answer word" for an idea it hasn't learned, that nobody has said yet?
  * Returns the word if so.
  */
-export function findGiveaway(lesson: LessonBlueprint, understanding: Understanding, reply: string, allowed: string): string | null {
-  const text = reply.toLowerCase();
+export function findGiveaway(lesson: LessonBlueprint, understanding: Understanding, reply: string, allowedText: string): string | null {
+  // Models write curly apostrophes (doesn’t). Compare plain text to plain text.
+  const plain = (s: string) => s.toLowerCase().replace(/[‘’ʼ]/g, "'");
+  const text = plain(reply);
+  const allowed = plain(allowedText);
   for (const c of lesson.concepts) {
     if ((understanding[c.id] ?? 0) >= 3) continue;
     for (const word of c.giveaways) {
@@ -194,6 +197,7 @@ export function findGiveaway(lesson: LessonBlueprint, understanding: Understandi
 function tidy(reply: string): string {
   const text = reply
     .replace(/^gloam:\s*/i, "")
+    .replace(/[*_]{1,2}([^*_]+)[*_]{1,2}/g, "$1") // no markdown *emphasis*
     .replace(/^["'\s.]+|["'\s]+$/g, "")
     .replace(/\p{Extended_Pictographic}/gu, "")
     .replace(/\s{2,}/g, " ")

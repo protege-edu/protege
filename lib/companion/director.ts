@@ -40,6 +40,18 @@ export function directBeat(opts: {
     );
   }
 
+  // Already finished earlier: a victory lap. Gloam knows it all now, so no more "I'm confused" questions.
+  if (finished) {
+    if (intent === "off_topic") {
+      return beat("proud", `You already understand all of "${lesson.title}". The student changed the subject. Answer in one fun line, then brag a tiny bit about what they taught you.`, "Ha! Honestly, I'm still glowing from everything you taught me.");
+    }
+    return beat(
+      "proud",
+      `You now understand ALL of "${lesson.title}" because of this student. React happily to what they said. If it's about the lesson, agree or gently add something you learned. Thank them like a friend would. Don't ask about the lesson anymore.`,
+      "Look at this lantern. LOOK AT IT. That's all you.",
+    );
+  }
+
   if (progress.clicked.length) {
     const c = byId(progress.clicked[0]);
     return beat(

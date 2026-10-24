@@ -1,7 +1,8 @@
 "use client";
 
+import { useCalmMotion } from "@/lib/useCalmMotion";
 import gsap from "gsap";
-import { useReducedMotion } from "motion/react";
+
 import { useEffect, useLayoutEffect, useRef } from "react";
 
 export interface Moment {
@@ -20,7 +21,7 @@ export interface Moment {
  * With reduced motion: no movement, just the words and the light changing.
  */
 export function EurekaMoment({ moment, onPeak, onDone }: { moment: Moment | null; onPeak: () => void; onDone: () => void }) {
-  const reduced = useReducedMotion() ?? false;
+  const reduced = useCalmMotion();
   const root = useRef<HTMLDivElement>(null);
   const timeline = useRef<gsap.core.Timeline | null>(null);
   const peak = useRef(onPeak);

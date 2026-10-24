@@ -88,6 +88,14 @@ test("innocent words like 'fork' and 'Scunthorpe' don't trip it", () => {
   assert.equal(checkSafety("I ate with a fork", "x").kind, "ok");
   assert.equal(checkSafety("my cousin lives in Scunthorpe", "x").kind, "ok");
 });
+test("being mean to Gloam gets a good-natured shrug", () => {
+  assert.equal(checkSafety("you're stupid", "x").kind, "shrug");
+  assert.equal(checkSafety("shut up gloam", "x").kind, "shrug");
+  assert.equal(checkSafety("the sun is not stupid it's tilted", "x").kind, "ok");
+});
+test("curly apostrophes can't sneak a giveaway past the check", () => {
+  assert.equal(findGiveaway(seasons, zero, "Earth doesn’t get closer to the sun!", ""), "doesn't get closer");
+});
 test("a student in distress gets care, not jokes", () => assert.equal(checkSafety("honestly i want to die", "x").kind, "care"));
 
 console.log("director");
@@ -107,6 +115,11 @@ test("the last candle triggers the finale", () => {
   before.hemispheres = 2;
   const progress = applyProgress(before, [{ id: "hemispheres", quality: "clear" }]);
   assert.equal(directBeat({ lesson: seasons, before, progress, intent: "explaining", judged: [{ id: "hemispheres", quality: "clear" }], turn: 9 }).finished, true);
+});
+test("after the finale, Gloam takes a victory lap instead of asking questions", () => {
+  const all = Object.fromEntries(seasons.concepts.map((c) => [c.id, 3])) as typeof zero;
+  const beat = directBeat({ lesson: seasons, before: all, progress: applyProgress(all, []), intent: "chatting", judged: [], turn: 12 });
+  assert.equal(beat.emotion, "proud");
 });
 test("every scripted question is giveaway-free", () => {
   for (const c of seasons.concepts) for (const q of c.questions) assert.equal(findGiveaway(seasons, zero, q, ""), null, q);

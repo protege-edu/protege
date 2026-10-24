@@ -1,6 +1,7 @@
 "use client";
 
-import { motion, useReducedMotion } from "motion/react";
+import { useCalmMotion } from "@/lib/useCalmMotion";
+import { motion } from "motion/react";
 
 /**
  * Gloam's valley, cut from flat layers of paper. It starts in the dark.
@@ -8,7 +9,7 @@ import { motion, useReducedMotion } from "motion/react";
  * lantern light, and fireflies show up. The scene IS the progress meter.
  */
 export function Diorama({ brightness }: { brightness: number }) {
-  const reduced = useReducedMotion() ?? false;
+  const reduced = useCalmMotion();
   const fade = { duration: reduced ? 0 : 1.6, ease: "easeInOut" as const };
   const b = brightness;
 

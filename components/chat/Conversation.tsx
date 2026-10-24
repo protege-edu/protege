@@ -1,6 +1,7 @@
 "use client";
 
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { useCalmMotion } from "@/lib/useCalmMotion";
+import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef } from "react";
 import { GloamLine } from "./GloamLine";
 
@@ -16,7 +17,7 @@ export type Item =
  */
 export function Conversation({ items, thinking, onRetry }: { items: Item[]; thinking: string | null; onRetry: () => void }) {
   const end = useRef<HTMLDivElement>(null);
-  const reduced = useReducedMotion() ?? false;
+  const reduced = useCalmMotion();
   const lastGloam = [...items].reverse().find((i) => i.kind === "gloam")?.id;
 
   useEffect(() => {

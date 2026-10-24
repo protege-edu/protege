@@ -1,6 +1,7 @@
 "use client";
 
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { useCalmMotion } from "@/lib/useCalmMotion";
+import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { GloamLine } from "@/components/chat/GloamLine";
 import { POSES, type GloamMood } from "@/components/gloam/poses";
@@ -28,7 +29,7 @@ export function introSteps(lessonTitle: string, candleCount: number): IntroStep[
  */
 export function Intro({ steps, onStep, onDone }: { steps: IntroStep[]; onStep: (mood: GloamMood) => void; onDone: () => void }) {
   const [i, setI] = useState(0);
-  const reduced = useReducedMotion() ?? false;
+  const reduced = useCalmMotion();
   const next = useRef<HTMLButtonElement>(null);
   const last = i === steps.length - 1;
 

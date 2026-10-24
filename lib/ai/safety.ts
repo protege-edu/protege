@@ -10,7 +10,9 @@
 export type SafetyResult =
   | { kind: "ok" }
   | { kind: "redirect"; reply: string }
-  | { kind: "care"; reply: string };
+  | { kind: "care"; reply: string }
+  /** The student was mean to Gloam. It shrugs it off with a joke, never gets sad or insults itself. */
+  | { kind: "shrug"; reply: string };
 
 // Words that mean a student might be struggling. Gloam drops the jokes for these.
 const CARE = [/\bkill (my ?self|myself)\b/i, /\bsuicid/i, /\bself[- ]?harm/i, /\bcut(ting)? myself\b/i, /\bwant to die\b/i, /\bhurt myself\b/i];
@@ -41,6 +43,22 @@ const REDIRECTS = [
   (t: string) => `Nope, my brain only has room for one thing right now, and it's "${t}". Teach me!`,
 ];
 
+// Mean (but not blocked) messages aimed at Gloam
+const MEAN = [
+  /\b(you'?re|ur|you are|u r)\s+(so\s+|really\s+|such\s+an?\s+)?(stupid|dumb|an idiot|idiot|useless|annoying|trash|the worst|lame|boring)\b/i,
+  /\bshut up\b/i,
+  /\bi hate (you|u|this|gloam)\b/i,
+  /^\s*(idiot|stupid|dumb|loser)\W*$/i,
+  /\b(you|u) suck\b/i,
+];
+
+const SHRUGS = [
+  (t: string) => `Ouch. My lantern just made a sad little flicker. Okay, I forgive you. Now help me figure out "${t}"?`,
+  () => "Hey! I'm doing my best with one tiny lantern here. Teach me one thing and watch me get smarter.",
+  () => "Bold words from my teacher! Lucky for you, I don't hold grudges. I hold lanterns. Teach me something?",
+  (t: string) => `I've been called worse by a moth. Anyway, I'm still stuck on "${t}" and I need you.`,
+];
+
 export function checkSafety(message: string, topic: string): SafetyResult {
   if (CARE.some((r) => r.test(message))) {
     return {
@@ -52,6 +70,10 @@ export function checkSafety(message: string, topic: string): SafetyResult {
   if (BLOCK.some((r) => r.test(message))) {
     const line = REDIRECTS[Math.floor(Math.random() * REDIRECTS.length)];
     return { kind: "redirect", reply: line(topic) };
+  }
+  if (MEAN.some((r) => r.test(message))) {
+    const line = SHRUGS[Math.floor(Math.random() * SHRUGS.length)];
+    return { kind: "shrug", reply: line(topic) };
   }
   return { kind: "ok" };
 }

@@ -1,7 +1,8 @@
 "use client";
 
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useEffect, useId, useState } from "react";
+import { useCalmMotion } from "@/lib/useCalmMotion";
+import { AnimatePresence, motion } from "motion/react";
+import { useEffect, useId, useState, type CSSProperties } from "react";
 import type { ClientConcept as Concept, Level } from "@/lib/lesson/types";
 
 const LEVEL_WORDS = ["Not lit yet", "A little spark", "Flickering", "Lit"];
@@ -52,7 +53,7 @@ function Candle({
   onClose: () => void;
   flashing: boolean;
 }) {
-  const reduced = useReducedMotion() ?? false;
+  const reduced = useCalmMotion();
   const tipId = useId();
 
   return (
@@ -93,6 +94,9 @@ function Candle({
   );
 }
 
+// The flame grows and flickers from the wick (in the drawing's own coordinates, not the shape's box)
+const FLAME_PIVOT = { transformBox: "view-box", originX: "20px", originY: "29px" } as CSSProperties;
+
 function CandleArt({ level, flashing, reduced }: { level: Level; flashing: boolean; reduced: boolean }) {
   const flame = [0, 0, 0.62, 1][level];
   return (
@@ -107,21 +111,22 @@ function CandleArt({ level, flashing, reduced }: { level: Level; flashing: boole
       {level === 1 && (
         <motion.circle cx="20" cy="27.5" r="2.4" fill="var(--color-ember)" animate={reduced ? {} : { opacity: [0.5, 1, 0.5] }} transition={{ duration: 1.4, repeat: Infinity }} />
       )}
-      {/* flame */}
+      {/* flame: the outer layer grows when the level changes, the inner layer only flickers.
+          Keeping them separate means a level change can never interrupt the flicker loop. */}
       <motion.g
-        style={{ originX: "20px", originY: "29px" }}
+        style={FLAME_PIVOT}
         initial={false}
-        animate={
-          flame === 0
-            ? { scale: 0, opacity: 0 }
-            : reduced
-              ? { scale: flame, opacity: 1 }
-              : { scale: [flame, flame * 1.06, flame * 0.96, flame], opacity: 1, rotate: [0, -3, 2, 0] }
-        }
-        transition={reduced ? { duration: 0 } : { duration: level === 3 ? 1.4 : 0.9, repeat: Infinity, ease: "easeInOut" }}
+        animate={{ scale: flame, opacity: flame === 0 ? 0 : 1 }}
+        transition={reduced ? { duration: 0 } : { type: "spring", stiffness: 220, damping: 14 }}
       >
-        <path d="M20 4 C 27 14 28 20 26 25 C 24.5 28.5 15.5 28.5 14 25 C 12 20 14 13 20 4 Z" fill="var(--color-lantern)" />
-        <path d="M20 14 C 23 19 23.5 22 22.5 24.5 C 21.5 26.5 18.5 26.5 17.5 24.5 C 16.5 22 17 19 20 14 Z" fill="var(--color-mist)" opacity="0.8" />
+        <motion.g
+          style={FLAME_PIVOT}
+          animate={reduced ? {} : { scale: [1, 1.06, 0.96, 1], rotate: [0, -3, 2, 0] }}
+          transition={{ duration: level === 3 ? 1.4 : 0.9, repeat: Infinity, ease: "easeInOut" }}
+        >
+          <path d="M20 4 C 27 14 28 20 26 25 C 24.5 28.5 15.5 28.5 14 25 C 12 20 14 13 20 4 Z" fill="var(--color-lantern)" />
+          <path d="M20 14 C 23 19 23.5 22 22.5 24.5 C 21.5 26.5 18.5 26.5 17.5 24.5 C 16.5 22 17 19 20 14 Z" fill="var(--color-mist)" opacity="0.8" />
+        </motion.g>
       </motion.g>
     </svg>
   );

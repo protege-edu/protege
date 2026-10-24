@@ -1,6 +1,7 @@
 "use client";
 
-import { motion, useAnimate, useReducedMotion, type Transition } from "motion/react";
+import { useCalmMotion } from "@/lib/useCalmMotion";
+import { motion, useAnimate, type Transition } from "motion/react";
 import { useEffect, useRef, type CSSProperties } from "react";
 import { lanternFill, mouthPath, POSES, type GloamMood, type Pose } from "./poses";
 import { useBlink } from "./useBlink";
@@ -37,7 +38,7 @@ const LANTERN = { x: 154, y: 64 };
  * breathing, blinking, lantern flicker, and reacting to typing.
  */
 export function Gloam({ mood, brightness, typingTick = 0, eurekaTick = 0, className }: GloamProps) {
-  const reduced = useReducedMotion() ?? false;
+  const reduced = useCalmMotion();
   const pose = POSES[mood];
   const blinking = useBlink(mood !== "asleep" && !reduced);
   const t: Transition = reduced ? { duration: 0 } : spring;
