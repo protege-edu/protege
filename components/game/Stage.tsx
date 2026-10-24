@@ -28,6 +28,7 @@ export function Stage({
   eurekaTick,
   focus,
   showCandles,
+  raised = false,
   children,
 }: {
   style: AgeStyle;
@@ -40,6 +41,8 @@ export function Stage({
   eurekaTick: number;
   focus: number;
   showCandles: boolean;
+  /** Smaller and higher, to make room for text underneath (the title screen on phones) */
+  raised?: boolean;
   children?: ReactNode;
 }) {
   const calm = useCalmMotion();
@@ -52,11 +55,11 @@ export function Stage({
 
       {/* Gloam stands on the ground. It walks to centre stage when teaching starts. */}
       <motion.div
-        className="absolute bottom-[16%] h-[66%] max-h-[500px] min-h-[180px] -translate-x-1/2 md:bottom-[17%]"
+        className="absolute h-[66%] max-h-[500px] min-h-[180px] -translate-x-1/2"
         initial={false}
-        animate={{ left: `${focus * 100}%` }}
+        animate={{ left: `${focus * 100}%`, bottom: raised ? "43%" : "17%", scale: raised ? 0.66 : 1 }}
         transition={move}
-        style={{ aspectRatio: painterly ? "320 / 350" : "260 / 312" }}
+        style={{ aspectRatio: painterly ? "320 / 350" : "260 / 312", transformOrigin: "50% 100%" }}
       >
         {painterly ? (
           <GloamPainterly mood={mood} brightness={brightness} typingTick={typingTick} eurekaTick={eurekaTick} motionScale={style.look.motion} className="h-full w-full" />

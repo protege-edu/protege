@@ -267,8 +267,8 @@ function Eye({ g, cx, lid, pose, t, blinking, glow }: { g: (n: string) => string
       <clipPath id={clip}>
         <ellipse cx={cx} cy={cy} rx={rx} ry={ry} />
       </clipPath>
-      {/* socket shadow */}
-      <ellipse cx={cx} cy={cy + 1} rx={rx + 3} ry={ry + 3} fill="#4a1729" opacity="0.45" />
+      {/* socket shadow: fades as the eye closes, so a sleeping Gloam doesn't look like it's wearing goggles */}
+      <motion.ellipse cx={cx} cy={cy + 1} rx={rx + 3} ry={ry + 3} fill="#4a1729" initial={false} animate={{ opacity: 0.45 * (1 - lid * 0.85) }} transition={blinking ? { duration: 0.07 } : t} />
       <ellipse cx={cx} cy={cy} rx={rx} ry={ry} fill={`url(#${g("sclera")})`} />
       <g clipPath={`url(#${clip})`}>
         <motion.g animate={{ x: pose.gazeX * 1.1, y: pose.gazeY * 1.1, scale: pose.pupil }} transition={t} style={pivot(cx, cy)}>

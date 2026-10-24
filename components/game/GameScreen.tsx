@@ -84,6 +84,7 @@ export function GameScreen({ lesson }: { lesson: ClientLesson }) {
           eurekaTick={s.eurekaTick}
           focus={focus}
           showCandles={s.phase !== "title" && s.phase !== "loading"}
+          raised={!wide && (s.phase === "title" || s.phase === "loading")}
         >
           {(s.phase === "teach" || s.phase === "intro") && <TopBar style={style} lesson={lesson} chapter={1} onPause={() => setOverlay("pause")} />}
           <StoryCaption text={s.phase === "teach" ? caption : null} />
