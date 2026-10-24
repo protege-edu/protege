@@ -8,6 +8,13 @@ import type { AgeStyle } from "./types";
 const storybookCopy = (big: boolean): AgeStyle["copy"] => ({
   appName: "Protégé",
   titleCta: big ? "Let's play!" : "Start teaching",
+  titleContinue: big ? "Keep playing" : "Continue",
+  paused: "Paused",
+  close: "Close",
+  seeRecap: "What you taught Gloam",
+  you: "You",
+  gloamName: "Gloam",
+  charsLeft: (n) => `${n} letters left`,
   titleHelp: big ? "What do I do?" : "How this works",
   chapter: (n) => `Chapter ${n}`,
   introNext: "Next",

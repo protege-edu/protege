@@ -71,7 +71,7 @@ export function GloamPainterly({ mood, brightness, typingTick = 0, eurekaTick = 
     <svg ref={scope} viewBox="0 -30 320 350" className={className} role="img" aria-label={`Gloam looks ${MOOD_WORDS[mood]}`}>
       <defs>
         {/* body: lit from the lantern (upper right), shadow lower left */}
-        <radialGradient id={g("body")} cx="0.66" cy="0.3" r="0.85">
+        <radialGradient id={g("body")} cx="189" cy="195" r="150" gradientUnits="userSpaceOnUse">
           <stop offset="0" stopColor="#d9677c" />
           <stop offset="0.45" stopColor="#b2445b" />
           <stop offset="0.85" stopColor="#6e2539" />
@@ -281,7 +281,7 @@ function Eye({ g, cx, lid, pose, t, blinking, glow }: { g: (n: string) => string
         </motion.g>
         {/* eyelid slides down; the lash line rides its edge */}
         <motion.g initial={false} animate={{ y: lid * (ry * 2 + 4) }} transition={blinking ? { duration: 0.07 } : t}>
-          <rect x={cx - rx - 4} y={cy - ry - 2 - (ry * 2 + 4)} width={rx * 2 + 8} height={ry * 2 + 4} fill="#a23f56" />
+          <rect x={cx - rx - 4} y={cy - ry - 2 - (ry * 2 + 4)} width={rx * 2 + 8} height={ry * 2 + 4} fill={`url(#${g("body")})`} />
           <path d={`M${cx - rx - 2} ${cy - ry - 2} Q ${cx} ${cy - ry + 4} ${cx + rx + 2} ${cy - ry - 2}`} fill="none" stroke="#2a0d16" strokeWidth="2.6" strokeLinecap="round" />
         </motion.g>
       </g>

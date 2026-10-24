@@ -147,7 +147,8 @@ body {
   Shantell Sans bounces (BNCE axis); Martian Mono gets wider (wdth axis).
 */
 .voice {
-  font-family: var(--font-voice);
+  /* read the age style's variable directly: a variable defined at :root would lock in the storybook font */
+  font-family: var(--t-voice-font);
   font-variation-settings: "BNCE" var(--bounce, 0), "INFM" var(--informal, 40);
 }
 [data-age-style="senior"] .voice {

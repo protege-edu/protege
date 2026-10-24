@@ -3,15 +3,14 @@
 import { useCalmMotion } from "@/lib/useCalmMotion";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useId, useState, type CSSProperties } from "react";
+import type { AgeStyle } from "@/lib/age-styles";
 import type { ClientConcept as Concept, Level } from "@/lib/lesson/types";
-
-const LEVEL_WORDS = ["Not lit yet", "A little spark", "Flickering", "Lit"];
 
 /**
  * One candle per idea in the lesson. This is the per-concept meter, as fire instead of numbers.
  * Tap or focus a candle to see what Gloam currently believes about that idea.
  */
-export function Candles({ concepts, understanding, flash }: { concepts: Concept[]; understanding: Record<string, Level>; flash?: string | null }) {
+export function Candles({ concepts, understanding, flash, style }: { concepts: Concept[]; understanding: Record<string, Level>; flash?: string | null; style: AgeStyle }) {
   const [open, setOpen] = useState<string | null>(null);
 
   useEffect(() => {
@@ -22,7 +21,7 @@ export function Candles({ concepts, understanding, flash }: { concepts: Concept[
   }, [open]);
 
   return (
-    <ul className="flex items-end justify-center gap-1 sm:gap-5" aria-label="What Gloam understands">
+    <ul className="flex items-end justify-center gap-1 sm:gap-5" aria-label={style.copy.candleLabel}>
       {concepts.map((c) => (
         <Candle
           key={c.id}
@@ -32,6 +31,8 @@ export function Candles({ concepts, understanding, flash }: { concepts: Concept[
           onToggle={() => setOpen((o) => (o === c.id ? null : c.id))}
           onClose={() => setOpen((o) => (o === c.id ? null : o))}
           flashing={flash === c.id}
+          copy={style.copy}
+          painterly={style.look.gloamSkin === "painterly"}
         />
       ))}
     </ul>
@@ -45,6 +46,8 @@ function Candle({
   onToggle,
   onClose,
   flashing,
+  copy,
+  painterly,
 }: {
   concept: Concept;
   level: Level;
@@ -52,6 +55,8 @@ function Candle({
   onToggle: () => void;
   onClose: () => void;
   flashing: boolean;
+  copy: AgeStyle["copy"];
+  painterly: boolean;
 }) {
   const reduced = useCalmMotion();
   const tipId = useId();
@@ -67,10 +72,10 @@ function Candle({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 4 }}
             transition={{ duration: 0.16 }}
-            className="absolute bottom-full z-20 mb-2 w-56 rounded-md bg-mist px-3 py-2.5 text-xs text-moss"
-            style={{ boxShadow: "0 3px 0 var(--color-soot)" }}
+            className="absolute bottom-full z-20 mb-2 w-60 rounded-md border border-line bg-panel px-3 py-2.5 text-xs text-ink"
+            style={{ boxShadow: "0 6px 24px rgb(0 0 0 / 0.35)" }}
           >
-            <span className="block font-bold">Gloam thinks:</span>
+            <span className="block font-bold text-ink-dim">{copy.gloamThinks}</span>
             <span className="voice block text-sm leading-snug" style={{ ["--bounce" as string]: level * 25 }}>
               “{concept.beliefs[level]}”
             </span>
@@ -84,11 +89,11 @@ function Candle({
         onBlur={onClose}
         aria-expanded={open}
         aria-describedby={open ? tipId : undefined}
-        aria-label={`${concept.name}: ${LEVEL_WORDS[level]}. Show what Gloam thinks.`}
+        aria-label={`${concept.name}: ${copy.levelWords[level]}. Show what Gloam thinks.`}
         className="group flex cursor-pointer flex-col items-center rounded-md px-1 pt-1 pb-1.5 outline-offset-2"
       >
-        <CandleArt level={level} flashing={flashing} reduced={reduced} />
-        <span className="mt-1 text-center text-xs leading-tight whitespace-nowrap text-mist group-hover:underline">{concept.name}</span>
+        <CandleArt level={level} flashing={flashing} reduced={reduced} painterly={painterly} />
+        <span className="mt-1 text-center text-xs leading-tight whitespace-nowrap text-[#e8e6dc] [text-shadow:0_1px_2px_rgb(0_0_0/0.8)] group-hover:underline">{concept.name}</span>
       </button>
     </li>
   );
@@ -97,16 +102,37 @@ function Candle({
 // The flame grows and flickers from the wick (in the drawing's own coordinates, not the shape's box)
 const FLAME_PIVOT = { transformBox: "view-box", originX: "20px", originY: "29px" } as CSSProperties;
 
-function CandleArt({ level, flashing, reduced }: { level: Level; flashing: boolean; reduced: boolean }) {
+function CandleArt({ level, flashing, reduced, painterly }: { level: Level; flashing: boolean; reduced: boolean; painterly: boolean }) {
   const flame = [0, 0, 0.62, 1][level];
+  const uid = useId().replace(/:/g, "");
+  const lit = flame > 0;
   return (
     <svg viewBox="0 0 40 72" className="h-16 w-9 overflow-visible sm:h-[72px] sm:w-10" aria-hidden="true">
-      {/* halo when fully lit */}
-      <motion.circle cx="20" cy="20" r="20" fill="var(--color-lantern)" animate={{ opacity: level === 3 ? 0.18 : 0, scale: flashing && !reduced ? [1, 2.6, 1] : 1 }} transition={{ duration: flashing ? 1 : 0.6 }} />
-      {/* wax */}
-      <rect x="11" y="34" width="18" height="34" rx="3" fill="var(--color-mist-dim)" />
-      <path d="M11 38 q4 4 6 0 q3 6 6 0 q3 3 6 0" fill="none" stroke="var(--color-mist)" strokeWidth="2" />
-      <line x1="20" y1="34" x2="20" y2="28" stroke="var(--color-soot)" strokeWidth="2" strokeLinecap="round" />
+      <defs>
+        {/* wax lit from the side, or warmly from its own flame */}
+        <linearGradient id={`wax-${uid}`} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor={painterly ? "#8f8a7c" : "#c9d2c4"} />
+          <stop offset="0.45" stopColor={painterly ? "#e9e2cf" : "#e8ede3"} />
+          <stop offset="1" stopColor={painterly ? "#b3ab95" : "#d5ddd0"} />
+        </linearGradient>
+        <linearGradient id={`glow-${uid}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#ffcf7a" stopOpacity="0.85" />
+          <stop offset="1" stopColor="#ffcf7a" stopOpacity="0" />
+        </linearGradient>
+        <radialGradient id={`halo-${uid}`}>
+          <stop offset="0" stopColor="#ffd98a" stopOpacity="0.7" />
+          <stop offset="1" stopColor="#f4b740" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      {/* halo when lit */}
+      <motion.circle cx="20" cy="22" r="26" fill={`url(#halo-${uid})`} animate={{ opacity: [0, 0, 0.35, 0.7][level], scale: flashing && !reduced ? [1, 2.4, 1] : 1 }} transition={{ duration: flashing ? 1 : 0.6 }} style={{ transformBox: "fill-box", transformOrigin: "center" }} />
+      {/* soft shadow it stands on */}
+      <ellipse cx="20" cy="69" rx="13" ry="3" fill="#000" opacity="0.4" />
+      {/* wax with a couple of drips */}
+      <rect x="11" y="34" width="18" height="34" rx="2.5" fill={`url(#wax-${uid})`} />
+      <path d="M11 37 q0 -3 4 -3 h10 q4 0 4 3 v1 q-2 0 -2 4 q0 3 -2 3 q-2 0 -2 -5 q-1 -2 -3 0 q0 9 -2.5 9 q-2.5 0 -2.5 -7 q0 -3 -3 -3 z" fill={painterly ? "#f2ecdb" : "#eef2ea"} />
+      <motion.rect x="11" y="34" width="18" height="20" rx="2.5" fill={`url(#glow-${uid})`} animate={{ opacity: lit ? flame * 0.7 : 0 }} transition={{ duration: 0.6 }} />
+      <line x1="20" y1="34" x2="20" y2="28" stroke={lit ? "#3a2412" : "#141414"} strokeWidth="1.8" strokeLinecap="round" />
       {/* smolder: the first spark */}
       {level === 1 && (
         <motion.circle cx="20" cy="27.5" r="2.4" fill="var(--color-ember)" animate={reduced ? {} : { opacity: [0.5, 1, 0.5] }} transition={{ duration: 1.4, repeat: Infinity }} />

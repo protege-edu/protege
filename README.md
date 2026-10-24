@@ -53,14 +53,29 @@ Any model from `ollama list` works. Bigger models are smarter but slower. Any Op
 
 ---
 
+## Age styles
+
+Protégé is for every grade, K–12. The core idea never changes, but **how it feels** adapts to the class. Each age group has one profile in `lib/age-styles/`:
+
+| Style | Grades | Gloam is… | Looks like… | Status |
+|---|---|---|---|---|
+| `little` | K–2 | silly, gentle, tiny words | bright storybook | basic |
+| `junior` | 3–5 | playful, a bit silly | bright storybook | basic |
+| `middle` | 6–8 | goofy, dramatic | storybook | basic |
+| `senior` | 9–12 | dry, deadpan, smugly wrong | moody indie game at night | **polished** |
+
+A profile controls Gloam's personality and AI rules, its **hand-written lines** (most of the jokes live here, so they're consistent and never repeat), every word on screen, the visuals (Gloam's skin, the valley, colors, Gloam's voice font), how big the celebrations are, how strict safety is (stricter for younger kids), and input options (bigger buttons, read-aloud and voice later). Nothing outside `lib/age-styles/` should be written for one age group.
+
+Lessons say which style they're written for (`ageStyle` in the blueprint). In Phase 2 the teacher's grade level picks it.
+
 ## How it works (the short version)
 
 Every time a student sends a message, four things happen:
 
-1. **Safety check** (`lib/ai/safety.ts`). Rude or not-for-school messages get a funny, in-character redirect, and the AI never even sees them. If a student says something worrying, Gloam drops the jokes and points them to a trusted adult.
-2. **The judge** (`lib/ai/prompts/judge.ts`). The AI reads the message and reports which ideas the student explained and whether they were right. It has to **quote the student's exact words**, and the code checks that the quote is real. That way a small AI can't give credit for "yes" or "idk".
-3. **The director** (`lib/companion/director.ts`). Plain code, no AI. It decides what happens in the story: did something click? Is the student stuck? Off topic? Asking for the answer? Then it picks Gloam's next "beat".
-4. **Gloam performs** (`lib/ai/prompts/gloam.ts`). The AI says the beat in Gloam's voice. Gloam **never sees the real answers**, so it can't accidentally give them away. There's a second safety net in `lib/ai/companion.ts` that catches "answer words" and makes Gloam try again.
+1. **Safety check** (`lib/ai/safety.ts`). Not-for-school messages get an in-character redirect and the AI never sees them. Insults get a good-natured comeback. If a student says something worrying, Gloam drops the jokes and points them to a trusted adult. Younger age styles use a stricter filter.
+2. **The judge** (`lib/companion/grade.ts` + `lib/ai/prompts/judge.ts`). Code finds which ideas a message could be about (using each idea's evidence words), then the AI answers one small question per idea: does the student agree with the true version or the wrong one? A small AI can't give credit for "yes" or file an answer under the wrong idea.
+3. **The director** (`lib/companion/director.ts`). Plain code, no AI. It decides what happens in the story: did something click? Is the student stuck? Off topic? Asking for the answer? If the student didn't explain anything ("yea", "idk", "js tell me"), Gloam answers **instantly** with a hand-written line from the age style. No AI needed.
+4. **Gloam performs** (`lib/ai/prompts/gloam.ts`). Only when the student explained something does the AI write Gloam's reply, so it can react to their exact words. Gloam **never sees the real answers**, so it can't give them away, and every reply is checked for answer words, banned phrases, reused comparisons and repeats before a student sees it.
 
 Every AI answer is checked with Zod (`lib/ai/schemas.ts`). If the AI sends back nonsense, we retry, then fall back to a friendly line. Students never see an error message from the AI.
 

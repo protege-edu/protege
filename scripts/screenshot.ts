@@ -62,18 +62,23 @@ async function main() {
 
     await page.goto(BASE, { waitUntil: "load" });
     await page.waitForTimeout(2500);
+    await shot("00-title");
+    await page.getByRole("button", { name: /^(start teaching|continue|let's play!|keep playing)$/i }).click();
+    await page.waitForTimeout(2200);
     await shot("01-intro");
 
     if (messages.length) {
-      await page.getByRole("button", { name: "Skip intro" }).click();
+      const skip = page.getByRole("button", { name: /skip intro|^skip$/i });
+      if (await skip.count()) await skip.click();
       await waitForStatus(page, ["ready", "offline"]);
       await page.waitForTimeout(1500);
       await shot("02-ready");
 
       for (const [n, msg] of messages.entries()) {
         const step = String(n + 1).padStart(2, "0");
+        if ((await page.locator("[data-phase]").getAttribute("data-phase")) === "ending") break;
         await page.getByLabel("Explain it to Gloam").fill(msg);
-        await page.getByRole("button", { name: "Teach Gloam", exact: true }).click();
+        await page.getByRole("button", { name: /^(teach|teach gloam|tell gloam)$/i }).click();
         await page.waitForTimeout(1200);
         await shot(`t${step}-a-thinking`);
         await waitForStatus(page, ["ready", "moment", "offline"]);
@@ -87,7 +92,7 @@ async function main() {
         console.log(`  turn ${step}: ${await status(page)}`);
       }
     }
-    const recap = page.getByRole("heading", { name: "What you taught Gloam" });
+    const recap = page.getByRole("heading", { name: /what you taught gloam/i });
     if (await recap.count()) {
       await recap.scrollIntoViewIfNeeded();
       await page.waitForTimeout(600);

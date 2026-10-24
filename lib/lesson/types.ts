@@ -50,7 +50,11 @@ export interface RecapItem {
 export type ClientConcept = Pick<Concept, "id" | "name" | "beliefs">;
 export interface ClientLesson {
   id: string;
+  ageStyle: AgeStyleId;
+  topic: string;
+  subject: string;
   title: string;
+  opener: string;
   concepts: ClientConcept[];
   storyBeats: string[];
 }

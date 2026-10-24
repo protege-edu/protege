@@ -104,6 +104,13 @@ export const senior: AgeStyle = {
   copy: {
     appName: "Protégé",
     titleCta: "Start teaching",
+    titleContinue: "Continue",
+    paused: "Paused",
+    close: "Close",
+    seeRecap: "What you taught Gloam",
+    you: "you",
+    gloamName: "gloam",
+    charsLeft: (n) => `${n} left`,
     titleHelp: "How this works",
     chapter: (n) => `Chapter ${n}`,
     introNext: "Next",

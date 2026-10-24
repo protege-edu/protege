@@ -17,7 +17,11 @@ export function lessonRecap(lesson: LessonBlueprint): RecapItem[] {
 export function toClientLesson(lesson: LessonBlueprint): ClientLesson {
   return {
     id: lesson.id,
+    ageStyle: lesson.ageStyle,
+    topic: lesson.topic,
+    subject: lesson.subject,
     title: lesson.title,
+    opener: lesson.opener,
     storyBeats: lesson.storyBeats,
     concepts: lesson.concepts.map(({ id, name, beliefs }) => ({ id, name, beliefs })),
   };

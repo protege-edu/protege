@@ -58,6 +58,13 @@ export interface AgeStyle {
   copy: {
     appName: string;
     titleCta: string;
+    titleContinue: string;
+    paused: string;
+    close: string;
+    seeRecap: string;
+    you: string;
+    gloamName: string;
+    charsLeft: (n: number) => string;
     titleHelp: string;
     chapter: (n: number) => string;
     introNext: string;
