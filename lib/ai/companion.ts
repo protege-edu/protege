@@ -90,6 +90,8 @@ export async function runTurn(input: TurnInput, hooks: { onJudged?: (e: JudgedEv
     }
     // "explaining" but it touched no idea: a vague attempt, not a lesson point
     if (intent === "explaining") intent = "chatting";
+    // "the sun", "summer?" are about the lesson even if they explain nothing: never call them off topic
+    if (intent === "off_topic" && mentionsLesson(lesson, message)) intent = "chatting";
   }
 
   // 3. Progress + director
@@ -177,7 +179,18 @@ function offline(understanding: Understanding): Omit<TurnOutput, "ms"> {
   return { understanding, improved: [], clicked: [], judged: [], reply: "", emotion: "confused", intent: "chatting", onTopic: true, finished: false, source: "offline" };
 }
 
-const topicOf = (lesson: LessonBlueprint) => lesson.title.toLowerCase().replace(/\?$/, "");
+const topicOf = (lesson: LessonBlueprint) => lesson.topic;
+
+/** Does the message use any of the lesson's words (title, topic words, or any idea's evidence words)? */
+function mentionsLesson(lesson: LessonBlueprint, message: string): boolean {
+  const words = new Set(
+    [lesson.title, lesson.topic, ...lesson.topicWords, ...lesson.concepts.flatMap((c) => c.evidence)]
+      .join(" ")
+      .toLowerCase()
+      .match(/[a-z]{3,}/g) ?? [],
+  );
+  return (message.toLowerCase().match(/[a-z]{3,}/g) ?? []).some((w) => words.has(w));
+}
 
 // Models write curly apostrophes (doesn’t). Compare plain text to plain text.
 const plain = (s: string) => s.toLowerCase().replace(/[‘’ʼ]/g, "'");

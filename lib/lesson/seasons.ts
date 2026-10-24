@@ -13,6 +13,8 @@ export const seasons: LessonBlueprint = {
   id: "seasons",
   ageStyle: "senior",
   grade: 9,
+  topic: "seasons",
+  topicWords: ["sun", "earth", "summer", "winter", "spring", "fall", "autumn", "season", "weather", "hot", "cold", "heat", "warm", "planet", "temperature"],
   title: "Why do we have seasons?",
   subject: "Grade 9 science",
   opener:

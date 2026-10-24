@@ -41,7 +41,7 @@ export function directBeat(opts: DirectInput): Beat {
   const finished = lesson.concepts.every((c) => u[c.id] === 3);
   const wasFinished = lesson.concepts.every((c) => before[c.id] === 3);
   const question = nextQuestion(lesson, u, gloamSaid, seed);
-  const topic = lesson.title.toLowerCase().replace(/\?$/, "");
+  const topic = lesson.topic;
   const fill = { topic, question };
   const line = (lines: string[]) => pickLine(lines, fill, gloamSaid.slice(-6), seed);
   const said = (emotion: Emotion, text: string): Beat => ({ emotion, kind: "line", direction: "", line: text, finished });

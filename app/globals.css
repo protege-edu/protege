@@ -3,7 +3,12 @@
 /*
   Protégé design tokens.
   We wipe Tailwind's default theme (--*: initial) so nothing "stock" can leak in.
-  Every color, size and font in the app comes from this list.
+
+  Two layers:
+  1. The world palette (mist, moss, lantern, ...): fixed colors with a meaning.
+  2. Semantic UI tokens (bg, panel, ink, accent, ...): what the interface uses.
+     Each AGE STYLE sets these differently (see [data-age-style] below), so the same
+     screens become a bright storybook for little kids or a moody indie game for high school.
 */
 @theme {
   --*: initial;
@@ -15,7 +20,7 @@
   --breakpoint-lg: 80rem;
   --breakpoint-xl: 110rem;
 
-  /* The six named colors of Gloam's valley */
+  /* The world palette */
   --color-mist: #e8ede3; /* paper */
   --color-moss: #23402f; /* ink + night */
   --color-lichen: #8faf8a; /* quiet UI */
@@ -24,14 +29,12 @@
   --color-soot: #16211b; /* deepest dark */
   --color-transparent: transparent;
   --color-current: currentColor;
-
-  /* Derived shades (used sparingly, always from the six above) */
   --color-moss-deep: #1b3324;
-  --color-rosehip-deep: #a83a50; /* button text-safe on mist */
-  --color-rosehip-ink: #8e2f45; /* pressed / hover */
-  --color-mist-dim: #d5ddd0;  --color-ember: #c8682a; /* the one spark before Gloam understands anything */
+  --color-rosehip-deep: #a83a50;
+  --color-rosehip-ink: #8e2f45;
+  --color-mist-dim: #d5ddd0;
+  --color-ember: #c8682a; /* the one spark before Gloam understands anything */
 
-  --font-voice: var(--font-shantell), "Comic Sans MS", system-ui, sans-serif;
   --font-body: var(--font-atkinson), system-ui, sans-serif;
 
   /* Type scale: 14 / 16 / 21 / 28 / 38 / 50 */
@@ -40,13 +43,15 @@
   --text-sm: 1rem;
   --text-sm--line-height: 1.5;
   --text-md: 1.3125rem;
-  --text-md--line-height: 1.4;
+  --text-md--line-height: 1.45;
   --text-lg: 1.75rem;
-  --text-lg--line-height: 1.2;
+  --text-lg--line-height: 1.25;
   --text-xl: 2.375rem;
   --text-xl--line-height: 1.1;
   --text-2xl: 3.125rem;
   --text-2xl--line-height: 1.05;
+  --text-3xl: 5.5rem;
+  --text-3xl--line-height: 0.95;
 
   --font-weight-normal: 400;
   --font-weight-medium: 500;
@@ -61,8 +66,55 @@
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-:root {
+/* Semantic tokens point at whatever the current age style sets */
+@theme inline {
+  --color-bg: var(--t-bg);
+  --color-panel: var(--t-panel);
+  --color-line: var(--t-line);
+  --color-ink: var(--t-ink);
+  --color-ink-dim: var(--t-ink-dim);
+  --color-accent: var(--t-accent);
+  --color-accent-ink: var(--t-accent-ink);
+  --color-accent-hover: var(--t-accent-hover);
+  --color-chip: var(--t-chip);
+  --font-voice: var(--t-voice-font);
+}
+
+/* ---------- Age style themes ---------- */
+
+/* Storybook (little, junior, middle): bright paper, Shantell Sans voice. Not polished yet. */
+:root,
+[data-age-style="little"],
+[data-age-style="junior"],
+[data-age-style="middle"] {
   color-scheme: light;
+  --t-bg: #e8ede3;
+  --t-panel: #e8ede3;
+  --t-line: rgb(35 64 47 / 0.15);
+  --t-ink: #23402f;
+  --t-ink-dim: rgb(35 64 47 / 0.8);
+  --t-accent: #a83a50;
+  --t-accent-ink: #e8ede3;
+  --t-accent-hover: #8e2f45;
+  --t-chip: #d5ddd0;
+  --t-focus: #a83a50;
+  --t-voice-font: var(--font-shantell), system-ui, sans-serif;
+}
+
+/* High school: a moody, stylish indie game at night. Martian Mono voice. */
+[data-age-style="senior"] {
+  color-scheme: dark;
+  --t-bg: #0a120f;
+  --t-panel: #0c1612;
+  --t-line: #22342c;
+  --t-ink: #ebe7dc;
+  --t-ink-dim: #a3b0a3;
+  --t-accent: #e06a7f;
+  --t-accent-ink: #1a080d;
+  --t-accent-hover: #f08497;
+  --t-chip: #15241e;
+  --t-focus: #f4c46a;
+  --t-voice-font: var(--font-martian), ui-monospace, monospace;
 }
 
 html,
@@ -71,8 +123,8 @@ body {
 }
 
 body {
-  background: var(--color-mist);
-  color: var(--color-moss);
+  background: var(--t-bg);
+  color: var(--t-ink);
   font-family: var(--font-body);
   font-size: var(--text-sm);
   -webkit-font-smoothing: antialiased;
@@ -80,20 +132,56 @@ body {
 
 /* Visible, on-brand keyboard focus everywhere */
 :focus-visible {
-  outline: 3px solid var(--color-rosehip-deep);
+  outline: 3px solid var(--t-focus);
   outline-offset: 3px;
   border-radius: 4px;
 }
 
 ::selection {
-  background: var(--color-moss);
-  color: var(--color-mist);
+  background: var(--t-accent);
+  color: var(--t-accent-ink);
 }
 
-/* Gloam's handwriting can bounce: the BNCE axis of Shantell Sans */
+/*
+  Gloam's voice changes shape with its mood:
+  Shantell Sans bounces (BNCE axis); Martian Mono gets wider (wdth axis).
+*/
 .voice {
   font-family: var(--font-voice);
   font-variation-settings: "BNCE" var(--bounce, 0), "INFM" var(--informal, 40);
+}
+[data-age-style="senior"] .voice {
+  font-variation-settings: "wdth" var(--voice-width, 100);
+  letter-spacing: -0.01em;
+}
+
+/* A slow drift for fog layers. Cheap: transform only. */
+@keyframes drift {
+  from {
+    transform: translateX(-4%);
+  }
+  to {
+    transform: translateX(4%);
+  }
+}
+.fog-drift {
+  animation: drift 38s ease-in-out infinite alternate;
+}
+
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
+@keyframes caret {
+  50% {
+    opacity: 0;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

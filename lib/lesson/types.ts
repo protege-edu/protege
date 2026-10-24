@@ -61,6 +61,10 @@ export interface LessonBlueprint {
   ageStyle: AgeStyleId;
   /** The class's grade, 0 = kindergarten */
   grade: number;
+  /** Short name Gloam uses in lines: "seasons" */
+  topic: string;
+  /** Everyday words that mean a message is about this lesson, even if it explains nothing ("sun", "winter") */
+  topicWords: string[];
   title: string;
   subject: string;
   /** Gloam's very first line */

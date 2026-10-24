@@ -25,9 +25,11 @@ export function candidateConcepts(lesson: LessonBlueprint, message: string): Con
 
 /** Turn the judge's answer about one idea into a grade. NEITHER means "not about this idea". */
 export function gradeCheck(message: string, check: ConceptCheck): Quality | null {
-  if (check.matches === "NEITHER") return null;
-  if (check.matches === "WRONG") return "wrong";
   const msg = normalize(message);
   const words = msg.split(" ").length;
+  // A one or two word answer like "tilt" is about the idea even if the judge can't tell which side it's on.
+  // Gloam should react to it ("tilt. one word. bold."), not ignore it.
+  if (check.matches === "NEITHER") return words <= 3 ? "vague" : null;
+  if (check.matches === "WRONG") return "wrong";
   return (check.gaveReason || REASON.test(msg)) && words >= 6 ? "clear" : "partial";
 }

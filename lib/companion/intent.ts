@@ -9,7 +9,7 @@ export function quickIntent(message: string): Intent | null {
   const m = message.toLowerCase().replace(/[^a-z0-9'\s?]/g, " ").replace(/\s+/g, " ").trim();
   if (!m) return "chatting";
 
-  if (/\b(just|js|jus|pls|please|plz|can you|can u|could you)?\s*(tell|give|say|show) (me|us) (the )?(answer|it|why|reason)\b|\bwhat'?s the answer\b|\bwhat is the answer\b|\bjust say it\b|\byou (explain|tell me|say it)\b|\bu (explain|tell me)\b|\bexplain it to me\b|\bwhat'?s the (real )?reason\b/.test(m)) {
+  if (/\b(just|js|jus|pls|please|plz|can you|can u|could you)?\s*(tell|give|say|show) (me|us) (the )?(answer|it|why|reason)\b|\bwhat'?s the answer\b|\bwhat is the answer\b|\bjust say it\b|\byou (explain|tell me|say it)\b|\bu (explain|tell me)\b|\bexplain it to me\b|\bwhat'?s the (real )?reason\b|\bwhat is the (real )?reason\b/.test(m)) {
     return "asking_for_answer";
   }
   if (/^(just |js |jus |pls |please |plz |bro |bruh )*(tell me|tell us|say it|explain|answer)( pls| please| bro)?\s*\??$/.test(m)) return "asking_for_answer";

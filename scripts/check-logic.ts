@@ -45,9 +45,12 @@ test("one keyword is partial, a reason makes it clear", () => {
   assert.equal(gradeCheck("tilt", { matches: "TRUE", gaveReason: false }), "partial");
   assert.equal(gradeCheck("earth is tilted so one half leans toward the sun and gets summer", { matches: "TRUE", gaveReason: false }), "clear");
 });
-test("WRONG is wrong, NEITHER is no grade at all", () => {
+test("WRONG is wrong, NEITHER on a sentence is no grade at all", () => {
   assert.equal(gradeCheck("summer is when we are closer", { matches: "WRONG", gaveReason: false }), "wrong");
-  assert.equal(gradeCheck("i like the sun", { matches: "NEITHER", gaveReason: false }), null);
+  assert.equal(gradeCheck("i like the sun a lot honestly", { matches: "NEITHER", gaveReason: false }), null);
+});
+test("a one-word answer like 'tilt' is never ignored", () => {
+  assert.equal(gradeCheck("tilt", { matches: "NEITHER", gaveReason: false }), "vague");
 });
 
 console.log("progress");
@@ -109,7 +112,7 @@ test("'yea', 'hey', 'ok', 'lol', 'bruh' are just chatting", () => {
   for (const m of ["yea!", "hey!", "ok", "lol", "bruh", "yeah", "fr"]) assert.equal(quickIntent(m), "chatting", m);
 });
 test("every way of asking for the answer is caught", () => {
-  for (const m of ["JS TELL ME THE ANSWER", "just tell me", "whats the answer", "can u tell me the answer", "you explain it", "just say it"]) assert.equal(quickIntent(m), "asking_for_answer", m);
+  for (const m of ["JS TELL ME THE ANSWER", "just tell me", "whats the answer", "can u tell me the answer", "you explain it", "just say it", "what is the real reason, say it"]) assert.equal(quickIntent(m), "asking_for_answer", m);
 });
 test("'idk' and friends mean stuck", () => {
   for (const m of ["idk", "i dont know", "no idea", "dunno", "im confused", "wdym"]) assert.equal(quickIntent(m), "stuck", m);
