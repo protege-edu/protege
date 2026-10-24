@@ -161,7 +161,21 @@ export const senior: AgeStyle = {
     retry: "Try again",
   },
 
-  look: { theme: "senior", gloamSkin: "painterly", motion: 0.75, voiceAxis: "width" },
+  look: {
+    theme: "senior",
+    gloamSkin: "painterly",
+    motion: 0.75,
+    voiceAxis: "width",
+    candleLabels: false,
+    scene: {
+      width: 1600,
+      height: 1000,
+      layers: [{ id: "valley", dark: "/art/senior/standin-dark.png", lit: "/art/senior/standin-lit.png", depth: 0.5 }],
+      ground: { x: 0.5, y: 0.8 },
+      fog: "#7fa294",
+      firefly: "#ffd98a",
+    },
+  },
   celebrate: { style: "understated", particles: 28 },
   safety: { level: "standard" },
   input: { modes: ["type"], targetScale: 1, readAloud: false },

@@ -90,7 +90,7 @@ export const little: AgeStyle = {
   },
   lines: storybookLines(true),
   copy: storybookCopy(true),
-  look: { theme: "little", gloamSkin: "storybook", motion: 1, voiceAxis: "bounce" },
+  look: { theme: "little", gloamSkin: "storybook", motion: 1, voiceAxis: "bounce", candleLabels: true },
   celebrate: { style: "big", particles: 60 },
   safety: { level: "strict" },
   input: { modes: ["type", "choices", "voice"], targetScale: 1.4, readAloud: true },
@@ -108,7 +108,7 @@ export const junior: AgeStyle = {
     maxWords: 22,
     lowercase: false,
   },
-  look: { theme: "junior", gloamSkin: "storybook", motion: 1, voiceAxis: "bounce" },
+  look: { theme: "junior", gloamSkin: "storybook", motion: 1, voiceAxis: "bounce", candleLabels: true },
   input: { modes: ["type", "choices"], targetScale: 1.2, readAloud: true },
 };
 
@@ -126,7 +126,7 @@ export const middle: AgeStyle = {
   },
   lines: storybookLines(false),
   copy: storybookCopy(false),
-  look: { theme: "middle", gloamSkin: "storybook", motion: 1, voiceAxis: "bounce" },
+  look: { theme: "middle", gloamSkin: "storybook", motion: 1, voiceAxis: "bounce", candleLabels: true },
   celebrate: { style: "big", particles: 40 },
   safety: { level: "standard" },
   input: { modes: ["type"], targetScale: 1, readAloud: false },

@@ -2,7 +2,7 @@
 
 import { useCalmMotion } from "@/lib/useCalmMotion";
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useId, useState, type CSSProperties } from "react";
+import { Fragment, useEffect, useId, useState, type CSSProperties } from "react";
 import type { AgeStyle } from "@/lib/age-styles";
 import type { ClientConcept as Concept, Level } from "@/lib/lesson/types";
 
@@ -10,7 +10,21 @@ import type { ClientConcept as Concept, Level } from "@/lib/lesson/types";
  * One candle per idea in the lesson. This is the per-concept meter, as fire instead of numbers.
  * Tap or focus a candle to see what Gloam currently believes about that idea.
  */
-export function Candles({ concepts, understanding, flash, style }: { concepts: Concept[]; understanding: Record<string, Level>; flash?: string | null; style: AgeStyle }) {
+export function Candles({
+  concepts,
+  understanding,
+  flash,
+  style,
+  gap = 0,
+}: {
+  concepts: Concept[];
+  understanding: Record<string, Level>;
+  flash?: string | null;
+  style: AgeStyle;
+  /** Space left in the middle of the row, where Gloam stands */
+  gap?: number;
+}) {
+  const split = Math.floor(concepts.length / 2);
   const [open, setOpen] = useState<string | null>(null);
 
   useEffect(() => {
@@ -22,9 +36,10 @@ export function Candles({ concepts, understanding, flash, style }: { concepts: C
 
   return (
     <ul className="flex items-end justify-center gap-1 sm:gap-5" aria-label={style.copy.candleLabel}>
-      {concepts.map((c) => (
+      {concepts.map((c, i) => (
+        <Fragment key={c.id}>
+          {gap > 0 && i === split && <li aria-hidden="true" style={{ width: gap }} />}
         <Candle
-          key={c.id}
           concept={c}
           level={understanding[c.id] ?? 0}
           open={open === c.id}
@@ -33,7 +48,9 @@ export function Candles({ concepts, understanding, flash, style }: { concepts: C
           flashing={flash === c.id}
           copy={style.copy}
           painterly={style.look.gloamSkin === "painterly"}
+          showLabel={style.look.candleLabels}
         />
+        </Fragment>
       ))}
     </ul>
   );
@@ -48,6 +65,7 @@ function Candle({
   flashing,
   copy,
   painterly,
+  showLabel,
 }: {
   concept: Concept;
   level: Level;
@@ -57,6 +75,7 @@ function Candle({
   flashing: boolean;
   copy: AgeStyle["copy"];
   painterly: boolean;
+  showLabel: boolean;
 }) {
   const reduced = useCalmMotion();
   const tipId = useId();
@@ -75,7 +94,8 @@ function Candle({
             className="absolute bottom-full z-20 mb-2 w-60 rounded-md border border-line bg-panel px-3 py-2.5 text-xs text-ink"
             style={{ boxShadow: "0 6px 24px rgb(0 0 0 / 0.35)" }}
           >
-            <span className="block font-bold text-ink-dim">{copy.gloamThinks}</span>
+            <span className="block font-bold text-ink">{concept.name}</span>
+            <span className="block text-ink-dim">{copy.gloamThinks}</span>
             <span className="voice block text-sm leading-snug" style={{ ["--bounce" as string]: level * 25 }}>
               “{concept.beliefs[level]}”
             </span>
@@ -93,7 +113,7 @@ function Candle({
         className="group flex cursor-pointer flex-col items-center rounded-md px-1 pt-1 pb-1.5 outline-offset-2"
       >
         <CandleArt level={level} flashing={flashing} reduced={reduced} painterly={painterly} />
-        <span className="mt-1 text-center text-xs leading-tight whitespace-nowrap text-[#e8e6dc] [text-shadow:0_1px_2px_rgb(0_0_0/0.8)] group-hover:underline">{concept.name}</span>
+        {showLabel && <span className="mt-1 text-center text-xs leading-tight whitespace-nowrap text-[#e8e6dc] [text-shadow:0_1px_2px_rgb(0_0_0/0.8)] group-hover:underline">{concept.name}</span>}
       </button>
     </li>
   );

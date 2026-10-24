@@ -13,6 +13,23 @@ export type AgeStyleId = "little" | "junior" | "middle" | "senior";
 /** A line can use {topic} (the lesson title) and {question} (Gloam's next question). */
 export type Line = string;
 
+/**
+ * A painted world in layers. Each layer has a DARK painting and a LIT painting of the same thing;
+ * Gloam's lantern light reveals the lit one, spreading further the more Gloam understands.
+ */
+export interface CinematicScene {
+  /** Size the paintings were made at (all layers share it) */
+  width: number;
+  height: number;
+  /** Back to front. depth 0 = sky (barely moves), 1 = foreground (moves most with the camera) */
+  layers: { id: string; dark: string; lit: string; depth: number }[];
+  /** Where Gloam's feet are in the painting (0..1), so the light and Gloam line up with the ground */
+  ground: { x: number; y: number };
+  /** Colour grade and mood */
+  fog: string;
+  firefly: string;
+}
+
 export interface AgeStyle {
   id: AgeStyleId;
   /** Shown to teachers: "Grades 9–12" */
@@ -111,6 +128,10 @@ export interface AgeStyle {
     motion: number;
     /** Gloam's text gets wider (Martian Mono) or bouncier (Shantell) with mood */
     voiceAxis: "bounce" | "width";
+    /** Show each candle's name under it (younger), or only on hover/tap (cleaner, older) */
+    candleLabels: boolean;
+    /** The painted, cinematic world. Without it, the simpler vector valley is used. */
+    scene?: CinematicScene;
   };
 
   celebrate: {

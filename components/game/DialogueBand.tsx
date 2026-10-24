@@ -44,8 +44,8 @@ export function DialogueBand({ s, style, onOpenLog }: { s: TeachSession; style: 
   };
 
   return (
-    <div className="relative border-t border-line bg-panel">
-      <div className="mx-auto flex max-w-[960px] flex-col gap-3 px-4 pt-4 pb-4 sm:px-8 md:pt-5">
+    <div className="absolute inset-x-0 bottom-0 z-20 bg-[linear-gradient(0deg,rgb(3_7_5/0.97)_0%,rgb(3_7_5/0.9)_58%,rgb(3_7_5/0.55)_80%,transparent_100%)] pt-16">
+      <div className="mx-auto flex max-w-[880px] flex-col gap-3 px-4 pb-4 sm:px-8 md:pb-6">
         {/* what you just said */}
         <AnimatePresence initial={false}>
           {studentAfterGloam && lastStudent?.kind === "student" && (
@@ -157,8 +157,8 @@ export function IntroBand({ s, style, steps }: { s: TeachSession; style: AgeStyl
   }, [i, steps, setEmotion]);
 
   return (
-    <div className="border-t border-line bg-panel">
-      <div className="mx-auto flex max-w-[960px] flex-col gap-4 px-4 pt-5 pb-5 sm:px-8">
+    <div className="absolute inset-x-0 bottom-0 z-20 bg-[linear-gradient(0deg,rgb(3_7_5/0.97)_0%,rgb(3_7_5/0.9)_58%,rgb(3_7_5/0.55)_80%,transparent_100%)] pt-16">
+      <div className="mx-auto flex max-w-[880px] flex-col gap-4 px-4 pb-6 sm:px-8">
         <div className="min-h-[4.5em]" aria-live="polite">
           <span className="voice mb-1 block text-xs font-bold text-accent">{style.copy.gloamName}</span>
           <TypedLine key={i} text={steps[i].text} shape={POSES[steps[i].mood as keyof typeof POSES]?.bounce ?? 20} animate className="text-md text-ink" />
