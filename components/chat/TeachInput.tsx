@@ -63,13 +63,13 @@ export function TeachInput({
             }
           }}
           placeholder="Explain it to Gloam in your own words…"
-          className="min-h-11 flex-1 resize-none bg-transparent px-2 py-2.5 text-sm text-moss placeholder:text-moss/60 focus:outline-none disabled:opacity-60"
+          className="min-h-11 flex-1 resize-none bg-transparent px-2 py-2.5 text-sm text-moss placeholder:text-moss/75 focus:outline-none disabled:opacity-60"
           style={{ outline: "none" }}
         />
         <button
           type="submit"
           disabled={!ready}
-          className="h-11 shrink-0 cursor-pointer rounded-md bg-rosehip-deep px-5 text-sm font-bold text-mist transition-[transform,background-color] duration-150 hover:bg-rosehip-ink active:scale-95 disabled:cursor-not-allowed disabled:bg-moss/25 disabled:text-moss/70"
+          className="h-11 shrink-0 cursor-pointer rounded-md bg-rosehip-deep px-5 text-sm font-bold text-mist transition-[transform,background-color] duration-150 hover:bg-rosehip-ink active:scale-95 disabled:cursor-not-allowed disabled:bg-moss/15 disabled:text-moss/85"
         >
           Teach Gloam
         </button>

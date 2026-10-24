@@ -93,7 +93,7 @@ export async function runTurn(input: TurnInput, hooks: { onJudged?: (e: JudgedEv
 
   // 4. Perform
   const beliefs = currentBeliefs(lesson, progress.understanding);
-  const allowed = [...history.filter((m) => m.from === "student").map((m) => m.text), message, ...beliefs, beat.fallback]
+  const allowed = [...history.filter((m) => m.from === "student").map((m) => m.text), message, ...beliefs, beat.fallback, beat.direction]
     .join(" ")
     .toLowerCase();
   const messages: ChatMessage[] = [
@@ -123,6 +123,14 @@ export async function runTurn(input: TurnInput, hooks: { onJudged?: (e: JudgedEv
       messages.push(
         { role: "assistant", content: JSON.stringify(res.data) },
         { role: "user", content: `You said "${leak}", but you don't know that yet! The student has to teach you. Rewrite it without that.` },
+      );
+      continue;
+    }
+    const recentGloam = history.filter((m) => m.from === "gloam").slice(-3).map((m) => m.text);
+    if (recentGloam.some((prev) => similarity(prev, res.data.reply) > 0.6)) {
+      messages.push(
+        { role: "assistant", content: JSON.stringify(res.data) },
+        { role: "user", content: "You already said almost exactly that. Say something new, in different words." },
       );
       continue;
     }
@@ -178,14 +186,27 @@ export function findGiveaway(lesson: LessonBlueprint, understanding: Understandi
 }
 
 function tidy(reply: string): string {
-  let text = reply
+  const text = reply
     .replace(/^gloam:\s*/i, "")
     .replace(/^["'\s.]+|["'\s]+$/g, "")
     .replace(/\p{Extended_Pictographic}/gu, "")
     .replace(/\s{2,}/g, " ")
     .trim();
-  // Small models ramble. Keep it to the first 3 sentences.
-  const sentences = text.match(/[^.!?]+[.!?]+["')]*|[^.!?]+$/g) ?? [text];
-  if (sentences.length > 3) text = sentences.slice(0, 3).join("").trim();
-  return text;
+  // Small models ramble. Keep it to the first 3 sentences, and drop a dangling "So…" at the end.
+  let sentences: string[] = text.match(/[^.!?…]+[.!?…]+["')]*|[^.!?…]+$/g) ?? [text];
+  if (sentences.length > 3) sentences = sentences.slice(0, 3);
+  const dangling = (s: string) => s.trim().split(/\s+/).length <= 2 && !/[!?]["')]*$/.test(s.trim()) && /(\.\.\.|…|[^.!?…"')])$/.test(s.trim());
+  while (sentences.length > 1 && dangling(sentences[sentences.length - 1])) sentences.pop();
+  return sentences.join("").trim();
+}
+
+/** How much two lines overlap, 0..1 (shared words / words in the shorter line) */
+function similarity(a: string, b: string): number {
+  const words = (s: string) => new Set(s.toLowerCase().match(/[a-z']+/g) ?? []);
+  const A = words(a);
+  const B = words(b);
+  if (A.size === 0 || B.size === 0) return 0;
+  let shared = 0;
+  for (const w of A) if (B.has(w)) shared++;
+  return shared / Math.min(A.size, B.size);
 }

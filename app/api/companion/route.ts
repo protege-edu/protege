@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { runTurn } from "@/lib/ai/companion";
 import { getSession, recordTurn } from "@/lib/companion/session";
-import { getLesson } from "@/lib/lesson";
+import { getLesson, lessonRecap } from "@/lib/lesson";
 
 const Body = z.object({
   sessionId: z.string().min(1),
@@ -62,6 +62,7 @@ export async function POST(request: Request) {
             improved: out.improved,
             clicked: out.clicked,
             finished: out.finished,
+            ...(out.finished ? { recap: lessonRecap(lesson) } : {}),
           });
         }
       } catch (err) {

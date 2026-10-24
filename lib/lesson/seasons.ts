@@ -26,6 +26,8 @@ export const seasons: LessonBlueprint = {
       ],
       giveaways: ["tilt", "23.5", "23 degrees", "lean"],
       evidence: ["tilt", "lean", "axis", "23", "angled", "crooked", "tipped", "tip", "point"],
+      recap:
+        "Earth's axis is tilted about 23.5°, and it keeps pointing the same way all year. So for part of the year your half of Earth leans toward the sun, and later it leans away.",
     },
     {
       id: "angle",
@@ -37,7 +39,7 @@ export const seasons: LessonBlueprint = {
         "Sunlight is sunlight. Angle is for math class.",
         "So the sun being high or low in the sky... matters?",
         "Straight-down light is stronger somehow? Because it's more... squished?",
-        "Direct light packs the energy into a small spot, slanted light spreads it out thin. Like a flashlight pointed straight vs. at an angle!",
+        "Direct light packs the energy into a small spot, slanted light spreads it out thin. Like a flashlight pointed straight down instead of tilted!",
       ],
       questions: [
         "Why is noon hotter than sunset if it's the same sun?",
@@ -45,6 +47,8 @@ export const seasons: LessonBlueprint = {
       ],
       giveaways: ["direct light", "directly", "slanted", "spread out", "spreads out", "concentrated", "energy per"],
       evidence: ["direct", "straight", "angle", "slant", "spread", "concentrat", "focus", "high in the sky", "overhead", "flashlight", "area", "intens", "low in the sky"],
+      recap:
+        "When the sun is high, its light hits the ground more directly and packs its energy into a smaller area, so it heats more. When it's low, the same light spreads out over a bigger area and heats less.",
     },
     {
       id: "daylight",
@@ -64,6 +68,8 @@ export const seasons: LessonBlueprint = {
       ],
       giveaways: ["longer days", "days are longer", "more hours of", "shorter days", "days are shorter"],
       evidence: ["longer", "shorter", "hours", "day length", "daylight", "night", "dark"],
+      recap:
+        "In summer the days are longer, so the ground gets more hours of sun to warm up and fewer hours of night to cool down. In winter it's the other way around.",
     },
     {
       id: "distance",
@@ -81,8 +87,25 @@ export const seasons: LessonBlueprint = {
         "If summer is when we're closer to the sun, why would Australia have summer in December?",
         "Is Earth's path around the sun a big stretched oval?",
       ],
-      giveaways: ["january", "almost a circle", "nearly circular", "perihelion", "not because of distance", "isn't distance"],
+      giveaways: [
+        "january",
+        "almost a circle",
+        "nearly circular",
+        "perihelion",
+        "not because of distance",
+        "isn't distance",
+        "not distance",
+        "doesn't scoot closer",
+        "doesn't get closer",
+        "not closer",
+        "isn't closer",
+        "made up that campfire",
+        "made up a campfire",
+        "campfire nonsense",
+      ],
       evidence: ["distance", "closer", "close", "far", "near", "orbit", "oval", "circle", "january", "ellip"],
+      recap:
+        "Seasons are NOT caused by distance. Earth's orbit is almost a circle, and Earth is actually closest to the sun in early January, during the northern winter.",
     },
     {
       id: "hemispheres",
@@ -102,6 +125,8 @@ export const seasons: LessonBlueprint = {
       ],
       giveaways: ["opposite season", "seasons are opposite", "southern hemisphere", "other half"],
       evidence: ["hemisphere", "opposite", "australia", "south", "north", "other half", "other side", "bottom half", "top half", "equator"],
+      recap:
+        "The northern and southern hemispheres have opposite seasons. When one half leans toward the sun, the other half leans away, so it's summer in Australia during our winter.",
     },
   ],
   storyBeats: [

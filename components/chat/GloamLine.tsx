@@ -7,14 +7,14 @@ import { motion, useReducedMotion } from "motion/react";
  * The words pop in one at a time (like it's talking), and the letters are as bouncy
  * as Gloam's mood: the Shantell Sans BNCE axis goes from flat (confused) to wild (eureka).
  */
-export function GloamLine({ text, bounce, animate, current }: { text: string; bounce: number; animate: boolean; current: boolean }) {
+export function GloamLine({ text, bounce, animate, current, big = false }: { text: string; bounce: number; animate: boolean; current: boolean; big?: boolean }) {
   const reduced = useReducedMotion() ?? false;
   const words = text.split(/\s+/);
   const play = animate && !reduced;
 
   return (
     <p
-      className={`voice text-md text-moss transition-opacity duration-500 ${current ? "opacity-100" : "opacity-70"}`}
+      className={`voice ${big ? "text-lg" : "text-md"} text-moss transition-opacity duration-500 ${current ? "opacity-100" : "opacity-70"}`}
       style={{ ["--bounce" as string]: bounce, ["--informal" as string]: 60 }}
     >
       {play

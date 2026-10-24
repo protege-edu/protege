@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "eval": "tsx scripts/companion-eval.ts",
+    "screenshots": "tsx scripts/screenshot.ts",
+    "test:logic": "tsx scripts/check-logic.ts"
   },
   "dependencies": {
     "better-sqlite3": "^13.0.3",

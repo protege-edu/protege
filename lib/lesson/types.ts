@@ -30,6 +30,18 @@ export interface Concept {
    * so "yes" or "idk" can never accidentally count as teaching.
    */
   evidence: string[];
+  /**
+   * The correct idea in plain, friendly words for the end-of-lesson recap.
+   * Written by a person (later: approved by the teacher), never generated live,
+   * so every student leaves with the right idea.
+   */
+  recap: string;
+}
+
+export interface RecapItem {
+  id: string;
+  name: string;
+  text: string;
 }
 
 /** What the browser gets: no answers, so nobody can peek in dev tools */

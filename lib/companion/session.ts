@@ -3,7 +3,8 @@ import { randomUUID } from "node:crypto";
 import { asc, eq } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { conceptEvents, messages, students, teachSessions } from "@/lib/db/schema";
-import { getLesson } from "@/lib/lesson";
+import { getLesson, lessonRecap } from "@/lib/lesson";
+import type { RecapItem } from "@/lib/lesson/types";
 import { startingUnderstanding, type Understanding } from "./progress";
 import type { Emotion, Quality } from "@/lib/ai/schemas";
 
@@ -13,6 +14,8 @@ export interface SessionState {
   nickname: string;
   understanding: Understanding;
   finished: boolean;
+  /** Only present once the lesson is finished */
+  recap?: RecapItem[];
   messages: { from: "student" | "gloam"; text: string; emotion: string | null }[];
 }
 
@@ -57,6 +60,7 @@ export function getSession(id: string): SessionState | null {
     nickname: row.nickname,
     understanding: row.s.understanding,
     finished: row.s.finishedAt !== null,
+    ...(row.s.finishedAt !== null ? { recap: lessonRecap(getLesson(row.s.lessonId)) } : {}),
     messages: msgs,
   };
 }

@@ -11,7 +11,8 @@ import { EurekaMoment, type Moment } from "@/components/scene/EurekaMoment";
 import type { Emotion } from "@/lib/ai/schemas";
 import { brightness, type Understanding } from "@/lib/companion/progress";
 import type { SessionState } from "@/lib/companion/session";
-import type { ClientLesson } from "@/lib/lesson/types";
+import type { ClientLesson, RecapItem } from "@/lib/lesson/types";
+import { Intro, introSteps } from "@/components/Intro";
 import { chime, pip } from "@/lib/sound";
 
 type Status = "loading" | "ready" | "thinking" | "offline";
@@ -78,11 +79,18 @@ export function TeachScreen({ lesson }: { lesson: ClientLesson }) {
   const [flash, setFlash] = useState<string | null>(null);
   const [sound, setSound] = useState(false);
   const [finished, setFinished] = useState(false);
+  const [recap, setRecap] = useState<RecapItem[] | null>(null);
+  const [intro, setIntro] = useState(false);
+  const opening = useRef<Item[]>([]);
   const pending = useRef<{ reply: string; emotion: Emotion; understanding: Understanding } | null>(null);
   const lastMessage = useRef<string | null>(null);
   const beatShown = useRef(0);
 
   const light = brightness(shown);
+  const shownRef = useRef(shown);
+  useEffect(() => {
+    shownRef.current = shown;
+  }, [shown]);
 
   // ---------- story beats ----------
   const addBeatsFor = useCallback(
@@ -116,6 +124,7 @@ export function TeachScreen({ lesson }: { lesson: ClientLesson }) {
       safeStorage(() => localStorage.setItem(SESSION_KEY, session.id), undefined);
       setSessionId(session.id);
       setFinished(session.finished);
+      setRecap(session.recap ?? null);
 
       const resumed = session.messages.length > 1;
       beatShown.current = 0;
@@ -136,10 +145,10 @@ export function TeachScreen({ lesson }: { lesson: ClientLesson }) {
         setItems(restored);
         setEmotion((last?.emotion as Emotion) ?? "curious");
       } else {
-        // First time: the valley is dark, Gloam is asleep... then it wakes up with a theory.
+        // New session: the valley is dark, Gloam is asleep... it wakes up and explains your job.
         setItems(restored.slice(0, 1));
-        setTimeout(() => !cancelled && setEmotion("proud"), 1100);
-        setTimeout(() => !cancelled && setItems(restored), 1600);
+        opening.current = restored;
+        setTimeout(() => !cancelled && setIntro(true), 900);
       }
 
       const health = await healthP;
@@ -220,11 +229,19 @@ export function TeachScreen({ lesson }: { lesson: ClientLesson }) {
               gotReply = true;
               setThinking(null);
               setFinished(ev.finished);
+              if (ev.recap) setRecap(ev.recap);
               if (ev.clicked.length) {
                 const concept = lesson.concepts.find((c) => c.id === ev.clicked[0]);
+                // The full cinematic is for the first idea and the finale. The rest are short.
+                const firstEver = lesson.concepts.every((c) => (shownRef.current[c.id] ?? 0) < 3);
                 pending.current = { reply: ev.reply, emotion: ev.emotion, understanding: ev.understanding };
                 setFlash(ev.clicked[0]);
-                setMoment({ key: Date.now(), conceptName: concept?.name ?? "something new", final: ev.finished });
+                setMoment({
+                  key: Date.now(),
+                  conceptName: concept?.name ?? "something new",
+                  size: firstEver || ev.finished ? "full" : "short",
+                  final: ev.finished,
+                });
               } else {
                 showReply(ev.reply, ev.emotion, ev.understanding);
                 if (sound) pip();
@@ -281,7 +298,17 @@ export function TeachScreen({ lesson }: { lesson: ClientLesson }) {
     pending.current = null;
     setMoment(null);
     setFlash(null);
+    setEmotion("proud"); // settle down after the big moment
     setStatus("ready");
+  }, []);
+
+  const steps = useMemo(() => introSteps(lesson.title, lesson.concepts.length), [lesson.title, lesson.concepts.length]);
+  const finishIntro = useCallback(() => {
+    setIntro(false);
+    setEmotion("proud");
+    setItems(opening.current);
+    // Put the cursor where the student teaches
+    setTimeout(() => document.getElementById("teach")?.focus(), 50);
   }, []);
 
   const startOver = async () => {
@@ -308,7 +335,7 @@ export function TeachScreen({ lesson }: { lesson: ClientLesson }) {
 
   return (
     // Phone: header, stage, conversation, input stacked. Laptop: stage on the left, the page on the right.
-    <div className="grid h-dvh grid-rows-[auto_auto_minmax(0,1fr)_auto] md:grid-cols-[minmax(0,1.15fr)_minmax(400px,1fr)] md:grid-rows-[auto_minmax(0,1fr)_auto]">
+    <div data-status={moment ? "moment" : status} className="grid h-dvh grid-rows-[auto_auto_minmax(0,1fr)_auto] md:grid-cols-[minmax(0,1.15fr)_minmax(400px,1fr)] md:grid-rows-[auto_minmax(0,1fr)_auto]">
       <div className="md:col-start-2 md:row-start-1">
         <Header lesson={lesson} sound={sound} onToggleSound={toggleSound} onStartOver={startOver} />
       </div>
@@ -331,10 +358,16 @@ export function TeachScreen({ lesson }: { lesson: ClientLesson }) {
       {/* ---------- the page ---------- */}
       <main className="contents">
         <div className="min-h-0 overflow-y-auto md:col-start-2 md:row-start-2">
-          <Conversation items={items} thinking={status === "thinking" ? thinking : null} onRetry={retry} />
-          {finished && !moment && <Finale lesson={lesson} onStartOver={startOver} />}
+          {intro ? (
+            <Intro steps={steps} onStep={setEmotion} onDone={finishIntro} />
+          ) : (
+            <>
+              <Conversation items={items} thinking={status === "thinking" ? thinking : null} onRetry={retry} />
+              {finished && recap && !moment && <Recap recap={recap} onStartOver={startOver} />}
+            </>
+          )}
         </div>
-        <div className="md:col-start-2 md:row-start-3">
+        <div className={`md:col-start-2 md:row-start-3 ${intro ? "hidden" : ""}`}>
           <TeachInput
           value={draft}
           onChange={(v) => {
@@ -421,21 +454,26 @@ function Header({ lesson, sound, onToggleSound, onStartOver }: { lesson: ClientL
   );
 }
 
-function Finale({ lesson, onStartOver }: { lesson: ClientLesson; onStartOver: () => void }) {
+/**
+ * The end-of-lesson recap. The text comes from the lesson blueprint (written by a person),
+ * never from the AI, so every student leaves with the correct ideas.
+ */
+function Recap({ recap, onStartOver }: { recap: RecapItem[]; onStartOver: () => void }) {
   return (
-    <section aria-labelledby="finale-title" className="mx-5 mb-6 border-t-2 border-moss/20 pt-5 sm:mx-8">
-      <h2 id="finale-title" className="voice text-lg font-bold text-moss" style={{ ["--bounce" as string]: 60 }}>
-        The valley is lit.
+    <section aria-labelledby="recap-title" className="mx-5 mb-6 border-t-2 border-moss/20 pt-5 sm:mx-8">
+      <h2 id="recap-title" className="voice text-lg font-bold text-moss" style={{ ["--bounce" as string]: 60 }}>
+        What you taught Gloam
       </h2>
-      <p className="mt-1 text-sm text-moss">Here&apos;s everything Gloam understands now, because of you:</p>
-      <ul className="mt-3 space-y-2">
-        {lesson.concepts.map((c) => (
-          <li key={c.id} className="text-sm text-moss">
-            <span className="font-bold">{c.name}.</span> <span className="voice">{c.beliefs[3]}</span>
+      <p className="mt-1 text-sm text-moss">The valley is lit. Here are the big ideas, in plain words:</p>
+      <ul className="mt-4 space-y-3">
+        {recap.map((r) => (
+          <li key={r.id} className="border-l-4 border-lantern pl-3 text-sm text-moss">
+            <span className="block font-bold">{r.name}</span>
+            {r.text}
           </li>
         ))}
       </ul>
-      <button type="button" onClick={onStartOver} className="mt-5 cursor-pointer rounded-md bg-moss px-4 py-2 text-sm font-bold text-mist hover:bg-moss-deep">
+      <button type="button" onClick={onStartOver} className="mt-5 min-h-11 cursor-pointer rounded-md bg-moss px-4 text-sm font-bold text-mist hover:bg-moss-deep">
         Teach Gloam again from the start
       </button>
     </section>
