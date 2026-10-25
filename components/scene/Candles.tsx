@@ -47,7 +47,7 @@ export function Candles({
           onClose={() => setOpen((o) => (o === c.id ? null : o))}
           flashing={flash === c.id}
           copy={style.copy}
-          painterly={style.look.gloamSkin === "painterly"}
+          painterly={style.look.gloamSkin !== "storybook"}
           showLabel={style.look.candleLabels}
         />
         </Fragment>

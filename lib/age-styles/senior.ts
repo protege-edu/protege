@@ -163,7 +163,7 @@ export const senior: AgeStyle = {
 
   look: {
     theme: "senior",
-    gloamSkin: "painterly",
+    gloamSkin: "painted",
     motion: 0.75,
     voiceAxis: "width",
     candleLabels: false,

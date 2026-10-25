@@ -123,7 +123,7 @@ export interface AgeStyle {
     /** Sets [data-age-style] on the page; colors, fonts and layout read it from CSS */
     theme: AgeStyleId;
     /** How Gloam is drawn */
-    gloamSkin: "storybook" | "painterly";
+    gloamSkin: "storybook" | "painterly" | "painted";
     /** 0..1, scales idle motion, hops, flicker */
     motion: number;
     /** Gloam's text gets wider (Martian Mono) or bouncier (Shantell) with mood */

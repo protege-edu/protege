@@ -39,6 +39,16 @@ REPAINT_FULL = (
     "a faint warm glow on the horizon, still night, " + STYLE
 )
 
+GLOAM_V2 = (
+    "character concept art of a small round soft creature shaped like a plump egg, covered in fluffy deep plum-rose and raspberry fur, "
+    "darker plum fur underneath, both short stubby arms resting down at its sides, two tiny feet, "
+    "big glossy dark brown eyes, a calm unimpressed half-lidded expression, a tiny mouth, "
+    "a curly green vine stalk with a spiral tip and one small leaf grows from the top of its head and curves over to hold a small round glowing paper lantern hanging above its head, "
+    "the lantern casts warm golden light on the top of its fuzzy head, full body, centered, front view, symmetrical pose, "
+    "hand-painted, gouache and oil brushwork, soft fur texture, Spiritfarer and Studio Ghibli style, "
+    "isolated on a plain flat very dark green background, no text, no watermark"
+)
+
 GLOAM = (
     "character concept art of a small round adorable creature, like a soft felted plum-rose puffball with a slightly squashed egg shape, "
     "short stubby arms, tiny feet, big expressive glossy brown eyes with heavy eyelids and a smug expression, "

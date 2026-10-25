@@ -19,6 +19,7 @@ PROMPTS = {
     "valley_dark": prompts.VALLEY_DARK,
     "valley_lit": prompts.VALLEY_LIT,
     "gloam": prompts.GLOAM,
+    "gloam_v2": prompts.GLOAM_V2,
 }
 
 OUT = os.environ.get("ART_OUT", r"C:\Users\sonaw\ProtegeArt\out")

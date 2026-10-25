@@ -22,6 +22,8 @@ interface Props {
   eurekaTick: number;
   /** Where Gloam's lantern is on screen (px from the top), so its glow lines up */
   lanternY: number;
+  /** Lantern's horizontal offset from Gloam's centre (px), it can hang off to one side */
+  lanternDX?: number;
   /** Where the ground should sit on screen (0 = top, 1 = bottom). The camera glides there. */
   groundAt: number;
   onLayout?: (layout: SceneLayout) => void;
@@ -37,13 +39,13 @@ interface Props {
  *
  * Cheap devices and reduced-motion users get a calmer, lighter version automatically.
  */
-export function CinematicValley({ scene, brightness, focus, eurekaTick, lanternY, groundAt, onLayout }: Props) {
+export function CinematicValley({ scene, brightness, focus, eurekaTick, lanternY, lanternDX = 0, groundAt, onLayout }: Props) {
   const host = useRef<HTMLDivElement>(null);
   const calm = useCalmMotion();
   // Values the render loop reads every frame (no React re-render needed)
-  const live = useRef({ brightness, focus, eurekaTick, calm, onLayout, lanternY, groundAt });
+  const live = useRef({ brightness, focus, eurekaTick, calm, onLayout, lanternY, lanternDX, groundAt });
   useEffect(() => {
-    live.current = { brightness, focus, eurekaTick, calm, onLayout, lanternY, groundAt };
+    live.current = { brightness, focus, eurekaTick, calm, onLayout, lanternY, lanternDX, groundAt };
   });
 
   useEffect(() => {
@@ -255,7 +257,7 @@ export function CinematicValley({ scene, brightness, focus, eurekaTick, lanternY
 
         // lantern glow + haze (a faint ember even at zero)
         const flicker = still ? 1 : 0.94 + Math.sin(t * 9.1) * 0.03 + Math.sin(t * 23.7) * 0.02;
-        glow.position.set(lx, lanternScreenY);
+        glow.position.set(lx + live.current.lanternDX, lanternScreenY);
         glow.width = glow.height = (60 + light * 220) * flicker * (1 + pushCurve * 0.6);
         glow.alpha = (0.15 + light * 0.75) * flicker;
         haze.position.set(lx, ly);
