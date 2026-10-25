@@ -145,14 +145,18 @@ export function GloamPainted({ mood, brightness, typingTick = 0, eurekaTick = 0,
 
 function Eye({ id, cx, cy, lid, pose, t, blinking, glow, side }: { id: string; cx: number; cy: number; lid: number; pose: Pose; t: Transition; blinking: boolean; glow: number; side: number }) {
   const { rx, ry } = PAINTED_RIG.eye;
+  const open = lid > 0.85 ? Math.max(0, (1 - lid) / 0.15) : 1;
   return (
     <g>
       <clipPath id={`eye-${id}`}>
         <ellipse cx={cx} cy={cy} rx={rx} ry={ry} />
       </clipPath>
       {/* a soft dark socket so the eye sits IN the fur */}
-      <ellipse cx={cx} cy={cy + 2} rx={rx + 5} ry={ry + 5} fill="#5a1626" opacity="0.35" />
-      <ellipse cx={cx} cy={cy} rx={rx} ry={ry} fill="#0d0406" />
+      {/* the open eye fades out as it closes, so a sleeping Gloam shows a soft curve, not a ring */}
+      <motion.g initial={false} animate={{ opacity: open }} transition={blinking ? { duration: 0.07 } : t}>
+        <ellipse cx={cx} cy={cy + 2} rx={rx + 5} ry={ry + 5} fill="#5a1626" opacity="0.35" />
+        <ellipse cx={cx} cy={cy} rx={rx} ry={ry} fill="#0d0406" />
+      </motion.g>
       <g clipPath={`url(#eye-${id})`}>
         <motion.g animate={{ x: pose.gazeX * 1.6, y: pose.gazeY * 1.4, scale: pose.pupil }} transition={t} style={pivot(cx, cy)}>
           <ellipse cx={cx} cy={cy + 3} rx={rx * 0.86} ry={ry * 0.92} fill={`url(#iris-${id.split("-")[0]})`} />
@@ -169,6 +173,17 @@ function Eye({ id, cx, cy, lid, pose, t, blinking, glow, side }: { id: string; c
           <path d={`M${cx - rx - 3} ${cy - ry - 4} Q ${cx} ${cy - ry + 5} ${cx + rx + 3} ${cy - ry - 4}`} fill="none" stroke="#2a0a12" strokeWidth="3.2" strokeLinecap="round" />
         </motion.g>
       </g>
+      {/* closed eye: a soft downward curve with lashes */}
+      <motion.path
+        d={`M${cx - rx} ${cy + 2} Q ${cx} ${cy + ry * 0.75} ${cx + rx} ${cy + 2}`}
+        fill="none"
+        stroke="#2a0a12"
+        strokeWidth="3.4"
+        strokeLinecap="round"
+        initial={false}
+        animate={{ opacity: 1 - open }}
+        transition={blinking ? { duration: 0.07 } : t}
+      />
       {/* little outer lashes, like the painting */}
       <path d={`M${cx + side * rx * 0.92} ${cy - ry * 0.25} l ${side * 9} -5 M${cx + side * rx * 0.98} ${cy - ry * 0.02} l ${side * 10} -1`} stroke="#2a0a12" strokeWidth="2.2" strokeLinecap="round" />
     </g>

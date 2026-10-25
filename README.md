@@ -68,6 +68,22 @@ A profile controls Gloam's personality and AI rules, its **hand-written lines** 
 
 Lessons say which style they're written for (`ageStyle` in the blueprint). In Phase 2 the teacher's grade level picks it.
 
+## The art (how the painted world was made)
+
+The high school style's valley and Gloam are **hand-painted images made on this laptop** with a free local image model (FLUX.1-schnell, Apache 2.0) through ComfyUI. No paid tools, nothing uploaded. Every step is a script in `art/`, so any image can be re-made or **replaced 1:1 by a human artist**:
+
+| Step | Script | What it does |
+|---|---|---|
+| Paint | `art/paint.py` + `art/prompts.py` | Paints candidates from a prompt and a seed (same seed = same image) |
+| Clean up | `art/erase.py` | Paints out things that don't belong (like an extra lantern) |
+| Relight | `art/grade.py` | Turns one painting into a matched **dark** and **lantern-lit** version |
+| Depth | `art/layers.py` | Splits the painting into 4 depth layers for parallax (Depth Anything V2) |
+| Gloam | `art/gloam_rig.py` | Cuts painted Gloam into a body and a swaying stalk + lantern (lit and unlit); the face is drawn in code so it can act |
+
+The game draws all of this with **PixiJS** on the GPU (`components/cinema/CinematicValley.tsx`): lantern light reveals the lit painting as Gloam understands more, plus fog, fireflies, bloom, film grain and a slow camera. Cheap Chromebooks automatically get a lighter version.
+
+The painting tools are only needed to make new art, not to run Protégé. They live outside the project (`C:\Users\sonaw\ProtegeArt`), about 12 GB.
+
 ## How it works (the short version)
 
 Every time a student sends a message, four things happen:

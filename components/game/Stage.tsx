@@ -85,7 +85,9 @@ export function Stage({
 
   // Gloam is sized from the stage: big enough to be the star, never taller than the space above the ground
   const vh = size?.h ?? 0;
-  const gloamH = Math.min(560, Math.max(180, vh * groundAt * (skin === "painted" ? 0.72 : 0.62))) * gloamScale;
+  // Phones get a slightly smaller Gloam and candle row so all five candles fit beside it
+  const compact = (size?.w ?? 1000) < 640;
+  const gloamH = Math.min(560, Math.max(180, vh * groundAt * (skin === "painted" ? (compact ? 0.6 : 0.72) : 0.62))) * gloamScale;
   const groundY = vh * groundAt;
   const lanternY = groundY - gloamH * (geo.feet - geo.lantern);
   const lanternDX = gloamH * geo.aspect * geo.lanternDX;
@@ -127,9 +129,9 @@ export function Stage({
             animate={{ left: `${focus * 100}%`, top: groundY - (style.look.candleLabels ? 66 : 58), opacity: showCandles ? 1 : 0 }}
             transition={calm ? { duration: 0 } : { left: move, top: move, opacity: { duration: 0.6 } }}
             aria-hidden={!showCandles}
-            style={{ pointerEvents: showCandles ? "auto" : "none" }}
+            style={{ pointerEvents: showCandles ? "auto" : "none", scale: compact ? 0.82 : 1 }}
           >
-            <Candles concepts={concepts} understanding={understanding} flash={flash} style={style} gap={gloamH * geo.aspect * 1.05} />
+            <Candles concepts={concepts} understanding={understanding} flash={flash} style={style} gap={gloamH * geo.aspect * (compact ? 0.8 : 1.05)} />
           </motion.div>
         </>
       )}
