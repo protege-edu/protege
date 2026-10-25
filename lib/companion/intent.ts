@@ -1,6 +1,18 @@
 import type { Intent } from "@/lib/ai/schemas";
 
 /**
+ * Explaining it in your OWN words is the whole game, so pasted text (a search result, an AI answer)
+ * doesn't light candles. Gloam just asks for the student's version. Never a punishment, never a lecture.
+ * `pasted` comes from the input box: most of the message arrived in one paste.
+ */
+export function looksCopied(message: string, pasted = false): boolean {
+  if (pasted) return true;
+  if (/^\s*(ai overview|according to (wikipedia|google)|from wikipedia)/i.test(message)) return true;
+  // Maths markup nobody types into a chat box
+  return /\\\(|\\\[|\\frac|\\cdot|\^\{/.test(message);
+}
+
+/**
  * Fast, plain-code guesses for the most common non-explanations, so Gloam answers
  * "yea", "idk" or "js tell me" instantly. Anything this can't place goes to the AI.
  * Only used when the message mentions none of the lesson's ideas.

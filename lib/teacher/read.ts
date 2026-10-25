@@ -1,7 +1,8 @@
 import "server-only";
 import JSZip from "jszip";
 import mammoth from "mammoth";
-import { extractText, getDocumentProxy } from "unpdf";
+import { getDocumentProxy } from "unpdf";
+import { pdfLinesToText } from "./pdf-text";
 
 /**
  * Reads a teacher's material into plain text, split into sections they can pick from.
@@ -54,8 +55,12 @@ function finish(kind: ReadResult["kind"], raw: Section[]): ReadResult {
 
 async function readPdf(data: Uint8Array): Promise<Section[]> {
   const pdf = await getDocumentProxy(new Uint8Array(data));
-  const { text } = await extractText(pdf, { mergePages: false });
-  const pages = Array.isArray(text) ? text : [text];
+  const pages: string[] = [];
+  for (let n = 1; n <= pdf.numPages; n++) {
+    const { items } = await (await pdf.getPage(n)).getTextContent();
+    // (the other kind of item marks a content group and has no text)
+    pages.push(pdfLinesToText(items.flatMap((it) => ("str" in it ? [it] : []))));
+  }
   return pages.map((t, i) => ({ id: `p${i + 1}`, title: firstLine(t) || `Page ${i + 1}`, text: t }));
 }
 

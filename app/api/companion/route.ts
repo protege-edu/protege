@@ -7,6 +7,8 @@ import { getApprovedLesson } from "@/lib/teacher/lessons";
 const Body = z.object({
   sessionId: z.string().min(1),
   message: z.string().trim().min(1).max(600),
+  /** Most of the message was pasted in, not typed */
+  pasted: z.boolean().optional(),
 });
 
 /**
@@ -41,6 +43,7 @@ export async function POST(request: Request) {
             understanding: session.understanding,
             history: session.messages.map((m) => ({ from: m.from, text: m.text })),
             message: parsed.data.message,
+            pasted: parsed.data.pasted,
           },
           { onJudged: (e) => send({ type: "judged", ...e }) },
         );

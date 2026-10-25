@@ -1,9 +1,14 @@
 /**
  * Drafts a blueprint from sample teacher notes with the real model and prints it with any problems.
- *   npx tsx scripts/draft-test.ts
+ *   npx tsx scripts/draft-test.ts                       (sample photosynthesis notes)
+ *   npx tsx scripts/draft-test.ts notes.pdf 1-2         (pages 1 to 2 of a PDF)
  */
+import fs from "node:fs";
+import { getDocumentProxy } from "unpdf";
 import { draftBlueprint } from "@/lib/ai/blueprint";
 import { checkBlueprint } from "@/lib/teacher/checks";
+import { MAX_SOURCE_CHARS } from "@/lib/teacher/limits";
+import { pdfLinesToText } from "@/lib/teacher/pdf-text";
 
 const NOTES = `Photosynthesis - Grade 9 Science
 
@@ -21,9 +26,21 @@ Oxygen is released as a by-product through the stomata. Plants also do cellular 
 
 Common mistakes: "plants get their food from the soil", "plants breathe in CO2 and breathe out oxygen instead of respiring".`;
 
+async function pdfPages(file: string, range = "1-99") {
+  const pdf = await getDocumentProxy(new Uint8Array(fs.readFileSync(file)));
+  const [from, to] = range.split("-").map(Number);
+  const pages: string[] = [];
+  for (let n = from; n <= Math.min(to || from, pdf.numPages); n++) {
+    const { items } = await (await pdf.getPage(n)).getTextContent();
+    pages.push(pdfLinesToText(items.flatMap((it) => ("str" in it ? [it] : []))));
+  }
+  return pages.join("\n\n").slice(0, MAX_SOURCE_CHARS);
+}
+
 async function main() {
   const t0 = Date.now();
-  const bp = await draftBlueprint({ source: NOTES, grade: 9, onProgress: (s) => console.log(`  [${((Date.now() - t0) / 1000).toFixed(0)}s] ${s}`) });
+  const source = process.argv[2] ? await pdfPages(process.argv[2], process.argv[3]) : NOTES;
+  const bp = await draftBlueprint({ source, grade: 9, onProgress: (s) => console.log(`  [${((Date.now() - t0) / 1000).toFixed(0)}s] ${s}`) });
   console.log(`\nDrafted in ${((Date.now() - t0) / 1000).toFixed(0)}s\n`);
   console.log(JSON.stringify(bp, null, 2));
   const problems = checkBlueprint(bp);

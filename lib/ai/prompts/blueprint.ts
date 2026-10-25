@@ -61,7 +61,11 @@ For ONE idea in the lesson "${opts.lessonTitle}", return JSON:
    [3] fully gets the TRUE idea, in its own words, correct
 - questions: exactly 3 questions Gloam asks to get the student explaining, in Gloam's voice, ordered from
    [0] neutral (does NOT mention the answer at all) to [2] more specific. Never answer them.
-- giveaways: 3 to 6 short words or phrases that would GIVE AWAY the true idea if Gloam said them first (lowercase)
+   Gloam asks them while it STILL believes the wrong idea. A question must never contain the answer,
+   and never say or hint that Gloam's idea is wrong (so never "why is it NOT ...?").
+- giveaways: 3 to 6 short phrases (lowercase) that only someone who already KNOWS the true idea would say,
+   like the key result, the key number, or the rule itself. NOT everyday topic words Gloam needs just to talk
+   about this idea, and nothing from the idea's name or the wrong idea.
 - evidence: 5 to 12 short lowercase word stems a student would almost certainly use when explaining this idea, right OR wrong (e.g. "tilt", "lean", "axis")
 - recap: the correct idea in 1 or 2 plain, friendly sentences for students (not in Gloam's voice)
 
@@ -84,8 +88,9 @@ ${style.voice.persona}
 Gloam's voice: ${voiceRules(style)}
 
 For the lesson "${opts.lessonTitle}", return JSON:
-- opener: Gloam's first line. It proudly explains its own WRONG theory, based on these wrong ideas: ${opts.misconceptions.join("; ")}. Never mention the true ideas. 1 to 3 short sentences.
+- opener: Gloam's first line. It proudly explains ONE wrong theory, based on this wrong idea: ${opts.misconceptions[0] ?? ""}. Never mention the true ideas. 1 to 3 short sentences.
 - storyBeats: exactly 5 short lines of quiet narration as the valley lights up, from dark [0] to fully lit [4]. In the same style. No mention of the lesson content.
+   (Gloam has ONE lantern. Each idea it learns lights a candle. Describe the place getting brighter; don't count lanterns or candles.)
 - finale: Gloam's line when it finally understands everything. It sums up the true ideas briefly in its own words and thanks the student in its style.
 - topicWords: 8 to 16 everyday lowercase words that mean a message is about this topic, even if it explains nothing
 
@@ -95,15 +100,37 @@ True ideas (for the finale only): ${opts.truths.join(" ")}`,
   ];
 }
 
-export function fixQuestionPrompt(opts: { style: AgeStyle; question: string; leaked: string; name: string }) {
+/** Rewrite one question that gives too much away. `problem` says what's wrong with it, in plain words. */
+export function fixQuestionPrompt(opts: { style: AgeStyle; question: string; problem: string; name: string; misconception: string }) {
   return [
     {
       role: "system" as const,
       content: `${opts.style.voice.persona}
-Rewrite this question so it gets a student explaining "${opts.name}" WITHOUT using the word "${opts.leaked}" or giving away the answer. Keep Gloam's voice: ${voiceRules(opts.style)}
+Gloam still believes this WRONG idea: ${opts.misconception}
+This question about "${opts.name}" ${opts.problem}. Rewrite it so Gloam, still believing its wrong idea, gets the student explaining, WITHOUT giving away the answer or saying its own idea is wrong. Keep Gloam's voice: ${voiceRules(opts.style)}
 Return JSON: {"question": "..."}`,
     },
     { role: "user" as const, content: opts.question },
+  ];
+}
+
+/** Which of Gloam's questions give the answer away, or tell the student Gloam's idea is wrong? */
+export function questionCheckPrompt(opts: { truth: string; misconception: string; questions: string[] }) {
+  return [
+    {
+      role: "system" as const,
+      content: `A confused character asks a student questions so the student will explain an idea. The character must NOT give the answer away.
+For each question, in order, return revealsAnswer: true if the question states or strongly hints the TRUE idea, or says the WRONG idea is wrong. Otherwise false.
+Return JSON: {"checks": [{"revealsAnswer": true or false}, ...]} with exactly ${opts.questions.length} items.`,
+    },
+    {
+      role: "user" as const,
+      content: `TRUE: ${opts.truth}
+WRONG: ${opts.misconception}
+
+QUESTIONS:
+${opts.questions.map((q, i) => `${i + 1}. ${q}`).join("\n")}`,
+    },
   ];
 }
 

@@ -6,7 +6,7 @@ import { conceptCheckSchema, intentSchema, performSchema, type Emotion, type Int
 import { getAgeStyle, pickLine, type AgeStyle } from "@/lib/age-styles";
 import { currentBeliefs, directBeat, nextQuestion } from "@/lib/companion/director";
 import { candidateConcepts, gradeCheck } from "@/lib/companion/grade";
-import { quickIntent } from "@/lib/companion/intent";
+import { looksCopied, quickIntent } from "@/lib/companion/intent";
 import { applyProgress, type Understanding } from "@/lib/companion/progress";
 import type { LessonBlueprint } from "@/lib/lesson/types";
 import type { z } from "zod";
@@ -16,6 +16,8 @@ export interface TurnInput {
   understanding: Understanding;
   history: { from: "student" | "gloam"; text: string }[];
   message: string;
+  /** Most of the message was pasted into the box, not typed */
+  pasted?: boolean;
 }
 
 /** Sent as soon as the judge is done, before Gloam has finished talking */
@@ -70,6 +72,12 @@ export async function runTurn(input: TurnInput, hooks: { onJudged?: (e: JudgedEv
       onTopic: safety === "insulted",
       source: "safety",
     });
+  }
+
+  // 1b. Pasted from somewhere: ask for their own words (no AI, no candles)
+  if (looksCopied(message, input.pasted)) {
+    const reply = pickLine(style.lines.copied, { topic: topicOf(lesson), question: nextQuestion(lesson, understanding, gloamSaid) }, gloamSaid.slice(-6));
+    return done({ ...unchanged, reply: voice(reply, style), emotion: "skeptical", intent: "chatting", onTopic: true, source: "line" });
   }
 
   // 2. Judge

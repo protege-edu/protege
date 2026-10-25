@@ -5,12 +5,13 @@
 import assert from "node:assert/strict";
 import { findGiveaway, voice } from "@/lib/ai/companion";
 import { AGE_STYLES } from "@/lib/age-styles";
-import { quickIntent } from "@/lib/companion/intent";
+import { looksCopied, quickIntent } from "@/lib/companion/intent";
 import { checkSafety } from "@/lib/ai/safety";
 import { directBeat } from "@/lib/companion/director";
 import { candidateConcepts, gradeCheck } from "@/lib/companion/grade";
 import { applyProgress, brightness, startingUnderstanding } from "@/lib/companion/progress";
 import { seasons } from "@/lib/lesson/seasons";
+import { pdfLinesToText } from "@/lib/teacher/pdf-text";
 
 let passed = 0;
 function test(name: string, fn: () => void) {
@@ -164,6 +165,24 @@ test("high school Gloam is lowercase but keeps SHOUTED words", () => {
 test("every age style has every line bank filled", () => {
   for (const st of Object.values(AGE_STYLES))
     for (const [k, v] of Object.entries(st.lines)) assert.ok(typeof v === "string" ? v.length > 0 : v.length > 0, `${st.id}.${k}`);
+});
+
+test("pasted answers ask for the student's own words", () => {
+  assert.ok(looksCopied("AI Overview\n\nThe expression \\((-3)^2\\) equals \\(9\\)"));
+  assert.ok(looksCopied("anything at all", true));
+  assert.ok(!looksCopied("its because the brackets make -3 the base so its -3 times -3"));
+  assert.ok(!looksCopied("x^2 times x^3 is x^5 cuz you add them"));
+});
+
+console.log("teacher material");
+const piece = (str: string, y: number, h: number, hasEOL = false) => ({ str, transform: [h, 0, 0, h, 0, y], height: h, hasEOL });
+test("PDF exponents stay exponents (2³ is not 23)", () => {
+  assert.equal(pdfLinesToText([piece("we write 2", 630, 10), piece("5", 635, 8), piece(". done", 630, 10)]), "we write 2⁵. done");
+  assert.equal(pdfLinesToText([piece("H", 100, 10), piece("2", 97, 7), piece("O", 100, 10)]), "H₂O");
+  assert.equal(pdfLinesToText([piece("a", 100, 10), piece("m + n", 104, 8)]), "a^(m + n)");
+});
+test("a smaller subtitle under a big title isn't a subscript", () => {
+  assert.equal(pdfLinesToText([piece("Exponents", 711, 24, true), piece("A guide", 696, 11)]), "Exponents\nA guide");
 });
 
 console.log(`\n${passed} passed${process.exitCode ? ", some FAILED" : ""}`);

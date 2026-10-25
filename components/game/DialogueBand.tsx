@@ -39,8 +39,14 @@ export function DialogueBand({ s, style, onOpenLog }: { s: TeachSession; style: 
     input.current?.focus({ preventScroll: true });
   }, []);
 
+  // How much of the draft arrived by pasting (own words light candles; pasted ones don't)
+  const pastedChars = useRef(0);
   const send = () => {
-    if (ready && s.teach(draft)) setDraft("");
+    const pasted = pastedChars.current >= 80 && pastedChars.current >= draft.trim().length * 0.6;
+    if (ready && s.teach(draft, pasted)) {
+      setDraft("");
+      pastedChars.current = 0;
+    }
   };
 
   return (
@@ -109,7 +115,11 @@ export function DialogueBand({ s, style, onOpenLog }: { s: TeachSession; style: 
               maxLength={MAX}
               onChange={(e) => {
                 setDraft(e.target.value);
+                if (!e.target.value.trim()) pastedChars.current = 0;
                 s.typed();
+              }}
+              onPaste={(e) => {
+                pastedChars.current += e.clipboardData.getData("text").length;
               }}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {

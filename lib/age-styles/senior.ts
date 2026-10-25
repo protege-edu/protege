@@ -94,6 +94,12 @@ export const senior: AgeStyle = {
       "honestly? good teaching. don't let it go to your head.",
       "i'd say i taught myself, but we both know that's a lie.",
     ],
+    copied: [
+      "that sounds very official. i only understand you, though. say it your way?",
+      "i tried to read that and my lantern got nervous. explain it like you'd text me.",
+      "the internet already tried to teach me. didn't work. your words, even messy ones.",
+      "ok that was extremely textbook. now the version that lives in your head?",
+    ],
     brainGlitch: [
       "sorry, my brain just blue-screened. say that again?",
       "lost the thought. it was probably a good one. one more time?",

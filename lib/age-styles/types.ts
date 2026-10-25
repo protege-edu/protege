@@ -67,6 +67,8 @@ export interface AgeStyle {
     /** Student is in distress. Never a joke. */
     care: string;
     victoryLap: Line[];
+    /** The message was pasted from somewhere (a search result, an AI). Ask for their own words, kindly. */
+    copied: Line[];
     /** When the AI fails twice */
     brainGlitch: Line[];
   };

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { chatJSON } from "./client";
-import { conceptPrompt, factCheckPrompt, fixQuestionPrompt, outlinePrompt, storyPrompt } from "./prompts/blueprint";
+import { conceptPrompt, factCheckPrompt, fixQuestionPrompt, outlinePrompt, questionCheckPrompt, storyPrompt } from "./prompts/blueprint";
 import { styleForGrade } from "@/lib/age-styles";
 import type { Concept, LessonBlueprint } from "@/lib/lesson/types";
 import { checkConcept, slug } from "@/lib/teacher/checks";
@@ -40,10 +40,12 @@ const Story = z.object({
 
 const FixedQuestion = z.object({ question: z.string().min(5).max(200) });
 
+const QuestionCheck = (n: number) => z.object({ checks: z.array(z.object({ revealsAnswer: z.boolean() })).length(n) });
+
 const FactCheck = z.object({ inNotes: z.boolean(), truthIsCorrect: z.boolean(), wrongIsActuallyWrong: z.boolean(), note: z.string().max(300) });
 
 // Words that are never evidence of anything
-const STOP = new Set(["what", "when", "where", "which", "does", "need", "needs", "about", "from", "with", "that", "this", "they", "their", "have", "happens", "works", "makes", "things", "thing", "idea", "ideas", "why"]);
+const STOP = new Set(["what", "when", "where", "which", "does", "need", "needs", "about", "from", "with", "that", "this", "they", "their", "have", "happens", "works", "makes", "things", "thing", "idea", "ideas", "why", "mean", "means", "really", "actually", "just"]);
 
 export type DraftProgress = (step: string) => void;
 
@@ -84,9 +86,6 @@ export async function draftBlueprint(opts: { source: string; grade: number; titl
     );
     // Evidence also includes the real content words from the idea's own name (never "what", "need"…)
     const nameWords = (c.name.toLowerCase().match(/[a-z]{4,}/g) ?? []).filter((w) => !STOP.has(w));
-    // An "answer word" can't be one of the wrong idea's own words: Gloam is SUPPOSED to say those
-    const wrongText = `${c.misconception} ${lines.beliefs[0]}`.toLowerCase();
-    const giveaways = lower(lines.giveaways).filter((g) => !wrongText.includes(g));
     concepts.push({
       id,
       name: c.name,
@@ -94,7 +93,7 @@ export async function draftBlueprint(opts: { source: string; grade: number; titl
       misconception: c.misconception,
       beliefs: lines.beliefs as [string, string, string, string],
       questions: lines.questions,
-      giveaways,
+      giveaways: lower(lines.giveaways),
       evidence: lower([...lines.evidence, ...nameWords]).filter((w) => !STOP.has(w)),
       recap: lines.recap,
     });
@@ -106,6 +105,22 @@ export async function draftBlueprint(opts: { source: string; grade: number; titl
     Story,
     storyPrompt({ style, lessonTitle: outline.title, topic: outline.topic, misconceptions: concepts.map((c) => c.misconception), truths: concepts.map((c) => c.truth) }),
   );
+
+  // "Answer words" are checked across the whole lesson, so one can't be a word Gloam needs just to talk:
+  // nothing from any idea's name, any wrong idea, Gloam's two confused belief stages, or its opening theory
+  const talkText = [story.opener, ...concepts.flatMap((c) => [c.name, c.misconception, c.beliefs[0], c.beliefs[1]])].join(" ").toLowerCase();
+  for (const c of concepts) c.giveaways = c.giveaways.filter((g) => !talkText.includes(g));
+
+  // Evidence words pick which ideas a message could be about, so words that fit everything are useless:
+  // the topic itself ("exponent" in an exponents lesson) and words that 3 or more ideas share
+  const topic = outline.topic.toLowerCase();
+  const uses = new Map<string, number>();
+  for (const w of concepts.flatMap((c) => c.evidence)) uses.set(w, (uses.get(w) ?? 0) + 1);
+  const shared = (w: string) => (uses.get(w) ?? 0) >= 3;
+  for (const c of concepts) {
+    const kept = c.evidence.filter((w) => !topic.includes(w) && !shared(w));
+    c.evidence = kept.length >= 3 ? kept : c.evidence;
+  }
 
   const bp: LessonBlueprint = {
     id: "draft",
@@ -137,18 +152,26 @@ export async function draftBlueprint(opts: { source: string; grade: number; titl
   }
   bp.reviewNotes = reviewNotes;
 
-  // Fix questions that give an answer away (and drop any that still do)
+  // Fix questions that give an answer away (and drop any that still do).
+  // Code catches answer words; the model catches the sneakier kind ("why is it NOT -9?").
   onProgress?.("Checking that Gloam never gives away an answer");
   for (const c of bp.concepts) {
+    let revealing: boolean[] = [];
+    try {
+      const qc = await ask("question_check", QuestionCheck(c.questions.length), questionCheckPrompt(c), 2);
+      revealing = qc.checks.map((x) => x.revealsAnswer);
+    } catch {
+      // the code check below still runs
+    }
     for (let q = 0; q < c.questions.length; q++) {
-      const problem = checkConcept(c, bp).find((p) => p.field === `questions.${q}`);
-      if (!problem) continue;
-      const leaked = problem.message.match(/"([^"]+)"\.$/)?.[1] ?? "";
+      const leaked = checkConcept(c, bp).find((p) => p.field === `questions.${q}`)?.message.match(/"([^"]+)"\.$/)?.[1];
+      if (!leaked && !revealing[q]) continue;
+      const problem = leaked ? `uses the word "${leaked}", which gives the answer away` : "gives the answer away or says Gloam's idea is wrong";
       try {
-        const fixed = await ask("fix_question", FixedQuestion, fixQuestionPrompt({ style, question: c.questions[q], leaked, name: c.name }), 2);
+        const fixed = await ask("fix_question", FixedQuestion, fixQuestionPrompt({ style, question: c.questions[q], problem, name: c.name, misconception: c.misconception }), 2);
         c.questions[q] = fixed.question;
       } catch {
-        // leave it; the next check drops it
+        // leave it; the next check drops it if it still has an answer word
       }
     }
     const stillLeaking = new Set(checkConcept(c, bp).filter((p) => p.field.startsWith("questions.")).map((p) => Number(p.field.split(".")[1])));

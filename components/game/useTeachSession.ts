@@ -82,7 +82,7 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle) {
   const [typingTick, setTypingTick] = useState(0);
   const [listening, setListening] = useState(false);
   const pending = useRef<{ reply: string; emotion: Emotion; understanding: Understanding } | null>(null);
-  const lastMessage = useRef<string | null>(null);
+  const lastMessage = useRef<{ text: string; pasted: boolean } | null>(null);
   const beatShown = useRef(0);
   const shownRef = useRef(shown);
   const listenTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -189,9 +189,9 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle) {
   );
 
   const send = useCallback(
-    async (text: string) => {
+    async (text: string, pasted = false) => {
       if (!sessionId) return;
-      lastMessage.current = text;
+      lastMessage.current = { text, pasted };
       setStatus("thinking");
       setThinking(pickLine(style.lines.thinking, fill, []));
 
@@ -200,7 +200,7 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle) {
         const res = await fetch("/api/companion", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ sessionId, message: text }),
+          body: JSON.stringify({ sessionId, message: text, pasted }),
         });
         if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);
         const reader = res.body.getReader();
@@ -258,11 +258,11 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle) {
   );
 
   const teach = useCallback(
-    (text: string) => {
+    (text: string, pasted = false) => {
       const clean = text.trim();
       if (!clean || status !== "ready") return false;
       setEntries((xs) => [...xs, { id: nextId(), kind: "student", text: clean }]);
-      void send(clean);
+      void send(clean, pasted);
       return true;
     },
     [status, send],
@@ -277,7 +277,7 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle) {
     setOfflineTries(0);
     setEmotion("curious");
     const last = entries[entries.length - 1];
-    if (last?.kind === "student" && lastMessage.current) void send(lastMessage.current);
+    if (last?.kind === "student" && lastMessage.current) void send(lastMessage.current.text, lastMessage.current.pasted);
     else setStatus("ready");
   }, [entries, send]);
 

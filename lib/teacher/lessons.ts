@@ -1,9 +1,9 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, inArray } from "drizzle-orm";
 import { DraftFailed, draftBlueprint } from "@/lib/ai/blueprint";
 import { db } from "@/lib/db/client";
-import { lessons } from "@/lib/db/schema";
+import { classLessons, conceptEvents, lessons, messages, teachSessions } from "@/lib/db/schema";
 import { BUILT_IN } from "@/lib/lesson";
 import type { LessonBlueprint } from "@/lib/lesson/types";
 import { checkBlueprint } from "./checks";
@@ -114,6 +114,16 @@ export function approveLesson(id: string): { ok: true } | { ok: false; problems:
   return { ok: true };
 }
 
+/** Delete a lesson and everything students did in it (their sessions, messages and candle history). */
 export function deleteLesson(id: string) {
-  db.delete(lessons).where(eq(lessons.id, id)).run();
+  db.transaction((tx) => {
+    const sessions = tx.select({ id: teachSessions.id }).from(teachSessions).where(eq(teachSessions.lessonId, id)).all().map((s) => s.id);
+    if (sessions.length) {
+      tx.delete(conceptEvents).where(inArray(conceptEvents.sessionId, sessions)).run();
+      tx.delete(messages).where(inArray(messages.sessionId, sessions)).run();
+      tx.delete(teachSessions).where(inArray(teachSessions.id, sessions)).run();
+    }
+    tx.delete(classLessons).where(eq(classLessons.lessonId, id)).run();
+    tx.delete(lessons).where(eq(lessons.id, id)).run();
+  });
 }
