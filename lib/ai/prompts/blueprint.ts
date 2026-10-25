@@ -26,7 +26,8 @@ Return JSON:
   - name: 2 to 4 words a student would say, like "The tilt"
   - truth: the correct idea in 1 or 2 plain sentences, including WHY. Only facts that are in the notes or are standard for this grade.
   - misconception: the most common realistic WRONG idea students have about it, in one plain sentence.
-    It must be FALSE. Double-check: if a scientist would agree with it, it is not a misconception.
+    If the notes list common mistakes or traps, use those first: they're what this class actually gets wrong.
+    It must be FALSE. Double-check: if an expert would agree with it, it is not a misconception.
 
 Only use ideas that are actually in the teacher's notes. No made-up facts.`,
     },
@@ -54,17 +55,17 @@ ${style.voice.persona}
 Gloam's voice: ${voiceRules(style)}
 
 For ONE idea in the lesson "${opts.lessonTitle}", return JSON:
-- beliefs: exactly 4 things Gloam believes, in Gloam's voice, as it slowly learns:
-   [0] confidently believes the WRONG idea (no hint of the truth at all)
-   [1] starting to doubt, a vague hint of the truth
-   [2] almost there, missing the reason why
-   [3] fully gets the TRUE idea, in its own words, correct
+- beliefs: what Gloam believes as it slowly learns, in Gloam's voice, school-appropriate:
+   wrong: confidently believes the WRONG idea (no hint of the truth at all)
+   doubting: starting to doubt the wrong idea, a vague hint of the truth
+   almost: almost there, has the TRUE idea but is missing the reason why
+   gotIt: fully gets the TRUE idea, in its own words. This one must be CORRECT.
 - questions: exactly 3 questions Gloam asks to get the student explaining, in Gloam's voice, ordered from
    [0] neutral (does NOT mention the answer at all) to [2] more specific. Never answer them.
    Gloam asks them while it STILL believes the wrong idea. A question must never contain the answer,
    and never say or hint that Gloam's idea is wrong (so never "why is it NOT ...?").
-- giveaways: 3 to 6 short phrases (lowercase) that only someone who already KNOWS the true idea would say,
-   like the key result, the key number, or the rule itself. NOT everyday topic words Gloam needs just to talk
+- giveaways: 3 to 6 key phrases of 1 to 4 words each (lowercase) that only someone who already KNOWS the true idea would say,
+   like the key result, the key number, or the rule itself. Never a full sentence. NOT everyday topic words Gloam needs just to talk
    about this idea, and nothing from the idea's name or the wrong idea.
 - evidence: 5 to 12 short lowercase word stems a student would almost certainly use when explaining this idea, right OR wrong (e.g. "tilt", "lean", "axis")
 - recap: the correct idea in 1 or 2 plain, friendly sentences for students (not in Gloam's voice)
@@ -90,7 +91,8 @@ Gloam's voice: ${voiceRules(style)}
 For the lesson "${opts.lessonTitle}", return JSON:
 - opener: Gloam's first line. It proudly explains ONE wrong theory, based on this wrong idea: ${opts.misconceptions[0] ?? ""}. Never mention the true ideas. 1 to 3 short sentences.
 - storyBeats: exactly 5 short lines of quiet narration as the valley lights up, from dark [0] to fully lit [4]. In the same style. No mention of the lesson content.
-   (Gloam has ONE lantern. Each idea it learns lights a candle. Describe the place getting brighter; don't count lanterns or candles.)
+   (Gloam has ONE lantern. Each idea it learns lights a candle. Describe the place getting brighter; don't count lanterns or candles.
+   [4] is the warmest, happiest moment of the whole lesson.)
 - finale: Gloam's line when it finally understands everything. It sums up the true ideas briefly in its own words and thanks the student in its style.
 - topicWords: 8 to 16 everyday lowercase words that mean a message is about this topic, even if it explains nothing
 
@@ -131,6 +133,20 @@ WRONG: ${opts.misconception}
 QUESTIONS:
 ${opts.questions.map((q, i) => `${i + 1}. ${q}`).join("\n")}`,
     },
+  ];
+}
+
+/** Are Gloam's first and last beliefs the right way round? (Small models sometimes shuffle the stages.) */
+export function beliefCheckPrompt(opts: { truth: string; misconception: string; wrong: string; gotIt: string }) {
+  return [
+    {
+      role: "system" as const,
+      content: `You check two lines a character says while learning an idea.
+Return JSON:
+- startIsWrong: true if START says the same thing as WRONG (the mistaken idea)
+- endIsTrue: true if END says the same thing as TRUE and contains nothing incorrect`,
+    },
+    { role: "user" as const, content: `TRUE: ${opts.truth}\nWRONG: ${opts.misconception}\n\nSTART: ${opts.wrong}\nEND: ${opts.gotIt}` },
   ];
 }
 

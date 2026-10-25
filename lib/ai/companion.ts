@@ -159,6 +159,9 @@ function checkReply(
   reply: string,
   ctx: { lesson: LessonBlueprint; style: AgeStyle; understanding: Understanding; allowed: string; gloamSaid: string[]; usedComparisons: string[] },
 ): string | null {
+  // Gloam's own words go through the same safety filter as the student's
+  if (checkSafety(reply, ctx.style) !== "ok") return "Keep it school-appropriate and kind. Rewrite it.";
+
   const leak = findGiveaway(ctx.lesson, ctx.understanding, reply, ctx.allowed);
   if (leak) return `You said "${leak}", but you don't know that yet. The student has to teach you. Rewrite it without that.`;
 

@@ -11,6 +11,7 @@ import { directBeat } from "@/lib/companion/director";
 import { candidateConcepts, gradeCheck } from "@/lib/companion/grade";
 import { applyProgress, brightness, startingUnderstanding } from "@/lib/companion/progress";
 import { seasons } from "@/lib/lesson/seasons";
+import { checkBlueprint } from "@/lib/teacher/checks";
 import { pdfLinesToText } from "@/lib/teacher/pdf-text";
 
 let passed = 0;
@@ -90,6 +91,10 @@ test("'lean' doesn't fire on 'clean'", () => {
 console.log("safety (high school style)");
 const hs = AGE_STYLES.senior;
 test("censored swears are blocked", () => assert.equal(checkSafety("this is f***ing boring", hs), "blocked"));
+test("swears glued to other words are blocked (Gloam's drafted lines too)", () => {
+  for (const m of ["thanks for making me light up like a dumbass", "what a jackass", "smartass"]) assert.equal(checkSafety(m, hs), "blocked", m);
+  for (const m of ["pass the glass to the class", "bass guitar", "assume", "assignment"]) assert.equal(checkSafety(m, hs), "ok", m);
+});
 test("normal science talk passes", () => assert.equal(checkSafety("the sun hits the northern hemisphere more directly", hs), "ok"));
 test("innocent words don't trip it (fork, Scunthorpe, class, assume)", () => {
   for (const m of ["I ate with a fork", "my cousin lives in Scunthorpe", "in class we learned this", "i assume its the tilt"]) assert.equal(checkSafety(m, hs), "ok", m);
@@ -175,6 +180,7 @@ test("pasted answers ask for the student's own words", () => {
 });
 
 console.log("teacher material");
+test("the built-in lesson passes every blueprint check", () => assert.deepEqual(checkBlueprint(seasons), []));
 const piece = (str: string, y: number, h: number, hasEOL = false) => ({ str, transform: [h, 0, 0, h, 0, y], height: h, hasEOL });
 test("PDF exponents stay exponents (2³ is not 23)", () => {
   assert.equal(pdfLinesToText([piece("we write 2", 630, 10), piece("5", 635, 8), piece(". done", 630, 10)]), "we write 2⁵. done");

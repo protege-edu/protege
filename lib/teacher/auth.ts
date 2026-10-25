@@ -63,7 +63,8 @@ export async function signOut() {
 
 export async function isTeacher(): Promise<boolean> {
   const value = (await cookies()).get(COOKIE)?.value;
-  if (!value) return false;
+  // No passcode (never set, or reset) means nobody is signed in
+  if (!value || !hasPasscode()) return false;
   const [expires, sig] = value.split(".");
   if (!expires || !sig || Number(expires) < Date.now()) return false;
   const good = sign(expires);

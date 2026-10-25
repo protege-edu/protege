@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { chatJSON } from "./client";
-import { conceptPrompt, factCheckPrompt, fixQuestionPrompt, outlinePrompt, questionCheckPrompt, storyPrompt } from "./prompts/blueprint";
+import { checkSafety } from "./safety";
+import { beliefCheckPrompt, conceptPrompt, factCheckPrompt, fixQuestionPrompt, outlinePrompt, questionCheckPrompt, storyPrompt } from "./prompts/blueprint";
 import { styleForGrade } from "@/lib/age-styles";
 import type { Concept, LessonBlueprint } from "@/lib/lesson/types";
 import { checkConcept, slug } from "@/lib/teacher/checks";
@@ -24,7 +25,13 @@ const Outline = z.object({
 });
 
 const ConceptLines = z.object({
-  beliefs: z.array(z.string().min(3).max(300)).length(4),
+  // Named stages, not a list: small models shuffle list order
+  beliefs: z.object({
+    wrong: z.string().min(3).max(300),
+    doubting: z.string().min(3).max(300),
+    almost: z.string().min(3).max(300),
+    gotIt: z.string().min(3).max(300),
+  }),
   questions: z.array(z.string().min(5).max(200)).min(2).max(4),
   giveaways: z.array(z.string().min(2).max(40)).min(2).max(8),
   evidence: z.array(z.string().min(2).max(30)).min(3).max(16),
@@ -42,21 +49,46 @@ const FixedQuestion = z.object({ question: z.string().min(5).max(200) });
 
 const QuestionCheck = (n: number) => z.object({ checks: z.array(z.object({ revealsAnswer: z.boolean() })).length(n) });
 
+const BeliefCheck = z.object({ startIsWrong: z.boolean(), endIsTrue: z.boolean() });
+
 const FactCheck = z.object({ inNotes: z.boolean(), truthIsCorrect: z.boolean(), wrongIsActuallyWrong: z.boolean(), note: z.string().max(300) });
 
 // Words that are never evidence of anything
-const STOP = new Set(["what", "when", "where", "which", "does", "need", "needs", "about", "from", "with", "that", "this", "they", "their", "have", "happens", "works", "makes", "things", "thing", "idea", "ideas", "why", "mean", "means", "really", "actually", "just"]);
+const STOP = new Set(["what", "when", "where", "which", "does", "need", "needs", "about", "from", "with", "that", "this", "they", "their", "have", "happens", "works", "makes", "things", "thing", "idea", "ideas", "why", "mean", "means", "really", "actually", "just", "example", "examples"]);
+
+// Chinese, Japanese and Korean characters (lessons in English or French never need them)
+const OTHER_SCRIPT = /[぀-ヿ㐀-鿿가-힯]/;
 
 export type DraftProgress = (step: string) => void;
 
 export class DraftFailed extends Error {}
 
-async function ask<T>(name: string, schema: z.ZodType<T>, messages: { role: "system" | "user"; content: string }[], tries = 3): Promise<T> {
+/**
+ * One drafting step, retried until the answer passes. `vet` can turn down an answer that fits the
+ * schema but still isn't usable (it returns what's wrong, or null if it's fine).
+ */
+async function ask<T>(
+  name: string,
+  schema: z.ZodType<T>,
+  messages: { role: "system" | "user"; content: string }[],
+  tries = 3,
+  vet?: (data: T) => string | null,
+): Promise<T> {
   let last = "";
   for (let i = 0; i < tries; i++) {
     // Writing a lesson takes a laptop model much longer than a chat reply, so each step gets up to 5 minutes
     const res = await chatJSON({ name, schema, messages, temperature: i === 0 ? 0.4 : 0.7, timeoutMs: 300_000 });
-    if (res.ok) return res.data;
+    // Small models sometimes slip into another script mid-word ("乘"): that answer can't be used
+    if (res.ok && OTHER_SCRIPT.test(JSON.stringify(res.data))) {
+      last = "text in an unexpected alphabet";
+      continue;
+    }
+    if (res.ok) {
+      const problem = vet?.(res.data);
+      if (!problem) return res.data;
+      last = problem;
+      continue;
+    }
     if (res.reason === "unreachable") throw new DraftFailed("Gloam's brain (Ollama) isn't running. Open Ollama and try again.");
     last = res.detail;
   }
@@ -68,22 +100,32 @@ const lower = (xs: string[]) => [...new Set(xs.map((x) => x.toLowerCase().trim()
 export async function draftBlueprint(opts: { source: string; grade: number; titleHint?: string; onProgress?: DraftProgress }): Promise<LessonBlueprint> {
   const { source, grade, titleHint, onProgress } = opts;
   const style = styleForGrade(grade);
+  // Everything Gloam says goes through the same school-safety filter as students' messages
+  const unsafe = (lines: string[]) => (lines.some((l) => checkSafety(l, style) !== "ok") ? "a line that isn't school-appropriate" : null);
 
   onProgress?.("Reading your notes and finding the key ideas");
   const outline = await ask("outline", Outline, outlinePrompt({ source, grade, titleHint }));
 
   const ids = new Set<string>();
+  const stageNotes: string[] = [];
   const concepts: Concept[] = [];
   for (const [i, c] of outline.concepts.entries()) {
     onProgress?.(`Writing Gloam's lines for idea ${i + 1} of ${outline.concepts.length}: ${c.name}`);
     let id = slug(c.name);
     while (ids.has(id)) id = `${id}-${i}`;
     ids.add(id);
-    const lines = await ask(
-      "concept",
-      ConceptLines,
-      conceptPrompt({ style, lessonTitle: outline.title, name: c.name, truth: c.truth, misconception: c.misconception, otherIdeas: outline.concepts.filter((o) => o !== c).map((o) => o.name) }),
-    );
+    const prompt = conceptPrompt({ style, lessonTitle: outline.title, name: c.name, truth: c.truth, misconception: c.misconception, otherIdeas: outline.concepts.filter((o) => o !== c).map((o) => o.name) });
+    const vetLines = (l: z.infer<typeof ConceptLines>) => unsafe([...Object.values(l.beliefs), ...l.questions]);
+    let lines = await ask("concept", ConceptLines, prompt, 3, vetLines);
+    // Gloam starts with the wrong idea and ends with the true one. Check it, and redo it if it's backwards.
+    let stagesOk = false;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const check = await ask("belief_check", BeliefCheck, beliefCheckPrompt({ truth: c.truth, misconception: c.misconception, ...lines.beliefs }), 2).catch(() => null);
+      stagesOk = !check || (check.startIsWrong && check.endIsTrue);
+      if (stagesOk || attempt === 2) break;
+      lines = await ask("concept", ConceptLines, prompt, 3, vetLines);
+    }
+    if (!stagesOk) stageNotes.push(c.name);
     // Evidence also includes the real content words from the idea's own name (never "what", "need"…)
     const nameWords = (c.name.toLowerCase().match(/[a-z]{4,}/g) ?? []).filter((w) => !STOP.has(w));
     concepts.push({
@@ -91,9 +133,10 @@ export async function draftBlueprint(opts: { source: string; grade: number; titl
       name: c.name,
       truth: c.truth,
       misconception: c.misconception,
-      beliefs: lines.beliefs as [string, string, string, string],
+      beliefs: [lines.beliefs.wrong, lines.beliefs.doubting, lines.beliefs.almost, lines.beliefs.gotIt],
       questions: lines.questions,
-      giveaways: lower(lines.giveaways),
+      // Answer words are matched exactly, so a long phrase protects nothing: keep the short ones
+      giveaways: lower(lines.giveaways).filter((g) => g.split(/\s+/).length <= 4),
       evidence: lower([...lines.evidence, ...nameWords]).filter((w) => !STOP.has(w)),
       recap: lines.recap,
     });
@@ -104,6 +147,8 @@ export async function draftBlueprint(opts: { source: string; grade: number; titl
     "story",
     Story,
     storyPrompt({ style, lessonTitle: outline.title, topic: outline.topic, misconceptions: concepts.map((c) => c.misconception), truths: concepts.map((c) => c.truth) }),
+    3,
+    (st) => unsafe([st.opener, st.finale, ...st.storyBeats]),
   );
 
   // "Answer words" are checked across the whole lesson, so one can't be a word Gloam needs just to talk:
@@ -139,6 +184,10 @@ export async function draftBlueprint(opts: { source: string; grade: number; titl
   // A second look at the facts. Doubts become notes on the teacher's review screen (the teacher decides).
   onProgress?.("Double-checking the facts against your notes");
   const reviewNotes: NonNullable<LessonBlueprint["reviewNotes"]> = [];
+  for (const name of stageNotes) {
+    const c = concepts.find((x) => x.name === name)!;
+    reviewNotes.push({ conceptId: c.id, note: `Check Gloam's lines for "${name}": the first should be the wrong idea and the last should be fully correct.` });
+  }
   for (const c of concepts) {
     try {
       const fc = await ask("fact_check", FactCheck, factCheckPrompt({ source, name: c.name, truth: c.truth, misconception: c.misconception }), 2);
