@@ -16,7 +16,9 @@ import { checkBlueprint } from "./checks";
 export type LessonRow = typeof lessons.$inferSelect;
 
 /** Live progress of lessons being drafted right now (this server only; it's fine to lose on restart) */
-const progress = new Map<string, string>();
+// (kept on globalThis so it survives code reloads in development while a draft is still running)
+const store = globalThis as unknown as { protegeDraftProgress?: Map<string, string> };
+const progress = (store.protegeDraftProgress ??= new Map<string, string>());
 
 export function listLessons(): (Pick<LessonRow, "id" | "title" | "grade" | "status" | "sourceName" | "updatedAt"> & { builtIn?: boolean })[] {
   const rows = db
