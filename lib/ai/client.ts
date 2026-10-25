@@ -21,10 +21,12 @@ export async function chatJSON<T>(opts: {
   name: string;
   temperature?: number;
   maxTokens?: number;
+  /** Chat replies use the short default; long jobs (drafting a lesson) pass more */
+  timeoutMs?: number;
 }): Promise<ChatResult<T>> {
   const start = Date.now();
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), aiConfig.timeoutMs);
+  const timer = setTimeout(() => controller.abort(), opts.timeoutMs ?? aiConfig.timeoutMs);
 
   try {
     const res = await fetch(`${aiConfig.baseUrl}/chat/completions`, {

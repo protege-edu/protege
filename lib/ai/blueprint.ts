@@ -52,7 +52,8 @@ export class DraftFailed extends Error {}
 async function ask<T>(name: string, schema: z.ZodType<T>, messages: { role: "system" | "user"; content: string }[], tries = 3): Promise<T> {
   let last = "";
   for (let i = 0; i < tries; i++) {
-    const res = await chatJSON({ name, schema, messages, temperature: i === 0 ? 0.4 : 0.7 });
+    // Writing a lesson takes a laptop model much longer than a chat reply, so each step gets up to 5 minutes
+    const res = await chatJSON({ name, schema, messages, temperature: i === 0 ? 0.4 : 0.7, timeoutMs: 300_000 });
     if (res.ok) return res.data;
     if (res.reason === "unreachable") throw new DraftFailed("Gloam's brain (Ollama) isn't running. Open Ollama and try again.");
     last = res.detail;
