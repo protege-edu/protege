@@ -26,6 +26,19 @@ VALLEY_LIT = (
     + STYLE
 )
 
+# Repaints of the chosen valley (same composition, different light)
+REPAINT_DARK = (
+    VALLEY
+    + "deep moonless night, the meadow and hills in cold blue-green shadow, no lantern, no warm light at all, "
+    "only faint starlight, " + STYLE
+)
+REPAINT_FULL = (
+    VALLEY
+    + "the whole valley is gently lit by warm golden lantern light spreading from the center of the meadow, "
+    "glowing amber grass, warm light on the edges of the hills and pine trees, golden mist, fireflies everywhere, "
+    "a faint warm glow on the horizon, still night, " + STYLE
+)
+
 GLOAM = (
     "character concept art of a small round adorable creature, like a soft felted plum-rose puffball with a slightly squashed egg shape, "
     "short stubby arms, tiny feet, big expressive glossy brown eyes with heavy eyelids and a smug expression, "

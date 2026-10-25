@@ -50,13 +50,16 @@ export function EurekaMoment({ moment, style, x = 0.5, onPeak, onDone }: { momen
         return;
       }
       const dim = full ? (quiet ? 0.5 : 0.62) : quiet ? 0.18 : 0.25;
-      tl.set(".em-bloom", { scale: 0.2, opacity: 0 })
+      tl.set(".em-bar", { scaleY: 0 })
+        .set(".em-bloom", { scale: 0.2, opacity: 0 })
         .set(".em-ring", { scale: 0, opacity: 0 })
         .set(".em-word", { opacity: 0, y: quiet ? 8 : 20, scale: quiet ? 1 : 0.6, "--bounce": 0, "--voice-width": 85 })
         .set(".em-credit", { opacity: 0, y: 10 })
         .set(".em-spark", { opacity: 0, x: 0, y: 0 })
         // 1. the world holds its breath
         .to(".em-dim", { opacity: dim, duration: full ? 0.45 : 0.18, ease: "power2.out" })
+        // big moments get cinema letterbox bars
+        .to(".em-bar", { scaleY: full ? 1 : 0, duration: 0.5, ease: "power3.out" }, "<")
         // 2. light blooms out of the lantern
         .to(".em-bloom", { opacity: 1, scale: 1, duration: 0.25, ease: "power2.out" }, full ? "+=0.2" : "+=0")
         .call(() => peak.current())
@@ -93,7 +96,8 @@ export function EurekaMoment({ moment, style, x = 0.5, onPeak, onDone }: { momen
         .to({}, { duration: moment.final ? 2.6 : full ? 1.2 : 0.6 })
         // 5. keep the new light, lift the dark
         .to([".em-word", ".em-credit"], { opacity: 0, y: -10, duration: 0.4, ease: "power2.in" })
-        .to(".em-dim", { opacity: 0, duration: 0.7, ease: "power2.inOut" }, "<0.1");
+        .to(".em-dim", { opacity: 0, duration: 0.7, ease: "power2.inOut" }, "<0.1")
+        .to(".em-bar", { scaleY: 0, duration: 0.6, ease: "power3.inOut" }, "<");
     }, root);
     return () => {
       timeline.current = null;
@@ -115,6 +119,8 @@ export function EurekaMoment({ moment, style, x = 0.5, onPeak, onDone }: { momen
   return (
     <div ref={root} className="absolute inset-0 z-30 overflow-hidden">
       <div className="em-dim absolute inset-0 bg-[#030705] opacity-0" />
+      <div className="em-bar absolute inset-x-0 top-0 h-[9vh] origin-top scale-y-0 bg-black" />
+      <div className="em-bar absolute inset-x-0 bottom-0 h-[9vh] origin-bottom scale-y-0 bg-black" />
       {/* the light, centred on Gloam's lantern */}
       <div className="absolute top-[30%]" style={{ left: `${x * 100}%` }}>
         <div className="em-bloom absolute -top-40 -left-40 h-80 w-80 rounded-full bg-[radial-gradient(circle,rgb(255_217_138/0.85)_0%,rgb(244_183_64/0.35)_35%,transparent_70%)] opacity-0" />

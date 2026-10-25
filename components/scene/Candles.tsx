@@ -126,14 +126,17 @@ function CandleArt({ level, flashing, reduced, painterly }: { level: Level; flas
   const flame = [0, 0, 0.62, 1][level];
   const uid = useId().replace(/:/g, "");
   const lit = flame > 0;
+  // In a dark painted world an unlit candle sits in shadow; it only turns ivory once it has a flame
+  const wax = painterly ? (lit ? ["#8f7a5c", "#f3e6c8", "#c2a77c"] : ["#20262a", "#4b5150", "#2d3332"]) : ["#c9d2c4", "#e8ede3", "#d5ddd0"];
+  const drip = painterly ? (lit ? "#fbf0d6" : "#565c5a") : "#eef2ea";
   return (
     <svg viewBox="0 0 40 72" className="h-16 w-9 overflow-visible sm:h-[72px] sm:w-10" aria-hidden="true">
       <defs>
         {/* wax lit from the side, or warmly from its own flame */}
         <linearGradient id={`wax-${uid}`} x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stopColor={painterly ? "#8f8a7c" : "#c9d2c4"} />
-          <stop offset="0.45" stopColor={painterly ? "#e9e2cf" : "#e8ede3"} />
-          <stop offset="1" stopColor={painterly ? "#b3ab95" : "#d5ddd0"} />
+          <stop offset="0" stopColor={wax[0]} />
+          <stop offset="0.45" stopColor={wax[1]} />
+          <stop offset="1" stopColor={wax[2]} />
         </linearGradient>
         <linearGradient id={`glow-${uid}`} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#ffcf7a" stopOpacity="0.85" />
@@ -150,7 +153,7 @@ function CandleArt({ level, flashing, reduced, painterly }: { level: Level; flas
       <ellipse cx="20" cy="69" rx="13" ry="3" fill="#000" opacity="0.4" />
       {/* wax with a couple of drips */}
       <rect x="11" y="34" width="18" height="34" rx="2.5" fill={`url(#wax-${uid})`} />
-      <path d="M11 37 q0 -3 4 -3 h10 q4 0 4 3 v1 q-2 0 -2 4 q0 3 -2 3 q-2 0 -2 -5 q-1 -2 -3 0 q0 9 -2.5 9 q-2.5 0 -2.5 -7 q0 -3 -3 -3 z" fill={painterly ? "#f2ecdb" : "#eef2ea"} />
+      <path d="M11 37 q0 -3 4 -3 h10 q4 0 4 3 v1 q-2 0 -2 4 q0 3 -2 3 q-2 0 -2 -5 q-1 -2 -3 0 q0 9 -2.5 9 q-2.5 0 -2.5 -7 q0 -3 -3 -3 z" fill={drip} />
       <motion.rect x="11" y="34" width="18" height="20" rx="2.5" fill={`url(#glow-${uid})`} animate={{ opacity: lit ? flame * 0.7 : 0 }} transition={{ duration: 0.6 }} />
       <line x1="20" y1="34" x2="20" y2="28" stroke={lit ? "#3a2412" : "#141414"} strokeWidth="1.8" strokeLinecap="round" />
       {/* smolder: the first spark */}

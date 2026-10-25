@@ -1,9 +1,10 @@
 "use client";
 
-import { AnimatePresence } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { EurekaMoment } from "@/components/scene/EurekaMoment";
 import { getAgeStyle } from "@/lib/age-styles";
+import { useCalmMotion } from "@/lib/useCalmMotion";
 import type { ClientLesson } from "@/lib/lesson/types";
 import { DialogueBand, IntroBand } from "./DialogueBand";
 import { EndingPanel, HelpDialog, LogDrawer, PauseMenu, StoryCaption, TitleScreen, TopBar } from "./Overlays";
@@ -33,14 +34,21 @@ export function GameScreen({ lesson }: { lesson: ClientLesson }) {
   const style = getAgeStyle(lesson.ageStyle);
   const s = useTeachSession(lesson, style);
   const wide = useWide();
+  const calm = useCalmMotion();
   const [overlay, setOverlay] = useState<Overlay>(null);
   const [caption, setCaption] = useState<string | null>(null);
+  // The opening shot: the camera starts on the sky and cranes down into the valley
+  const [opened, setOpened] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setOpened(true), 350);
+    return () => clearTimeout(t);
+  }, []);
   const steps = useMemo(() => style.copy.intro(lesson.topic, lesson.concepts.length), [style, lesson.topic, lesson.concepts.length]);
 
   // The camera, per shot. focus = where Gloam stands across the screen, groundAt = where the ground sits down it.
   const shot =
     s.phase === "title" || s.phase === "loading"
-      ? { focus: wide ? 0.66 : 0.5, groundAt: wide ? 0.8 : 0.56, scale: wide ? 0.9 : 0.7 }
+      ? { focus: wide ? 0.66 : 0.5, groundAt: !opened ? 1.05 : wide ? 0.8 : 0.56, scale: wide ? 0.9 : 0.7 }
       : s.phase === "ending"
         ? { focus: wide ? 0.29 : 0.5, groundAt: wide ? 0.74 : 0.5, scale: 1 }
         : { focus: 0.5, groundAt: wide ? 0.6 : 0.5, scale: 1 };
@@ -107,6 +115,15 @@ export function GameScreen({ lesson }: { lesson: ClientLesson }) {
 
       {s.phase === "intro" && <IntroBand s={s} style={style} steps={steps} />}
       {s.phase === "teach" && <DialogueBand s={s} style={style} onOpenLog={() => setOverlay("log")} />}
+
+      {/* fade in from black, like the start of a film */}
+      <motion.div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 z-50 bg-black"
+        initial={{ opacity: calm ? 0 : 1 }}
+        animate={{ opacity: 0 }}
+        transition={{ duration: 2.4, ease: [0.4, 0, 0.2, 1], delay: 0.2 }}
+      />
 
       <AnimatePresence>
         {overlay === "pause" && (

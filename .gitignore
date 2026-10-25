@@ -49,3 +49,4 @@ next-env.d.ts
 /screenshots/
 
 !.env.example
+art/__pycache__/

@@ -167,11 +167,19 @@ export const senior: AgeStyle = {
     motion: 0.75,
     voiceAxis: "width",
     candleLabels: false,
+    // Painted with local FLUX.1-schnell (art/prompts.py VALLEY_LIT, seed 101), relit with art/grade.py,
+    // cut into depth layers with art/layers.py. A human artist can replace these files 1:1.
     scene: {
-      width: 1600,
-      height: 1000,
-      layers: [{ id: "valley", dark: "/art/senior/standin-dark.png", lit: "/art/senior/standin-lit.png", depth: 0.5 }],
-      ground: { x: 0.5, y: 0.8 },
+      width: 1344,
+      height: 768,
+      layers: [0, 1, 2, 3].map((k) => ({
+        id: `valley-${k}`,
+        dark: `/art/senior/valley-${k}-dark.webp`,
+        lit: `/art/senior/valley-${k}-lit.webp`,
+        depth: k / 3,
+      })),
+      // Gloam stands where the painter put the light, on the meadow
+      ground: { x: 0.512, y: 0.68 },
       fog: "#7fa294",
       firefly: "#ffd98a",
     },
