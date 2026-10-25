@@ -3,7 +3,8 @@ import { randomUUID } from "node:crypto";
 import { asc, eq } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { conceptEvents, messages, students, teachSessions } from "@/lib/db/schema";
-import { getLesson, lessonRecap } from "@/lib/lesson";
+import { lessonRecap } from "@/lib/lesson";
+import { getApprovedLesson } from "@/lib/teacher/lessons";
 import type { RecapItem } from "@/lib/lesson/types";
 import { startingUnderstanding, type Understanding } from "./progress";
 import type { Emotion, Quality } from "@/lib/ai/schemas";
@@ -21,7 +22,8 @@ export interface SessionState {
 
 /** Phase 1 has one fake student. No real student data, ever. */
 export function createSession(lessonId: string): SessionState {
-  const lesson = getLesson(lessonId);
+  const lesson = getApprovedLesson(lessonId);
+  if (!lesson) throw new Error("Students can only start approved lessons.");
   const now = new Date();
   const studentId = randomUUID();
   const sessionId = randomUUID();
@@ -60,7 +62,7 @@ export function getSession(id: string): SessionState | null {
     nickname: row.nickname,
     understanding: row.s.understanding,
     finished: row.s.finishedAt !== null,
-    ...(row.s.finishedAt !== null ? { recap: lessonRecap(getLesson(row.s.lessonId)) } : {}),
+    ...(row.s.finishedAt !== null && getApprovedLesson(row.s.lessonId) ? { recap: lessonRecap(getApprovedLesson(row.s.lessonId)!) } : {}),
     messages: msgs,
   };
 }

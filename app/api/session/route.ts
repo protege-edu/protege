@@ -15,5 +15,11 @@ const Body = z.object({ lessonId: z.string().optional() });
 /** Start a new session */
 export async function POST(request: Request) {
   const body = Body.safeParse(await request.json().catch(() => ({})));
-  return Response.json(createSession(body.success ? (body.data.lessonId ?? DEFAULT_LESSON_ID) : DEFAULT_LESSON_ID));
+  const lessonId = body.success ? (body.data.lessonId ?? DEFAULT_LESSON_ID) : DEFAULT_LESSON_ID;
+  try {
+    return Response.json(createSession(lessonId));
+  } catch {
+    // Not approved (or doesn't exist): students never see drafts
+    return Response.json({ error: "This lesson isn't ready yet. Ask your teacher to approve it." }, { status: 404 });
+  }
 }

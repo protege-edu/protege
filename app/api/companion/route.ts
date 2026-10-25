@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { runTurn } from "@/lib/ai/companion";
 import { getSession, recordTurn } from "@/lib/companion/session";
-import { getLesson, lessonRecap } from "@/lib/lesson";
+import { lessonRecap } from "@/lib/lesson";
+import { getApprovedLesson } from "@/lib/teacher/lessons";
 
 const Body = z.object({
   sessionId: z.string().min(1),
@@ -24,7 +25,10 @@ export async function POST(request: Request) {
     return Response.json({ error: "This session ended. Refresh the page to start a new one." }, { status: 404 });
   }
 
-  const lesson = getLesson(session.lessonId);
+  const lesson = getApprovedLesson(session.lessonId);
+  if (!lesson) {
+    return Response.json({ error: "This lesson isn't available right now. Ask your teacher to check it's approved." }, { status: 404 });
+  }
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream({

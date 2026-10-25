@@ -78,4 +78,6 @@ export interface LessonBlueprint {
   storyBeats: string[];
   /** Gloam's line when every candle is lit */
   finale: string;
+  /** Things the teacher should double-check before approving (from the AI's own fact check) */
+  reviewNotes?: { conceptId?: string; note: string }[];
 }

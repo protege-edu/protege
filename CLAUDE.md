@@ -143,6 +143,15 @@ Architecture: personality, prompts, visuals and wording all come from one profil
 
 Phase 1: build the age style system, but only fully polish ONE profile: high school (grades 9–12), because that's where the first real test happens. Other profiles come later.
 
+**THE QUALITY BAR APPLIES TO EVERY AGE STYLE (permanent rule).** "Later" does not mean "simpler". Each age style must eventually get the same insane, cinematic, hand-painted treatment the high school style has:
+- **Its own Gloam**: painted for that age (e.g. rounder, brighter and bouncier for K–2; dramatic and goofy for middle school; deadpan for high school), with its own face and animation style.
+- **Its own world**: a painted scene that fits the age (bright storybook meadow for little kids, moody night valley for high school), relit dark/lit, layered for parallax.
+- **Its own UI**: layout, type, buttons, sizes and wording built for that age, not the high school UI with bigger fonts.
+- **Its own celebrations, sounds and motion.**
+Every phase must keep raising the bar for ALL age styles, never just one. When a phase adds something (teacher tools, chapters, classroom mode), it has to feel native in every age style.
+
+**How the art is made** (so any session can continue it): local FLUX.1-schnell through ComfyUI in `C:\Users\sonaw\ProtegeArt` (free, Apache 2.0), then the scripts in `art/` (paint → erase → grade into dark/lit → depth layers; `gloam_rig.py` cuts a painted Gloam into an animatable rig with a code-drawn face). A human artist can replace any image 1:1. Before painting, stop other heavy Ollama models: they share the GPU.
+
 ## TEACHER MATERIAL (Phase 2)
 
 Teachers bring their OWN lessons. Support uploading PDF, PowerPoint (.pptx), Word (.docx), and pasted text, using free libraries that run locally. If the material is too long for the model, the teacher picks which section to use. After the AI generates the blueprint, the teacher reviews and edits it (concepts, misconceptions, questions). STUDENTS ONLY EVER SEE A BLUEPRINT THE TEACHER APPROVED.

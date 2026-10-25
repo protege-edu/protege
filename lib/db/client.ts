@@ -4,6 +4,7 @@ import path from "node:path";
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
+import { BUILT_IN } from "@/lib/lesson";
 import * as schema from "./schema";
 
 const DATA_DIR = path.join(process.cwd(), "data");
@@ -17,6 +18,14 @@ function open() {
   sqlite.pragma("foreign_keys = ON");
   const db = drizzle(sqlite, { schema });
   migrate(db, { migrationsFolder: path.join(process.cwd(), "drizzle") });
+  // Built-in lessons get a row too, so classes and sessions can point at them like any other lesson
+  const now = new Date();
+  for (const b of Object.values(BUILT_IN)) {
+    db.insert(schema.lessons)
+      .values({ id: b.id, title: b.title, grade: b.grade, status: "approved", blueprint: b, sourceName: "Built into Protégé", createdAt: now, updatedAt: now, approvedAt: now })
+      .onConflictDoNothing()
+      .run();
+  }
   return db;
 }
 

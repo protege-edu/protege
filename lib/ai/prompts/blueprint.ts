@@ -1,0 +1,129 @@
+import type { AgeStyle } from "@/lib/age-styles";
+
+/** The age style's voice rules, minus their example quotes (small models copy examples word for word) */
+const voiceRules = (style: AgeStyle) =>
+  style.voice.rules
+    .map((r) => r.replace(/\([^)]*\)/g, "").replace(/"[^"]*"/g, "").replace(/\s{2,}/g, " ").trim())
+    .join(" ");
+
+/**
+ * Prompts that turn a teacher's material into a lesson blueprint, in small steps a laptop model can do well.
+ * The teacher reviews and edits everything before students see it.
+ */
+
+export function outlinePrompt(opts: { source: string; grade: number; titleHint?: string }) {
+  return [
+    {
+      role: "system" as const,
+      content: `You help a teacher turn their lesson notes into a teaching game for grade ${opts.grade === 0 ? "K" : opts.grade} students.
+Students will TEACH a confused character, so we need the key ideas and the realistic wrong ideas students (and the character) start with.
+
+Return JSON:
+- title: a short question or title for the lesson, like "Why do we have seasons?"
+- topic: 1 to 3 words, lowercase, like "seasons"
+- subject: like "Grade 9 science"
+- concepts: 3 to 5 key ideas from the notes, in teaching order. For each:
+  - name: 2 to 4 words a student would say, like "The tilt"
+  - truth: the correct idea in 1 or 2 plain sentences, including WHY. Only facts that are in the notes or are standard for this grade.
+  - misconception: the most common realistic WRONG idea students have about it, in one plain sentence.
+    It must be FALSE. Double-check: if a scientist would agree with it, it is not a misconception.
+
+Only use ideas that are actually in the teacher's notes. No made-up facts.`,
+    },
+    {
+      role: "user" as const,
+      content: `${opts.titleHint ? `The teacher called this lesson: "${opts.titleHint}"\n\n` : ""}TEACHER'S NOTES:\n${opts.source}`,
+    },
+  ];
+}
+
+export function conceptPrompt(opts: {
+  style: AgeStyle;
+  lessonTitle: string;
+  name: string;
+  truth: string;
+  misconception: string;
+  otherIdeas: string[];
+}) {
+  const { style } = opts;
+  return [
+    {
+      role: "system" as const,
+      content: `You write lines for Gloam, a character who is CONFUSED about a lesson and gets taught by a student.
+${style.voice.persona}
+Gloam's voice: ${voiceRules(style)}
+
+For ONE idea in the lesson "${opts.lessonTitle}", return JSON:
+- beliefs: exactly 4 things Gloam believes, in Gloam's voice, as it slowly learns:
+   [0] confidently believes the WRONG idea (no hint of the truth at all)
+   [1] starting to doubt, a vague hint of the truth
+   [2] almost there, missing the reason why
+   [3] fully gets the TRUE idea, in its own words, correct
+- questions: exactly 3 questions Gloam asks to get the student explaining, in Gloam's voice, ordered from
+   [0] neutral (does NOT mention the answer at all) to [2] more specific. Never answer them.
+- giveaways: 3 to 6 short words or phrases that would GIVE AWAY the true idea if Gloam said them first (lowercase)
+- evidence: 5 to 12 short lowercase word stems a student would almost certainly use when explaining this idea, right OR wrong (e.g. "tilt", "lean", "axis")
+- recap: the correct idea in 1 or 2 plain, friendly sentences for students (not in Gloam's voice)
+
+Other ideas in this lesson (don't mix them in): ${opts.otherIdeas.join("; ") || "none"}`,
+    },
+    {
+      role: "user" as const,
+      content: `IDEA: ${opts.name}\nTRUE: ${opts.truth}\nWRONG IDEA: ${opts.misconception}`,
+    },
+  ];
+}
+
+export function storyPrompt(opts: { style: AgeStyle; lessonTitle: string; topic: string; misconceptions: string[]; truths: string[] }) {
+  const { style } = opts;
+  return [
+    {
+      role: "system" as const,
+      content: `You write lines for Gloam, a small creature with a lantern on its head that lights up as it understands things.
+${style.voice.persona}
+Gloam's voice: ${voiceRules(style)}
+
+For the lesson "${opts.lessonTitle}", return JSON:
+- opener: Gloam's first line. It proudly explains its own WRONG theory, based on these wrong ideas: ${opts.misconceptions.join("; ")}. Never mention the true ideas. 1 to 3 short sentences.
+- storyBeats: exactly 5 short lines of quiet narration as the valley lights up, from dark [0] to fully lit [4]. In the same style. No mention of the lesson content.
+- finale: Gloam's line when it finally understands everything. It sums up the true ideas briefly in its own words and thanks the student in its style.
+- topicWords: 8 to 16 everyday lowercase words that mean a message is about this topic, even if it explains nothing
+
+True ideas (for the finale only): ${opts.truths.join(" ")}`,
+    },
+    { role: "user" as const, content: `Write it for the topic "${opts.topic}".` },
+  ];
+}
+
+export function fixQuestionPrompt(opts: { style: AgeStyle; question: string; leaked: string; name: string }) {
+  return [
+    {
+      role: "system" as const,
+      content: `${opts.style.voice.persona}
+Rewrite this question so it gets a student explaining "${opts.name}" WITHOUT using the word "${opts.leaked}" or giving away the answer. Keep Gloam's voice: ${voiceRules(opts.style)}
+Return JSON: {"question": "..."}`,
+    },
+    { role: "user" as const, content: opts.question },
+  ];
+}
+
+/** A second look: is each idea really in the notes, really true, and is its "wrong idea" really wrong? */
+export function factCheckPrompt(opts: { source: string; name: string; truth: string; misconception: string }) {
+  return [
+    {
+      role: "system" as const,
+      content: `You fact-check one idea for a school lesson, using the teacher's notes and standard school knowledge.
+Return JSON:
+- inNotes: true if the teacher's notes actually cover this idea
+- truthIsCorrect: true if TRUE is accurate
+- wrongIsActuallyWrong: true if WRONG is genuinely incorrect (a misconception), false if it is actually true
+- note: if anything is false, one short plain sentence for the teacher explaining what to fix. Otherwise ""`,
+    },
+    { role: "user" as const, content: `TEACHER'S NOTES:
+${opts.source}
+
+IDEA: ${opts.name}
+TRUE: ${opts.truth}
+WRONG: ${opts.misconception}` },
+  ];
+}

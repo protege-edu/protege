@@ -1,13 +1,10 @@
 import { seasons } from "./seasons";
 import type { ClientLesson, LessonBlueprint, RecapItem } from "./types";
 
-const LESSONS: Record<string, LessonBlueprint> = { [seasons.id]: seasons };
+/** Lessons that ship with Protégé (always approved). Teachers' own lessons live in the database. */
+export const BUILT_IN: Record<string, LessonBlueprint> = { [seasons.id]: seasons };
 
 export const DEFAULT_LESSON_ID = seasons.id;
-
-export function getLesson(id: string): LessonBlueprint {
-  return LESSONS[id] ?? seasons;
-}
 
 /** The end-of-lesson recap. Only sent to the browser once the student has finished. */
 export function lessonRecap(lesson: LessonBlueprint): RecapItem[] {
