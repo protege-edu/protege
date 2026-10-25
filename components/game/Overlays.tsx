@@ -55,6 +55,10 @@ export function TitleScreen({
           </button>
         </motion.div>
       </div>
+      {/* a quiet way in for teachers; students won't need it */}
+      <a href="/teacher" className="absolute right-4 bottom-4 min-h-11 content-center rounded-md px-3 text-xs font-bold text-ink-dim underline-offset-4 hover:text-ink hover:underline">
+        {style.copy.forTeachers}
+      </a>
     </motion.div>
   );
 }

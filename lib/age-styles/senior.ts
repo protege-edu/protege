@@ -112,6 +112,7 @@ export const senior: AgeStyle = {
     gloamName: "gloam",
     charsLeft: (n) => `${n} left`,
     titleHelp: "How this works",
+    forTeachers: "For teachers",
     chapter: (n) => `Chapter ${n}`,
     introNext: "Next",
     introDone: "Let's go",

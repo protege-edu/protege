@@ -83,6 +83,7 @@ export interface AgeStyle {
     gloamName: string;
     charsLeft: (n: number) => string;
     titleHelp: string;
+    forTeachers: string;
     chapter: (n: number) => string;
     introNext: string;
     introDone: string;

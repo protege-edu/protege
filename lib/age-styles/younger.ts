@@ -16,6 +16,7 @@ const storybookCopy = (big: boolean): AgeStyle["copy"] => ({
   gloamName: "Gloam",
   charsLeft: (n) => `${n} letters left`,
   titleHelp: big ? "What do I do?" : "How this works",
+  forTeachers: "For teachers",
   chapter: (n) => `Chapter ${n}`,
   introNext: "Next",
   introDone: big ? "Let's go!" : "Let's start",
