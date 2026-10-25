@@ -1,0 +1,32 @@
+import { chromium } from "@playwright/test";
+import fs from "node:fs";
+const NOTES = fs.readFileSync("scripts/draft-test.ts", "utf8").split("const NOTES = `")[1].split("`;")[0];
+const b = await chromium.launch();
+const p = await b.newPage({ viewport: { width: 1366, height: 768 } });
+const errs: string[] = [];
+p.on("pageerror", (e) => errs.push(e.message.slice(0, 200)));
+p.on("console", (m) => m.type() === "error" && errs.push(m.text().slice(0, 200)));
+const t0 = Date.now();
+await p.goto("http://localhost:3100/teacher/lessons/new", { waitUntil: "load" });
+await p.waitForTimeout(2000);
+if (await p.getByLabel("Passcode").count()) {
+  await p.getByLabel("Passcode").fill("test-1234");
+  await p.getByRole("button", { name: /sign in|save passcode/i }).click();
+  await p.waitForTimeout(2000);
+}
+await p.getByRole("tab", { name: "Paste text" }).click();
+await p.getByLabel("Your lesson text").fill(NOTES);
+await p.getByRole("button", { name: "Use this text" }).click();
+await p.waitForTimeout(2500);
+await p.screenshot({ path: "screenshots/teacher-new.png", fullPage: true });
+await p.getByRole("button", { name: "Draft the lesson" }).click();
+await p.waitForTimeout(4000);
+await p.screenshot({ path: "screenshots/teacher-drafting.png" });
+await p.getByRole("button", { name: /approve for students/i }).first().waitFor({ timeout: 900_000 });
+await p.waitForTimeout(1500);
+console.log(`drafted in ${((Date.now() - t0) / 1000).toFixed(0)}s`);
+await p.screenshot({ path: "screenshots/teacher-review.png" });
+await p.screenshot({ path: "screenshots/teacher-review-full.png", fullPage: true });
+console.log("url:", p.url());
+console.log(errs.slice(0, 4).join("\n") || "no errors");
+await b.close();

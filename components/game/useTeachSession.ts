@@ -18,7 +18,8 @@ export type Entry =
   | { id: string; kind: "student"; text: string }
   | { id: string; kind: "story"; text: string };
 
-const SESSION_KEY = "protege.session";
+// Each lesson remembers its own session, so switching lessons never resumes the wrong one
+const sessionKey = (lessonId: string) => `protege.session.${lessonId}`;
 const SOUND_KEY = "protege.sound";
 // Story beats appear when the valley reaches these brightness levels
 const BEAT_AT = [0, 0.2, 0.45, 0.7, 1];
@@ -40,11 +41,13 @@ const checkHealth = () =>
     .catch(() => ({ online: false }));
 
 // One load per page view, even when React runs effects twice in development
-let sessionLoad: Promise<SessionState | null> | null = null;
+const sessionLoads = new Map<string, Promise<SessionState | null>>();
 function loadSession(lessonId: string, fresh = false): Promise<SessionState | null> {
-  if (fresh) sessionLoad = null;
-  sessionLoad ??= (async () => {
-    const saved = fresh ? null : safeStorage(() => localStorage.getItem(SESSION_KEY), null);
+  if (fresh) sessionLoads.delete(lessonId);
+  const existing = sessionLoads.get(lessonId);
+  if (existing) return existing;
+  const load = (async () => {
+    const saved = fresh ? null : safeStorage(() => localStorage.getItem(sessionKey(lessonId)), null);
     if (saved) {
       const r = await fetch(`/api/session?id=${encodeURIComponent(saved)}`).catch(() => null);
       if (r?.ok) return (await r.json()) as SessionState;
@@ -52,7 +55,8 @@ function loadSession(lessonId: string, fresh = false): Promise<SessionState | nu
     const r = await fetch("/api/session", { method: "POST", body: JSON.stringify({ lessonId }) }).catch(() => null);
     return r?.ok ? ((await r.json()) as SessionState) : null;
   })();
-  return sessionLoad;
+  sessionLoads.set(lessonId, load);
+  return load;
 }
 
 /**
@@ -107,7 +111,7 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle) {
   // ---------- load ----------
   const applySession = useCallback(
     (session: SessionState) => {
-      safeStorage(() => localStorage.setItem(SESSION_KEY, session.id), undefined);
+      safeStorage(() => localStorage.setItem(sessionKey(session.lessonId), session.id), undefined);
       setSessionId(session.id);
       setFinished(session.finished);
       setRecap(session.recap ?? null);
@@ -305,7 +309,7 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle) {
   }, []);
 
   const startOver = useCallback(async () => {
-    safeStorage(() => localStorage.removeItem(SESSION_KEY), undefined);
+    safeStorage(() => localStorage.removeItem(sessionKey(lesson.id)), undefined);
     const session = await loadSession(lesson.id, true);
     if (!session) return;
     setMoment(null);

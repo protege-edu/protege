@@ -117,6 +117,27 @@
   --t-voice-font: var(--font-martian), ui-monospace, monospace;
 }
 
+/*
+  Teacher side: "Gloam's field journal". Light paper so it reads on a classroom projector,
+  same world and meanings (gold = understanding, ember = stuck). A teacher's tool, not a game.
+*/
+[data-theme="teacher"] {
+  color-scheme: light;
+  --t-bg: #e8ede3;
+  --t-panel: #f1f4ee;
+  --t-line: #c9d3c4;
+  --t-ink: #1d3427;
+  --t-ink-dim: #4a5f51;
+  --t-accent: #a83a50;
+  --t-accent-ink: #f6f8f3;
+  --t-accent-hover: #8e2f45;
+  --t-chip: #dde4d7;
+  --t-focus: #a83a50;
+  --t-voice-font: var(--font-martian), ui-monospace, monospace;
+  background: var(--t-bg);
+  color: var(--t-ink);
+}
+
 html,
 body {
   height: 100%;

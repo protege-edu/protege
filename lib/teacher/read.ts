@@ -24,8 +24,7 @@ export interface ReadResult {
   chars: number;
 }
 
-/** About how much text the lesson drafter can read at once on a laptop model */
-export const MAX_SOURCE_CHARS = 6000;
+export { MAX_SOURCE_CHARS } from "./limits";
 
 export async function readMaterial(name: string, data: Uint8Array | string): Promise<ReadResult> {
   if (typeof data === "string") return finish("text", splitPlainText(data));
