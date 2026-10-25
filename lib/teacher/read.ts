@@ -2,7 +2,7 @@ import "server-only";
 import JSZip from "jszip";
 import mammoth from "mammoth";
 import { getDocumentProxy } from "unpdf";
-import { pdfLinesToText } from "./pdf-text";
+import { dropRunningLines, pdfLinesToText } from "./pdf-text";
 
 /**
  * Reads a teacher's material into plain text, split into sections they can pick from.
@@ -61,7 +61,7 @@ async function readPdf(data: Uint8Array): Promise<Section[]> {
     // (the other kind of item marks a content group and has no text)
     pages.push(pdfLinesToText(items.flatMap((it) => ("str" in it ? [it] : []))));
   }
-  return pages.map((t, i) => ({ id: `p${i + 1}`, title: firstLine(t) || `Page ${i + 1}`, text: t }));
+  return dropRunningLines(pages).map((t, i) => ({ id: `p${i + 1}`, title: firstLine(t) || `Page ${i + 1}`, text: t }));
 }
 
 async function readPptx(data: Uint8Array): Promise<Section[]> {

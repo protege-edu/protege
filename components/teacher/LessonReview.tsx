@@ -20,7 +20,12 @@ interface Row {
   createdAt: string;
 }
 
-const BELIEF_STAGES = ["Starts out believing (wrong)", "Starting to doubt", "Almost there", "Finally gets it"];
+/** Titles and idea names are one line, even though they wrap on screen */
+const noNewLines = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  if (e.key === "Enter") e.preventDefault();
+};
+
+const BELIEF_STAGES =["Starts out believing (wrong)", "Starting to doubt", "Almost there", "Finally gets it"];
 
 /**
  * Review a drafted lesson like a marked-up document, edit anything, and approve it.
@@ -148,12 +153,15 @@ export function LessonReview({ id }: { id: string }) {
               <label className="sr-only" htmlFor="title">
                 Lesson title
               </label>
-              <input
+              {/* a textarea, not an input, so long titles wrap on small screens */}
+              <textarea
                 id="title"
+                rows={1}
                 value={bp.title}
                 readOnly={readOnly}
+                onKeyDown={noNewLines}
                 onChange={(e) => edit((b) => void (b.title = e.target.value))}
-                className="w-full rounded-md bg-transparent text-xl font-bold text-ink focus:bg-panel focus:outline-none"
+                className="block w-full resize-none rounded-md bg-transparent text-xl font-bold text-ink [field-sizing:content] focus:bg-panel focus:outline-none"
               />
               <p className="mt-1 text-sm text-ink-dim">
                 {gradeLabel(bp.grade)}. Gloam talks like it&apos;s in {bp.ageStyle === "senior" ? "high school" : bp.ageStyle === "middle" ? "middle school" : "elementary school"}.
@@ -206,12 +214,14 @@ export function LessonReview({ id }: { id: string }) {
               <div className="flex flex-wrap items-baseline justify-between gap-3">
                 <h2 id={`idea-${c.id}`} className="text-lg font-bold text-ink">
                   Idea {ci + 1}:{" "}
-                  <input
+                  <textarea
                     aria-label={`Name of idea ${ci + 1}`}
+                    rows={1}
                     value={c.name}
                     readOnly={readOnly}
+                    onKeyDown={noNewLines}
                     onChange={(e) => edit((b) => void (b.concepts[ci].name = e.target.value))}
-                    className="rounded-md bg-transparent focus:bg-panel focus:outline-none"
+                    className="max-w-full resize-none rounded-md bg-transparent align-top [field-sizing:content] focus:bg-panel focus:outline-none"
                   />
                 </h2>
                 {!readOnly && bp.concepts.length > 2 && (

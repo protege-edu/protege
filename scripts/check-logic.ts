@@ -12,7 +12,7 @@ import { candidateConcepts, gradeCheck } from "@/lib/companion/grade";
 import { applyProgress, brightness, startingUnderstanding } from "@/lib/companion/progress";
 import { seasons } from "@/lib/lesson/seasons";
 import { checkBlueprint } from "@/lib/teacher/checks";
-import { pdfLinesToText } from "@/lib/teacher/pdf-text";
+import { dropRunningLines, pdfLinesToText } from "@/lib/teacher/pdf-text";
 
 let passed = 0;
 function test(name: string, fn: () => void) {
@@ -186,6 +186,10 @@ test("PDF exponents stay exponents (2³ is not 23)", () => {
   assert.equal(pdfLinesToText([piece("we write 2", 630, 10), piece("5", 635, 8), piece(". done", 630, 10)]), "we write 2⁵. done");
   assert.equal(pdfLinesToText([piece("H", 100, 10), piece("2", 97, 7), piece("O", 100, 10)]), "H₂O");
   assert.equal(pdfLinesToText([piece("a", 100, 10), piece("m + n", 104, 8)]), "a^(m + n)");
+});
+test("running headers are dropped so each page is named by its own heading", () => {
+  const pages = ["Guide Page 1 of 3\nExponents\nAn exponent is...", "Guide Page 2 of 3\nThe Exponent Laws\nThese rules...", "Guide Page 3 of 3\nZero exponents\nAny number..."];
+  assert.deepEqual(dropRunningLines(pages).map((p) => p.split("\n")[0]), ["Exponents", "The Exponent Laws", "Zero exponents"]);
 });
 test("a smaller subtitle under a big title isn't a subscript", () => {
   assert.equal(pdfLinesToText([piece("Exponents", 711, 24, true), piece("A guide", 696, 11)]), "Exponents\nA guide");

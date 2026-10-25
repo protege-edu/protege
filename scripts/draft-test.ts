@@ -8,7 +8,7 @@ import { getDocumentProxy } from "unpdf";
 import { draftBlueprint } from "@/lib/ai/blueprint";
 import { checkBlueprint } from "@/lib/teacher/checks";
 import { MAX_SOURCE_CHARS } from "@/lib/teacher/limits";
-import { pdfLinesToText } from "@/lib/teacher/pdf-text";
+import { dropRunningLines, pdfLinesToText } from "@/lib/teacher/pdf-text";
 
 const NOTES = `Photosynthesis - Grade 9 Science
 
@@ -34,7 +34,7 @@ async function pdfPages(file: string, range = "1-99") {
     const { items } = await (await pdf.getPage(n)).getTextContent();
     pages.push(pdfLinesToText(items.flatMap((it) => ("str" in it ? [it] : []))));
   }
-  return pages.join("\n\n").slice(0, MAX_SOURCE_CHARS);
+  return dropRunningLines(pages).join("\n\n").slice(0, MAX_SOURCE_CHARS);
 }
 
 async function main() {

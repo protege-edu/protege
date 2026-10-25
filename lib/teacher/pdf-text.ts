@@ -40,3 +40,21 @@ export function pdfLinesToText(items: PdfItem[]): string {
   }
   return out;
 }
+
+/**
+ * Removes running headers and footers ("Exponents: A Grade 9 Guide  Page 2 of 5") that repeat on most pages,
+ * so each page is named by its own first heading and the AI doesn't read the same line five times.
+ */
+export function dropRunningLines(pages: string[]): string[] {
+  if (pages.length < 2) return pages;
+  const key = (line: string) => line.trim().toLowerCase().replace(/\d+/g, "#");
+  const seen = new Map<string, number>();
+  for (const page of pages) for (const k of new Set(page.split("\n").map(key).filter(Boolean))) seen.set(k, (seen.get(k) ?? 0) + 1);
+  const running = (line: string) => (seen.get(key(line)) ?? 0) >= Math.max(2, pages.length * 0.6);
+  return pages.map((page) =>
+    page
+      .split("\n")
+      .filter((line) => !running(line))
+      .join("\n"),
+  );
+}

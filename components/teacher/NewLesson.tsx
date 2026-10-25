@@ -187,7 +187,8 @@ export function NewLesson() {
                   />
                   <span className="min-w-0">
                     <span className="block text-sm font-bold text-ink">{s.title}</span>
-                    <span className="line-clamp-2 block text-sm text-ink-dim">{s.text.slice(0, 220)}</span>
+                    {/* (line-clamp sets its own display, so no "block" here) */}
+                    <span className="line-clamp-2 text-sm text-ink-dim">{(s.text.startsWith(s.title) ? s.text.slice(s.title.length) : s.text).trim().slice(0, 400)}</span>
                   </span>
                 </label>
               </li>

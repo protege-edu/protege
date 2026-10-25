@@ -93,7 +93,7 @@ export function TeacherGate({ children }: { children: ReactNode }) {
   };
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center px-6">
+    <main className="mx-auto flex min-h-dvh max-w-[400px] flex-col justify-center px-6">
       <p className="voice text-lg font-bold text-ink" style={{ ["--voice-width" as string]: 110 }}>
         protégé
       </p>
@@ -115,7 +115,13 @@ export function TeacherGate({ children }: { children: ReactNode }) {
           onChange={(e) => setCode(e.target.value)}
           className="min-h-12 rounded-md border border-line bg-panel px-3 text-md text-ink focus:border-[var(--t-focus)] focus:outline-none"
           autoComplete={state === "setup" ? "new-password" : "current-password"}
+          aria-describedby={state === "setup" ? "passcode-hint" : undefined}
         />
+        {state === "setup" && (
+          <p id="passcode-hint" className="-mt-1 text-sm text-ink-dim">
+            At least 4 characters. Write it down somewhere safe.
+          </p>
+        )}
         {error && (
           <p role="alert" className="text-sm font-bold text-accent">
             {error}

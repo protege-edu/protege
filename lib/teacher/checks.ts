@@ -53,6 +53,14 @@ export function checkConcept(c: Concept, bp: LessonBlueprint, nothing: Record<st
     const leak = findGiveaway(lesson, nothing, q, "");
     if (leak) at(`questions.${i}`, `Question ${i + 1} for "${c.name}" gives away "${leak}".`);
   });
+  // The AI sometimes stops mid-sentence ("2³ means 2 × 2 × "). Students would read that in the recap.
+  const cutOff = (t: string) => /[×÷+\-−–=,(:]\s*$|\b(the|a|an|and|of)\s*$/i.test(t.trim());
+  if (cutOff(c.recap)) at("recap", `The recap for "${c.name}" looks cut off. Please finish the sentence.`);
+  if (cutOff(c.truth)) at("truth", `The correct idea for "${c.name}" looks cut off. Please finish the sentence.`);
+  c.beliefs.forEach((b, i) => {
+    if (cutOff(b)) at(`beliefs.${i}`, `One of Gloam's lines for "${c.name}" looks cut off. Please finish it.`);
+  });
+
   // Everything Gloam says has to be school-appropriate (the same filter students' messages go through)
   const style = getAgeStyle(bp.ageStyle);
   c.beliefs.forEach((b, i) => {
