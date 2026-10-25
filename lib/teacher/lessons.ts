@@ -30,6 +30,12 @@ export function listLessons(): (Pick<LessonRow, "id" | "title" | "grade" | "stat
 export function getLessonRow(id: string): (LessonRow & { progress?: string }) | null {
   const row = db.select().from(lessons).where(eq(lessons.id, id)).get();
   if (!row) return null;
+  // Still says "drafting" but nothing is working on it (the server restarted): say so, offer a retry
+  if (row.status === "drafting" && !progress.has(id)) {
+    const problem = "Drafting was interrupted (Protégé restarted). Press Try again to start it over.";
+    db.update(lessons).set({ status: "failed", problem, updatedAt: new Date() }).where(eq(lessons.id, id)).run();
+    return { ...row, status: "failed", problem };
+  }
   return { ...row, progress: progress.get(id) };
 }
 
