@@ -150,6 +150,7 @@ export function PauseMenu({
   onTitle,
   canSeeRecap,
   onRecap,
+  onMap,
 }: {
   style: AgeStyle;
   sound: boolean;
@@ -161,6 +162,8 @@ export function PauseMenu({
   onTitle: () => void;
   canSeeRecap: boolean;
   onRecap: () => void;
+  /** the trail map (only in age styles with a journey world) */
+  onMap?: () => void;
 }) {
   const [confirming, setConfirming] = useState(false);
   const row = "!justify-start w-full";
@@ -176,6 +179,11 @@ export function PauseMenu({
         {canSeeRecap && (
           <InkButton variant="ghost" className={row} onClick={onRecap}>
             {style.copy.seeRecap}
+          </InkButton>
+        )}
+        {onMap && (
+          <InkButton variant="ghost" className={row} onClick={onMap}>
+            {style.copy.trailMap}
           </InkButton>
         )}
         <InkButton variant="ghost" className={row} onClick={onLog}>

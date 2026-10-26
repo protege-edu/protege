@@ -18,6 +18,9 @@ const storybookCopy = (big: boolean): AgeStyle["copy"] => ({
   titleHelp: big ? "What do I do?" : "How this works",
   forTeachers: "For teachers",
   chapter: (n) => `Chapter ${n}`,
+  trailMap: "Map",
+  mapHere: "Gloam is at",
+  mapEnd: "the end of the path!",
   trickLearned: (level) =>
     ({
       2: "New trick: Gloam can twirl its lantern!",

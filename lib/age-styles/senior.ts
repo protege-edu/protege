@@ -131,6 +131,9 @@ export const senior: AgeStyle = {
     titleHelp: "How this works",
     forTeachers: "For teachers",
     chapter: (n) => `Chapter ${n}`,
+    trailMap: "Trail map",
+    mapHere: "Gloam is waiting at",
+    mapEnd: "the overlook (it gets everything)",
     trickLearned: (level) =>
       ({
         2: "New trick: it twirls its lantern when it's bored. Show-off.",
@@ -213,6 +216,7 @@ export const senior: AgeStyle = {
       end: 0.83,
       fog: "#7fa294",
       firefly: "#ffd98a",
+      map: { dark: "/art/senior/journey-map-dark.webp", lit: "/art/senior/journey-map-lit.webp" },
       // painted with FLUX (art/prompts.py SHRINE, seed 40), cut out by art/cutout.py; the candle sits in its niche
       shrine: { src: "/art/senior/shrine.webp", w: 491, h: 391, base: [249, 373], candle: [249, 250], scale: 0.62 },
       travel: [

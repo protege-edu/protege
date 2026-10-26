@@ -7,6 +7,7 @@ import { getAgeStyle, pickLine } from "@/lib/age-styles";
 import { step } from "@/lib/sound";
 import { useTestMode } from "@/lib/testMode";
 import { TestPanel } from "./TestPanel";
+import { TrailMap } from "./TrailMap";
 import { useCalmMotion } from "@/lib/useCalmMotion";
 import type { ClientLesson } from "@/lib/lesson/types";
 import { DialogueBand, IntroBand } from "./DialogueBand";
@@ -15,7 +16,7 @@ import { ChapterCard, LevelUpCard, TravelQuip } from "./JourneyMoments";
 import { Stage, type GloamBox } from "./Stage";
 import { useTeachSession } from "./useTeachSession";
 
-type Overlay = null | "pause" | "help" | "log";
+type Overlay = null | "pause" | "help" | "log" | "map";
 
 const WIDE = "(min-width: 56rem)";
 function useWide() {
@@ -225,10 +226,12 @@ export function GameScreen({ lesson }: { lesson: ClientLesson }) {
               setOverlay(null);
               s.setPhase("ending");
             }}
+            onMap={world ? () => setOverlay("map") : undefined}
           />
         )}
         {overlay === "help" && <HelpDialog key="help" style={style} lesson={lesson} onClose={() => setOverlay(null)} />}
         {overlay === "log" && <LogDrawer key="log" style={style} entries={s.entries} onClose={() => setOverlay(null)} />}
+        {overlay === "map" && world && <TrailMap key="map" style={style} world={world} concepts={lesson.concepts} levels={levels} stop={walkLit} onClose={() => setOverlay(null)} />}
       </AnimatePresence>
     </div>
   );

@@ -47,6 +47,8 @@ export interface JourneyWorld {
   end: number;
   fog: string;
   firefly: string;
+  /** The whole journey, small, for the trail map (dark and lit) */
+  map?: { dark: string; lit: string };
   /** Short, hand-written things Gloam notices while walking between checkpoints (no AI) */
   travel: string[];
   /** The painted shrine that stands at each checkpoint; its candle (drawn in code) burns at the idea's level */
@@ -123,6 +125,10 @@ export interface AgeStyle {
     titleHelp: string;
     forTeachers: string;
     chapter: (n: number) => string;
+    /** The trail map (pause menu): its button, "Gloam is at", and the end of the trail */
+    trailMap: string;
+    mapHere: string;
+    mapEnd: string;
     /** What Gloam learned to do at this level (lib/gloam-rig/brain.ts TRICKS), or null */
     trickLearned: (level: number) => string | null;
     introNext: string;
