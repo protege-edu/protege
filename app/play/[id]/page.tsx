@@ -27,7 +27,7 @@ async function Lesson({ params }: { params: PageProps<"/play/[id]">["params"] })
   const me = await currentStudent();
   const lesson = playedBy(approved, me?.id);
   return (
-    <div data-age-style={lesson.ageStyle}>
+    <div data-age-style={lesson.ageStyle} lang={lesson.language ?? "en"}>
       <GameScreen lesson={toClientLesson(lesson)} account={me ? "student" : "preview"} access={me ? studentAccess(me.id) : null} />
     </div>
   );

@@ -3,12 +3,13 @@
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { MicButton } from "@/components/access/MicButton";
+import { ReadAloudButton, useCanReadAloud } from "@/components/access/ReadAloud";
 import { POSES } from "@/components/gloam/poses";
 import { InkButton } from "@/components/ui/InkButton";
 import { Sheet } from "@/components/ui/Sheet";
 import { useAccess } from "@/lib/access/store";
 import type { AgeStyle } from "@/lib/age-styles";
-import { canReadAloud, readAloud, stopReading } from "@/lib/speech";
+import { readAloud, stopReading } from "@/lib/speech";
 import { useCalmMotion } from "@/lib/useCalmMotion";
 import { useVoiceReady } from "@/lib/voice/client";
 import type { GloamBox } from "./Stage";
@@ -90,36 +91,16 @@ function SpeechPanel({ gloam, wide, children, seed }: { gloam: GloamBox | null; 
 
 function GloamName({ style, line }: { style: AgeStyle; line?: string }) {
   // read-aloud, when the student wants it (Ways to play), and only with a voice that runs on this device
-  const lang = style.language ?? "en";
   const wanted = useAccess(style).readAloud !== "off";
-  const [voiced, setVoiced] = useState(false);
-  useEffect(() => {
-    if (!wanted || typeof window === "undefined" || !("speechSynthesis" in window)) return;
-    const check = () => setVoiced(canReadAloud(lang));
-    check();
-    window.speechSynthesis.addEventListener("voiceschanged", check);
-    return () => {
-      window.speechSynthesis.removeEventListener("voiceschanged", check);
-      stopReading();
-    };
-  }, [wanted, lang]);
+  const voiced = useCanReadAloud(style.language ?? "en");
+  // leaving the screen stops reading
+  useEffect(() => () => stopReading(), []);
+  const show = wanted && voiced && !!line;
   return (
     // the bubble's tail already shows who's talking, so the name is only for screen readers
-    <span className={wanted && voiced && line ? "-mt-1 mb-1 flex justify-end" : "contents"}>
+    <span className={show ? "-mt-1 mb-1 flex justify-end" : "contents"}>
       <span className="sr-only">{style.copy.gloamName}: </span>
-      {wanted && voiced && line && (
-        <button
-          type="button"
-          onClick={() => readAloud(line, lang)}
-          className="flex min-h-11 cursor-pointer items-center gap-1.5 rounded-md px-2 text-xs font-bold text-ink-dim hover:text-ink"
-        >
-          <svg viewBox="0 0 20 20" className="h-4 w-4" aria-hidden="true">
-            <path d="M3 8h3l4-3.5v11L6 12H3z" fill="currentColor" />
-            <path d="M13 7.2c1 .8 1.5 1.8 1.5 2.8s-.5 2-1.5 2.8M15.3 5c1.6 1.4 2.4 3.1 2.4 5s-.8 3.6-2.4 5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-          </svg>
-          {style.copy.readAloud}
-        </button>
-      )}
+      {show && <ReadAloudButton style={style} text={line} />}
     </span>
   );
 }

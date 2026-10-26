@@ -1,13 +1,14 @@
 "use client";
 
-import { useId, useRef, useState, useSyncExternalStore, type KeyboardEvent, type ReactNode } from "react";
+import { useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { Cut, useSize } from "@/components/ui/Cut";
 import { InkButton } from "@/components/ui/InkButton";
 import { Modal } from "@/components/ui/Modal";
 import { setAccess, useAccess } from "@/lib/access/store";
 import type { Access } from "@/lib/access/settings";
 import type { AgeStyle } from "@/lib/age-styles";
-import { canReadAloud, readAloud } from "@/lib/speech";
+import { readAloud } from "@/lib/speech";
+import { useCanReadAloud } from "./ReadAloud";
 import { useDeviceCalm } from "@/lib/useCalmMotion";
 import { useVoiceReady } from "@/lib/voice/client";
 
@@ -194,18 +195,5 @@ function Choice({ chosen, disabled, onPick, children, ref }: { chosen: boolean; 
       </span>
       <span className={`relative block px-2 py-2 text-xs leading-tight font-bold ${chosen ? "text-accent-ink" : "text-ink group-hover:underline"}`}>{children}</span>
     </button>
-  );
-}
-
-/** Can this device read this language aloud? Voices load late in some browsers, so listen for them. */
-function useCanReadAloud(lang: string) {
-  return useSyncExternalStore(
-    (onChange) => {
-      if (!("speechSynthesis" in window)) return () => {};
-      window.speechSynthesis.addEventListener("voiceschanged", onChange);
-      return () => window.speechSynthesis.removeEventListener("voiceschanged", onChange);
-    },
-    () => canReadAloud(lang),
-    () => true,
   );
 }

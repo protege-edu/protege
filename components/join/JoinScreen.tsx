@@ -1,5 +1,6 @@
 "use client";
 
+import { ReadAloudButton } from "@/components/access/ReadAloud";
 import { WaysToPlayButton } from "@/components/access/WaysToPlay";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
@@ -11,7 +12,7 @@ import type { GloamMood } from "@/components/gloam/poses";
 import { InkButton } from "@/components/ui/InkButton";
 import { Cut, useSize } from "@/components/ui/Cut";
 import { Wordmark } from "@/components/ui/Logo";
-import { getAgeStyle, type AgeStyleId, type Language } from "@/lib/age-styles";
+import { getAgeStyle, type AgeStyle, type AgeStyleId, type Language } from "@/lib/age-styles";
 import type { JoinError } from "@/lib/age-styles/types";
 import type { Picture } from "@/lib/student/pictures";
 import { useCalmMotion } from "@/lib/useCalmMotion";
@@ -217,7 +218,7 @@ export function JoinScreen({ initialCode, googleFor, guess = "en" }: { initialCo
   };
 
   return (
-    <div data-age-style={style.id} className="relative h-dvh overflow-hidden bg-bg text-ink">
+    <div data-age-style={style.id} lang={style.language ?? "en"} className="relative h-dvh overflow-hidden bg-bg text-ink">
       <div className="absolute inset-0">
         <Stage
           style={style}
@@ -264,7 +265,9 @@ export function JoinScreen({ initialCode, googleFor, guess = "en" }: { initialCo
                   void findClass(code);
                 }}
               >
-                <Title>{t.codeTitle}</Title>
+                <Title style={style} read={`${t.codeTitle} ${t.codeHint}`}>
+                  {t.codeTitle}
+                </Title>
                 <label htmlFor="code" className="mt-5 block text-sm font-bold text-ink-dim">
                   {t.codeLabel}
                 </label>
@@ -288,7 +291,9 @@ export function JoinScreen({ initialCode, googleFor, guess = "en" }: { initialCo
 
             {step.k === "who" && preview && (
               <div>
-                <Title>{t.whoTitle}</Title>
+                <Title style={style} read={`${t.whoTitle} ${t.whoHint(preview.name)}`}>
+                  {t.whoTitle}
+                </Title>
                 <p className="mt-2 text-sm text-ink-dim">{t.whoHint(preview.name)}</p>
                 <ul className="mt-5 flex max-h-[38vh] flex-wrap gap-2 overflow-y-auto p-1">
                   {preview.nicknames.map((n) => (
@@ -332,7 +337,9 @@ export function JoinScreen({ initialCode, googleFor, guess = "en" }: { initialCo
 
             {step.k === "nick" && preview && (
               <form onSubmit={submitNick}>
-                <Title>{t.nickTitle}</Title>
+                <Title style={style} read={`${t.nickTitle} ${googleFor ? t.googleNick : t.nickHint}`}>
+                  {t.nickTitle}
+                </Title>
                 <p className="mt-2 text-sm text-ink-dim">{googleFor ? t.googleNick : t.nickHint}</p>
                 <label htmlFor="nick" className="mt-5 block text-sm font-bold text-ink-dim">
                   {t.nickLabel}
@@ -367,7 +374,12 @@ export function JoinScreen({ initialCode, googleFor, guess = "en" }: { initialCo
 
             {(step.k === "key" || step.k === "enter") && preview && (
               <div>
-                <Title>{step.k === "key" ? t.keyTitle(preview.keySize) : t.keyEnterTitle(step.nickname)}</Title>
+                <Title
+                  style={style}
+                  read={step.k === "key" ? `${t.keyTitle(preview.keySize)} ${t.keyHint}` : `${t.keyEnterTitle(step.nickname)} ${step.reset ? t.keyResetHint : t.keyEnterHint}`}
+                >
+                  {step.k === "key" ? t.keyTitle(preview.keySize) : t.keyEnterTitle(step.nickname)}
+                </Title>
                 <p className="mt-2 text-sm text-ink-dim">{step.k === "key" ? t.keyHint : step.reset ? t.keyResetHint : t.keyEnterHint}</p>
                 <div className="mt-5">
                   <KeyPad
@@ -396,7 +408,9 @@ export function JoinScreen({ initialCode, googleFor, guess = "en" }: { initialCo
 
             {step.k === "remember" && preview && (
               <div>
-                <Title>{t.keyRememberTitle}</Title>
+                <Title style={style} read={`${t.keyRememberTitle} ${t.keyRememberHint}`}>
+                  {t.keyRememberTitle}
+                </Title>
                 <p className="mt-2 text-sm text-ink-dim">{t.keyRememberHint}</p>
                 <div className="mt-6 mb-10">
                   <KeyShow picture={key} big={big} t={t} />
@@ -439,8 +453,14 @@ export function JoinScreen({ initialCode, googleFor, guess = "en" }: { initialCo
   );
 }
 
-function Title({ children }: { children: ReactNode }) {
-  return <h1 className="text-xl font-bold text-ink md:text-2xl">{children}</h1>;
+/** A step's heading. With read-aloud on (Ways to play), a "read it to me" for the heading and its hint: little kids can't read yet. */
+function Title({ children, style, read }: { children: ReactNode; style?: AgeStyle; read?: string }) {
+  return (
+    <>
+      <h1 className="text-xl font-bold text-ink md:text-2xl">{children}</h1>
+      {style && read && <ReadAloudButton style={style} text={read} className="-ml-2" />}
+    </>
+  );
 }
 
 function Problem({ text }: { text: string | null }) {

@@ -47,6 +47,15 @@ export function GameScreen({ lesson, account = "preview", access = null }: { les
   const [dozeTick, setDozeTick] = useState(0);
   const wide = useWide();
   const calm = useCalmMotion();
+  // Screen readers hear a candle grow ("the tilt: flickering"), the way sighted students see it
+  const [heard, setHeard] = useState("");
+  const before = useRef(s.shown);
+  useEffect(() => {
+    const was = before.current;
+    before.current = s.shown;
+    const grew = lesson.concepts.filter((c) => (s.shown[c.id] ?? 0) > (was[c.id] ?? 0));
+    if (grew.length) void Promise.resolve().then(() => setHeard(grew.map((c) => `${c.name}: ${style.copy.levelWords[s.shown[c.id] ?? 0]}`).join(". ")));
+  }, [s.shown, lesson.concepts, style]);
   // a signed-in student's Ways to play come from their account; practice and previews keep this device's
   useEffect(() => (account === "student" ? adoptAccess(access) : forgetAccount()), [account, access]);
   const [overlay, setOverlay] = useState<Overlay>(null);
@@ -156,6 +165,7 @@ export function GameScreen({ lesson, account = "preview", access = null }: { les
   return (
     <div
       data-age-style={style.id}
+      lang={style.language ?? "en"}
       data-screen={s.moment ? "moment" : s.status}
       data-phase={s.phase}
       className="relative h-dvh overflow-hidden bg-bg text-ink"
@@ -222,6 +232,10 @@ export function GameScreen({ lesson, account = "preview", access = null }: { les
       {test && s.phase === "teach" && (
         <TestPanel onNext={() => void s.skipAhead(false)} onAll={() => void s.skipAhead(true)} onDoze={() => setDozeTick((t) => t + 1)} disabled={s.status !== "ready" || !!s.moment || s.finished} />
       )}
+
+      <p className="sr-only" aria-live="polite">
+        {heard}
+      </p>
 
       {/* fade in from black, like the start of a film */}
       <motion.div

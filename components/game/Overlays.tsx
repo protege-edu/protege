@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
+import { ReadAloudButton } from "@/components/access/ReadAloud";
 import { WaysToPlayButton } from "@/components/access/WaysToPlay";
 import { InkButton } from "@/components/ui/InkButton";
 import { Modal } from "@/components/ui/Modal";
@@ -309,6 +310,7 @@ export function EndingPanel({
               {style.copy.recapTitle.toLowerCase()}
             </h2>
             <p className="mt-2 text-sm text-ink-dim">{style.copy.recapIntro}</p>
+            <ReadAloudButton style={style} className="-ml-2 mt-1" text={[style.copy.recapTitle, style.copy.recapIntro, ...recap.map((r) => `${r.name}. ${r.text}`)].join(" ")} />
             <ol className="mt-6 space-y-5">
               {recap.map((r, i) => (
                 <motion.li

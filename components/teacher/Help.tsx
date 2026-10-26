@@ -55,14 +55,53 @@ export function Help() {
           </ul>
         </Part>
 
+        <Part title="Every student can play">
+          <p>
+            Every student screen has a <span className="font-bold">Ways to play</span> button (&ldquo;How I play&rdquo; for the youngest). Students can switch on what helps them, and it follows them to any
+            Chromebook:
+          </p>
+          <ul className="list-disc space-y-2 pl-5">
+            <li>
+              <span className="font-bold">Talk instead of typing.</span> They press the mic, talk, and their words appear in the box to check before sending. Their voice is turned into words on this laptop
+              and never saved. It&apos;s never sent to an online speech service. (Run <code className="rounded bg-chip px-1">npm run voice:setup</code> once to turn it on.)
+            </li>
+            <li>
+              <span className="font-bold">Read aloud:</span> Gloam&apos;s words, the join steps and the recap, by a button or every line. It uses the voices on the student&apos;s device.
+            </li>
+            <li>
+              <span className="font-bold">Bigger text</span> (two sizes up), <span className="font-bold">stronger contrast</span>, <span className="font-bold">easier reading</span> (more space, or a
+              dyslexia-friendly font), <span className="font-bold">less motion</span>, and sound on or off.
+            </li>
+          </ul>
+          <p>
+            For an accommodation, open the student on your class page and use <span className="font-bold">Ways to play for them</span>. Only you see these settings. They never show up in class
+            summaries or the spreadsheet.
+          </p>
+        </Part>
+
         <Part title="Privacy, in plain words">
           <ul className="list-disc space-y-2 pl-5">
             <li>Students only have a nickname. No real names, emails, birthdays or photos.</li>
             <li>Their secret pictures are stored scrambled, like a password.</li>
             <li>If you let a class use Google, Protégé only learns that it&apos;s the same account as last time. Never a name, email or photo.</li>
             <li>Everything stays on the laptop running Protégé, including the AI. Nothing is sent to an outside company. No ads, no tracking.</li>
+            <li>Voice typing happens on this laptop too. Recordings are never saved.</li>
             <li>Other teachers on this Protégé can&apos;t see your classes or lessons.</li>
           </ul>
+        </Part>
+
+        <Part title="Accessibility">
+          <p>
+            Protégé aims to meet <span className="font-bold">WCAG 2.2 level AA</span> on every screen, for students and teachers. Every screen works with a keyboard alone, shows where the keyboard is,
+            works with screen readers (Gloam&apos;s words and candle changes are announced), respects &ldquo;reduce motion&rdquo;, and fits from a phone to a projector.
+          </p>
+          <p>
+            How it&apos;s checked: an automatic accessibility test (axe) and a check for overlapping or cut-off text on every screen, in every age style, in English and French, at four screen sizes, with
+            bigger text and stronger contrast on. Gloam&apos;s painted world is decoration, so screen readers skip it and hear the words instead.
+          </p>
+          <p>
+            Not yet done: testing with students who use screen readers or switch access every day. If something gets in a student&apos;s way, tell whoever runs Protégé, and it&apos;ll be fixed first.
+          </p>
         </Part>
 
         <Part title="If something goes wrong">

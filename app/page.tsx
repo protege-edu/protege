@@ -10,7 +10,7 @@ export default function Home() {
   const lesson = toClientLesson(BUILT_IN[DEFAULT_LESSON_ID]);
   return (
     // The age style is on the page from the very first paint, so there's no flash of the wrong theme
-    <div data-age-style={lesson.ageStyle}>
+    <div data-age-style={lesson.ageStyle} lang={lesson.language ?? "en"}>
       <Suspense fallback={<GameScreen lesson={lesson} account="guest" />}>
         <Front lesson={lesson} />
       </Suspense>

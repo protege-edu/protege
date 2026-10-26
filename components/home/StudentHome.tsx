@@ -60,7 +60,7 @@ export function StudentHome({ home }: { home: Home }) {
   };
 
   return (
-    <div data-age-style={style.id} className="relative h-dvh overflow-hidden bg-bg text-ink">
+    <div data-age-style={style.id} lang={style.language ?? "en"} className="relative h-dvh overflow-hidden bg-bg text-ink">
       <div className="absolute inset-0">
         <Stage
           style={style}

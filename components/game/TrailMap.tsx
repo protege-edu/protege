@@ -1,5 +1,6 @@
 "use client";
 
+import { useTrapFocus } from "@/components/ui/Modal";
 import { motion } from "motion/react";
 import { useEffect, useRef } from "react";
 import { InkButton } from "@/components/ui/InkButton";
@@ -32,16 +33,14 @@ export function TrailMap({
   const calm = useCalmMotion();
   const close = useRef<HTMLButtonElement>(null);
   const returnTo = useRef<HTMLElement | null>(typeof document === "undefined" ? null : (document.activeElement as HTMLElement | null));
+  const box = useRef<HTMLDivElement>(null);
+  useTrapFocus(box, onClose, true, close);
   useEffect(() => {
-    close.current?.focus();
     const back = returnTo.current;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
     return () => {
-      window.removeEventListener("keydown", onKey);
       if (back && document.contains(back)) back.focus({ preventScroll: true });
     };
-  }, [onClose]);
+  }, []);
 
   const n = concepts.length;
   const xAt = (i: number) => (i >= n ? world.end : world.start + ((world.end - world.start) * i) / n);
@@ -70,6 +69,7 @@ export function TrailMap({
       onMouseDown={(e) => e.target === e.currentTarget && onClose()}
     >
       <motion.div
+        ref={box}
         role="dialog"
         aria-modal="true"
         aria-labelledby="map-title"

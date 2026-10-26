@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import { Sheet } from "@/components/ui/Sheet";
 import { useCalmMotion } from "@/lib/useCalmMotion";
@@ -14,6 +14,34 @@ const FOCUSABLE = 'button:not([disabled]):not([tabindex="-1"]), [href], textarea
  * closes with Escape or a click outside, and gives focus back to whatever had it.
  * `side` slides it in from the right as a tall drawer.
  */
+/**
+ * A dialog's keyboard rules: focus starts inside it, Tab and Shift+Tab stay inside it, Escape closes it.
+ * (`first`: what gets focus first; otherwise the first thing a keyboard can reach.)
+ */
+export function useTrapFocus(box: RefObject<HTMLElement | null>, onClose: () => void, active = true, first?: RefObject<HTMLElement | null>) {
+  useEffect(() => {
+    if (!active) return;
+    (first?.current ?? box.current?.querySelector<HTMLElement>(FOCUSABLE))?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      if (e.key === "Tab" && box.current) {
+        const items = [...box.current.querySelectorAll<HTMLElement>(FOCUSABLE)];
+        if (!items.length) return;
+        const [a, z] = [items[0], items[items.length - 1]];
+        if (e.shiftKey && (document.activeElement === a || !box.current.contains(document.activeElement))) {
+          e.preventDefault();
+          z.focus();
+        } else if (!e.shiftKey && (document.activeElement === z || !box.current.contains(document.activeElement))) {
+          e.preventDefault();
+          a.focus();
+        }
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [box, onClose, active, first]);
+}
+
 export function Modal({ onClose, label, children, side = false }: { onClose: () => void; label: string; children: ReactNode; side?: boolean }) {
   const calm = useCalmMotion();
   const box = useRef<HTMLDivElement>(null);
@@ -32,29 +60,7 @@ export function Modal({ onClose, label, children, side = false }: { onClose: () 
       if (back && document.contains(back)) back.focus({ preventScroll: true });
     };
   }, []);
-  useEffect(() => {
-    if (!host) return;
-    const first = box.current?.querySelector<HTMLElement>(FOCUSABLE);
-    first?.focus();
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-      // keep keyboard focus inside the panel
-      if (e.key === "Tab" && box.current) {
-        const items = [...box.current.querySelectorAll<HTMLElement>(FOCUSABLE)];
-        if (!items.length) return;
-        const [a, z] = [items[0], items[items.length - 1]];
-        if (e.shiftKey && document.activeElement === a) {
-          e.preventDefault();
-          z.focus();
-        } else if (!e.shiftKey && document.activeElement === z) {
-          e.preventDefault();
-          a.focus();
-        }
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose, host]);
+  useTrapFocus(box, onClose, !!host);
 
   if (!host) return <span ref={anchor} hidden />;
   return createPortal(
