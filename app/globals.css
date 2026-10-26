@@ -125,21 +125,26 @@
 }
 
 /*
-  Teacher side: "Gloam's field journal". Light paper so it reads on a classroom projector,
-  same world and meanings (gold = understanding, ember = stuck). A teacher's tool, not a game.
+  Teacher side: "the lantern-keeper's desk". Daytime paper so it reads on a classroom projector,
+  valley-teal ink, the same hand-cut kit as the game. Same meanings: gold = understanding,
+  ember = stuck. A calm teacher's tool, not a game.
 */
 [data-theme="teacher"] {
   color-scheme: light;
-  --t-bg: #e8ede3;
-  --t-panel: #f1f4ee;
-  --t-line: #c9d3c4;
-  --t-ink: #1d3427;
-  --t-ink-dim: #4a5f51;
-  --t-accent: #a83a50;
-  --t-accent-ink: #f6f8f3;
-  --t-accent-hover: #8e2f45;
-  --t-chip: #dde4d7;
+  --t-bg: #e7ece5;
+  --t-panel: #f3f6f1;
+  --t-panel-2: #f8faf6;
+  --t-line: #bfccc4;
+  --t-ink: #16302a;
+  --t-ink-dim: #4a6058;
+  --t-accent: #24524b;
+  --t-accent-ink: #f1f6f2;
+  --t-accent-hover: #2e665d;
+  --t-accent-deep: #12332e;
+  --t-chip: #dce5de;
   --t-focus: #2f6f8c;
+  --t-moon: #2f6f8c;
+  --t-flame-off: #93a69d;
   --t-voice-font: var(--font-recursive), system-ui, sans-serif;
   background: var(--t-bg);
   color: var(--t-ink);

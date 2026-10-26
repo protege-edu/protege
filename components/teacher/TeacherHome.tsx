@@ -141,7 +141,7 @@ export function TeacherHome() {
                 <p className="text-md font-bold text-ink">{l.title}</p>
                 <p className="text-sm text-ink-dim">
                   {gradeLabel(l.grade)}
-                  {l.sourceName ? `, from ${l.sourceName}` : ""}
+                  {l.builtIn ? ", comes with Protégé" : l.sourceName ? `, from ${l.sourceName}` : ""}
                 </p>
               </div>
               <StatusPill status={l.status} />

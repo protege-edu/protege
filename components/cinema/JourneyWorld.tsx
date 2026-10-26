@@ -8,7 +8,7 @@ import type { JourneyWorld as World } from "@/lib/age-styles/types";
 import { lanternFor } from "@/lib/companion/level";
 import type { RigSpec } from "@/lib/gloam-rig/spec";
 import { useCalmMotion } from "@/lib/useCalmMotion";
-import { fogCanvas, glowCanvas, grainCanvas, lightSpillCanvas, vignetteCanvas } from "./textures";
+import { fadeInCanvas, fogCanvas, glowCanvas, grainCanvas, lightSpillCanvas, vignetteCanvas } from "./textures";
 
 export interface JourneyProps {
   world: World;
@@ -124,6 +124,9 @@ export function JourneyWorld(props: JourneyProps) {
       const fogFront = new PIXI.TilingSprite({ texture: fogTex, width: 10, height: 10 });
       const muddle = new PIXI.TilingSprite({ texture: fogTex, width: 10, height: 10 });
       for (const f of [fogBack, fogFront, muddle]) f.tint = world.fog;
+      // the Muddle fades in softly ahead of Gloam (no hard edge)
+      const muddleFade = new PIXI.Sprite(tex(fadeInCanvas()));
+      muddle.mask = muddleFade;
 
       // ---- shrines: the painted stone shrine, with a candle in its niche, one per idea ----
       const shrineLayer = new PIXI.Container();
@@ -176,7 +179,7 @@ export function JourneyWorld(props: JourneyProps) {
       if (!lite) litWorld.filters = [bloom];
       litWorld.filterArea = app.screen;
 
-      app.stage.addChild(darkWorld, fogBack, litWorld, shrineLayer, actor.container, haze, muddle, fogFront, flies, vignette, grain, mask);
+      app.stage.addChild(darkWorld, fogBack, litWorld, shrineLayer, actor.container, haze, muddle, fogFront, flies, vignette, grain, mask, muddleFade);
 
       // ---- layout ----
       const W = world.width;
@@ -409,8 +412,9 @@ export function JourneyWorld(props: JourneyProps) {
         lanternSpill.position.set(lanternScreen.x / 2, (lanternScreen.y + (feet.y - lanternScreen.y) * 0.4) / 2);
         lanternSpill.width = lanternSpill.height = radius;
         mask.position.set(0, 0);
+        // fade the light in through the mask, not the layers: overlapping depth layers would double up
+        lanternSpill.alpha = Math.min(1, 0.25 + light * 4);
         app.renderer.render({ container: spillGroup, target: maskRT, clear: true });
-        litWorld.alpha = Math.min(1, 0.25 + light * 4);
         haze.position.set(lanternScreen.x, feet.y - gh * 0.3);
         haze.width = vw * (0.4 + light * 1.2);
         haze.height = vh * (0.35 + light * 0.8);
@@ -435,6 +439,9 @@ export function JourneyWorld(props: JourneyProps) {
         muddle.height = gh * 1.7;
         const unlit = stops ? 1 - lit / stops : 0;
         muddle.alpha = (0.18 + 0.4 * unlit) * (1 - light * 0.6);
+        muddleFade.position.set(muddle.x, muddle.y);
+        muddleFade.width = Math.max(1, muddle.width);
+        muddleFade.height = muddle.height;
 
         // ---- fireflies wake up as the valley does ----
         for (const p of fly) {

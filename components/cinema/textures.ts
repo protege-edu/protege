@@ -86,6 +86,18 @@ export function lightSpillCanvas(size = 512) {
 }
 
 /** Wispy fog that tiles left-to-right forever */
+/** A soft left edge: transparent on the left, fading in over the first part (used as a mask) */
+export function fadeInCanvas(w = 256, h = 4, over = 0.4) {
+  const [c, g] = canvas(w, h);
+  const grad = g.createLinearGradient(0, 0, w, 0);
+  grad.addColorStop(0, "rgba(255,255,255,0)");
+  grad.addColorStop(over, "rgba(255,255,255,1)");
+  grad.addColorStop(1, "rgba(255,255,255,1)");
+  g.fillStyle = grad;
+  g.fillRect(0, 0, w, h);
+  return c;
+}
+
 export function fogCanvas(w = 512, h = 256) {
   const [c, g] = canvas(w, h);
   const img = g.createImageData(w, h);

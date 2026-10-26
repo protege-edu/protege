@@ -37,7 +37,12 @@ export function Sheet({
     const fromRight = tailTo.x > w;
     const fromTop = tailTo.y < 0;
     const [sx, sy] = fromLeft ? [6, by] : fromRight ? [w - 6, by] : fromTop ? [bx, 6] : [bx, h - 6];
-    extra = tail(sx, sy, tailTo.x, tailTo.y, 26);
+    // a short tail that points at the speaker, never a long spike
+    const dx = tailTo.x - sx;
+    const dy = tailTo.y - sy;
+    const len = Math.hypot(dx, dy) || 1;
+    const reach = Math.min(len, 64);
+    extra = tail(sx, sy, sx + (dx / len) * reach, sy + (dy / len) * reach, 26);
   }
   return (
     <div ref={box} className={`grain relative ${className}`} style={style}>

@@ -2,6 +2,8 @@
 
 import { useParams, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Sheet } from "@/components/ui/Sheet";
+import { ClassTrail } from "./ClassTrail";
 import { CandleMark, Shell, api, gradeLabel } from "./kit";
 
 interface Data {
@@ -64,7 +66,8 @@ export function ClassDashboard() {
 
           {/* What the class thinks: the most useful thing a teacher can act on right now */}
           {data.insights.length > 0 && (
-            <section aria-labelledby="thinks" className="mt-8 rounded-lg border border-line bg-panel p-5">
+            <Sheet seed="thinks" tone="day" className="mt-8 p-5">
+            <section aria-labelledby="thinks">
               <h2 id="thinks" className="text-md font-bold text-ink">
                 What the class thinks
               </h2>
@@ -81,7 +84,10 @@ export function ClassDashboard() {
                 ))}
               </ul>
             </section>
+            </Sheet>
           )}
+
+          <ClassTrail concepts={data.lesson.concepts} students={data.students} />
 
           <div className="mt-8 overflow-x-auto">
             <table className="w-full min-w-[640px] border-collapse text-left">

@@ -29,7 +29,7 @@ function FlameE({ lit, delay }: { lit: number; delay: number }) {
         {on && <circle cx="10" cy="20" r="13" fill="var(--color-lantern)" opacity={0.18 + lit * 0.2} style={{ filter: "blur(4px)" }} />}
         <motion.path
           d="M12 1 C 9 7, 17 10, 17 18 C 17 25, 11 28, 8.5 27.5 C 4 26.5, 2.5 22, 3.5 18 C 4.5 14, 8 13, 9 9 C 9.7 6.5, 10.5 3.5, 12 1 Z"
-          fill={on ? "var(--color-lantern)" : "var(--t-line)"}
+          fill={on ? "var(--color-lantern)" : "var(--t-flame-off, var(--t-line))"}
           stroke={on ? "#ffd98a" : "none"}
           strokeOpacity={0.9}
           strokeWidth={1.2}

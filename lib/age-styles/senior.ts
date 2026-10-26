@@ -186,20 +186,22 @@ export const senior: AgeStyle = {
     // The adventure: the valley grown into a long journey (art/panorama.py), cut into depth layers
     world: {
       name: "the gloaming valley",
-      width: 1344,
+      // the valley grown into a journey: meadow, footbridge, the great tree, mist, standing stones, the overlook
+      // (art/panorama.py + panorama_join.py + seams.py + mist_veil.py, then grade.py and layers.py)
+      width: 4032,
       height: 768,
       layers: [0, 1, 2, 3].map((k) => ({
-        id: `valley-${k}`,
-        dark: `/art/senior/valley-${k}-dark.webp`,
-        lit: `/art/senior/valley-${k}-lit.webp`,
+        id: `journey-${k}`,
+        dark: `/art/senior/journey-${k}-dark.webp`,
+        lit: `/art/senior/journey-${k}-lit.webp`,
         depth: k / 3,
       })),
       path: [
-        [0, 0.7],
-        [1, 0.7],
+        [0, 0.74],
+        [1, 0.74],
       ],
-      start: 0.3,
-      end: 0.75,
+      start: 0.16,
+      end: 0.93,
       fog: "#7fa294",
       firefly: "#ffd98a",
       // painted with FLUX (art/prompts.py SHRINE, seed 40), cut out by art/cutout.py; the candle sits in its niche

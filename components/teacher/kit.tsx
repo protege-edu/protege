@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, type ButtonHTMLAttributes, type ReactNode } from "react";
+import { InkButton } from "@/components/ui/InkButton";
+import { Wordmark } from "@/components/ui/Wordmark";
 
 /* ---------------- fetch helper ---------------- */
 
@@ -21,15 +23,11 @@ export const json = (method: string, body: unknown): RequestInit => ({ method, h
 
 /* ---------------- buttons ---------------- */
 
-type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "quiet" | "danger" };
-export function Button({ variant = "primary", className = "", ...props }: ButtonProps) {
-  const look =
-    variant === "primary"
-      ? "bg-accent text-accent-ink hover:bg-accent-hover"
-      : variant === "danger"
-        ? "text-accent hover:bg-chip"
-        : "text-ink hover:bg-chip border border-line";
-  return <button type="button" {...props} className={`min-h-11 cursor-pointer rounded-md px-4 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-50 ${look} ${className}`} />;
+type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "quiet" | "danger"; children: ReactNode };
+/** The same cut-paper buttons as the game (components/ui/InkButton), in the teacher's colours */
+export function Button({ variant = "primary", className = "", type = "button", ...props }: ButtonProps) {
+  if (variant === "danger") return <InkButton type={type} variant="ghost" {...props} className={`!text-[#9b2c2c] ${className}`} />;
+  return <InkButton type={type} variant={variant} {...props} className={className} />;
 }
 
 /* ---------------- the page shell ---------------- */
@@ -44,8 +42,8 @@ export function Shell({ children, title, back }: { children: ReactNode; title?: 
   return (
     <div className="mx-auto max-w-[1100px] px-5 pb-20 sm:px-8">
       <header className="flex items-center justify-between gap-4 border-b border-line py-4">
-        <Link href="/teacher" className="voice text-md font-bold text-ink" style={{ ["--voice-width" as string]: 108 }}>
-          protégé
+        <Link href="/teacher" className="text-lg text-ink" aria-label="Protégé, teacher home">
+          <Wordmark />
         </Link>
         <nav className="flex items-center gap-1 text-sm" aria-label="Teacher">
           <span className="mr-2 hidden text-ink-dim sm:inline">Teacher</span>
@@ -94,8 +92,8 @@ export function TeacherGate({ children }: { children: ReactNode }) {
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-[400px] flex-col justify-center px-6">
-      <p className="voice text-lg font-bold text-ink" style={{ ["--voice-width" as string]: 110 }}>
-        protégé
+      <p className="text-2xl text-ink">
+        <Wordmark />
       </p>
       <h1 className="mt-6 text-lg font-bold text-ink">{state === "setup" ? "Set up the teacher side" : "Teacher sign in"}</h1>
       <p className="mt-2 text-sm text-ink-dim">

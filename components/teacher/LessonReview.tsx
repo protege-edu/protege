@@ -192,7 +192,7 @@ export function LessonReview({ id }: { id: string }) {
 
           {/* everything to check, in one place */}
           {(row.problems.length > 0 || (bp.reviewNotes?.length ?? 0) > 0) && (
-            <section aria-labelledby="checks" className="mt-6 rounded-lg border border-[#e0b871] bg-[#fbf0d9] p-5">
+            <section aria-labelledby="checks" className="mt-6 rounded-lg border border-[#d9b36a] bg-[#f8eed8] p-5">
               <h2 id="checks" className="text-md font-bold text-[#6b4510]">
                 Check before approving
               </h2>

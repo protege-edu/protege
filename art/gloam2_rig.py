@@ -159,8 +159,9 @@ def main():
     lan_a = alpha * ell_mask(shape, [LANTERN], 1.5)
     lsize = save(rgb, lan_a, LANTERN_BOX, os.path.join(out, "gloam2-lantern-lit.webp"))
     hsv = cv2.cvtColor(rgb, cv2.COLOR_RGB2HSV).astype(np.float32)
-    hsv[..., 1] *= 0.35
-    hsv[..., 2] = hsv[..., 2] * 0.42
+    # unlit paper: still reads as a paper lantern (pale, cool, a little see-through), just no light in it
+    hsv[..., 1] *= 0.32
+    hsv[..., 2] = hsv[..., 2] * 0.62 + 18
     dark = cv2.cvtColor(hsv.clip(0, 255).astype(np.uint8), cv2.COLOR_HSV2RGB).astype(np.float32)
     dark = (dark * np.array([0.92, 1.0, 1.08])).clip(0, 255).astype(np.uint8)  # a little cooler
     save(dark, lan_a, LANTERN_BOX, os.path.join(out, "gloam2-lantern-dark.webp"))
