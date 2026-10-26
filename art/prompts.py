@@ -78,3 +78,11 @@ CONCEPTS = {
     "c5_owl": "a small round puffball creature with slate-blue and cream feathery down, two pointed ear tufts like a tiny owl, a pale face disc, " + _CONCEPT_TAIL,
     "c6_ember": "a small round creature with soft charcoal fur and a warm dark-red ember glow showing through the fur on its chest, two small horn-like nubs, " + _CONCEPT_TAIL,
 }
+
+# The checkpoint shrine: one per idea on the journey (a candle is drawn on top in code, and lit by teaching)
+SHRINE = (
+    "a single small old stone shrine, a short stack of three rounded mossy river stones with a flat stone slab on top, "
+    "patches of moss and lichen, a few blades of grass at its base, standing alone, front view, centered, full object visible, "
+    "night, cool blue-green moonlight, hand-painted, gouache and oil brushwork, soft painterly shading, indie game prop design, "
+    "isolated on a plain flat very dark teal background, no text, no watermark, no candle, no fire"
+)

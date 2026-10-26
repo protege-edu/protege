@@ -7,7 +7,8 @@ import { Sheet } from "@/components/ui/Sheet";
 import { TrailStrip } from "@/components/ui/TrailStrip";
 import { Wordmark } from "@/components/ui/Wordmark";
 import type { AgeStyle } from "@/lib/age-styles";
-import type { ClientLesson, RecapItem } from "@/lib/lesson/types";
+import type { GloamLevel } from "@/lib/companion/level";
+import type { ClientLesson, Level, RecapItem } from "@/lib/lesson/types";
 import { useCalmMotion } from "@/lib/useCalmMotion";
 import type { Entry } from "./useTeachSession";
 
@@ -67,14 +68,12 @@ export function TitleScreen({
 
 /* ---------------- Top bar while teaching ---------------- */
 
-export function TopBar({ style, lesson, lit, onPause }: { style: AgeStyle; lesson: ClientLesson; lit: number; onPause: () => void }) {
-  const total = lesson.concepts.length;
-  const current = Math.min(lit, total - 1);
+export function TopBar({ style, lesson, levels, current, onPause }: { style: AgeStyle; lesson: ClientLesson; levels: Level[]; current: number; onPause: () => void }) {
   return (
     <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-4 bg-[linear-gradient(180deg,rgb(5_10_8/0.7),transparent)] px-4 pt-3 pb-10 sm:px-6">
       <div className="min-w-0">
         <h1 className="truncate text-sm font-bold text-ink">{lesson.title}</h1>
-        <TrailStrip total={total} lit={lit} current={current} label={`${style.copy.chapter(current + 1)} of ${total}. ${lit} lit.`} />
+        <TrailStrip style={style} concepts={lesson.concepts} levels={levels} current={Math.min(current, lesson.concepts.length - 1)} />
       </div>
       <InkButton variant="quiet" onClick={onPause} aria-keyshortcuts="Escape" className="pointer-events-auto">
         {style.copy.pause}
@@ -261,17 +260,35 @@ export function LogDrawer({ style, entries, onClose }: { style: AgeStyle; entrie
   );
 }
 
-/* ---------------- The ending ---------------- */
+/* ---------------- The ending: Gloam's journal ---------------- */
 
+/** A small hand-drawn flame: an idea Gloam now understands (gold = understanding) */
+function FlameMark() {
+  return (
+    <svg viewBox="0 0 20 28" className="mt-0.5 h-6 w-4 shrink-0" aria-hidden="true">
+      <circle cx="10" cy="17" r="10" fill="var(--color-lantern)" opacity="0.16" />
+      <path d="M11 1 C 8 7, 16 10, 16 17 C 16 23, 11 26, 9 25.5 C 4.5 24.5, 3 20.5, 4 17 C 5 13.5, 8 12.5, 9 9 C 9.6 6.5, 10 3.5, 11 1 Z" fill="var(--color-lantern)" />
+      <path d="M10 12 C 9.5 15, 12.5 16.5, 12 20 C 11.5 22.5, 8.5 23, 7.5 21 C 6.8 19, 8.6 17, 10 12 Z" fill="#fff4d6" opacity="0.85" />
+    </svg>
+  );
+}
+
+/**
+ * The finale's recap, as pages of Gloam's journal: everything the student taught it, in plain words.
+ * Written from the approved lesson (never by the AI), so students always leave with the right ideas.
+ * Gloam's lantern level shows as words and light, never as a bar.
+ */
 export function EndingPanel({
   style,
   recap,
+  gloam,
   onTeachAgain,
   onTitle,
   onKeepTalking,
 }: {
   style: AgeStyle;
   recap: RecapItem[];
+  gloam: GloamLevel;
   onTeachAgain: () => void;
   onTitle: () => void;
   onKeepTalking: () => void;
@@ -279,49 +296,70 @@ export function EndingPanel({
   const calm = useCalmMotion();
   const first = useRef<HTMLButtonElement>(null);
   useEffect(() => first.current?.focus({ preventScroll: true }), []);
+  const toGo = gloam.next === null ? null : gloam.next - gloam.light;
   return (
     <motion.section
       aria-labelledby="ending-title"
-      className="absolute inset-y-0 right-0 z-20 flex w-full flex-col p-3 md:w-[min(500px,42vw)]"
-      initial={calm ? false : { x: 60, opacity: 0 }}
-      animate={{ x: 0, opacity: 1 }}
-      transition={{ type: "spring", stiffness: 120, damping: 22, delay: calm ? 0 : 0.3 }}
+      className="absolute inset-y-0 right-0 z-20 flex w-full flex-col p-3 md:w-[min(520px,44vw)]"
+      initial={calm ? false : { x: 60, opacity: 0, rotate: 1.5 }}
+      animate={{ x: 0, opacity: 1, rotate: 0 }}
+      transition={{ type: "spring", stiffness: 110, damping: 20, delay: calm ? 0 : 0.3 }}
     >
-      <Sheet seed="ending" radius={22} className="flex min-h-0 flex-1 flex-col">
-      <div className="flex h-[calc(100dvh-24px)] flex-col">
-      <div className="flex-1 overflow-y-auto px-6 pt-8 pb-4 md:px-8">
-      <p className="voice text-xs font-bold text-lantern">{style.copy.finaleWord}</p>
-      <h2 id="ending-title" className="voice mt-2 text-lg text-ink" style={{ ["--casual" as string]: 1, ["--voice-weight" as string]: 750 }}>
-        {style.copy.recapTitle}
-      </h2>
-      <p className="mt-2 text-sm text-ink-dim">{style.copy.recapIntro}</p>
-      <ul className="mt-5 space-y-4">
-        {recap.map((r, i) => (
-          <motion.li
-            key={r.id}
-            className="border-l-2 border-lantern pl-4"
-            initial={calm ? false : { opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: calm ? 0 : 0.6 + i * 0.12 }}
-          >
-            <span className="block text-sm font-bold text-ink">{r.name}</span>
-            <span className="text-sm text-ink-dim">{r.text}</span>
-          </motion.li>
-        ))}
-      </ul>
-      </div>
-      <div className="flex flex-wrap gap-2 border-t border-dashed border-line px-6 py-4 md:px-8">
-        <InkButton ref={first} onClick={onKeepTalking}>
-          {style.copy.resume}
-        </InkButton>
-        <InkButton variant="quiet" onClick={onTeachAgain}>
-          {style.copy.teachAgain}
-        </InkButton>
-        <InkButton variant="ghost" onClick={onTitle}>
-          {style.copy.backToTitle}
-        </InkButton>
-      </div>
-      </div>
+      <Sheet seed="journal" tone="slate" radius={22} className="flex min-h-0 flex-1 flex-col">
+        <div className="flex h-[calc(100dvh-24px)] flex-col">
+          {/* faint ruled lines, like a real journal page */}
+          <div className="flex-1 overflow-y-auto bg-[repeating-linear-gradient(180deg,transparent_0,transparent_31px,rgb(211_221_214/0.07)_31px,rgb(211_221_214/0.07)_32px)] px-6 pt-8 pb-4 md:px-8">
+            <p className="voice text-sm text-[var(--color-lantern)]" style={{ ["--casual" as string]: 1, ["--slant" as string]: -8 }}>
+              {style.copy.finaleWord}
+            </p>
+            <h2 id="ending-title" className="voice mt-1 text-xl text-ink" style={{ ["--casual" as string]: 1, ["--voice-weight" as string]: 800, ["--slant" as string]: -4 }}>
+              {style.copy.recapTitle.toLowerCase()}
+            </h2>
+            <p className="mt-2 text-sm text-ink-dim">{style.copy.recapIntro}</p>
+            <ol className="mt-6 space-y-5">
+              {recap.map((r, i) => (
+                <motion.li
+                  key={r.id}
+                  className="flex gap-3"
+                  initial={calm ? false : { opacity: 0, y: 10, filter: "blur(4px)" }}
+                  animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                  transition={{ delay: calm ? 0 : 0.7 + i * 0.22, duration: 0.6 }}
+                >
+                  <FlameMark />
+                  <span>
+                    <span className="block text-sm font-bold text-ink">{r.name}</span>
+                    <span className="text-sm text-ink-dim">{r.text}</span>
+                  </span>
+                </motion.li>
+              ))}
+            </ol>
+            <motion.div
+              className="mt-8 border-t border-dashed border-line pt-4"
+              initial={calm ? false : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: calm ? 0 : 0.9 + recap.length * 0.22 }}
+            >
+              <p className="voice text-md text-ink" style={{ ["--casual" as string]: 1, ["--slant" as string]: -6 }}>
+                {style.id === "senior" ? `gloam's lantern: level ${gloam.level}` : `Gloam's lantern: level ${gloam.level}`}
+              </p>
+              <p className="mt-1 text-sm text-ink-dim">
+                You&apos;ve taught Gloam {gloam.light} {gloam.light === 1 ? "idea" : "ideas"} so far.
+                {toGo !== null && ` ${toGo} more and its lantern grows again.`}
+              </p>
+            </motion.div>
+          </div>
+          <div className="flex flex-wrap gap-2 border-t border-dashed border-line px-6 py-4 md:px-8">
+            <InkButton ref={first} onClick={onKeepTalking}>
+              {style.copy.resume}
+            </InkButton>
+            <InkButton variant="quiet" onClick={onTeachAgain}>
+              {style.copy.teachAgain}
+            </InkButton>
+            <InkButton variant="ghost" onClick={onTitle}>
+              {style.copy.backToTitle}
+            </InkButton>
+          </div>
+        </div>
       </Sheet>
     </motion.section>
   );

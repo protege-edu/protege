@@ -178,10 +178,16 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle) {
   const start = useCallback(() => {
     if (resumable) {
       setPhase(finished ? "ending" : "teach");
+      // Gloam waited at its checkpoint: it says hi (a hand-written line, not saved)
+      if (!finished) {
+        const line = pickLine(style.lines.welcomeBack, fill, []);
+        setEmotion("sheepish");
+        setEntries((xs) => [...xs, { id: nextId(), kind: "gloam", text: line, emotion: "sheepish", fresh: true }]);
+      }
       return;
     }
     setPhase("intro");
-  }, [resumable, finished]);
+  }, [resumable, finished, style, fill]);
 
   const finishIntro = useCallback(() => {
     setPhase("teach");

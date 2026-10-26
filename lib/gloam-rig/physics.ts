@@ -42,6 +42,8 @@ export interface Pt {
 export class Stalk {
   pts: Pt[];
   prev: Pt[];
+  /** false = snap straight to the resting curl on the next step (first frame, or after a jump) */
+  settled = false;
   constructor(
     /** resting shape, relative to the base, base first (in px, y down) */
     public rest: Pt[],
@@ -57,6 +59,14 @@ export class Stalk {
     const s = Math.sin(angle);
     const k = 1 - Math.pow(1 - this.stiffness, dt * 60);
     const n = this.pts.length;
+    if (!this.settled) {
+      for (let i = 0; i < n; i++) {
+        const r = this.rest[i];
+        this.pts[i] = { x: base.x + r.x * c - r.y * s, y: base.y + r.x * s + r.y * c };
+        this.prev[i] = { ...this.pts[i] };
+      }
+      this.settled = true;
+    }
     for (let i = 0; i < n; i++) {
       // where this point "wants" to be: the rest curl, rotated with the head, plus a gentle breeze
       const r = this.rest[i];
@@ -132,5 +142,10 @@ export class Pendulum {
   }
   kick(v: number) {
     this.vel += v;
+  }
+  /** forget the anchor's motion (after a jump), so it doesn't fling */
+  reset() {
+    this.last = null;
+    this.lastV = { x: 0, y: 0 };
   }
 }

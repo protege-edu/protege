@@ -2,7 +2,7 @@
 
 import { motion } from "motion/react";
 import dynamic from "next/dynamic";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Gloam } from "@/components/gloam/Gloam";
 import { GloamPainted, PAINTED_RIG } from "@/components/gloam/GloamPainted";
 import { GloamPainterly } from "@/components/gloam/GloamPainterly";
@@ -14,8 +14,21 @@ import type { AgeStyle } from "@/lib/age-styles";
 import type { ClientConcept, Level } from "@/lib/lesson/types";
 import { useCalmMotion } from "@/lib/useCalmMotion";
 
-// The painted, GPU-rendered world only loads in the browser
+// The painted, GPU-rendered worlds only load in the browser
 const CinematicValley = dynamic(() => import("@/components/cinema/CinematicValley").then((m) => m.CinematicValley), { ssr: false });
+const JourneyWorld = dynamic(() => import("@/components/cinema/JourneyWorld").then((m) => m.JourneyWorld), { ssr: false });
+
+/** What the adventure needs to know (only used by age styles with a world + rig) */
+export interface JourneyState {
+  talking: boolean;
+  waiting: boolean;
+  level: number;
+  /** each idea's level, in lesson order (one shrine each) */
+  levels: number[];
+  /** the shrine Gloam walks to: the first idea it doesn't get yet */
+  stop: number;
+  onWalking?: (walking: boolean) => void;
+}
 
 // Each Gloam skin's proportions: width/height, and where its feet and lantern are (fractions of its height;
 // lanternDX is the lantern's offset from centre as a fraction of its width)
@@ -64,6 +77,7 @@ export function Stage({
   gloamScale = 1,
   showCandles,
   onGloamBox,
+  journey,
   children,
 }: {
   style: AgeStyle;
@@ -80,6 +94,7 @@ export function Stage({
   showCandles: boolean;
   /** Where Gloam is on screen (px), so speech panels can point at it */
   onGloamBox?: (box: GloamBox) => void;
+  journey?: JourneyState;
   children?: ReactNode;
 }) {
   const calm = useCalmMotion();
@@ -111,14 +126,37 @@ export function Stage({
   const gloamW = gloamH * geo.aspect;
   const gloamTop = groundY - gloamH * geo.feet;
   const cx = (size?.w ?? 0) * focus;
+  // The adventure world draws Gloam itself (the animated rig) and reports where it is
+  const world = useMemo(() => (style.look.world && style.look.rig ? { world: style.look.world, rig: style.look.rig } : null), [style]);
   useEffect(() => {
-    if (!size) return;
+    if (!size || world) return;
     onGloamBox?.({ cx, top: gloamTop, w: gloamW, h: gloamH, stageW: size.w, stageH: size.h });
-  }, [size, cx, gloamTop, gloamW, gloamH, onGloamBox]);
+  }, [size, cx, gloamTop, gloamW, gloamH, onGloamBox, world]);
+  // in the adventure, the shrines along the path (and the trail strip) are the candles
+  const onJourneyBox = useCallback((b: GloamBox) => onGloamBox?.(b), [onGloamBox]);
 
   return (
     <section ref={box} aria-label="Gloam's valley" className="absolute inset-0 overflow-hidden bg-bg">
-      {scene ? (
+      {world && journey ? (
+        <JourneyWorld
+          world={world.world}
+          rig={world.rig}
+          mood={mood}
+          typingTick={typingTick}
+          eurekaTick={eurekaTick}
+          talking={journey.talking}
+          waiting={journey.waiting}
+          light={brightness}
+          level={journey.level}
+          levels={journey.levels}
+          stop={journey.stop}
+          focus={focus}
+          groundAt={groundAt}
+          gloamHeight={gloamH * 0.95}
+          onGloamBox={onJourneyBox}
+          onWalking={journey.onWalking}
+        />
+      ) : scene ? (
         <CinematicValley scene={scene} brightness={brightness} focus={focus} eurekaTick={eurekaTick} lanternY={lanternY} lanternDX={lanternDX} groundAt={groundAt} />
       ) : painterly ? (
         <NightValley brightness={brightness} cx={focus} />
@@ -126,7 +164,7 @@ export function Stage({
         <Diorama brightness={brightness} />
       )}
 
-      {size && (
+      {size && !world && (
         <>
           {/* Gloam stands on the ground and walks between shots */}
           <motion.div

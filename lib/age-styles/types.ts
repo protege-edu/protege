@@ -31,6 +31,37 @@ export interface CinematicScene {
   firefly: string;
 }
 
+/**
+ * The adventure: a long painted panorama Gloam walks across, with a checkpoint shrine for each idea.
+ * Same painting rules as CinematicScene (dark + lit copies of every depth layer).
+ */
+export interface JourneyWorld {
+  name: string;
+  width: number;
+  height: number;
+  layers: { id: string; dark: string; lit: string; depth: number }[];
+  /** Where the path is down the painting (0..1), sampled across it (0..1) */
+  path: [number, number][];
+  /** Where the journey starts and ends across the painting (0..1); shrines are spread between */
+  start: number;
+  end: number;
+  fog: string;
+  firefly: string;
+  /** Short, hand-written things Gloam notices while walking between checkpoints (no AI) */
+  travel: string[];
+  /** The painted shrine that stands at each checkpoint; its candle (drawn in code) burns at the idea's level */
+  shrine: {
+    src: string;
+    w: number;
+    h: number;
+    /** where it stands on the ground, and where the candle sits, in its own image */
+    base: [number, number];
+    candle: [number, number];
+    /** how tall it is next to Gloam (fraction of Gloam's height) */
+    scale: number;
+  };
+}
+
 export interface AgeStyle {
   id: AgeStyleId;
   /** Shown to teachers: "Grades 9–12" */
@@ -72,6 +103,10 @@ export interface AgeStyle {
     copied: Line[];
     /** When the AI fails twice */
     brainGlitch: Line[];
+    /** Coming back to a lesson part-way (Gloam waited at its checkpoint) */
+    welcomeBack: Line[];
+    /** Gloam's lantern just grew (it levelled up from everything this student taught it) */
+    levelUp: Line[];
   };
 
   /** Every word on screen comes from here */
@@ -138,6 +173,8 @@ export interface AgeStyle {
     candleLabels: boolean;
     /** The painted, cinematic world. Without it, the simpler vector valley is used. */
     scene?: CinematicScene;
+    /** The adventure world (Phase 3). With it, Gloam walks from checkpoint to checkpoint. */
+    world?: JourneyWorld;
   };
 
   celebrate: {

@@ -7,11 +7,19 @@ import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import { BUILT_IN } from "@/lib/lesson";
 import * as schema from "./schema";
 
-const DATA_DIR = path.join(process.cwd(), "data");
-const DB_FILE = path.join(DATA_DIR, "protege.db");
+import { OLD_DB_FILE, dbFile, ensureDataDir } from "./location";
 
 function open() {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
+  ensureDataDir();
+  const DB_FILE = dbFile();
+  // One time: bring the database along from its old place inside the project (data/protege.db)
+  if (!fs.existsSync(DB_FILE) && fs.existsSync(OLD_DB_FILE)) {
+    const old = new Database(OLD_DB_FILE);
+    old.pragma("wal_checkpoint(TRUNCATE)");
+    old.close();
+    fs.copyFileSync(OLD_DB_FILE, DB_FILE);
+    fs.writeFileSync(path.join(path.dirname(OLD_DB_FILE), "MOVED.txt"), `Protégé's database now lives at ${DB_FILE}\nThis old copy isn't used any more. You can delete this folder.\n`);
+  }
   const sqlite = new Database(DB_FILE);
   // WAL lets many students read while one writes. Matters for Phase 4 classroom mode.
   sqlite.pragma("journal_mode = WAL");

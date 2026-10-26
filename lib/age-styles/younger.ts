@@ -74,6 +74,8 @@ const storybookLines = (simple: boolean): AgeStyle["lines"] => ({
   blocked: ["Let's keep it school-friendly! {question}", "Hmm, let's talk about {topic} instead. {question}"],
   care: "That sounds really hard. Please tell your teacher or a grown-up you trust how you're feeling. They want to help.",
   victoryLap: ["Look how bright my lantern is! You did that!", "I understand it now, because of you!"],
+  welcomeBack: simple ? ["You came back! I waited by the candle!"] : ["you're back! i saved your spot by the candle."],
+  levelUp: simple ? ["My lantern got BIGGER! Because of you!"] : ["whoa, my lantern grew! that's all your teaching!"],
   copied: simple
     ? ["Those are big words! Can you tell me in your words?", "Hmm, say it like you'd tell a friend!"]
     : ["whoa, that sounds like a textbook. say it your way? i learn better from you.", "that's a lot of fancy words. how would YOU explain it?"],

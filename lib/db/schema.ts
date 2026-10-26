@@ -2,7 +2,7 @@ import { integer, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core"
 import type { LessonBlueprint } from "@/lib/lesson/types";
 
 /**
- * Everything is stored on this machine in data/protege.db.
+ * Everything is stored on this machine, in the app-data folder (lib/db/location.ts).
  * No real names, emails or birthdays, ever. Students are nicknames only.
  *
  * Designed so later ideas need no rewrite:

@@ -11,9 +11,10 @@ import { drizzle } from "drizzle-orm/better-sqlite3";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import { eq, inArray, like } from "drizzle-orm";
 import { classLessons, classes, conceptEvents, lessons, messages, students, teachSessions } from "@/lib/db/schema";
+import { dbFile } from "@/lib/db/location";
 import { seasons } from "@/lib/lesson/seasons";
 
-const db = drizzle(new Database(path.join(process.cwd(), "data", "protege.db")));
+const db = drizzle(new Database(dbFile()));
 migrate(db, { migrationsFolder: path.join(process.cwd(), "drizzle") });
 
 const NICKNAMES = ["Pixel Fox", "Quiet Owl", "Comet", "Mango", "Static", "Bramble", "Nova", "Pebble", "Tango", "Juniper", "Echo", "Wren"];

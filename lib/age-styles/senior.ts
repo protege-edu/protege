@@ -1,3 +1,4 @@
+import { seniorGloam } from "./rigs/senior-gloam";
 import type { AgeStyle } from "./types";
 
 /**
@@ -94,6 +95,16 @@ export const senior: AgeStyle = {
       "honestly? good teaching. don't let it go to your head.",
       "i'd say i taught myself, but we both know that's a lie.",
     ],
+    welcomeBack: [
+      "oh. you're back. i kept the candle warm. sort of.",
+      "you left. i stood here. it was fine. completely fine.",
+      "welcome back. i've been rehearsing being confused.",
+    ],
+    levelUp: [
+      "my lantern got bigger. don't make it weird.",
+      "is it me or is this thing brighter. it's brighter. that's you.",
+      "level up. i'd act cool about it but i'm literally glowing.",
+    ],
     copied: [
       "that sounds very official. i only understand you, though. say it your way?",
       "i tried to read that and my lantern got nervous. explain it like you'd text me.",
@@ -170,7 +181,38 @@ export const senior: AgeStyle = {
 
   look: {
     theme: "senior",
-    gloamSkin: "painted",
+    gloamSkin: "rig",
+    rig: seniorGloam,
+    // The adventure: the valley grown into a long journey (art/panorama.py), cut into depth layers
+    world: {
+      name: "the gloaming valley",
+      width: 1344,
+      height: 768,
+      layers: [0, 1, 2, 3].map((k) => ({
+        id: `valley-${k}`,
+        dark: `/art/senior/valley-${k}-dark.webp`,
+        lit: `/art/senior/valley-${k}-lit.webp`,
+        depth: k / 3,
+      })),
+      path: [
+        [0, 0.7],
+        [1, 0.7],
+      ],
+      start: 0.3,
+      end: 0.75,
+      fog: "#7fa294",
+      firefly: "#ffd98a",
+      // painted with FLUX (art/prompts.py SHRINE, seed 40), cut out by art/cutout.py; the candle sits in its niche
+      shrine: { src: "/art/senior/shrine.webp", w: 491, h: 391, base: [249, 373], candle: [249, 250], scale: 0.62 },
+      travel: [
+        "walking. love that for me.",
+        "the path's darker up here. great. very normal.",
+        "if a moth jumps out i'm going home.",
+        "i'm not scared. the lantern is scared.",
+        "my legs are short. this valley is long. noted.",
+        "next candle. same deal: you explain, i pretend i knew.",
+      ],
+    },
     motion: 0.75,
     voiceAxis: "casual",
     candleLabels: false,

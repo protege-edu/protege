@@ -5,6 +5,11 @@ import { Sheet } from "@/components/ui/Sheet";
 import { TrailStrip } from "@/components/ui/TrailStrip";
 import { Wordmark } from "@/components/ui/Wordmark";
 import { TypedLine } from "@/components/game/TypedLine";
+import { senior } from "@/lib/age-styles/senior";
+import { toClientLesson } from "@/lib/lesson";
+import { seasons as seasonsBlueprint } from "@/lib/lesson/seasons";
+
+const seasons = toClientLesson(seasonsBlueprint);
 
 const SWATCHES = [
   ["night moss", "#0d1613"],
@@ -21,7 +26,7 @@ export function StyleTile() {
       <div className="flex flex-wrap items-end gap-12">
         <Wordmark className="text-3xl text-ink" />
         <Wordmark lit={1} className="text-3xl text-ink" />
-        <TrailStrip total={5} lit={2} current={2} label="Checkpoint 3 of 5" />
+        <TrailStrip style={senior} concepts={seasons.concepts} levels={[3, 3, 1, 2, 0]} current={2} />
       </div>
 
       <div className="mt-8 flex flex-wrap gap-3">

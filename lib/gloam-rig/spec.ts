@@ -35,15 +35,16 @@ export interface RigSpec {
     cheekColor: string;
     cheekR: number;
   };
+  /** painted arms and legs, each turning around its own pivot (where it joins the body) */
   arms: {
-    shoulders: [[number, number], [number, number]];
-    length: number;
-    thick: number;
+    l: Limb;
+    r: Limb;
+    /** the resting angle of the painted arms, degrees out from straight down */
+    rest: number;
   };
-  feet: {
-    at: [[number, number], [number, number]];
-    w: number;
-    h: number;
+  legs: {
+    l: Limb;
+    r: Limb;
   };
   stalk: {
     base: [number, number];
@@ -54,6 +55,8 @@ export interface RigSpec {
     dark: string;
   };
   lantern: {
+    /** how tall the lantern is, as a fraction of Gloam's body height */
+    scale: number;
     lit: string;
     dark: string;
     w: number;
@@ -63,4 +66,12 @@ export interface RigSpec {
     /** the flame's centre, in its own image (where the light comes from) */
     flame: [number, number];
   };
+}
+
+export interface Limb {
+  src: string;
+  /** the joint, in the limb's own image */
+  pivot: [number, number];
+  /** where the joint sits on the body */
+  at: [number, number];
 }
