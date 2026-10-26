@@ -1,14 +1,22 @@
 import "server-only";
 import { z } from "zod";
-import { isTeacher } from "./auth";
+import { forbidden, sameOrigin } from "@/lib/auth/request";
+import { currentTeacher, type Teacher } from "./auth";
 
-/** Every teacher API route starts with this: only a signed-in teacher gets through. */
-export async function requireTeacher(): Promise<Response | null> {
-  if (await isTeacher()) return null;
+/**
+ * Every teacher API route starts with this: only a signed-in teacher gets through, and only for
+ * requests that came from Protégé's own pages. Returns the teacher, or the response to send back.
+ *   const me = await requireTeacher(request); if (me instanceof Response) return me;
+ */
+export async function requireTeacher(request?: Request): Promise<Teacher | Response> {
+  if (request && !sameOrigin(request)) return forbidden();
+  const t = await currentTeacher();
+  if (t) return t;
   return Response.json({ error: "Please sign in to the teacher side first." }, { status: 401 });
 }
 
 export const bad = (error: string, status = 400) => Response.json({ error }, { status });
+export const notYours = () => bad("We couldn't find that. It might belong to another teacher.", 404);
 
 /** What a teacher's edited blueprint must look like before we save it */
 export const BlueprintInput = z.object({

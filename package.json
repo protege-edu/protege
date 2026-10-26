@@ -10,7 +10,9 @@
     "typecheck": "tsc --noEmit",
     "eval": "tsx scripts/companion-eval.ts",
     "screenshots": "tsx scripts/screenshot.ts",
-    "test:logic": "tsx scripts/check-logic.ts"
+    "test:logic": "tsx scripts/check-logic.ts",
+    "test:accounts": "tsx --conditions=react-server scripts/check-accounts.ts",
+    "reset-teacher": "tsx --conditions=react-server scripts/reset-teacher.ts"
   },
   "dependencies": {
     "better-sqlite3": "^13.0.3",

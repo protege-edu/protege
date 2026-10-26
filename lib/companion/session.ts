@@ -1,6 +1,6 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
-import { asc, eq } from "drizzle-orm";
+import { and, asc, desc, eq } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { conceptEvents, gloams, messages, students, teachSessions } from "@/lib/db/schema";
 import { lessonRecap } from "@/lib/lesson";
@@ -32,7 +32,14 @@ export interface SessionState {
  * remembered by an id in the browser so their Gloam keeps growing across lessons.
  * No real student data, ever.
  */
-export function createSession(lessonId: string, existingStudentId?: string): SessionState {
+/** A signed-in student's session for a lesson, if they've started it before (any Chromebook) */
+export function findSession(studentId: string, lessonId: string): SessionState | null {
+  // the most recent one ("start over" makes a new one)
+  const row = db.select({ id: teachSessions.id }).from(teachSessions).where(and(eq(teachSessions.studentId, studentId), eq(teachSessions.lessonId, lessonId))).orderBy(desc(teachSessions.createdAt)).get();
+  return row ? getSession(row.id) : null;
+}
+
+export function createSession(lessonId: string, existingStudentId?: string, classId?: string): SessionState {
   const lesson = getApprovedLesson(lessonId);
   if (!lesson) throw new Error("Students can only start approved lessons.");
   const now = new Date();
@@ -45,7 +52,7 @@ export function createSession(lessonId: string, existingStudentId?: string): Ses
     if (!known) tx.insert(students).values({ id: studentId, nickname: "Test Pilot", createdAt: now }).run();
     tx.insert(gloams).values({ studentId, updatedAt: now }).onConflictDoNothing().run();
     tx.insert(teachSessions)
-      .values({ id: sessionId, studentId, lessonId, understanding, createdAt: now, updatedAt: now })
+      .values({ id: sessionId, studentId, lessonId, classId: classId ?? null, understanding, createdAt: now, updatedAt: now })
       .run();
     tx.insert(messages).values({ sessionId, from: "gloam", text: lesson.opener, emotion: "proud", createdAt: now }).run();
   });

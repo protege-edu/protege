@@ -152,7 +152,45 @@ export function TeacherHome() {
           ))}
         </ul>
       </section>
+
+      <InviteTeacher />
     </Shell>
+  );
+}
+
+/** Another teacher at the school wants in: a one-use code they type when they make their account */
+function InviteTeacher() {
+  const [invite, setInvite] = useState<{ code: string; expires: string } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const make = async () => {
+    const res = await api<{ code: string; expires: string }>("/api/teacher/invite", json("POST", {}));
+    if (!res.ok) return setError(res.error);
+    setInvite(res.data);
+  };
+  return (
+    <section className="mt-12" aria-labelledby="invite-title">
+      <h2 id="invite-title" className="text-lg font-bold text-ink">
+        Invite a teacher
+      </h2>
+      <p className="mt-1 max-w-[60ch] text-sm text-ink-dim">
+        Other teachers need an invite code to make an account here. Each code works once and lasts a week. Their classes and lessons stay separate from yours.
+      </p>
+      {invite ? (
+        <p className="mt-4 text-sm text-ink" aria-live="polite">
+          Their code: <span className="ml-1 rounded-md border border-dashed border-line bg-panel px-3 py-1.5 font-mono text-md font-bold tracking-wider select-all">{invite.code}</span>
+          <span className="ml-3 text-ink-dim">works until {new Date(invite.expires).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}</span>
+        </p>
+      ) : (
+        <Button variant="quiet" className="mt-4" onClick={make}>
+          Make an invite code
+        </Button>
+      )}
+      {error && (
+        <p role="alert" className="mt-3 text-sm font-bold text-[#9b2c2c]">
+          {error}
+        </p>
+      )}
+    </section>
   );
 }
 

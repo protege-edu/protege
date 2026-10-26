@@ -5,8 +5,8 @@ const MAX_BYTES = 25 * 1024 * 1024;
 
 /** Upload a PDF / PowerPoint / Word file, or send pasted text. Returns its sections to pick from. */
 export async function POST(request: Request) {
-  const denied = await requireTeacher();
-  if (denied) return denied;
+  const me = await requireTeacher(request);
+  if (me instanceof Response) return me;
   try {
     const type = request.headers.get("content-type") ?? "";
     if (type.includes("multipart/form-data")) {

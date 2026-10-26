@@ -1,14 +1,36 @@
 import "server-only";
-import { randomUUID } from "node:crypto";
+import { randomInt, randomUUID } from "node:crypto";
 import { and, asc, eq, inArray } from "drizzle-orm";
 import { db } from "@/lib/db/client";
-import { classLessons, classes, conceptEvents, students, teachSessions } from "@/lib/db/schema";
+import { classLessons, classes, conceptEvents, gloams, messages, students, teachSessions } from "@/lib/db/schema";
 import type { Level, LessonBlueprint } from "@/lib/lesson/types";
 
 export type ClassRow = typeof classes.$inferSelect;
 
-export function listClasses() {
-  const rows = db.select().from(classes).orderBy(asc(classes.createdAt)).all();
+// Join codes: a short word and two numbers, like GLOW-42. Easy to read off a projector and say out loud.
+const WORDS = ["GLOW", "MOSS", "FERN", "MOTH", "STAR", "LAMP", "WICK", "OWL", "PINE", "MIST", "DUSK", "LEAF", "BEAM", "RAIN", "WAVE", "SEED", "HILL", "COVE", "REED", "ECHO"];
+
+export function newClassCode(): string {
+  for (;;) {
+    const code = `${WORDS[randomInt(WORDS.length)]}-${randomInt(10, 100)}`;
+    if (!db.select({ id: classes.id }).from(classes).where(eq(classes.code, code)).get()) return code;
+  }
+}
+
+/** Make the code look like ours, whatever a student typed ("glow 42", "Glow-42 ") */
+export function normalizeCode(raw: string): string {
+  const m = raw.toUpperCase().replace(/[^A-Z0-9]/g, "").match(/^([A-Z]+)(\d+)$/);
+  return m ? `${m[1]}-${m[2]}` : raw.toUpperCase().trim();
+}
+
+export function classByCode(raw: string) {
+  return db.select().from(classes).where(eq(classes.code, normalizeCode(raw))).get() ?? null;
+}
+
+export function listClasses(teacherId: string) {
+  const rows = db.select().from(classes).where(eq(classes.teacherId, teacherId)).orderBy(asc(classes.createdAt)).all();
+  // classes made before codes existed get one now
+  for (const c of rows) if (!c.code) db.update(classes).set({ code: (c.code = newClassCode()) }).where(eq(classes.id, c.id)).run();
   return rows.map((c) => ({
     ...c,
     students: db.select({ id: students.id }).from(students).where(eq(students.classId, c.id)).all().length,
@@ -16,13 +38,17 @@ export function listClasses() {
   }));
 }
 
-export function getClass(id: string) {
-  return db.select().from(classes).where(eq(classes.id, id)).get() ?? null;
+/** A class, only if it belongs to this teacher */
+export function getClass(id: string, teacherId: string) {
+  const c = db.select().from(classes).where(eq(classes.id, id)).get();
+  if (!c || c.teacherId !== teacherId) return null;
+  if (!c.code) db.update(classes).set({ code: (c.code = newClassCode()) }).where(eq(classes.id, c.id)).run();
+  return c;
 }
 
-export function createClass(name: string, grade: number) {
+export function createClass(name: string, grade: number, teacherId: string) {
   const id = randomUUID();
-  db.insert(classes).values({ id, name, grade, createdAt: new Date() }).run();
+  db.insert(classes).values({ id, name, grade, teacherId, code: newClassCode(), createdAt: new Date() }).run();
   return id;
 }
 
@@ -111,4 +137,20 @@ export function studentSessionId(classId: string, studentId: string, lessonId: s
       .where(and(eq(teachSessions.studentId, studentId), eq(teachSessions.lessonId, lessonId), eq(teachSessions.classId, classId)))
       .get()?.id ?? null
   );
+}
+
+/** Remove a student from a class, with everything they did (sessions, messages, candle history, their Gloam) */
+export function removeStudent(classId: string, studentId: string) {
+  const kid = db.select().from(students).where(and(eq(students.id, studentId), eq(students.classId, classId))).get();
+  if (!kid) return;
+  db.transaction((tx) => {
+    const sessions = tx.select({ id: teachSessions.id }).from(teachSessions).where(eq(teachSessions.studentId, studentId)).all().map((s) => s.id);
+    if (sessions.length) {
+      tx.delete(conceptEvents).where(inArray(conceptEvents.sessionId, sessions)).run();
+      tx.delete(messages).where(inArray(messages.sessionId, sessions)).run();
+      tx.delete(teachSessions).where(inArray(teachSessions.id, sessions)).run();
+    }
+    tx.delete(gloams).where(eq(gloams.studentId, studentId)).run();
+    tx.delete(students).where(eq(students.id, studentId)).run();
+  });
 }

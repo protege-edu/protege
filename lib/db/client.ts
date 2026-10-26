@@ -13,7 +13,7 @@ function open() {
   ensureDataDir();
   const DB_FILE = dbFile();
   // One time: bring the database along from its old place inside the project (data/protege.db)
-  if (!fs.existsSync(DB_FILE) && fs.existsSync(OLD_DB_FILE)) {
+  if (!process.env.PROTEGE_DATA_DIR && !fs.existsSync(DB_FILE) && fs.existsSync(OLD_DB_FILE)) {
     const old = new Database(OLD_DB_FILE);
     old.pragma("wal_checkpoint(TRUNCATE)");
     old.close();

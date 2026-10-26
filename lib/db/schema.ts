@@ -11,20 +11,58 @@ import type { LessonBlueprint } from "@/lib/lesson/types";
  *     explanation by concept, without anything that identifies a person
  */
 
-/** A teacher's class. The grade picks the age style. */
+/**
+ * A teacher. Their own email is their login name (it's the teacher's information, not a student's).
+ * Passwords and recovery codes are stored only as scrypt hashes; a Google account only as a keyed hash.
+ */
+export const teachers = sqliteTable("teachers", {
+  id: text("id").primaryKey(),
+  email: text("email").notNull().unique(),
+  name: text("name").notNull(),
+  passwordHash: text("password_hash"),
+  recoveryHash: text("recovery_hash"),
+  googleIdHash: text("google_id_hash").unique(),
+  failedLogins: integer("failed_logins").notNull().default(0),
+  lockedUntil: integer("locked_until", { mode: "timestamp_ms" }),
+  /** the teacher finished the first-run setup */
+  onboardedAt: integer("onboarded_at", { mode: "timestamp_ms" }),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+});
+
+/** A teacher's class. The grade picks the age style. Students join with its code. */
 export const classes = sqliteTable("classes", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
   /** 0 = kindergarten */
   grade: integer("grade").notNull(),
+  /** whose class it is (null only for classes made before teacher accounts, until claimed) */
+  teacherId: text("teacher_id").references(() => teachers.id),
+  /** what students type to join, like GLOW-42 */
+  code: text("code").unique(),
+  /** "Continue with Google" for students: off unless the teacher's school allows it */
+  googleSignIn: integer("google_sign_in", { mode: "boolean" }).notNull().default(false),
+  /** the teacher paused the class (every Gloam falls asleep) */
+  pausedAt: integer("paused_at", { mode: "timestamp_ms" }),
   createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
 });
 
+/**
+ * A student: a nickname in a class. NO real names, emails or birthdays, ever.
+ * They log back in with a secret picture key (stored only as a hash), or, if their teacher turned it on,
+ * with Google, stored only as a keyed hash of Google's account id: never their email, name or photo.
+ */
 export const students = sqliteTable("students", {
   id: text("id").primaryKey(),
   nickname: text("nickname").notNull(),
-  /** Which class they joined (null for the Phase 1 practice student) */
+  /** Which class they joined (null for the practice student on this computer) */
   classId: text("class_id").references(() => classes.id),
+  keyHash: text("key_hash"),
+  googleIdHash: text("google_id_hash"),
+  failedKeys: integer("failed_keys").notNull().default(0),
+  lockedUntil: integer("locked_until", { mode: "timestamp_ms" }),
+  /** they've met Gloam (first-time intro done) */
+  metGloamAt: integer("met_gloam_at", { mode: "timestamp_ms" }),
+  lastSeenAt: integer("last_seen_at", { mode: "timestamp_ms" }),
   createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
 });
 
@@ -34,6 +72,8 @@ export const students = sqliteTable("students", {
  */
 export const lessons = sqliteTable("lessons", {
   id: text("id").primaryKey(),
+  /** whose lesson it is (null = built into Protégé, or made before teacher accounts until claimed) */
+  teacherId: text("teacher_id").references(() => teachers.id),
   title: text("title").notNull(),
   grade: integer("grade").notNull(),
   status: text("status", { enum: ["drafting", "draft", "approved", "failed"] }).notNull(),

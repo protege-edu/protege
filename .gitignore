@@ -50,3 +50,6 @@ next-env.d.ts
 
 !.env.example
 art/__pycache__/
+
+# throwaway helper scripts
+/scripts/_*

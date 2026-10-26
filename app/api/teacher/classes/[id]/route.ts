@@ -1,17 +1,22 @@
+import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { bad, requireTeacher } from "@/lib/teacher/api";
+import { db } from "@/lib/db/client";
+import { classes } from "@/lib/db/schema";
+import { bad, notYours, requireTeacher } from "@/lib/teacher/api";
 import { assignLesson, dashboard, getClass } from "@/lib/teacher/classes";
-import { getApprovedLesson } from "@/lib/teacher/lessons";
+import { canSee, getApprovedLesson, getLessonRow } from "@/lib/teacher/lessons";
 
-/** The live dashboard for one class and one lesson: ?lesson=<id> */
+/** The live dashboard for one class and one lesson: ?lesson=<id> (no lesson: just the class) */
 export async function GET(request: Request, ctx: RouteContext<"/api/teacher/classes/[id]">) {
-  const denied = await requireTeacher();
-  if (denied) return denied;
+  const me = await requireTeacher(request);
+  if (me instanceof Response) return me;
   const { id } = await ctx.params;
-  const cls = getClass(id);
-  if (!cls) return bad("We couldn't find that class.", 404);
+  const cls = getClass(id, me.id);
+  if (!cls) return notYours();
   const lessonId = new URL(request.url).searchParams.get("lesson");
-  const lesson = lessonId ? getApprovedLesson(lessonId) : null;
+  if (!lessonId) return Response.json({ class: cls });
+  const row = getLessonRow(lessonId);
+  const lesson = row && canSee(row, me.id) ? getApprovedLesson(lessonId) : null;
   if (!lesson) return bad("Pick an approved lesson to see the dashboard.", 404);
   return Response.json({
     class: cls,
@@ -20,15 +25,32 @@ export async function GET(request: Request, ctx: RouteContext<"/api/teacher/clas
   });
 }
 
-const Assign = z.object({ lessonId: z.string() });
+const Change = z.union([
+  z.object({ lessonId: z.string() }),
+  z.object({ googleSignIn: z.boolean() }),
+  z.object({ paused: z.boolean() }),
+  z.object({ name: z.string().trim().min(1).max(60) }),
+]);
 
-/** Give a class an approved lesson */
+/** Give a class an approved lesson, or change a class setting (Google sign-in, pause, name) */
 export async function POST(request: Request, ctx: RouteContext<"/api/teacher/classes/[id]">) {
-  const denied = await requireTeacher();
-  if (denied) return denied;
+  const me = await requireTeacher(request);
+  if (me instanceof Response) return me;
   const { id } = await ctx.params;
-  const body = Assign.safeParse(await request.json().catch(() => null));
-  if (!body.success || !getApprovedLesson(body.data.lessonId)) return bad("Only approved lessons can be given to a class.");
-  assignLesson(id, body.data.lessonId);
+  if (!getClass(id, me.id)) return notYours();
+  const body = Change.safeParse(await request.json().catch(() => null));
+  if (!body.success) return bad("That change didn't make sense. Reload the page and try again.");
+  const c = body.data;
+  if ("lessonId" in c) {
+    const row = getLessonRow(c.lessonId);
+    if (!row || !canSee(row, me.id) || !getApprovedLesson(c.lessonId)) return bad("Only your approved lessons can be given to a class.");
+    assignLesson(id, c.lessonId);
+  } else if ("googleSignIn" in c) {
+    db.update(classes).set({ googleSignIn: c.googleSignIn }).where(eq(classes.id, id)).run();
+  } else if ("paused" in c) {
+    db.update(classes).set({ pausedAt: c.paused ? new Date() : null }).where(eq(classes.id, id)).run();
+  } else {
+    db.update(classes).set({ name: c.name }).where(eq(classes.id, id)).run();
+  }
   return Response.json({ ok: true });
 }

@@ -128,7 +128,7 @@ export async function draftBlueprint(opts: { source: string; grade: number; titl
     if (!stagesOk) stageNotes.push(c.name);
     // Evidence also includes the real content words from the idea's own name (never "what", "need"…)
     // (accents folded first, so "être" gives "etre", not "tre")
-    const folded = c.name.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+    const folded = c.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     const nameWords = (folded.match(/[a-z]{4,}/g) ?? []).filter((w) => !STOP.has(w));
     concepts.push({
       id,

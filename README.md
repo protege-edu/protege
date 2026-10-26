@@ -2,7 +2,7 @@
 
 **The student is the teacher.** Gloam, a small, dramatic creature with a lantern on its head, is confused about the lesson. Students explain things in their own words. When Gloam understands an idea, a candle lights up, and when it gets everything, the whole valley glows.
 
-Everything runs on your own computer. No accounts, no paid services, no tracking, and no student data leaves the machine.
+Everything runs on your own computer: no paid services, no tracking, and no student data leaves the machine. Teachers have accounts; students join a class with a code, a nickname and a secret picture key.
 
 ---
 
@@ -31,6 +31,16 @@ npm run dev
 ```
 Open **http://localhost:3000** and start teaching.
 
+### 5. Make your teacher account
+Open **http://localhost:3000/teacher**. The first account needs the **setup code**, which Protégé prints in the window where `npm run dev` is running:
+```
+  ┌──────────────────────────────────────────────┐
+  │  Protégé setup code:  ABCD-EFGH              │
+```
+(It's also saved in `SETUP-CODE.txt` next to the database, see Privacy.) The first account takes over everything made before, like the practice class. Save the **recovery code** it shows you: it's the only way back in if you forget your password, because Protégé doesn't send emails.
+
+**More teachers:** on teacher home, press "Make an invite code" and give it to them. Each code works once and lasts a week. Every teacher only sees their own classes and lessons.
+
 ---
 
 ## Changing the AI model
@@ -48,6 +58,7 @@ Any model from `ollama list` works. Bigger models are smarter but slower. Any Op
 | `npm run eval` | Talks to Gloam with pretend students (good, wrong, off-topic, rude) and prints the transcripts and a report |
 | `npm run screenshots` | Takes screenshots at Chromebook, desktop and phone sizes (app must be running) |
 | `npm run test:logic` | Tests the non-AI rules (grading, progress, giveaways, safety). Takes a second |
+| `npm run test:accounts` | Tests accounts and safety (passwords, picture keys, lock-outs, invites, nicknames, each teacher seeing only their own things) on a throwaway database |
 | `npm run typecheck` | Checks the TypeScript |
 | `npx tsx scripts/perf.ts --rate 4` | Measures how smooth the game is with the CPU slowed 4x, like a cheap Chromebook (app must be running) |
 | `npm run lint` | Checks code style |
@@ -57,6 +68,39 @@ Any model from `ollama list` works. Bigger models are smarter but slower. Any Op
 **Test mode** (only while developing): open http://localhost:3000/?test. Pasted answers (like a Google AI Overview) can teach Gloam, and a small panel lets you teach the next idea or everything instantly, or make Gloam doze off, so you can see every moment without typing real explanations. It saves like a real turn. A real build doesn't have it.
 
 Development-only pages (they don't exist in a production build): `/dev/style` (every button, panel and font), `/dev/rig` (Gloam's rig: every mood and moment, e.g. `/dev/rig?mood=excited&talk=1`), `/dev/journey` (the adventure at any checkpoint, e.g. `/dev/journey?levels=3,3,1,0,0`).
+
+## Putting Protégé online for a class (free)
+
+Protégé and the AI run on the teacher's laptop. To let students reach it from their Chromebooks, use a free **tunnel**: it gives the laptop a secure https address. No credit card for either option.
+
+1. Run Protégé in **real mode** (faster, and test mode and the `/dev` pages don't exist there):
+   ```
+   npm run build
+   npm start
+   ```
+2. Start a tunnel, either:
+   - **Tailscale Funnel** (a fixed address, needed for Google sign-in): install [Tailscale](https://tailscale.com/download) (free personal plan), sign in, then run `tailscale funnel 3000`. The first time, it gives you a link to switch Funnel on. Your address looks like `https://your-laptop.your-tailnet.ts.net`.
+   - **Cloudflare quick tunnel** (no account at all, but the address changes every time): install [cloudflared](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/), then run `cloudflared tunnel --url http://localhost:3000`.
+3. Students open that address and type the class code.
+
+The laptop has to stay on and awake during class, because it runs the AI.
+
+Everything is internet-safe: sign-ins are rate-limited and lock after too many wrong tries, cookies are `Secure` over https, and every change has to come from Protégé's own pages.
+
+## Google sign-in (optional)
+
+"Continue with Google" appears once three settings are in `.env.local` (see `.env.example`). Making them takes about 10 minutes and is free.
+
+1. Get a fixed https address with Tailscale Funnel (above), and set `PUBLIC_URL` to it.
+2. Go to [console.cloud.google.com](https://console.cloud.google.com), sign in, and make a new project called "Protégé".
+3. **APIs & Services → OAuth consent screen**: pick **External**, app name "Protégé", add your email. Scopes: just `openid` and `email`, which don't need Google's review.
+4. **APIs & Services → Credentials → Create credentials → OAuth client ID**: type **Web application**. Under **Authorized redirect URIs** add `https://<your address>/api/auth/google/callback`.
+5. Copy the client ID and secret into `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`, then restart Protégé.
+
+While the consent screen is in "Testing", only the Google accounts you list as test users can sign in. Press "Publish app" when you're ready for everyone.
+
+- **Teachers** sign in with Google instead of a password. A new teacher still needs an invite code (they type it first).
+- **Students** only get the Google button if their teacher switches it on for the class, and only if the school allows it. Protégé asks Google for nothing but a scrambled account id. No name, email or photo. The student still picks a nickname.
 
 ## The adventure (Phase 3)
 
@@ -131,6 +175,14 @@ scripts/              eval and screenshot tools
 ```
 
 ## Privacy
-- Students are nicknames only. No real names, emails or birthdays are collected.
+- Students are nicknames only. No real names, emails or birthdays are collected. Their picture key is stored scrambled (hashed), like a password.
+- Students who use Google: only a scrambled (keyed hash) Google account id is stored, never their name, email or photo.
+- Teachers: their email, name, and a scrambled password and recovery code. No passwords are ever stored as they were typed.
 - The database is a file on this computer, in the app-data folder: `%LOCALAPPDATA%\Protege\protege.db` on Windows (`~/.local/share/Protege` on Mac/Linux). Set `PROTEGE_DATA_DIR` to keep it somewhere else. Delete it to wipe everything. (It lives outside the project folder because the dev server reloads the page whenever a file inside the project changes.)
 - No analytics, no trackers, no third-party scripts. Fonts are downloaded once at build time and served from this computer.
+
+## Troubleshooting
+- **The page keeps reloading by itself (while developing):** stop `npm run dev`, delete the `.next` folder, and start it again.
+- **Forgot the setup code:** it's in `SETUP-CODE.txt` in the database folder, and printed again every time Protégé starts until the first account exists.
+- **A teacher forgot their password and lost the recovery code:** on the laptop running Protégé, run `npm run reset-teacher -- their@email`. It prints a new recovery code; they use it with "Forgot your password?". Only someone at the laptop can do this.
+- **A student forgot their pictures:** the teacher opens the class and presses "Reset pictures" next to that student. The student picks new ones next time.

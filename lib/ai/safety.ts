@@ -58,6 +58,32 @@ const MEAN = [
   /\bgo away\b|\bleave me alone\b/i,
 ];
 
+/*
+ * Nicknames are stricter than chat: the whole class sees them, all year, and people glue words together
+ * ("ShitHead", "s.h.1.t"). So squash out everything but letters (undoing number swaps) and look for
+ * stems ANYWHERE. Only long, unambiguous stems: "cock" or "ass" would block Peacock and Glass.
+ */
+const NICK_STEMS = [
+  "fuck", "fuk", "fck", "phuck", "shit", "bitch", "biatch", "cunt", "penis", "vagina", "asshole", "dumbass", "jackass", "bastard",
+  "douche", "porn", "horny", "nude", "boob", "titties", "nigg", "faggot", "retard", "slut", "whore", "killyourself", "hitler",
+  "nazi", "rapist", "pedophile", "kkk", "stfu", "wtf",
+];
+// real words with a stem hidden inside (removed before the scan)
+const NICK_INNOCENT = ["scunthorpe", "shitake", "shiitake", "cocktail"];
+const LEET: Record<string, string> = { "0": "o", "1": "i", "3": "e", "4": "a", "5": "s", "7": "t", "@": "a", $: "s", "!": "i" };
+
+export function nicknameSafe(nickname: string, style: AgeStyle): boolean {
+  if (checkSafety(nickname, style) !== "ok") return false;
+  const squashed = nickname
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[0-9@$!]/g, (ch) => LEET[ch] ?? ch)
+    .replace(/[^a-z]/g, "");
+  const cleaned = NICK_INNOCENT.reduce((acc, w) => acc.replaceAll(w, ""), squashed);
+  return !NICK_STEMS.some((s) => cleaned.includes(s));
+}
+
 export function checkSafety(message: string, style: AgeStyle): SafetyKind {
   if (CARE.some((r) => r.test(message))) return "care";
   if (BLOCK.some((r) => r.test(message))) return "blocked";

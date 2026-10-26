@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState, type ButtonHTMLAttributes, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useState, type ButtonHTMLAttributes, type ReactNode } from "react";
 import { InkButton } from "@/components/ui/InkButton";
 import { Wordmark } from "@/components/ui/Logo";
+import { SignIn, type AuthStatus } from "./SignIn";
 
 /* ---------------- fetch helper ---------------- */
 
@@ -33,11 +33,10 @@ export function Button({ variant = "primary", className = "", type = "button", .
 /* ---------------- the page shell ---------------- */
 
 export function Shell({ children, title, back }: { children: ReactNode; title?: string; back?: { href: string; label: string } }) {
-  const router = useRouter();
+  // a full reload, so nothing from this teacher's pages stays in memory (shared computers)
   const signOut = async () => {
     await api("/api/teacher/auth", { method: "DELETE" });
-    router.push("/teacher");
-    router.refresh();
+    window.location.assign("/teacher");
   };
   return (
     <div className="mx-auto max-w-[1100px] px-5 pb-20 sm:px-8">
@@ -66,72 +65,26 @@ export function Shell({ children, title, back }: { children: ReactNode; title?: 
 /* ---------------- sign-in gate ---------------- */
 
 export function TeacherGate({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<"loading" | "setup" | "signin" | "in">("loading");
-  const [code, setCode] = useState("");
+  const [status, setStatus] = useState<AuthStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
-
   const check = useCallback(async () => {
-    const res = await api<{ hasPasscode: boolean; signedIn: boolean }>("/api/teacher/auth");
+    const res = await api<AuthStatus>("/api/teacher/auth");
     if (!res.ok) return setError(res.error);
-    setState(res.data.signedIn ? "in" : res.data.hasPasscode ? "signin" : "setup");
+    setStatus(res.data);
   }, []);
   useEffect(() => {
     void Promise.resolve().then(check);
   }, [check]);
 
-  if (state === "in") return <>{children}</>;
-  if (state === "loading") return <div className="min-h-dvh" />;
-
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    const res = await api("/api/teacher/auth", json("POST", { passcode: code }));
-    if (!res.ok) return setError(res.error);
-    setState("in");
-  };
-
-  return (
-    <main className="mx-auto flex min-h-dvh max-w-[400px] flex-col justify-center px-6">
-      <p className="text-2xl text-ink">
-        <Wordmark tone="light" />
-      </p>
-      <h1 className="mt-6 text-lg font-bold text-ink">{state === "setup" ? "Set up the teacher side" : "Teacher sign in"}</h1>
-      <p className="mt-2 text-sm text-ink-dim">
-        {state === "setup"
-          ? "Pick a passcode so students can't open your lessons and dashboard. It stays on this computer."
-          : "Type your teacher passcode."}
-      </p>
-      <form onSubmit={submit} className="mt-6 flex flex-col gap-3">
-        <label htmlFor="passcode" className="text-sm font-bold text-ink">
-          Passcode
-        </label>
-        <input
-          id="passcode"
-          type="password"
-          autoFocus
-          value={code}
-          onChange={(e) => setCode(e.target.value)}
-          className="min-h-12 rounded-md border border-line bg-panel px-3 text-md text-ink focus:border-[var(--t-focus)] focus:outline-none"
-          autoComplete={state === "setup" ? "new-password" : "current-password"}
-          aria-describedby={state === "setup" ? "passcode-hint" : undefined}
-        />
-        {state === "setup" && (
-          <p id="passcode-hint" className="-mt-1 text-sm text-ink-dim">
-            At least 4 characters. Write it down somewhere safe.
-          </p>
-        )}
-        {error && (
-          <p role="alert" className="text-sm font-bold text-accent">
-            {error}
-          </p>
-        )}
-        <Button type="submit" disabled={code.length < 4}>
-          {state === "setup" ? "Save passcode and continue" : "Sign in"}
-        </Button>
-      </form>
-    </main>
-  );
+  if (error) return <p className="p-8 text-sm font-bold text-[#9b2c2c]">{error}</p>;
+  if (!status) return <div className="min-h-dvh" />;
+  if (!status.teacher) return <SignIn status={status} onSignedIn={() => void check()} />;
+  return <TeacherContext.Provider value={status.teacher}>{children}</TeacherContext.Provider>;
 }
+
+/** The signed-in teacher (inside TeacherGate) */
+export const TeacherContext = createContext<NonNullable<AuthStatus["teacher"]> | null>(null);
+export const useTeacher = () => useContext(TeacherContext);
 
 /* ---------------- candle mark (dashboard) ---------------- */
 

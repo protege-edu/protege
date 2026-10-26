@@ -56,7 +56,7 @@ function loadSession(lessonId: string, fresh = false): Promise<SessionState | nu
       if (r?.ok) return (await r.json()) as SessionState;
     }
     const studentId = safeStorage(() => localStorage.getItem(STUDENT_KEY), null) ?? undefined;
-    const r = await fetch("/api/session", { method: "POST", body: JSON.stringify({ lessonId, studentId }) }).catch(() => null);
+    const r = await fetch("/api/session", { method: "POST", body: JSON.stringify({ lessonId, studentId, fresh }) }).catch(() => null);
     return r?.ok ? ((await r.json()) as SessionState) : null;
   })();
   sessionLoads.set(lessonId, load);

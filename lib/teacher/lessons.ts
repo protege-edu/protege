@@ -1,6 +1,6 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
-import { desc, eq, inArray } from "drizzle-orm";
+import { desc, eq, inArray, isNull, or } from "drizzle-orm";
 import { DraftFailed, draftBlueprint } from "@/lib/ai/blueprint";
 import { db } from "@/lib/db/client";
 import { classLessons, conceptEvents, lessons, messages, teachSessions } from "@/lib/db/schema";
@@ -20,13 +20,20 @@ export type LessonRow = typeof lessons.$inferSelect;
 const store = globalThis as unknown as { protegeDraftProgress?: Map<string, string> };
 const progress = (store.protegeDraftProgress ??= new Map<string, string>());
 
-export function listLessons(): (Pick<LessonRow, "id" | "title" | "grade" | "status" | "sourceName" | "updatedAt"> & { builtIn?: boolean })[] {
+/** A teacher sees their own lessons and the ones built into Protégé, never another teacher's */
+export function canSee(row: Pick<LessonRow, "id" | "teacherId">, teacherId: string) {
+  return row.id in BUILT_IN || row.teacherId === teacherId;
+}
+
+export function listLessons(teacherId: string): (Pick<LessonRow, "id" | "title" | "grade" | "status" | "sourceName" | "updatedAt"> & { builtIn?: boolean })[] {
   const rows = db
-    .select({ id: lessons.id, title: lessons.title, grade: lessons.grade, status: lessons.status, sourceName: lessons.sourceName, updatedAt: lessons.updatedAt })
+    .select({ id: lessons.id, teacherId: lessons.teacherId, title: lessons.title, grade: lessons.grade, status: lessons.status, sourceName: lessons.sourceName, updatedAt: lessons.updatedAt })
     .from(lessons)
+    .where(or(eq(lessons.teacherId, teacherId), isNull(lessons.teacherId)))
     .orderBy(desc(lessons.updatedAt))
-    .all();
-  return rows.map((r) => ({ ...r, builtIn: r.id in BUILT_IN }));
+    .all()
+    .filter((r) => canSee(r, teacherId));
+  return rows.map((r) => ({ id: r.id, title: r.title, grade: r.grade, status: r.status, sourceName: r.sourceName, updatedAt: r.updatedAt, builtIn: r.id in BUILT_IN }));
 }
 
 export function getLessonRow(id: string): (LessonRow & { progress?: string }) | null {
@@ -50,13 +57,14 @@ export function getApprovedLesson(id: string): LessonBlueprint | null {
 }
 
 /** Start drafting. Returns right away; the AI works in the background (a few minutes on a laptop). */
-export function startDraft(opts: { source: string; sourceName: string; grade: number; titleHint?: string }): string {
+export function startDraft(opts: { source: string; sourceName: string; grade: number; titleHint?: string; teacherId: string }): string {
   const id = randomUUID();
   const now = new Date();
   db.insert(lessons)
     .values({
       id,
       title: opts.titleHint || opts.sourceName || "New lesson",
+      teacherId: opts.teacherId,
       grade: opts.grade,
       status: "drafting",
       sourceName: opts.sourceName,
