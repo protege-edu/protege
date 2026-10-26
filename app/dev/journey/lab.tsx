@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import type { GloamMood } from "@/components/gloam/poses";
 import { senior } from "@/lib/age-styles/senior";
 
@@ -12,6 +12,14 @@ const getQuery = () => window.location.search;
 
 export function JourneyLab() {
   const search = useSyncExternalStore(subscribe, getQuery, () => "");
+  // ?eureka=2.2 plays an "I get it" moment 2.2 seconds after the page opens
+  const [eurekaTick, setEurekaTick] = useState(0);
+  useEffect(() => {
+    const at = Number(new URLSearchParams(window.location.search).get("eureka") ?? 0);
+    if (!at) return;
+    const t = setTimeout(() => setEurekaTick(1), at * 1000);
+    return () => clearTimeout(t);
+  }, []);
   const q = new URLSearchParams(search);
   const levels = (q.get("levels") ?? "0,0,0,0,0").split(",").map(Number);
   const firstUnlit = levels.findIndex((l) => l < 3);
@@ -25,7 +33,7 @@ export function JourneyLab() {
         rig={senior.look.rig!}
         mood={(q.get("mood") as GloamMood) ?? "curious"}
         typingTick={0}
-        eurekaTick={0}
+        eurekaTick={eurekaTick}
         talking={false}
         waiting
         light={light}

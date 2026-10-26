@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { EurekaMoment } from "@/components/scene/EurekaMoment";
 import { getAgeStyle, pickLine } from "@/lib/age-styles";
+import { step } from "@/lib/sound";
 import { useCalmMotion } from "@/lib/useCalmMotion";
 import type { ClientLesson } from "@/lib/lesson/types";
 import { DialogueBand, IntroBand } from "./DialogueBand";
@@ -58,6 +59,8 @@ export function GameScreen({ lesson }: { lesson: ClientLesson }) {
   // the finale: Gloam walks to the overlook first, then the journal opens
   const [finaleArrived, setFinaleArrived] = useState(false);
   const walkingNow = useRef(false);
+  const stepTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  useEffect(() => () => void (stepTimer.current && clearInterval(stepTimer.current)), []);
   // if Gloam is already at the overlook (a finished lesson, reopened), open the journal anyway
   useEffect(() => {
     if (s.phase !== "ending" || finaleArrived) return;
@@ -71,6 +74,9 @@ export function GameScreen({ lesson }: { lesson: ClientLesson }) {
     (walking: boolean) => {
       if (!world) return;
       walkingNow.current = walking;
+      // soft footsteps while Gloam walks (only if sound is on)
+      if (stepTimer.current) clearInterval(stepTimer.current);
+      if (walking && s.sound) stepTimer.current = setInterval(step, 340);
       if (walking) {
         const line = pickLine(world.travel, { topic: lesson.topic, question: "" }, saidQuips.current);
         saidQuips.current = [...saidQuips.current.slice(-3), line];
@@ -86,7 +92,7 @@ export function GameScreen({ lesson }: { lesson: ClientLesson }) {
       }
       arrivedAt.current = walkLit;
     },
-    [world, lesson.topic, lesson.concepts.length, walkLit],
+    [world, lesson.topic, lesson.concepts.length, walkLit, s.sound],
   );
   const beat = lesson.storyBeats[Math.min(lesson.storyBeats.length - 1, Math.round((walkLit / Math.max(1, lesson.concepts.length)) * (lesson.storyBeats.length - 1)))];
   // each level gets its own line (no randomness while rendering)

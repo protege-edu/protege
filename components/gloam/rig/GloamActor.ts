@@ -276,7 +276,12 @@ export class GloamActor {
           .fill({ color: hex(sp.body.shade), alpha: 0.18 });
       }
       // lash line: along the lid's edge when it's down, along the top of the eye when it's open
-      if (lid > 0.08) {
+      if (lid > 0.85) {
+        // shut: one soft curved line, the classic sleepy eye
+        fg.moveTo(c.x - rx * 0.95, c.y + ry * 0.05)
+          .quadraticCurveTo(c.x, c.y + ry * 0.7, c.x + rx * 0.95, c.y + ry * 0.05)
+          .stroke({ color: hex(sp.face.lash), width: Math.max(1.5, ry * 0.17), cap: "round", alpha: 0.95 });
+      } else if (lid > 0.08) {
         fg.moveTo(xL, edgeY)
           .quadraticCurveTo(c.x, edgeY + sag, xR, edgeY)
           .stroke({ color: hex(sp.face.lash), width: Math.max(1.5, ry * 0.17), cap: "round", alpha: 0.95 });

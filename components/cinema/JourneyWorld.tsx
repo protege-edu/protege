@@ -8,7 +8,7 @@ import type { JourneyWorld as World } from "@/lib/age-styles/types";
 import { lanternFor } from "@/lib/companion/level";
 import type { RigSpec } from "@/lib/gloam-rig/spec";
 import { useCalmMotion } from "@/lib/useCalmMotion";
-import { fadeInCanvas, fogCanvas, glowCanvas, grainCanvas, lightSpillCanvas, vignetteCanvas } from "./textures";
+import { fadeInCanvas, fogCanvas, glowCanvas, grainCanvas, lightSpillCanvas, ringCanvas, vignetteCanvas } from "./textures";
 
 export interface JourneyProps {
   world: World;
@@ -115,6 +115,18 @@ export function JourneyWorld(props: JourneyProps) {
       const lanternSpill = new PIXI.Sprite(spillTex);
       lanternSpill.anchor.set(0.5);
       spillGroup.addChild(lanternSpill);
+      // the eureka: a wave of light rolls out from the lantern across the whole valley.
+      // A ring you can see, and a matching reveal of the lit painting as it passes.
+      const waveReveal = new PIXI.Sprite(spillTex);
+      waveReveal.anchor.set(0.5);
+      waveReveal.visible = false;
+      spillGroup.addChild(waveReveal);
+      const waveRing = new PIXI.Sprite(tex(ringCanvas()));
+      waveRing.anchor.set(0.5);
+      waveRing.tint = 0xffc864;
+      waveRing.blendMode = "add";
+      waveRing.visible = false;
+      let waveT = -1;
       const shrineSpills: PixiSprite[] = [];
       let maskRT = PIXI.RenderTexture.create({ width: 8, height: 8 });
       const mask = new PIXI.Sprite(maskRT);
@@ -179,7 +191,7 @@ export function JourneyWorld(props: JourneyProps) {
       if (!lite) litWorld.filters = [bloom];
       litWorld.filterArea = app.screen;
 
-      app.stage.addChild(darkWorld, fogBack, litWorld, shrineLayer, actor.container, haze, muddle, fogFront, flies, vignette, grain, mask, muddleFade);
+      app.stage.addChild(darkWorld, fogBack, litWorld, shrineLayer, actor.container, haze, waveRing, muddle, fogFront, flies, vignette, grain, mask, muddleFade);
 
       // ---- layout ----
       const W = world.width;
@@ -308,6 +320,7 @@ export function JourneyWorld(props: JourneyProps) {
         if (L.eurekaTick !== lastEureka) {
           lastEureka = L.eurekaTick;
           push = still ? 0 : 1;
+          waveT = still ? -1 : 0;
         }
         push = Math.max(0, push - dt * 0.45);
         const pushCurve = Math.sin(push * Math.PI);
@@ -414,6 +427,22 @@ export function JourneyWorld(props: JourneyProps) {
         mask.position.set(0, 0);
         // fade the light in through the mask, not the layers: overlapping depth layers would double up
         lanternSpill.alpha = Math.min(1, 0.25 + light * 4);
+        // the wave: starts a moment into the eureka (after Gloam's jump), rolls out over ~2 seconds
+        if (waveT >= 0) waveT += dt / 2.2;
+        const wv = waveT - 0.12;
+        const waving = wv > 0 && wv < 1;
+        waveRing.visible = waveReveal.visible = waving;
+        if (waving) {
+          const reach = Math.hypot(vw, vh) * 1.25;
+          const ease = 1 - Math.pow(1 - wv, 3);
+          const r = 40 + ease * reach;
+          waveRing.position.set(lanternScreen.x, lanternScreen.y);
+          waveRing.width = waveRing.height = r * 2;
+          waveRing.alpha = Math.sin(wv * Math.PI) * 0.6;
+          waveReveal.position.set(lanternScreen.x / 2, lanternScreen.y / 2);
+          waveReveal.width = waveReveal.height = r;
+          waveReveal.alpha = Math.pow(1 - wv, 1.4);
+        } else if (waveT > 1.2) waveT = -1;
         app.renderer.render({ container: spillGroup, target: maskRT, clear: true });
         haze.position.set(lanternScreen.x, feet.y - gh * 0.3);
         haze.width = vw * (0.4 + light * 1.2);

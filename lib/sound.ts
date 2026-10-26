@@ -42,3 +42,10 @@ export function chime(big = false) {
   const notes = big ? [523, 659, 784, 1047, 1319] : [523, 659, 784, 1047];
   notes.forEach((n, i) => tone(n, i * 0.09, 0.9, 0.07));
 }
+
+/** One soft, felt-footed step (a short low thump, slightly different each time) */
+export function step() {
+  const pitch = 95 + Math.random() * 25;
+  tone(pitch, 0, 0.09, 0.05, "sine");
+  tone(pitch * 2.1, 0, 0.04, 0.012, "triangle");
+}

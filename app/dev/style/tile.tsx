@@ -4,6 +4,7 @@ import { InkButton } from "@/components/ui/InkButton";
 import { Sheet } from "@/components/ui/Sheet";
 import { TrailStrip } from "@/components/ui/TrailStrip";
 import { Wordmark } from "@/components/ui/Logo";
+import { LevelUpCard } from "@/components/game/JourneyMoments";
 import { TypedLine } from "@/components/game/TypedLine";
 import { senior } from "@/lib/age-styles/senior";
 import { toClientLesson } from "@/lib/lesson";
@@ -67,6 +68,9 @@ export function StyleTile() {
           <InkButton>Teach</InkButton>
         </div>
       </Sheet>
+      <div className="relative mt-10 h-48">
+        <LevelUpCard style={senior} level={2} line={senior.lines.levelUp[0]} onDone={() => {}} />
+      </div>
       <div className="mt-6 space-y-2">
         <TypedLine text="fine. FINE. you're right. i hate this." shape={-30} animate={false} className="text-md" />
         <TypedLine text="wait wait wait. say that again." shape={100} animate={false} className="text-md" />

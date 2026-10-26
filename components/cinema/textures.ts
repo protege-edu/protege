@@ -86,6 +86,21 @@ export function lightSpillCanvas(size = 512) {
 }
 
 /** Wispy fog that tiles left-to-right forever */
+/** A soft ring of light (bright near its edge, clear in the middle): the eureka wave */
+export function ringCanvas(size = 512) {
+  const [c, g] = canvas(size, size);
+  const r = size / 2;
+  const grad = g.createRadialGradient(r, r, 0, r, r, r);
+  grad.addColorStop(0, "rgba(255,255,255,0)");
+  grad.addColorStop(0.62, "rgba(255,255,255,0.05)");
+  grad.addColorStop(0.86, "rgba(255,255,255,0.75)");
+  grad.addColorStop(0.93, "rgba(255,255,255,0.35)");
+  grad.addColorStop(1, "rgba(255,255,255,0)");
+  g.fillStyle = grad;
+  g.fillRect(0, 0, size, size);
+  return c;
+}
+
 /** A soft left edge: transparent on the left, fading in over the first part (used as a mask) */
 export function fadeInCanvas(w = 256, h = 4, over = 0.4) {
   const [c, g] = canvas(w, h);

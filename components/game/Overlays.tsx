@@ -81,6 +81,14 @@ export function TopBar({ style, lesson, levels, current, onPause }: { style: Age
 function Modal({ onClose, label, children, side = false }: { onClose: () => void; label: string; children: ReactNode; side?: boolean }) {
   const calm = useCalmMotion();
   const box = useRef<HTMLDivElement>(null);
+  // give focus back to whatever had it (the notebook) when the panel closes
+  const returnTo = useRef<HTMLElement | null>(typeof document === "undefined" ? null : (document.activeElement as HTMLElement | null));
+  useEffect(() => {
+    const back = returnTo.current;
+    return () => {
+      if (back && document.contains(back)) back.focus({ preventScroll: true });
+    };
+  }, []);
   useEffect(() => {
     const first = box.current?.querySelector<HTMLElement>("button, [href], textarea, input");
     first?.focus();
