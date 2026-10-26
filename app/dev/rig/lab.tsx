@@ -5,7 +5,14 @@ import { POSES, type GloamMood } from "@/components/gloam/poses";
 import type { GloamActor } from "@/components/gloam/rig/GloamActor";
 import { loadActor } from "@/components/gloam/rig/load";
 import type { TrickName } from "@/lib/gloam-rig/brain";
-import { senior } from "@/lib/age-styles/senior";
+import { juniorGloam } from "@/lib/age-styles/rigs/junior-gloam";
+import { littleGloam } from "@/lib/age-styles/rigs/little-gloam";
+import { middleGloam } from "@/lib/age-styles/rigs/middle-gloam";
+import { seniorGloam } from "@/lib/age-styles/rigs/senior-gloam";
+import type { RigSpec } from "@/lib/gloam-rig/spec";
+
+// ?rig=little shows another age's Gloam
+const RIGS: Record<string, RigSpec> = { senior: seniorGloam, little: littleGloam, junior: juniorGloam, middle: middleGloam };
 
 const MOODS = Object.keys(POSES) as GloamMood[];
 
@@ -24,7 +31,8 @@ export function RigLab() {
 
   useEffect(() => {
     const el = host.current;
-    if (!el || !senior.look.rig) return;
+    const rig = RIGS[q.get("rig") ?? "senior"] ?? seniorGloam;
+    if (!el) return;
     let destroyed = false;
     let cleanup = () => {};
     (async () => {
@@ -33,7 +41,7 @@ export function RigLab() {
       await app.init({ resizeTo: el, backgroundAlpha: 0, antialias: true, resolution: Math.min(2, devicePixelRatio), autoDensity: true });
       if (destroyed) return app.destroy(true);
       el.appendChild(app.canvas);
-      const actor = await loadActor(PIXI, senior.look.rig!);
+      const actor = await loadActor(PIXI, rig);
       actorRef.current = actor;
       app.stage.addChild(actor.container);
       // ?trick=firefly shows that trick, again every 5 seconds
