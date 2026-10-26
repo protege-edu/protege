@@ -6,6 +6,7 @@ import type { GloamActor } from "@/components/gloam/rig/GloamActor";
 import type { GloamBox } from "@/components/game/Stage";
 import type { JourneyWorld as World } from "@/lib/age-styles/types";
 import { lanternFor } from "@/lib/companion/level";
+import { BORED } from "@/lib/gloam-rig/brain";
 import type { RigSpec } from "@/lib/gloam-rig/spec";
 import { useCalmMotion } from "@/lib/useCalmMotion";
 import { fadeInCanvas, fogCanvas, glowCanvas, grainCanvas, lightSpillCanvas, ringCanvas, vignetteCanvas } from "./textures";
@@ -34,6 +35,8 @@ export interface JourneyProps {
   onGloamBox?: (box: GloamBox) => void;
   /** Gloam set off walking (true) or arrived (false) */
   onWalking?: (walking: boolean) => void;
+  /** test mode: goes up by one to make Gloam doze off right away */
+  dozeTick?: number;
 }
 
 /**
@@ -267,6 +270,7 @@ export function JourneyWorld(props: JourneyProps) {
       let t = 0;
       let light = live.current.light;
       let lastEureka = live.current.eurekaTick;
+      let lastDoze = live.current.dozeTick ?? 0;
       let push = 0;
       let slowFrames = 0;
       let checked = 0;
@@ -317,6 +321,10 @@ export function JourneyWorld(props: JourneyProps) {
         camX += (gx - camX) * (still ? 1 : Math.min(1, dt * 2.4));
         fit();
 
+        if ((L.dozeTick ?? 0) !== lastDoze) {
+          lastDoze = L.dozeTick ?? 0;
+          actor.brain.setIdle(BORED.sleep - 6); // a few seconds of yawning around, then asleep
+        }
         if (L.eurekaTick !== lastEureka) {
           lastEureka = L.eurekaTick;
           push = still ? 0 : 1;

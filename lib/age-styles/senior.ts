@@ -202,7 +202,8 @@ export const senior: AgeStyle = {
       ],
       // far enough in that the title shot can stand Gloam right of the title with painting all around
       start: 0.23,
-      end: 0.93,
+      // the overlook: far enough from the edge that Gloam stays visible beside the journal at the end
+      end: 0.83,
       fog: "#7fa294",
       firefly: "#ffd98a",
       // painted with FLUX (art/prompts.py SHRINE, seed 40), cut out by art/cutout.py; the candle sits in its niche

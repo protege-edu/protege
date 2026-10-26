@@ -18,6 +18,8 @@ export interface TurnInput {
   message: string;
   /** Most of the message was pasted into the box, not typed */
   pasted?: boolean;
+  /** Test mode while developing: let copied answers teach Gloam */
+  allowCopied?: boolean;
 }
 
 /** Sent as soon as the judge is done, before Gloam has finished talking */
@@ -75,7 +77,7 @@ export async function runTurn(input: TurnInput, hooks: { onJudged?: (e: JudgedEv
   }
 
   // 1b. Pasted from somewhere: ask for their own words (no AI, no candles)
-  if (looksCopied(message, input.pasted)) {
+  if (!input.allowCopied && looksCopied(message, input.pasted)) {
     const reply = pickLine(style.lines.copied, { topic: topicOf(lesson), question: nextQuestion(lesson, understanding, gloamSaid) }, gloamSaid.slice(-6));
     return done({ ...unchanged, reply: voice(reply, style), emotion: "skeptical", intent: "chatting", onTopic: true, source: "line" });
   }

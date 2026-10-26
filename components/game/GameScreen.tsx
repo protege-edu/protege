@@ -5,6 +5,8 @@ import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore
 import { EurekaMoment } from "@/components/scene/EurekaMoment";
 import { getAgeStyle, pickLine } from "@/lib/age-styles";
 import { step } from "@/lib/sound";
+import { useTestMode } from "@/lib/testMode";
+import { TestPanel } from "./TestPanel";
 import { useCalmMotion } from "@/lib/useCalmMotion";
 import type { ClientLesson } from "@/lib/lesson/types";
 import { DialogueBand, IntroBand } from "./DialogueBand";
@@ -34,7 +36,9 @@ function useWide() {
  */
 export function GameScreen({ lesson }: { lesson: ClientLesson }) {
   const style = getAgeStyle(lesson.ageStyle);
-  const s = useTeachSession(lesson, style);
+  const test = useTestMode();
+  const s = useTeachSession(lesson, style, test);
+  const [dozeTick, setDozeTick] = useState(0);
   const wide = useWide();
   const calm = useCalmMotion();
   const [overlay, setOverlay] = useState<Overlay>(null);
@@ -168,6 +172,7 @@ export function GameScreen({ lesson }: { lesson: ClientLesson }) {
             levels,
             stop: walkLit,
             onWalking,
+            dozeTick,
           }}
         >
           {(s.phase === "teach" || s.phase === "intro") && <TopBar style={style} lesson={lesson} levels={levels} current={world ? walkLit : litCount} onPause={() => setOverlay("pause")} />}
@@ -187,6 +192,9 @@ export function GameScreen({ lesson }: { lesson: ClientLesson }) {
 
       {s.phase === "intro" && <IntroBand s={s} style={style} steps={steps} gloam={gloamBox} wide={wide} />}
       {s.phase === "teach" && <DialogueBand s={s} style={style} gloam={gloamBox} wide={wide} onOpenLog={() => setOverlay("log")} />}
+      {test && s.phase === "teach" && (
+        <TestPanel onNext={() => void s.skipAhead(false)} onAll={() => void s.skipAhead(true)} onDoze={() => setDozeTick((t) => t + 1)} disabled={s.status !== "ready" || !!s.moment || s.finished} />
+      )}
 
       {/* fade in from black, like the start of a film */}
       <motion.div

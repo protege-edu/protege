@@ -67,7 +67,19 @@ function loadSession(lessonId: string, fresh = false): Promise<SessionState | nu
  * Everything about one student teaching one lesson: the session, the conversation,
  * Gloam's mood, the candles, the big moments. Layouts (game screen, storybook) only draw it.
  */
-export function useTeachSession(lesson: ClientLesson, style: AgeStyle) {
+interface ReplyEvent {
+  reply: string;
+  emotion: Emotion;
+  understanding: Understanding;
+  clicked: string[];
+  finished: boolean;
+  checkpoints?: string[];
+  recap?: RecapItem[];
+  gloam?: GloamLevel;
+  levelUp?: boolean;
+}
+
+export function useTeachSession(lesson: ClientLesson, style: AgeStyle, test = false) {
   const [phase, setPhase] = useState<Phase>("loading");
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [resumable, setResumable] = useState(false);
@@ -211,6 +223,35 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle) {
     [beatsFor],
   );
 
+  // What happens when Gloam answers (a real turn, or a test-mode shortcut)
+  const onReply = useCallback(
+    (ev: ReplyEvent) => {
+      // During a big moment, keep Gloam's "oh no." showing until its line lands at the peak
+      setThinking(ev.clicked.length ? pickLine(style.lines.clicking, fill, []) : null);
+      setFinished(ev.finished);
+      if (ev.recap) setRecap(ev.recap);
+      if (ev.gloam) setGloam(ev.gloam);
+      if (ev.levelUp && ev.gloam) setLevelUp(ev.gloam);
+      if (ev.clicked.length) {
+        const concept = lesson.concepts.find((c) => c.id === ev.clicked[0]);
+        const firstEver = lesson.concepts.every((c) => (shownRef.current[c.id] ?? 0) < 3);
+        pending.current = { reply: ev.reply, emotion: ev.emotion, understanding: ev.understanding, checkpoints: ev.checkpoints };
+        setFlash(ev.clicked[0]);
+        setMoment({
+          key: Date.now(),
+          conceptName: concept?.name ?? "something new",
+          size: firstEver || ev.finished ? "full" : "short",
+          final: ev.finished,
+        });
+      } else {
+        showReply(ev.reply, ev.emotion, ev.understanding, ev.checkpoints);
+        if (sound) pip();
+        setStatus("ready");
+      }
+    },
+    [lesson.concepts, showReply, sound, style, fill],
+  );
+
   const send = useCallback(
     async (text: string, pasted = false) => {
       if (!sessionId) return;
@@ -223,7 +264,8 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle) {
         const res = await fetch("/api/companion", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ sessionId, message: text, pasted }),
+          // in test mode, pasted answers are allowed to teach Gloam (only works while developing)
+          body: JSON.stringify({ sessionId, message: text, pasted: test ? false : pasted, test }),
         });
         if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);
         const reader = res.body.getReader();
@@ -245,28 +287,7 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle) {
               else if (ev.improved.length) setThinking(pickLine(style.lines.almost, fill, []));
             } else if (ev.type === "reply") {
               gotReply = true;
-              // During a big moment, keep Gloam's "oh no." showing until its line lands at the peak
-              setThinking(ev.clicked.length ? pickLine(style.lines.clicking, fill, []) : null);
-              setFinished(ev.finished);
-              if (ev.recap) setRecap(ev.recap);
-              if (ev.gloam) setGloam(ev.gloam);
-              if (ev.levelUp) setLevelUp(ev.gloam);
-              if (ev.clicked.length) {
-                const concept = lesson.concepts.find((c) => c.id === ev.clicked[0]);
-                const firstEver = lesson.concepts.every((c) => (shownRef.current[c.id] ?? 0) < 3);
-                pending.current = { reply: ev.reply, emotion: ev.emotion, understanding: ev.understanding, checkpoints: ev.checkpoints };
-                setFlash(ev.clicked[0]);
-                setMoment({
-                  key: Date.now(),
-                  conceptName: concept?.name ?? "something new",
-                  size: firstEver || ev.finished ? "full" : "short",
-                  final: ev.finished,
-                });
-              } else {
-                showReply(ev.reply, ev.emotion, ev.understanding, ev.checkpoints);
-                if (sound) pip();
-                setStatus("ready");
-              }
+              onReply(ev);
             } else if (ev.type === "offline") {
               throw new Error("offline");
             }
@@ -279,7 +300,20 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle) {
         setEmotion("asleep");
       }
     },
-    [sessionId, lesson.concepts, showReply, sound, style, fill],
+    [sessionId, style, fill, onReply, test],
+  );
+
+  /** TEST MODE: teach the next idea (or everything) instantly, through the real save path */
+  const skipAhead = useCallback(
+    async (all: boolean) => {
+      if (!sessionId || status !== "ready" || moment) return;
+      setStatus("thinking");
+      const r = await fetch("/api/dev/teach", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sessionId, all }) }).catch(() => null);
+      if (!r?.ok) return setStatus("ready");
+      setEntries((xs) => [...xs, { id: nextId(), kind: "student", text: all ? "(test mode: taught everything)" : "(test mode: taught the next idea)" }]);
+      onReply(await r.json());
+    },
+    [sessionId, status, moment, onReply],
   );
 
   const teach = useCallback(
@@ -387,6 +421,7 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle) {
     gloam,
     levelUp,
     clearLevelUp: () => setLevelUp(null),
+    skipAhead,
     talking,
     bounce: POSES[mood].bounce,
     start,

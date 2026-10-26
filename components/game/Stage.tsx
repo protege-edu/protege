@@ -28,6 +28,8 @@ export interface JourneyState {
   /** the shrine Gloam walks to: the first idea it doesn't get yet */
   stop: number;
   onWalking?: (walking: boolean) => void;
+  /** test mode: goes up by one to make Gloam doze off right away */
+  dozeTick?: number;
 }
 
 // Each Gloam skin's proportions: width/height, and where its feet and lantern are (fractions of its height;
@@ -155,6 +157,7 @@ export function Stage({
           gloamHeight={gloamH * 0.95}
           onGloamBox={onJourneyBox}
           onWalking={journey.onWalking}
+          dozeTick={journey.dozeTick}
         />
       ) : scene ? (
         <CinematicValley scene={scene} brightness={brightness} focus={focus} eurekaTick={eurekaTick} lanternY={lanternY} lanternDX={lanternDX} groundAt={groundAt} />

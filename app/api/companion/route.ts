@@ -9,6 +9,8 @@ const Body = z.object({
   message: z.string().trim().min(1).max(600),
   /** Most of the message was pasted in, not typed */
   pasted: z.boolean().optional(),
+  /** Test mode (only honoured while developing): pasted answers may teach Gloam */
+  test: z.boolean().optional(),
 });
 
 /**
@@ -44,6 +46,7 @@ export async function POST(request: Request) {
             history: session.messages.map((m) => ({ from: m.from, text: m.text })),
             message: parsed.data.message,
             pasted: parsed.data.pasted,
+            allowCopied: parsed.data.test === true && process.env.NODE_ENV !== "production",
           },
           { onJudged: (e) => send({ type: "judged", ...e }) },
         );

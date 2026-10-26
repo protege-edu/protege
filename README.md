@@ -52,6 +52,8 @@ Any model from `ollama list` works. Bigger models are smarter but slower. Any Op
 | `npx tsx scripts/perf.ts --rate 4` | Measures how smooth the game is with the CPU slowed 4x, like a cheap Chromebook (app must be running) |
 | `npm run lint` | Checks code style |
 
+**Test mode** (only while developing): open http://localhost:3000/?test. Pasted answers (like a Google AI Overview) can teach Gloam, and a small panel lets you teach the next idea or everything instantly, or make Gloam doze off, so you can see every moment without typing real explanations. It saves like a real turn. A real build doesn't have it.
+
 Development-only pages (they don't exist in a production build): `/dev/style` (every button, panel and font), `/dev/rig` (Gloam's rig: every mood and moment, e.g. `/dev/rig?mood=excited&talk=1`), `/dev/journey` (the adventure at any checkpoint, e.g. `/dev/journey?levels=3,3,1,0,0`).
 
 ## The adventure (Phase 3)

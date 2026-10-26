@@ -41,7 +41,7 @@ export function ChapterCard({ style, chapter, total, beat }: { style: AgeStyle; 
         <motion.div
           key={chapter}
           role="status"
-          className="pointer-events-none absolute inset-x-0 top-[13%] z-20 flex flex-col items-center px-6 text-center"
+          className="pointer-events-none absolute inset-x-0 top-[6%] z-20 flex flex-col items-center px-6 text-center"
           initial={calm ? false : { opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={calm ? undefined : { opacity: 0, transition: { duration: 1.2 } }}
