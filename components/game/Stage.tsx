@@ -31,6 +31,16 @@ const SKINS = {
   storybook: { aspect: 260 / 312, feet: 0.955, lantern: 0.135, lanternDX: (164 - 130) / 260 },
 } as const;
 
+export interface GloamBox {
+  /** Gloam's centre across the screen, and the top of its box, in px */
+  cx: number;
+  top: number;
+  w: number;
+  h: number;
+  stageW: number;
+  stageH: number;
+}
+
 /**
  * The world: the valley, Gloam, the candles. The age style picks how it's drawn.
  *   focus:    where Gloam stands across the screen (0..1)
@@ -51,6 +61,7 @@ export function Stage({
   groundAt,
   gloamScale = 1,
   showCandles,
+  onGloamBox,
   children,
 }: {
   style: AgeStyle;
@@ -65,6 +76,8 @@ export function Stage({
   groundAt: number;
   gloamScale?: number;
   showCandles: boolean;
+  /** Where Gloam is on screen (px), so speech panels can point at it */
+  onGloamBox?: (box: GloamBox) => void;
   children?: ReactNode;
 }) {
   const calm = useCalmMotion();
@@ -92,6 +105,14 @@ export function Stage({
   const lanternY = groundY - gloamH * (geo.feet - geo.lantern);
   const lanternDX = gloamH * geo.aspect * geo.lanternDX;
   const move = calm ? { duration: 0 } : { type: "spring" as const, stiffness: 55, damping: 18 };
+
+  const gloamW = gloamH * geo.aspect;
+  const gloamTop = groundY - gloamH * geo.feet;
+  const cx = (size?.w ?? 0) * focus;
+  useEffect(() => {
+    if (!size) return;
+    onGloamBox?.({ cx, top: gloamTop, w: gloamW, h: gloamH, stageW: size.w, stageH: size.h });
+  }, [size, cx, gloamTop, gloamW, gloamH, onGloamBox]);
 
   return (
     <section ref={box} aria-label="Gloam's valley" className="absolute inset-0 overflow-hidden bg-bg">

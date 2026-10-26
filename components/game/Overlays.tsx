@@ -2,6 +2,10 @@
 
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { InkButton } from "@/components/ui/InkButton";
+import { Sheet } from "@/components/ui/Sheet";
+import { TrailStrip } from "@/components/ui/TrailStrip";
+import { Wordmark } from "@/components/ui/Wordmark";
 import type { AgeStyle } from "@/lib/age-styles";
 import type { ClientLesson, RecapItem } from "@/lib/lesson/types";
 import { useCalmMotion } from "@/lib/useCalmMotion";
@@ -13,12 +17,15 @@ export function TitleScreen({
   style,
   lesson,
   resumable,
+  light,
   onStart,
   onHelp,
 }: {
   style: AgeStyle;
   lesson: ClientLesson;
   resumable: boolean;
+  /** How much the student has taught Gloam so far (the wordmark's flames light up) */
+  light: number;
   onStart: () => void;
   onHelp: () => void;
 }) {
@@ -35,24 +42,19 @@ export function TitleScreen({
         <motion.p {...rise(0.2)} className="text-xs font-bold text-ink-dim">
           {lesson.subject}
         </motion.p>
-        <motion.h1 {...rise(0.35)} className="voice mt-2 text-2xl font-bold text-ink md:text-3xl" style={{ ["--voice-width" as string]: 112, ["--bounce" as string]: 40 }}>
-          {style.copy.appName.toLowerCase()}
+        <motion.h1 {...rise(0.35)} className="mt-3 text-[4rem] text-ink md:text-[6.5rem]">
+          <Wordmark lit={light} />
         </motion.h1>
-        <motion.p {...rise(0.5)} className="mt-4 max-w-[26ch] text-lg text-ink">
+        <motion.p {...rise(0.5)} className="mt-5 max-w-[24ch] text-lg text-ink">
           {lesson.title}
         </motion.p>
         <motion.div {...rise(0.7)} className="mt-8 flex flex-wrap items-center gap-3">
-          <button
-            ref={cta}
-            type="button"
-            onClick={onStart}
-            className="min-h-12 cursor-pointer rounded-md bg-accent px-7 text-sm font-bold text-accent-ink hover:bg-accent-hover active:scale-95"
-          >
+          <InkButton ref={cta} size="lg" onClick={onStart}>
             {resumable ? style.copy.titleContinue : style.copy.titleCta}
-          </button>
-          <button type="button" onClick={onHelp} className="min-h-12 cursor-pointer rounded-md px-4 text-sm font-bold text-ink-dim underline-offset-4 hover:text-ink hover:underline">
+          </InkButton>
+          <InkButton variant="quiet" size="lg" onClick={onHelp}>
             {style.copy.titleHelp}
-          </button>
+          </InkButton>
         </motion.div>
       </div>
       {/* a quiet way in for teachers; students won't need it */}
@@ -65,23 +67,18 @@ export function TitleScreen({
 
 /* ---------------- Top bar while teaching ---------------- */
 
-export function TopBar({ style, lesson, chapter, onPause }: { style: AgeStyle; lesson: ClientLesson; chapter: number; onPause: () => void }) {
+export function TopBar({ style, lesson, lit, onPause }: { style: AgeStyle; lesson: ClientLesson; lit: number; onPause: () => void }) {
+  const total = lesson.concepts.length;
+  const current = Math.min(lit, total - 1);
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-4 bg-[linear-gradient(180deg,rgb(5_10_8/0.65),transparent)] px-4 pt-3 pb-8 sm:px-6">
+    <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-4 bg-[linear-gradient(180deg,rgb(5_10_8/0.7),transparent)] px-4 pt-3 pb-10 sm:px-6">
       <div className="min-w-0">
-        <p className="voice text-xs font-bold text-ink-dim" style={{ ["--voice-width" as string]: 100 }}>
-          {style.copy.chapter(chapter).toLowerCase()}
-        </p>
         <h1 className="truncate text-sm font-bold text-ink">{lesson.title}</h1>
+        <TrailStrip total={total} lit={lit} current={current} label={`${style.copy.chapter(current + 1)} of ${total}. ${lit} lit.`} />
       </div>
-      <button
-        type="button"
-        onClick={onPause}
-        className="pointer-events-auto min-h-11 shrink-0 cursor-pointer rounded-md border border-line bg-panel/80 px-4 text-xs font-bold text-ink hover:bg-panel"
-        aria-keyshortcuts="Escape"
-      >
+      <InkButton variant="quiet" onClick={onPause} aria-keyshortcuts="Escape" className="pointer-events-auto">
         {style.copy.pause}
-      </button>
+      </InkButton>
     </div>
   );
 }
@@ -131,9 +128,11 @@ function Modal({ onClose, label, children, side = false }: { onClose: () => void
         animate={{ x: 0, y: 0, opacity: 1 }}
         exit={calm ? undefined : side ? { x: 40, opacity: 0 } : { y: 8, opacity: 0 }}
         transition={{ type: "spring", stiffness: 320, damping: 32 }}
-        className={side ? "flex h-full w-full max-w-[440px] flex-col border-l border-line bg-panel" : "w-[min(420px,calc(100%-32px))] rounded-lg border border-line bg-panel p-6"}
+        className={side ? "flex h-full w-full max-w-[460px] flex-col p-3" : "w-[min(420px,calc(100%-32px))]"}
       >
-        {children}
+        <Sheet seed={label} radius={20} className={side ? "flex min-h-0 flex-1 flex-col" : "p-6"}>
+          {side ? <div className="flex h-[calc(100dvh-24px)] flex-col">{children}</div> : children}
+        </Sheet>
       </motion.div>
     </motion.div>
   );
@@ -163,40 +162,42 @@ export function PauseMenu({
   onRecap: () => void;
 }) {
   const [confirming, setConfirming] = useState(false);
-  const row = "min-h-11 w-full cursor-pointer rounded-md px-4 text-left text-sm font-bold text-ink hover:bg-chip";
+  const row = "!justify-start w-full";
   return (
     <Modal onClose={onResume} label={style.copy.paused}>
-      <p className="voice mb-4 text-lg font-bold text-ink" style={{ ["--voice-width" as string]: 110 }}>
+      <p className="voice mb-4 text-lg text-ink" style={{ ["--casual" as string]: 1, ["--voice-weight" as string]: 750 }}>
         {style.copy.paused.toLowerCase()}
       </p>
-      <div className="flex flex-col gap-1">
-        <button type="button" onClick={onResume} className="mb-2 min-h-12 w-full cursor-pointer rounded-md bg-accent px-4 text-sm font-bold text-accent-ink hover:bg-accent-hover">
+      <div className="flex flex-col items-stretch gap-0.5">
+        <InkButton onClick={onResume} className="mb-3 w-full">
           {style.copy.resume}
-        </button>
+        </InkButton>
         {canSeeRecap && (
-          <button type="button" className={row} onClick={onRecap}>
+          <InkButton variant="ghost" className={row} onClick={onRecap}>
             {style.copy.seeRecap}
-          </button>
+          </InkButton>
         )}
-        <button type="button" className={row} onClick={onLog}>
+        <InkButton variant="ghost" className={row} onClick={onLog}>
           {style.copy.log}
-        </button>
-        <button type="button" className={row} onClick={onHelp}>
+        </InkButton>
+        <InkButton variant="ghost" className={row} onClick={onHelp}>
           {style.copy.titleHelp}
-        </button>
-        <button type="button" className={row} onClick={onToggleSound} aria-pressed={sound}>
+        </InkButton>
+        <InkButton variant="ghost" className={row} onClick={onToggleSound} aria-pressed={sound}>
           {style.copy.sound(sound)}
-        </button>
-        <button type="button" className={row} onClick={onTitle}>
+        </InkButton>
+        <InkButton variant="ghost" className={row} onClick={onTitle}>
           {style.copy.backToTitle}
-        </button>
-        <button
-          type="button"
-          className={`${row} ${confirming ? "bg-accent text-accent-ink hover:bg-accent-hover" : "text-ink-dim"}`}
-          onClick={() => (confirming ? onStartOver() : setConfirming(true))}
-        >
-          {confirming ? style.copy.startOverConfirm : style.copy.startOver}
-        </button>
+        </InkButton>
+        {confirming ? (
+          <InkButton className="mt-2 w-full" onClick={onStartOver}>
+            {style.copy.startOverConfirm}
+          </InkButton>
+        ) : (
+          <InkButton variant="ghost" className={`${row} !text-ink-dim`} onClick={() => setConfirming(true)}>
+            {style.copy.startOver}
+          </InkButton>
+        )}
       </div>
     </Modal>
   );
@@ -205,7 +206,7 @@ export function PauseMenu({
 export function HelpDialog({ style, lesson, onClose }: { style: AgeStyle; lesson: ClientLesson; onClose: () => void }) {
   return (
     <Modal onClose={onClose} label={style.copy.howItWorksTitle}>
-      <h2 className="voice text-lg font-bold text-ink" style={{ ["--voice-width" as string]: 105 }}>
+      <h2 className="voice text-lg text-ink" style={{ ["--casual" as string]: 1, ["--voice-weight" as string]: 750 }}>
         {style.copy.howItWorksTitle}
       </h2>
       <div className="mt-3 space-y-2 text-sm text-ink">
@@ -213,9 +214,9 @@ export function HelpDialog({ style, lesson, onClose }: { style: AgeStyle; lesson
           <p key={p}>{p}</p>
         ))}
       </div>
-      <button type="button" onClick={onClose} className="mt-5 min-h-11 cursor-pointer rounded-md bg-accent px-5 text-sm font-bold text-accent-ink hover:bg-accent-hover">
+      <InkButton onClick={onClose} className="mt-5">
         {style.copy.close}
-      </button>
+      </InkButton>
     </Modal>
   );
 }
@@ -226,23 +227,27 @@ export function LogDrawer({ style, entries, onClose }: { style: AgeStyle; entrie
   useEffect(() => end.current?.scrollIntoView({ block: "end" }), []);
   return (
     <Modal onClose={onClose} label={style.copy.log} side>
-      <div className="flex items-center justify-between border-b border-line px-5 py-3">
-        <h2 className="text-sm font-bold text-ink">{style.copy.log}</h2>
-        <button type="button" onClick={onClose} className="min-h-11 cursor-pointer rounded-md px-3 text-xs font-bold text-ink-dim hover:text-ink">
+      <div className="flex items-center justify-between border-b border-dashed border-line px-5 py-3">
+        <h2 className="voice text-md text-ink" style={{ ["--casual" as string]: 1, ["--voice-weight" as string]: 750 }}>
+          {style.copy.log.toLowerCase()}
+        </h2>
+        <InkButton variant="quiet" onClick={onClose}>
           {style.copy.close}
-        </button>
+        </InkButton>
       </div>
       <ol className="flex-1 space-y-4 overflow-y-auto px-5 py-5">
         {entries.map((e) => (
           <li key={e.id}>
             {e.kind === "gloam" && (
               <>
-                <span className="voice block text-xs font-bold text-accent">{style.copy.gloamName}</span>
+                <span className="voice block text-xs text-accent" style={{ ["--voice-weight" as string]: 750 }}>
+                  {style.copy.gloamName}
+                </span>
                 <p className="voice text-sm text-ink">{e.text}</p>
               </>
             )}
             {e.kind === "student" && (
-              <div className="ml-6 rounded-md bg-chip px-3 py-2">
+              <div className="ml-6 border-l-2 border-line pl-3">
                 <span className="block text-xs font-bold text-ink-dim">{style.copy.you}</span>
                 <p className="text-sm whitespace-pre-wrap text-ink">{e.text}</p>
               </div>
@@ -277,14 +282,16 @@ export function EndingPanel({
   return (
     <motion.section
       aria-labelledby="ending-title"
-      className="absolute inset-y-0 right-0 z-20 flex w-full flex-col border-l border-line bg-panel/95 md:w-[min(480px,42vw)]"
+      className="absolute inset-y-0 right-0 z-20 flex w-full flex-col p-3 md:w-[min(500px,42vw)]"
       initial={calm ? false : { x: 60, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       transition={{ type: "spring", stiffness: 120, damping: 22, delay: calm ? 0 : 0.3 }}
     >
+      <Sheet seed="ending" radius={22} className="flex min-h-0 flex-1 flex-col">
+      <div className="flex h-[calc(100dvh-24px)] flex-col">
       <div className="flex-1 overflow-y-auto px-6 pt-8 pb-4 md:px-8">
       <p className="voice text-xs font-bold text-lantern">{style.copy.finaleWord}</p>
-      <h2 id="ending-title" className="voice mt-2 text-lg font-bold text-ink" style={{ ["--voice-width" as string]: 108 }}>
+      <h2 id="ending-title" className="voice mt-2 text-lg text-ink" style={{ ["--casual" as string]: 1, ["--voice-weight" as string]: 750 }}>
         {style.copy.recapTitle}
       </h2>
       <p className="mt-2 text-sm text-ink-dim">{style.copy.recapIntro}</p>
@@ -303,17 +310,19 @@ export function EndingPanel({
         ))}
       </ul>
       </div>
-      <div className="flex flex-wrap gap-3 border-t border-line px-6 py-4 md:px-8">
-        <button ref={first} type="button" onClick={onKeepTalking} className="min-h-11 cursor-pointer rounded-md bg-accent px-5 text-sm font-bold text-accent-ink hover:bg-accent-hover">
+      <div className="flex flex-wrap gap-2 border-t border-dashed border-line px-6 py-4 md:px-8">
+        <InkButton ref={first} onClick={onKeepTalking}>
           {style.copy.resume}
-        </button>
-        <button type="button" onClick={onTeachAgain} className="min-h-11 cursor-pointer rounded-md border border-line px-5 text-sm font-bold text-ink hover:bg-chip">
+        </InkButton>
+        <InkButton variant="quiet" onClick={onTeachAgain}>
           {style.copy.teachAgain}
-        </button>
-        <button type="button" onClick={onTitle} className="min-h-11 cursor-pointer rounded-md px-3 text-sm font-bold text-ink-dim underline-offset-4 hover:text-ink hover:underline">
+        </InkButton>
+        <InkButton variant="ghost" onClick={onTitle}>
           {style.copy.backToTitle}
-        </button>
+        </InkButton>
       </div>
+      </div>
+      </Sheet>
     </motion.section>
   );
 }
@@ -327,8 +336,8 @@ export function StoryCaption({ text }: { text: string | null }) {
         {text && (
           <motion.p
             key={text}
-            className="voice max-w-[40ch] text-center text-sm text-ink-dim [text-shadow:0_1px_8px_rgb(0_0_0/0.9)]"
-            style={{ ["--voice-width" as string]: 96 }}
+            className="voice max-w-[40ch] text-center text-md text-ink [text-shadow:0_1px_10px_rgb(0_0_0/0.95)]"
+            style={{ ["--casual" as string]: 0.7, ["--slant" as string]: -8, ["--voice-weight" as string]: 500 }}
             initial={calm ? false : { opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={calm ? undefined : { opacity: 0, transition: { duration: 1.2 } }}

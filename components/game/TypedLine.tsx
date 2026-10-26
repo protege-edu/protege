@@ -6,7 +6,8 @@ import { useCalmMotion } from "@/lib/useCalmMotion";
 /**
  * Gloam's line, typed out like game dialogue. Click (or press any key in the box) to show it all.
  * The voice font changes shape with Gloam's mood: `shape` is -40 (flat, unimpressed) to 100 (thrilled).
- * Shantell Sans bounces, Martian Mono gets wider; the CSS for the age style decides which.
+ * Shantell Sans bounces; Recursive (high school) gets looser and heavier when Gloam is thrilled and leans
+ * when it's sheepish or unimpressed. The CSS for the age style decides which axes apply.
  */
 export function TypedLine({ text, shape, animate, className = "" }: { text: string; shape: number; animate: boolean; className?: string }) {
   const calm = useCalmMotion();
@@ -26,13 +27,19 @@ export function TypedLine({ text, shape, animate, className = "" }: { text: stri
     return () => clearInterval(t);
   }, [text, play]);
 
-  const width = 88 + ((Math.max(-40, Math.min(100, shape)) + 40) / 140) * 24;
+  const t = (Math.max(-40, Math.min(100, shape)) + 40) / 140;
   const done = shown >= text.length;
 
   return (
     <p
       className={`voice ${className}`}
-      style={{ ["--bounce" as string]: shape, ["--voice-width" as string]: width.toFixed(1), ["--informal" as string]: 60 }}
+      style={{
+        ["--bounce" as string]: shape,
+        ["--informal" as string]: 60,
+        ["--casual" as string]: (0.45 + t * 0.55).toFixed(2),
+        ["--slant" as string]: shape < 0 ? -7 : 0,
+        ["--voice-weight" as string]: Math.round(520 + t * 220),
+      }}
       onClick={() => setShown(text.length)}
     >
       {/* The full line is always there for screen readers; the typing is only visual */}

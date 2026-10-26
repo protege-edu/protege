@@ -8,7 +8,7 @@ import { useCalmMotion } from "@/lib/useCalmMotion";
 import type { ClientLesson } from "@/lib/lesson/types";
 import { DialogueBand, IntroBand } from "./DialogueBand";
 import { EndingPanel, HelpDialog, LogDrawer, PauseMenu, StoryCaption, TitleScreen, TopBar } from "./Overlays";
-import { Stage } from "./Stage";
+import { Stage, type GloamBox } from "./Stage";
 import { useTeachSession } from "./useTeachSession";
 
 type Overlay = null | "pause" | "help" | "log";
@@ -37,6 +37,8 @@ export function GameScreen({ lesson }: { lesson: ClientLesson }) {
   const calm = useCalmMotion();
   const [overlay, setOverlay] = useState<Overlay>(null);
   const [caption, setCaption] = useState<string | null>(null);
+  const [gloamBox, setGloamBox] = useState<GloamBox | null>(null);
+  const litCount = lesson.concepts.filter((c) => s.shown[c.id] === 3).length;
   // The opening shot: the camera starts on the sky and cranes down into the valley
   const [opened, setOpened] = useState(false);
   useEffect(() => {
@@ -100,12 +102,13 @@ export function GameScreen({ lesson }: { lesson: ClientLesson }) {
           groundAt={shot.groundAt}
           gloamScale={shot.scale}
           showCandles={s.phase !== "title" && s.phase !== "loading"}
+          onGloamBox={setGloamBox}
         >
-          {(s.phase === "teach" || s.phase === "intro") && <TopBar style={style} lesson={lesson} chapter={1} onPause={() => setOverlay("pause")} />}
+          {(s.phase === "teach" || s.phase === "intro") && <TopBar style={style} lesson={lesson} lit={litCount} onPause={() => setOverlay("pause")} />}
           <StoryCaption text={s.phase === "teach" ? caption : null} />
           <EurekaMoment moment={s.moment} style={style} x={focus} onPeak={s.onPeak} onDone={s.onMomentDone} />
           <AnimatePresence>
-            {s.phase === "title" && <TitleScreen key="title" style={style} lesson={lesson} resumable={s.resumable} onStart={s.start} onHelp={() => setOverlay("help")} />}
+            {s.phase === "title" && <TitleScreen key="title" style={style} lesson={lesson} resumable={s.resumable} light={s.light} onStart={s.start} onHelp={() => setOverlay("help")} />}
           </AnimatePresence>
           {s.phase === "ending" && s.recap && (
             <EndingPanel style={style} recap={s.recap} onKeepTalking={() => s.setPhase("teach")} onTeachAgain={s.startOver} onTitle={toTitle} />
@@ -113,8 +116,8 @@ export function GameScreen({ lesson }: { lesson: ClientLesson }) {
         </Stage>
       </div>
 
-      {s.phase === "intro" && <IntroBand s={s} style={style} steps={steps} />}
-      {s.phase === "teach" && <DialogueBand s={s} style={style} onOpenLog={() => setOverlay("log")} />}
+      {s.phase === "intro" && <IntroBand s={s} style={style} steps={steps} gloam={gloamBox} wide={wide} />}
+      {s.phase === "teach" && <DialogueBand s={s} style={style} gloam={gloamBox} wide={wide} onOpenLog={() => setOverlay("log")} />}
 
       {/* fade in from black, like the start of a film */}
       <motion.div

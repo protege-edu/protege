@@ -57,3 +57,24 @@ GLOAM = (
     "hand-painted, gouache brushwork, soft fur texture, Spiritfarer and Studio Ghibli style, "
     "isolated on a plain flat very dark green background, no text, no watermark"
 )
+
+
+# ---- Gloam 2.0 concept round (Phase 3) ----
+# Same core in every concept: small, round, a little dramatic, a lantern hanging from a curly stalk on its head.
+# Different materials and silhouettes, so the pick is a real choice. Front view, arms down, plain background:
+# the chosen one gets cut into parts for the animation rig.
+_CONCEPT_TAIL = (
+    "a curly vine stalk with a spiral tip grows from the top of its head and curves over to hold a small round paper lantern, "
+    "the lantern glows warm gold and lights the top of its head, full body, centered, front view, standing, both short arms down at its sides, "
+    "two tiny feet, big expressive eyes, a dry unimpressed half-lidded expression, "
+    "hand-painted character concept art, gouache and oil brushwork, soft painterly shading, indie game character design sheet, "
+    "isolated on a plain flat very dark teal background, no text, no watermark"
+)
+CONCEPTS = {
+    "c1_ink": "a small round creature with a smooth glossy blue-black ink-drop body like a polished river stone, a soft sheen highlight, big pale moon-white eyes, " + _CONCEPT_TAIL,
+    "c2_felt": "a small round creature made of rust-orange felted wool with soft fuzzy fibres and faint stitched seams, a cream-coloured belly patch, " + _CONCEPT_TAIL,
+    "c3_moth": "a small round fluffy creature with charcoal-grey and dusty lavender fur like a moth, two big feathery moth antennae ears, a fluffy cream collar ruff, " + _CONCEPT_TAIL,
+    "c4_velvet": "a small round creature with short deep plum-rose velvet fur, darker plum underneath, two small rounded ear tufts, rosy cheeks, " + _CONCEPT_TAIL,
+    "c5_owl": "a small round puffball creature with slate-blue and cream feathery down, two pointed ear tufts like a tiny owl, a pale face disc, " + _CONCEPT_TAIL,
+    "c6_ember": "a small round creature with soft charcoal fur and a warm dark-red ember glow showing through the fur on its chest, two small horn-like nubs, " + _CONCEPT_TAIL,
+}

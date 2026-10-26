@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Atkinson_Hyperlegible_Next, Martian_Mono, Shantell_Sans } from "next/font/google";
+import { Atkinson_Hyperlegible_Next, Recursive, Shantell_Sans } from "next/font/google";
 import "./globals.css";
 
 // Gloam's voice for younger age styles. BNCE (bounce) lets its handwriting change with mood.
@@ -9,11 +9,12 @@ const shantell = Shantell_Sans({
   axes: ["BNCE", "INFM"],
 });
 
-// Gloam's voice for high school: dry, typed, deadpan. The width axis stretches with mood.
-const martian = Martian_Mono({
-  variable: "--font-martian",
+// Gloam's voice for high school: dry and deadpan, but a person talking, not a terminal.
+// Its CASL (casual) and slnt axes shift with Gloam's mood: upright and neat when unimpressed, loose when thrilled.
+const recursive = Recursive({
+  variable: "--font-recursive",
   subsets: ["latin"],
-  axes: ["wdth"],
+  axes: ["CASL", "slnt"],
 });
 
 // Everything students read and type, at every age.
@@ -28,12 +29,12 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0a120f",
+  themeColor: "#0d1613",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${shantell.variable} ${martian.variable} ${atkinson.variable}`}>
+    <html lang="en" className={`${shantell.variable} ${recursive.variable} ${atkinson.variable}`}>
       <body>{children}</body>
     </html>
   );
