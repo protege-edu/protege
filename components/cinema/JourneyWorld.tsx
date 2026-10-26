@@ -6,7 +6,7 @@ import type { GloamActor } from "@/components/gloam/rig/GloamActor";
 import type { GloamBox } from "@/components/game/Stage";
 import type { JourneyWorld as World } from "@/lib/age-styles/types";
 import { lanternFor } from "@/lib/companion/level";
-import { BORED } from "@/lib/gloam-rig/brain";
+import { BORED, TRICKS } from "@/lib/gloam-rig/brain";
 import type { RigSpec } from "@/lib/gloam-rig/spec";
 import { useCalmMotion } from "@/lib/useCalmMotion";
 import { fadeInCanvas, fogCanvas, glowCanvas, grainCanvas, lightSpillCanvas, ringCanvas, vignetteCanvas } from "./textures";
@@ -271,6 +271,7 @@ export function JourneyWorld(props: JourneyProps) {
       let light = live.current.light;
       let lastEureka = live.current.eurekaTick;
       let lastDoze = live.current.dozeTick ?? 0;
+      let lastLevel = live.current.level;
       let push = 0;
       let slowFrames = 0;
       let checked = 0;
@@ -321,6 +322,12 @@ export function JourneyWorld(props: JourneyProps) {
         camX += (gx - camX) * (still ? 1 : Math.min(1, dt * 2.4));
         fit();
 
+        // a new level: Gloam shows off the trick it just learned (after the moment settles)
+        if (L.level > lastLevel) {
+          const learned = TRICKS.find((tk) => tk.level === L.level);
+          if (learned) setTimeout(() => actor.brain.showTrick(learned.name), 2600);
+        }
+        lastLevel = L.level;
         if ((L.dozeTick ?? 0) !== lastDoze) {
           lastDoze = L.dozeTick ?? 0;
           actor.brain.setIdle(BORED.sleep - 6); // a few seconds of yawning around, then asleep
@@ -370,6 +377,7 @@ export function JourneyWorld(props: JourneyProps) {
           lookAt: null,
           waiting: L.waiting && !walking,
           calm: still,
+          level: L.level,
           at: { x: feet.x, y: feet.y },
           lanternScale: lan.scale,
           lanternGlow: lan.glow,

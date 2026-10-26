@@ -54,6 +54,8 @@ export class GloamActor {
   private lanternDark: PixiNS.Sprite;
   private flameGlow: PixiNS.Sprite;
   private zs: PixiNS.Text[];
+  private notes: PixiNS.Text[];
+  private pet: PixiNS.Sprite;
   private stalk: Stalk;
   private pendulum: Pendulum;
   private lastLook = { x: 0, y: 0 };
@@ -145,6 +147,21 @@ export class GloamActor {
       c.addChild(z);
       return z;
     });
+
+    // the "hum" trick's notes, and the "firefly" trick's firefly
+    this.notes = ["\u266A", "\u266B", "\u266A"].map((n) => {
+      const z = new PIXI.Text({ text: n, style: { fontFamily: "system-ui", fontWeight: "700", fontSize: 30, fill: 0xd3ddd6 } });
+      z.anchor.set(0.5);
+      z.alpha = 0;
+      c.addChild(z);
+      return z;
+    });
+    this.pet = new PIXI.Sprite(tex.glow);
+    this.pet.anchor.set(0.5);
+    this.pet.tint = 0xffe39a;
+    this.pet.blendMode = "add";
+    this.pet.alpha = 0;
+    c.addChild(this.pet);
 
     const rest = spec.stalk.rest.map(([x, y]) => ({ x, y }));
     this.stalk = new Stalk(rest, 0.14, 0.88);
@@ -429,6 +446,26 @@ export class GloamActor {
       z.scale.set((0.5 + t * 0.8) * (H / 300));
       z.alpha = Math.sin(t * Math.PI) * 0.8;
     });
+
+    // ---- tricks ----
+    const head = this.deform(sp.body.feet[0], sp.body.feet[1] * 0.18, f);
+    this.notes.forEach((nt, i) => {
+      if (f.trick !== "hum") {
+        nt.alpha = Math.max(0, nt.alpha - dt * 2);
+        return;
+      }
+      const k = (this.brain.t * 0.5 + i / 3) % 1;
+      nt.position.set(head.x + H * 0.32 + Math.sin(k * 7 + i) * H * 0.06, head.y - k * H * 0.5);
+      nt.scale.set((0.6 + k * 0.5) * (H / 300));
+      nt.alpha = Math.sin(k * Math.PI) * 0.85 * Math.sin(Math.min(1, f.trickK * 1.15) * Math.PI);
+    });
+    const petOn = f.trick === "firefly" ? Math.sin(Math.min(1, f.trickK * 1.15) * Math.PI) : 0;
+    this.pet.alpha += (petOn - this.pet.alpha) * Math.min(1, dt * 6);
+    if (this.pet.alpha > 0.01) {
+      const a = f.fireflyAngle;
+      this.pet.position.set(head.x + Math.cos(a) * H * 0.48, head.y + Math.sin(a) * H * 0.3 - H * 0.12);
+      this.pet.scale.set(((H * 0.34) / this.pet.texture.width) * (0.85 + 0.15 * Math.sin(this.brain.t * 13)));
+    }
 
     const top = this.deform(sp.body.feet[0], 0, f);
     return { lantern: flame, mouth: m, top: top.y, frame: f };

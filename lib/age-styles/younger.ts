@@ -18,6 +18,13 @@ const storybookCopy = (big: boolean): AgeStyle["copy"] => ({
   titleHelp: big ? "What do I do?" : "How this works",
   forTeachers: "For teachers",
   chapter: (n) => `Chapter ${n}`,
+  trickLearned: (level) =>
+    ({
+      2: "New trick: Gloam can twirl its lantern!",
+      3: "New trick: Gloam hums a little song!",
+      4: "New trick: Gloam has a firefly friend!",
+      5: "New trick: Gloam does a big ta-da pose!",
+    })[level] ?? null,
   introNext: "Next",
   introDone: big ? "Let's go!" : "Let's start",
   introSkip: "Skip",

@@ -100,6 +100,7 @@ export function LevelUpCard({ style, level, line, onDone }: { style: AgeStyle; l
               {style.id === "senior" ? `level ${level}` : `Level ${level}!`}
             </p>
             <p className="voice mt-1 text-sm text-ink-dim">{line}</p>
+            {style.copy.trickLearned(level) && <p className="mt-2 border-t border-dashed border-line pt-2 text-xs text-ink">{style.copy.trickLearned(level)}</p>}
           </Sheet>
         </motion.div>
       )}

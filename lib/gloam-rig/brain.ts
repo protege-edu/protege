@@ -33,7 +33,22 @@ export interface BrainInput {
   waiting: boolean;
   /** play less (reduced motion): no hops, no boredom, gentler everything */
   calm: boolean;
+  /** this student's Gloam level: higher levels unlock new tricks for when Gloam is bored */
+  level?: number;
 }
+
+/**
+ * Tricks Gloam learns as it levels up (from everything a student teaches it). When it's bored,
+ * it shows them off, one at a time. Level 1 just looks around, fiddles, sits and sleeps.
+ */
+export const TRICKS = [
+  { name: "spin", level: 2 },
+  { name: "hum", level: 3 },
+  { name: "firefly", level: 4 },
+  { name: "pose", level: 5 },
+] as const;
+export type TrickName = (typeof TRICKS)[number]["name"];
+const TRICK_LEN = 4.2;
 
 /** One frame of Gloam. Distances are in body heights; angles in radians. */
 export interface Frame {
@@ -67,6 +82,11 @@ export interface Frame {
   lanternKick: number;
   /** "z" bubbles while asleep */
   snoring: boolean;
+  /** the trick being shown off right now (and how far through it, 0..1) */
+  trick: TrickName | null;
+  trickK: number;
+  /** where Gloam's pet firefly is, as an angle around its head (the "firefly" trick) */
+  fireflyAngle: number;
 }
 
 const D2R = Math.PI / 180;
@@ -91,6 +111,9 @@ export class GloamBrain {
   private walkPhase = 0;
   private lastMood: GloamMood | null = null;
   private wasAsleep = false;
+  private trickAt = 0;
+  private trickIdx = -1;
+  private forced: { name: TrickName; at: number } | null = null;
 
   private sp(name: string, x: number, stiffness = 120, damping = 14) {
     return (this.s[name] ??= new Spring(x, stiffness, damping));
@@ -123,7 +146,30 @@ export class GloamBrain {
     const bored = this.idle;
     const asleep = inp.mood === "asleep" || bored > BORED.sleep;
     const sitting = asleep || bored > BORED.sit;
-    const fiddling = !sitting && bored > BORED.fiddle && Math.sin(t * 0.9) > -0.2;
+    // a trick to show off (once Gloam has learned some), every so often while it waits
+    const known = TRICKS.filter((tk) => (inp.level ?? 1) >= tk.level);
+    let trick: TrickName | null = null;
+    let trickK = 0;
+    if (!inp.calm && !sitting && bored > BORED.lookAround + 3 && known.length) {
+      if (this.trickAt === 0 || t > this.trickAt + TRICK_LEN + 9) {
+        this.trickAt = t;
+        this.trickIdx = (this.trickIdx + 1) % known.length;
+      }
+      const k = (t - this.trickAt) / TRICK_LEN;
+      if (k < 1) {
+        trick = known[this.trickIdx % known.length].name;
+        trickK = k;
+      }
+    } else this.trickAt = 0;
+    // the lab / test mode can ask for a trick right now
+    if (this.forced && !inp.calm) {
+      const k = (t - this.forced.at) / TRICK_LEN;
+      if (k < 1) {
+        trick = this.forced.name;
+        trickK = k;
+      } else this.forced = null;
+    }
+    const fiddling = !trick && !sitting && bored > BORED.fiddle && Math.sin(t * 0.9) > -0.2;
     if (this.wasAsleep && !asleep) {
       this.wakeT = t;
       lanternKick += 3;
@@ -198,12 +244,45 @@ export class GloamBrain {
       browY -= 0.08 * flap;
     }
 
-    // fiddling with the lantern while waiting
+    // fiddling with the lantern while waiting (it hangs on Gloam's left)
     if (fiddling) {
-      armR = 135 * D2R + Math.sin(t * 3) * 0.15;
-      lookX = 0.65;
+      armL = 135 * D2R + Math.sin(t * 3) * 0.15;
+      lookX = -0.65;
       lookY = -0.85;
       if (Math.sin(t * 3) > 0.97) lanternKick += 0.6;
+    }
+
+    // ---- showing off a trick ----
+    const env2 = Math.sin(Math.min(1, trickK * 1.15) * Math.PI); // eases in and out
+    if (trick === "spin") {
+      // twirls the lantern round and round on its stalk
+      armL = (110 + 40 * env2) * D2R + Math.sin(t * 9) * 0.25;
+      lookX = -0.7;
+      lookY = -0.9;
+      if (Math.sin(t * 9) > 0.92) lanternKick += 2.4 * env2;
+      smile = 0.5;
+    } else if (trick === "hum") {
+      // eyes half shut, swaying, humming (little notes float up)
+      lidL = lidR = 0.55;
+      mouthOpen = 0.12 + 0.12 * (0.5 + 0.5 * Math.sin(t * 6));
+      tilt += Math.sin(t * 2.2) * 0.09 * env2;
+      smile = 0.35;
+    } else if (trick === "firefly") {
+      // a firefly circles its head; its eyes follow it round
+      const a = t * 2.4;
+      lookX = Math.cos(a);
+      lookY = Math.sin(a) * 0.7 - 0.2;
+      pupil = 1.2;
+      smile = 0.6;
+    } else if (trick === "pose") {
+      // the big finish: arms up, tall, very pleased with itself
+      armL = armR = (40 + 120 * env2) * D2R;
+      squashY += 0.06 * env2;
+      squashX -= 0.04 * env2;
+      smile = 1;
+      mouthOpen = 0.35 * env2;
+      lidL = lidR = 0.2;
+      if (trickK < 0.04) lanternKick += 1.2;
     }
 
     // sitting and sleeping
@@ -214,7 +293,8 @@ export class GloamBrain {
       squashY -= 0.06;
       squashX += 0.05;
       armL = 18 * D2R;
-      armR = fiddling ? armR : 18 * D2R;
+      armR = 18 * D2R;
+      if (!fiddling) armL = 18 * D2R;
     }
     if (asleep) {
       lidL = lidR = 1;
@@ -326,7 +406,15 @@ export class GloamBrain {
       glow: f("glow", glow, 80, 14),
       lanternKick: inp.calm ? 0 : lanternKick,
       snoring: asleep,
+      trick,
+      trickK,
+      fireflyAngle: t * 2.4,
     };
+  }
+
+  /** For the lab page and test mode: show off a trick right now */
+  showTrick(name: TrickName) {
+    this.forced = { name, at: this.t };
   }
 
   /** For tests and the lab page: pretend nobody typed for this long */

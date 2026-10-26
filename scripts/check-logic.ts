@@ -10,7 +10,7 @@ import { checkSafety } from "@/lib/ai/safety";
 import { directBeat } from "@/lib/companion/director";
 import { candidateConcepts, gradeCheck } from "@/lib/companion/grade";
 import { applyProgress, brightness, startingUnderstanding } from "@/lib/companion/progress";
-import { BORED, GloamBrain } from "@/lib/gloam-rig/brain";
+import { BORED, GloamBrain, TRICKS } from "@/lib/gloam-rig/brain";
 import { lanternFor, levelFor, newlyLit } from "@/lib/companion/level";
 import { seasons } from "@/lib/lesson/seasons";
 import { checkBlueprint } from "@/lib/teacher/checks";
@@ -239,6 +239,17 @@ test("a eureka makes Gloam jump with its arms up", () => {
   }
   assert.ok(highest < -0.15, `jumped ${highest}`);
   assert.ok(arms > 2, `arms ${arms}`);
+});
+test("tricks are unlocked by levels: a level 1 Gloam has none, a level 3 Gloam shows them off", () => {
+  const trickAfterBoredom = (level: number) => {
+    const b = new GloamBrain();
+    b.setIdle(BORED.lookAround + 4);
+    let seen: string | null = null;
+    for (let i = 0; i < 120; i++) seen = b.update(1 / 60, { ...still, level }).trick ?? seen;
+    return seen;
+  };
+  assert.equal(trickAfterBoredom(1), null);
+  assert.ok(TRICKS.some((t) => t.name === trickAfterBoredom(3)));
 });
 test("reduced motion: no hops or eureka jump", () => {
   const b = new GloamBrain();

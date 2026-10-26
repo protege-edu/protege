@@ -131,6 +131,13 @@ export const senior: AgeStyle = {
     titleHelp: "How this works",
     forTeachers: "For teachers",
     chapter: (n) => `Chapter ${n}`,
+    trickLearned: (level) =>
+      ({
+        2: "New trick: it twirls its lantern when it's bored. Show-off.",
+        3: "New trick: it hums when nobody's typing. Badly.",
+        4: "New trick: a firefly hangs out with it now.",
+        5: "New trick: it strikes a pose. We don't talk about it.",
+      })[level] ?? null,
     introNext: "Next",
     introDone: "Let's go",
     introSkip: "Skip intro",

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { POSES, type GloamMood } from "@/components/gloam/poses";
 import type { GloamActor } from "@/components/gloam/rig/GloamActor";
 import { loadActor } from "@/components/gloam/rig/load";
+import type { TrickName } from "@/lib/gloam-rig/brain";
 import { senior } from "@/lib/age-styles/senior";
 
 const MOODS = Object.keys(POSES) as GloamMood[];
@@ -35,6 +36,12 @@ export function RigLab() {
       const actor = await loadActor(PIXI, senior.look.rig!);
       actorRef.current = actor;
       app.stage.addChild(actor.container);
+      // ?trick=firefly shows that trick, again every 5 seconds
+      const trick = q.get("trick") as TrickName | null;
+      if (trick) {
+        actor.brain.showTrick(trick);
+        setInterval(() => actor.brain.showTrick(trick), 5000);
+      }
       const idle = Number(q.get("idle") ?? 0);
       if (idle) actor.brain.setIdle(idle);
       if (q.get("eureka")) live.current.eureka = 1;
@@ -44,7 +51,7 @@ export function RigLab() {
         const L = live.current;
         actor.container.position.set(app.screen.width / 2, app.screen.height * 0.82);
         actor.setHeight(app.screen.height * 0.5);
-        actor.update(dt, { mood: L.mood, typingTick: L.typing, eurekaTick: L.eureka, talking: L.talk, light: L.light, walk: L.walk, lookAt: null, waiting: true, calm: false });
+        actor.update(dt, { mood: L.mood, typingTick: L.typing, eurekaTick: L.eureka, talking: L.talk, light: L.light, walk: L.walk, lookAt: null, waiting: true, calm: false, level: Number(q.get("level") ?? 1) });
       };
       for (let t = 0; t < at; t += 1 / 60) step(1 / 60);
       app.ticker.add((tk) => step(tk.deltaMS / 1000));

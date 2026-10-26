@@ -123,6 +123,8 @@ export interface AgeStyle {
     titleHelp: string;
     forTeachers: string;
     chapter: (n: number) => string;
+    /** What Gloam learned to do at this level (lib/gloam-rig/brain.ts TRICKS), or null */
+    trickLearned: (level: number) => string | null;
     introNext: string;
     introDone: string;
     introSkip: string;
