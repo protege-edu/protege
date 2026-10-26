@@ -7,6 +7,7 @@ Prints the cropped size and the crop offset, so measurements made on the paintin
 """
 import sys
 
+import cv2
 import numpy as np
 from PIL import Image
 from rembg import new_session, remove
@@ -17,6 +18,18 @@ def main():
     max_h = int(sys.argv[3]) if len(sys.argv) > 3 else 0
     img = Image.open(src).convert("RGB")
     cut = remove(img, session=new_session("isnet-general-use"), post_process_mask=True)
+    # a dark niche or doorway can look like "background": fill any see-through hole the object surrounds,
+    # with the painting's own colours (a prop never has real holes)
+    rgba = np.array(cut)
+    solid = (rgba[..., 3] > 8).astype(np.uint8)
+    outside = np.zeros((solid.shape[0] + 2, solid.shape[1] + 2), np.uint8)
+    flood = 1 - solid
+    cv2.floodFill(flood, outside, (0, 0), 2)
+    holes = flood == 1
+    if holes.any():
+        rgba[holes, :3] = np.array(img)[holes]
+        rgba[holes, 3] = 255
+        cut = Image.fromarray(rgba, "RGBA")
     a = np.array(cut)[..., 3]
     ys, xs = np.where(a > 8)
     box = (int(xs.min()) - 4, int(ys.min()) - 4, int(xs.max()) + 5, int(ys.max()) + 5)

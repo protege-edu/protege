@@ -24,8 +24,8 @@ export const littleWorld: JourneyWorld = {
   fog: "#d9e2e6",
   firefly: "#fff2b3",
   map: { dark: "/art/little/journey-map-dark.webp", lit: "/art/little/journey-map-lit.webp" },
-  // (the high school shrine until the meadow's own is painted)
-  shrine: { src: "/art/senior/shrine.webp", w: 491, h: 391, base: [249, 373], candle: [249, 250], scale: 0.62 },
+  // painted from art/worlds/little.json (seed 42; its painted candle erased: the game draws the real one), cut out by art/cutout.py
+  shrine: { src: "/art/little/shrine.webp", w: 329, h: 400, base: [164, 392], candle: [161, 296], scale: 0.62 },
   travel: ["Walking, walking, walking!", "Ooh, a flower!", "My legs are tiny. The meadow is big!", "Next candle, here I come!", "Is that a bee? Hi, bee!", "Almost there! I think!"],
 };
 
@@ -44,7 +44,8 @@ export const juniorWorld: JourneyWorld = {
   fog: "#c9c3da",
   firefly: "#ffe6a8",
   map: { dark: "/art/junior/journey-map-dark.webp", lit: "/art/junior/journey-map-lit.webp" },
-  shrine: { src: "/art/junior/shrine.webp", w: 400, h: 400, base: [200, 392], candle: [200, 250], scale: 0.62 },
+  // painted from art/worlds/junior.json (seed 43, painted candle erased), cut out by art/cutout.py
+  shrine: { src: "/art/junior/shrine.webp", w: 368, h: 400, base: [184, 383], candle: [196, 324], scale: 0.62 },
   travel: ["Onward! Probably.", "These mushrooms are judging me.", "I'm not lost. The path is lost.", "Next candle! You explain, I nod.", "Did that fern just move?", "My lantern says left. My feet say right."],
 };
 
@@ -63,7 +64,8 @@ export const middleWorld: JourneyWorld = {
   fog: "#aab4c8",
   firefly: "#ffd98a",
   map: { dark: "/art/middle/journey-map-dark.webp", lit: "/art/middle/journey-map-lit.webp" },
-  shrine: { src: "/art/middle/shrine.webp", w: 400, h: 400, base: [200, 392], candle: [200, 250], scale: 0.62 },
+  // painted from art/worlds/middle.json (seed 41, painted candle erased), cut out by art/cutout.py
+  shrine: { src: "/art/middle/shrine.webp", w: 434, h: 400, base: [217, 392], candle: [215, 304], scale: 0.66 },
   travel: [
     "the WIND. it's trying to steal my lantern.",
     "don't look down. i looked down.",
