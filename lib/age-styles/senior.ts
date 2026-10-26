@@ -172,7 +172,7 @@ export const senior: AgeStyle = {
     theme: "senior",
     gloamSkin: "painted",
     motion: 0.75,
-    voiceAxis: "width",
+    voiceAxis: "casual",
     candleLabels: false,
     // Painted with local FLUX.1-schnell (art/prompts.py VALLEY_LIT, seed 101), relit with art/grade.py,
     // cut into depth layers with art/layers.py. A human artist can replace these files 1:1.

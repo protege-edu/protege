@@ -10,6 +10,8 @@ import { checkSafety } from "@/lib/ai/safety";
 import { directBeat } from "@/lib/companion/director";
 import { candidateConcepts, gradeCheck } from "@/lib/companion/grade";
 import { applyProgress, brightness, startingUnderstanding } from "@/lib/companion/progress";
+import { BORED, GloamBrain } from "@/lib/gloam-rig/brain";
+import { lanternFor, levelFor, newlyLit } from "@/lib/companion/level";
 import { seasons } from "@/lib/lesson/seasons";
 import { checkBlueprint } from "@/lib/teacher/checks";
 import { dropRunningLines, pdfLinesToText } from "@/lib/teacher/pdf-text";
@@ -193,6 +195,56 @@ test("running headers are dropped so each page is named by its own heading", () 
 });
 test("a smaller subtitle under a big title isn't a subscript", () => {
   assert.equal(pdfLinesToText([piece("Exponents", 711, 24, true), piece("A guide", 696, 11)]), "Exponents\nA guide");
+});
+
+console.log("the adventure");
+test("Gloam's level comes only from what was taught", () => {
+  assert.equal(levelFor(0).level, 1);
+  assert.equal(levelFor(2).level, 1);
+  assert.equal(levelFor(3).level, 2);
+  assert.equal(levelFor(3).progress, 0);
+  assert.equal(levelFor(500).next, null);
+  assert.ok(lanternFor(5).scale > lanternFor(1).scale);
+});
+test("checkpoints are the ideas lit this turn, in lesson order", () => {
+  assert.deepEqual(newlyLit({ a: 2, b: 3, c: 1 }, { a: 3, b: 3, c: 3 }, ["a", "b", "c"]), ["a", "c"]);
+  assert.deepEqual(newlyLit({ a: 2 }, { a: 2 }, ["a"]), []);
+});
+const still = { mood: "curious" as const, typingTick: 0, eurekaTick: 0, talking: false, light: 0.2, walk: 0, lookAt: null, waiting: true, calm: false };
+test("Gloam's brain never produces a broken number", () => {
+  const b = new GloamBrain();
+  for (let i = 0; i < 600; i++) {
+    const f = b.update(1 / 60, { ...still, talking: i % 200 < 100, walk: i > 300 ? 1 : 0, typingTick: Math.floor(i / 7), eurekaTick: i > 400 ? 1 : 0 });
+    for (const [k, v] of Object.entries(f)) if (typeof v === "number") assert.ok(Number.isFinite(v), `${k} is ${v}`);
+  }
+});
+test("ignored long enough, Gloam sits, then falls asleep; typing wakes it", () => {
+  const b = new GloamBrain();
+  b.setIdle(BORED.sleep + 1);
+  let f = b.update(1 / 60, still);
+  for (let i = 0; i < 240; i++) f = b.update(1 / 60, still);
+  assert.ok(f.snoring && f.sleep > 0.9, "asleep");
+  for (let i = 0; i < 240; i++) f = b.update(1 / 60, { ...still, typingTick: 1 });
+  assert.ok(!f.snoring, "awake again");
+});
+test("a eureka makes Gloam jump with its arms up", () => {
+  const b = new GloamBrain();
+  for (let i = 0; i < 30; i++) b.update(1 / 60, still);
+  let highest = 0;
+  let arms = 0;
+  for (let i = 0; i < 90; i++) {
+    const f = b.update(1 / 60, { ...still, eurekaTick: 1 });
+    highest = Math.min(highest, f.y);
+    arms = Math.max(arms, f.armL);
+  }
+  assert.ok(highest < -0.15, `jumped ${highest}`);
+  assert.ok(arms > 2, `arms ${arms}`);
+});
+test("reduced motion: no hops or eureka jump", () => {
+  const b = new GloamBrain();
+  let highest = 0;
+  for (let i = 0; i < 120; i++) highest = Math.min(highest, b.update(1 / 60, { ...still, calm: true, eurekaTick: i > 10 ? 1 : 0 }).y);
+  assert.ok(highest > -0.02, `moved ${highest}`);
 });
 
 console.log(`\n${passed} passed${process.exitCode ? ", some FAILED" : ""}`);

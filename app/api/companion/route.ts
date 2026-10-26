@@ -51,7 +51,7 @@ export async function POST(request: Request) {
         if (out.source === "offline") {
           send({ type: "offline" });
         } else {
-          recordTurn({
+          const saved = recordTurn({
             sessionId: session.id,
             studentText: parsed.data.message,
             reply: out.reply,
@@ -69,6 +69,9 @@ export async function POST(request: Request) {
             improved: out.improved,
             clicked: out.clicked,
             finished: out.finished,
+            checkpoints: saved.checkpoints,
+            gloam: saved.after,
+            levelUp: saved.after.level > saved.before.level,
             ...(out.finished ? { recap: lessonRecap(lesson) } : {}),
           });
         }

@@ -29,6 +29,8 @@ const SKINS = {
   },
   painterly: { aspect: 320 / 350, feet: 0.943, lantern: 0.25, lanternDX: (172 - 160) / 320 },
   storybook: { aspect: 260 / 312, feet: 0.955, lantern: 0.135, lanternDX: (164 - 130) / 260 },
+  // the animated rig draws itself inside the painted world (CinematicValley); these are its rough proportions
+  rig: { aspect: 0.78, feet: 0.97, lantern: 0.1, lanternDX: -0.2 },
 } as const;
 
 export interface GloamBox {

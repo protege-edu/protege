@@ -10,14 +10,15 @@ export async function GET(request: Request) {
   return Response.json(session);
 }
 
-const Body = z.object({ lessonId: z.string().optional() });
+const Body = z.object({ lessonId: z.string().optional(), studentId: z.string().max(64).optional() });
 
 /** Start a new session */
 export async function POST(request: Request) {
   const body = Body.safeParse(await request.json().catch(() => ({})));
   const lessonId = body.success ? (body.data.lessonId ?? DEFAULT_LESSON_ID) : DEFAULT_LESSON_ID;
   try {
-    return Response.json(createSession(lessonId));
+    // the browser's practice student, so their Gloam keeps growing across lessons
+    return Response.json(createSession(lessonId, body.success ? body.data.studentId : undefined));
   } catch {
     // Not approved (or doesn't exist): students never see drafts
     return Response.json({ error: "This lesson isn't ready yet. Ask your teacher to approve it." }, { status: 404 });

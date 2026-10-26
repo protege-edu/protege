@@ -5,6 +5,7 @@ import { POSES, type GloamMood } from "@/components/gloam/poses";
 import type { Moment } from "@/components/scene/EurekaMoment";
 import { pickLine, type AgeStyle } from "@/lib/age-styles";
 import type { Emotion } from "@/lib/ai/schemas";
+import { levelFor, type GloamLevel } from "@/lib/companion/level";
 import { brightness, type Understanding } from "@/lib/companion/progress";
 import type { SessionState } from "@/lib/companion/session";
 import type { ClientLesson, RecapItem } from "@/lib/lesson/types";
@@ -21,6 +22,8 @@ export type Entry =
 // Each lesson remembers its own session, so switching lessons never resumes the wrong one
 const sessionKey = (lessonId: string) => `protege.session.${lessonId}`;
 const SOUND_KEY = "protege.sound";
+// The browser's practice student (a random id, nickname "Test Pilot"), so Gloam keeps growing across lessons
+const STUDENT_KEY = "protege.student";
 // Story beats appear when the valley reaches these brightness levels
 const BEAT_AT = [0, 0.2, 0.45, 0.7, 1];
 
@@ -52,7 +55,8 @@ function loadSession(lessonId: string, fresh = false): Promise<SessionState | nu
       const r = await fetch(`/api/session?id=${encodeURIComponent(saved)}`).catch(() => null);
       if (r?.ok) return (await r.json()) as SessionState;
     }
-    const r = await fetch("/api/session", { method: "POST", body: JSON.stringify({ lessonId }) }).catch(() => null);
+    const studentId = safeStorage(() => localStorage.getItem(STUDENT_KEY), null) ?? undefined;
+    const r = await fetch("/api/session", { method: "POST", body: JSON.stringify({ lessonId, studentId }) }).catch(() => null);
     return r?.ok ? ((await r.json()) as SessionState) : null;
   })();
   sessionLoads.set(lessonId, load);
@@ -81,7 +85,12 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle) {
   const [recap, setRecap] = useState<RecapItem[] | null>(null);
   const [typingTick, setTypingTick] = useState(0);
   const [listening, setListening] = useState(false);
-  const pending = useRef<{ reply: string; emotion: Emotion; understanding: Understanding } | null>(null);
+  const [checkpoints, setCheckpoints] = useState<string[]>([]);
+  const [gloam, setGloam] = useState<GloamLevel>(() => levelFor(0));
+  const [levelUp, setLevelUp] = useState<GloamLevel | null>(null);
+  const [talking, setTalking] = useState(false);
+  const talkTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pending = useRef<{ reply: string; emotion: Emotion; understanding: Understanding; checkpoints?: string[] } | null>(null);
   const lastMessage = useRef<{ text: string; pasted: boolean } | null>(null);
   const beatShown = useRef(0);
   const shownRef = useRef(shown);
@@ -112,6 +121,9 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle) {
   const applySession = useCallback(
     (session: SessionState) => {
       safeStorage(() => localStorage.setItem(sessionKey(session.lessonId), session.id), undefined);
+      safeStorage(() => localStorage.setItem(STUDENT_KEY, session.studentId), undefined);
+      setCheckpoints(session.checkpoints ?? []);
+      if (session.gloam) setGloam(session.gloam);
       setSessionId(session.id);
       setFinished(session.finished);
       setRecap(session.recap ?? null);
@@ -180,9 +192,14 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle) {
   }, [lesson.opener]);
 
   const showReply = useCallback(
-    (reply: string, emo: Emotion, u: Understanding) => {
+    (reply: string, emo: Emotion, u: Understanding, cps?: string[]) => {
       setShown(u);
       setEmotion(emo);
+      if (cps) setCheckpoints(cps);
+      // Gloam's mouth moves while its line types out (TypedLine types ~1 character per 24ms)
+      setTalking(true);
+      if (talkTimer.current) clearTimeout(talkTimer.current);
+      talkTimer.current = setTimeout(() => setTalking(false), Math.min(6000, reply.length * 24 + 200));
       setEntries((xs) => [...xs, { id: nextId(), kind: "gloam", text: reply, emotion: emo, fresh: true }, ...beatsFor(u)]);
     },
     [beatsFor],
@@ -226,10 +243,12 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle) {
               setThinking(ev.clicked.length ? pickLine(style.lines.clicking, fill, []) : null);
               setFinished(ev.finished);
               if (ev.recap) setRecap(ev.recap);
+              if (ev.gloam) setGloam(ev.gloam);
+              if (ev.levelUp) setLevelUp(ev.gloam);
               if (ev.clicked.length) {
                 const concept = lesson.concepts.find((c) => c.id === ev.clicked[0]);
                 const firstEver = lesson.concepts.every((c) => (shownRef.current[c.id] ?? 0) < 3);
-                pending.current = { reply: ev.reply, emotion: ev.emotion, understanding: ev.understanding };
+                pending.current = { reply: ev.reply, emotion: ev.emotion, understanding: ev.understanding, checkpoints: ev.checkpoints };
                 setFlash(ev.clicked[0]);
                 setMoment({
                   key: Date.now(),
@@ -238,7 +257,7 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle) {
                   final: ev.finished,
                 });
               } else {
-                showReply(ev.reply, ev.emotion, ev.understanding);
+                showReply(ev.reply, ev.emotion, ev.understanding, ev.checkpoints);
                 if (sound) pip();
                 setStatus("ready");
               }
@@ -288,7 +307,7 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle) {
     setEurekaTick((t) => t + 1);
     setThinking(null);
     if (sound) chime(finished);
-    showReply(p.reply, p.emotion, p.understanding);
+    showReply(p.reply, p.emotion, p.understanding, p.checkpoints);
   }, [showReply, sound, finished]);
 
   const onMomentDone = useCallback(() => {
@@ -358,6 +377,11 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle) {
     resumable,
     typingTick,
     gloamSaid,
+    checkpoints,
+    gloam,
+    levelUp,
+    clearLevelUp: () => setLevelUp(null),
+    talking,
     bounce: POSES[mood].bounce,
     start,
     finishIntro,

@@ -1,3 +1,4 @@
+import type { RigSpec } from "@/lib/gloam-rig/spec";
 import type { Emotion } from "@/lib/ai/schemas";
 
 /**
@@ -125,12 +126,14 @@ export interface AgeStyle {
   look: {
     /** Sets [data-age-style] on the page; colors, fonts and layout read it from CSS */
     theme: AgeStyleId;
-    /** How Gloam is drawn */
-    gloamSkin: "storybook" | "painterly" | "painted";
+    /** How Gloam is drawn ("rig" = the animated painted rig in `rig`) */
+    gloamSkin: "storybook" | "painterly" | "painted" | "rig";
+    /** This age's own animated Gloam: a painted body + rig file (see lib/gloam-rig) */
+    rig?: RigSpec;
     /** 0..1, scales idle motion, hops, flicker */
     motion: number;
-    /** Gloam's text gets wider (Martian Mono) or bouncier (Shantell) with mood */
-    voiceAxis: "bounce" | "width";
+    /** Gloam's text gets bouncier (Shantell) or more casual (Recursive) with mood */
+    voiceAxis: "bounce" | "casual";
     /** Show each candle's name under it (younger), or only on hover/tap (cleaner, older) */
     candleLabels: boolean;
     /** The painted, cinematic world. Without it, the simpler vector valley is used. */

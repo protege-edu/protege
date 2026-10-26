@@ -78,6 +78,22 @@ def img2img(prompt, image_path, seed=1, denoise=0.5, steps=4):
     return wf
 
 
+def inpaint(prompt, rgba_path, seed=1, steps=4, denoise=1.0):
+    """
+    Paint only where the picture is transparent (or half-transparent, for soft edges), keep the rest.
+    Used to extend a painting sideways (outpainting) into a long panorama.
+    """
+    name = f"protege_in_{uuid.uuid4().hex[:8]}.png"
+    shutil.copy(rgba_path, os.path.join(COMFY_DIR, "input", name))
+    wf = _base(prompt, seed, steps)
+    wf["load"] = {"class_type": "LoadImage", "inputs": {"image": name}}  # outputs the picture AND a mask (1 = transparent)
+    wf["encode"] = {"class_type": "VAEEncode", "inputs": {"pixels": ["load", 0], "vae": ["vae", 0]}}
+    wf["masked"] = {"class_type": "SetLatentNoiseMask", "inputs": {"samples": ["encode", 0], "mask": ["load", 1]}}
+    wf["sample"]["inputs"]["latent_image"] = ["masked", 0]
+    wf["sample"]["inputs"]["denoise"] = denoise
+    return wf
+
+
 def run(workflow, out_path, timeout=1800):
     """Queue a workflow, wait for it, copy the image to out_path. Returns seconds taken."""
     start = time.time()

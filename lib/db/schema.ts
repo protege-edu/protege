@@ -74,9 +74,26 @@ export const teachSessions = sqliteTable("teach_sessions", {
   classId: text("class_id").references(() => classes.id),
   /** JSON: { conceptId: 0-3 } */
   understanding: text("understanding", { mode: "json" }).$type<Record<string, 0 | 1 | 2 | 3>>().notNull(),
+  /** JSON: the ideas fully understood, in the order they were lit (the journey's checkpoints) */
+  checkpoints: text("checkpoints", { mode: "json" }).$type<string[]>().notNull().default([]),
   createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
   finishedAt: integer("finished_at", { mode: "timestamp_ms" }),
+});
+
+/**
+ * Each student's own Gloam, across every lesson: it grows with everything they teach it.
+ * This is the start of "Gloam grows all year". The level comes from `light` (lib/companion/level.ts).
+ */
+export const gloams = sqliteTable("gloams", {
+  studentId: text("student_id")
+    .primaryKey()
+    .references(() => students.id),
+  /** every idea this student has fully taught Gloam, across all lessons */
+  light: integer("light").notNull().default(0),
+  /** lessons taught all the way to the end */
+  lessons: integer("lessons").notNull().default(0),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
 });
 
 export const messages = sqliteTable("messages", {
