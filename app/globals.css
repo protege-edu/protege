@@ -104,6 +104,68 @@
   --t-voice-font: var(--font-shantell), system-ui, sans-serif;
 }
 
+/* Each younger age's own paper, matched to its painted world and its orange Gloam (M5) */
+[data-age-style="little"] {
+  /* K-2: warm cream picture-book paper, sunny meadow */
+  --t-bg: #fbf4e4;
+  --t-panel: #fffaf0;
+  --t-panel-2: #fff6e2;
+  --t-line: rgb(120 80 30 / 0.2);
+  --t-ink: #3a2a14;
+  --t-ink-dim: rgb(58 42 20 / 0.82);
+  --t-accent: #c2481a;
+  --t-accent-ink: #fffaf0;
+  --t-accent-hover: #a63c13;
+  --t-chip: #f3e6c8;
+  --t-focus: #1f6fa8;
+  --t-scrim: 251 244 228;
+  /* bigger everything: tap targets and text (every spacing and text size reads these) */
+  --spacing: 0.3rem;
+  --text-xs: 1rem;
+  --text-sm: 1.15rem;
+  --text-md: 1.5rem;
+  --text-lg: 2rem;
+  --text-xl: 2.6rem;
+}
+[data-age-style="junior"] {
+  /* Grades 3-5: lavender dusk storybook paper */
+  --t-bg: #f3ecf7;
+  --t-panel: #fbf7fd;
+  --t-panel-2: #f6effa;
+  --t-line: rgb(80 50 110 / 0.2);
+  --t-ink: #2f2342;
+  --t-ink-dim: rgb(47 35 66 / 0.82);
+  --t-accent: #c2481a;
+  --t-accent-ink: #fff8f0;
+  --t-accent-hover: #a63c13;
+  --t-chip: #e7dcef;
+  --t-focus: #5a3fa3;
+  --t-scrim: 243 236 247;
+  --spacing: 0.275rem;
+  --text-xs: 0.95rem;
+  --text-sm: 1.08rem;
+  --text-md: 1.4rem;
+  --text-lg: 1.875rem;
+}
+[data-age-style="middle"] {
+  /* Grades 6-8: twilight navy, bolder and more like a game */
+  color-scheme: dark;
+  --t-bg: #10182b;
+  --t-panel: #16213a;
+  --t-panel-2: #1c2a47;
+  --t-line: #2f4366;
+  --t-ink: #e6ecf7;
+  --t-ink-dim: #a9b6cf;
+  --t-accent: #ff7a3d;
+  --t-accent-ink: #1a0c04;
+  --t-accent-hover: #ff935f;
+  --t-chip: #1c2944;
+  --t-focus: #7fd3ff;
+  --t-moon: #7fd3ff;
+  --t-warn: #ffb38a;
+  --t-scrim: 12 18 33;
+}
+
 /*
   High school: a moody, stylish indie game at night ("lantern-lit").
     night moss #0d1613 · valley teal #2c4844 · moonmist #d3ddd6 · moonlight #8ec5dc · Gloam's colour (accent)

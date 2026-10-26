@@ -286,6 +286,10 @@ export function frStorybook(big: boolean): FrenchStyle {
       ? ["write ONLY in simple french a 6 year old understands. no english words.", "use 'tu' with the student."]
       : ["write ONLY in french (canadian french is welcome), like a 12 year old talks. no english words.", "use 'tu' with the student."],
     banned: ["en tant qu'ia", "modèle de langage", "stupide", "idiot"],
+    // what Gloam mutters on the trail (each younger world is painted for its age)
+    travel: big
+      ? ["On marche, on marche!", "Oh, une fleur!", "J'ai des petites jambes, mais j'avance!", "Prochaine bougie, j'arrive!", "C'est une abeille? Salut, l'abeille!", "Presque arrivé! Je pense!"]
+      : ["le VENT. il veut voler ma lanterne.", "regarde pas en bas. j'ai regardé en bas.", "ce pont est correct. totalement correct. (non.)", "prochaine bougie! même deal : tu enseignes, je panique.", "un phare. frimeur.", "je suis jamais dramatique. c'est faux."],
     lines: {
       thinking: big ? ["Hmm…", "Je réfléchis…", "Laisse-moi penser!"] : ["hmm…", "je réfléchis tellement fort que ma tige fait mal", "traitement… traitement… aïe."],
       almost: ["Ooh?", "Attends…"],

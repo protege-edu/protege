@@ -1,0 +1,17 @@
+{
+ "_what": "K-2: a bright storybook flower meadow at golden hour. Unlit: grey and faded. Lit: full colour.",
+ "style": "cheerful children's picture book illustration, soft watercolour and gouache, rounded friendly shapes, warm pastel colours, gentle soft light, highly detailed, no text, no watermark, no people, no animals",
+ "base": "a wide sunny storybook meadow at golden hour, soft rolling green hills, big fluffy clouds in a warm sky, a winding dirt footpath across the grassy foreground, wildflowers everywhere",
+ "start": "a gentle grassy hill with a few wildflowers and a small round bush beside the path",
+ "stretches": [
+  "a little round pond with lily pads and a tiny wooden footbridge over a stream",
+  "one giant old friendly oak tree with a rope swing hanging from a branch, beside the path",
+  "a patch of giant sunflowers and a little red-roofed birdhouse on a wooden post",
+  "a soft green hilltop at the end of the path with a view over the whole meadow and a faint rainbow in the sky"
+ ],
+ "shrine": "a small cute rounded stone shrine with a little arched niche in its front, daisies and clover growing around its base, front view, centered, full object visible, cheerful children's picture book illustration, soft watercolour and gouache, isolated on a plain flat soft pale blue background, no text, no watermark, no candle, no fire",
+ "grade": "storybook",
+ "fog": "#d9e2e6",
+ "firefly": "#fff2b3",
+ "horizon": 700
+}

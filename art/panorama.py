@@ -1,7 +1,7 @@
 """
 Grow the valley painting into a long journey panorama, one half-screen at a time (outpainting).
 
-  venv\\Scripts\\python art\\panorama.py <start.png> <out_dir> [--seed 501]
+  venv\\Scripts\\python art\\panorama.py <start.png> <out_dir> [--seed 501] [--world art/worlds/<age>.json]
 
 Each step keeps the right half of what's painted so far and paints a new half-screen after it,
 with a soft overlap so the seam disappears. Every new stretch gets its own landmark, where a
@@ -37,14 +37,17 @@ def main():
     ap.add_argument("start")
     ap.add_argument("out")
     ap.add_argument("--seed", type=int, default=501)
+    ap.add_argument("--world", default=None, help="a younger age's world: its scene, landmarks and style")
     a = ap.parse_args()
+    world = json.load(open(a.world)) if a.world else None
+    stretches = world["stretches"] if world else STRETCHES
     os.makedirs(a.out, exist_ok=True)
 
     pano = np.array(Image.open(a.start).convert("RGB"))
     H = pano.shape[0]
     W0 = pano.shape[1]
     centres = [W0 * 0.5]
-    for i, what in enumerate(STRETCHES):
+    for i, what in enumerate(stretches):
         # canvas: the last half-screen we have + a transparent half-screen to paint
         canvas = np.zeros((H, STEP * 2, 4), np.uint8)
         canvas[:, :STEP, :3] = pano[:, -STEP:]
@@ -56,7 +59,9 @@ def main():
         src = os.path.join(a.out, f"step-{i}-in.png")
         Image.fromarray(canvas, "RGBA").save(src)
         prompt = (
-            "a wide quiet valley at night, layered rolling hills fading into mist, a jagged mountain range on the horizon, "
+            f"{world['base']}, {what}, {world['style']}"
+            if world
+            else "a wide quiet valley at night, layered rolling hills fading into mist, a jagged mountain range on the horizon, "
             "a clear sky full of faint stars, a soft grassy meadow foreground with a faint winding footpath, "
             + what
             + ", very dark night lit only by faint starlight and a little warm glow, "

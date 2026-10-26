@@ -1,0 +1,16 @@
+{
+ "_what": "Grades 6-8: windy sea cliffs at twilight, rope bridges and a lighthouse. Unlit: grey and faded. Lit: full colour.",
+ "style": "stylised indie animation background art, bold graphic shapes, gouache texture, dramatic lighting, cinematic, highly detailed, no text, no watermark, no people, no animals",
+ "base": "dramatic windswept sea cliffs at twilight, a deep blue and orange sky with long streaky clouds, the sea far below, wind-bent grass along a winding clifftop footpath across the foreground",
+ "start": "a grassy clifftop with a few wind-bent bushes and rocks beside the path",
+ "stretches": [
+  "a long swaying wooden rope bridge across a deep rocky gorge",
+  "a crooked old stone lighthouse on a rocky point beside the path",
+  "a narrow cliff path past a tall waterfall pouring down into the sea",
+  "a high windy headland at the end of the path with a lone twisted tree and a little flag on a pole, the sea stretching away"
+ ],
+ "shrine": "a small stack of flat weathered stones forming a little shrine with an arched niche in its front, wind-bent grass around its base, front view, centered, full object visible, stylised indie animation prop art, bold shapes, gouache texture, isolated on a plain flat deep twilight blue background, no text, no watermark, no candle, no fire",
+ "grade": "storybook",
+ "fog": "#aab4c8",
+ "firefly": "#ffd98a"
+}

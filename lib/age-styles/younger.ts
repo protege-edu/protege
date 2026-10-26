@@ -1,4 +1,6 @@
+import { littleGloam } from "./rigs/little-gloam";
 import type { AgeStyle } from "./types";
+import { littleWorld } from "./worlds";
 
 /**
  * The younger age styles. They exist so nothing in the app is hard-wired to high school,
@@ -217,7 +219,7 @@ export const little: AgeStyle = {
   },
   lines: storybookLines(true),
   copy: storybookCopy(true),
-  look: { theme: "little", tone: "light", gloamSkin: "storybook", motion: 1, voiceAxis: "bounce", candleLabels: true },
+  look: { theme: "little", tone: "light", gloamSkin: "rig", rig: littleGloam, world: littleWorld, motion: 1, voiceAxis: "bounce", candleLabels: true },
   celebrate: { style: "big", particles: 60 },
   safety: { level: "strict" },
   input: { modes: ["type", "choices", "voice"], targetScale: 1.4, readAloud: true },
@@ -255,7 +257,7 @@ export const middle: AgeStyle = {
   },
   lines: storybookLines(false),
   copy: storybookCopy(false),
-  look: { theme: "middle", tone: "light", gloamSkin: "storybook", motion: 1, voiceAxis: "bounce", candleLabels: true },
+  look: { theme: "middle", tone: "dark", gloamSkin: "storybook", motion: 1, voiceAxis: "bounce", candleLabels: true },
   celebrate: { style: "big", particles: 40 },
   safety: { level: "standard" },
   input: { modes: ["type"], targetScale: 1, readAloud: false },

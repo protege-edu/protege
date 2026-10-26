@@ -25,12 +25,13 @@ def main():
     ap.add_argument("seams")
     ap.add_argument("--denoise", type=float, default=0.45)
     ap.add_argument("--seed", type=int, default=611)
+    ap.add_argument("--prompt", default=None, help="what the scene is (a younger world's own description); default: the night valley")
     a = ap.parse_args()
     pano = np.array(Image.open(a.src).convert("RGB")).astype(np.float32)
     H, W = pano.shape[:2]
     tmp = os.path.join(os.path.dirname(os.path.abspath(a.out)), "_seam")
     os.makedirs(tmp, exist_ok=True)
-    prompt = (
+    prompt = a.prompt or (
         "a wide quiet valley at night, layered rolling hills fading into mist, a mountain range on the horizon, "
         "a clear sky full of faint stars, a soft grassy meadow with a faint winding footpath, very dark night, " + prompts.STYLE
     )

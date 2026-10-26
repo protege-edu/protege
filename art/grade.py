@@ -2,7 +2,11 @@
 Relight one painting into a DARK and a LIT version, like a film colourist ("day for night").
 Both come from the same pixels, so they line up perfectly when the lantern light blends between them.
 
-  venv\\Scripts\\python art\\grade.py <painting.png> <out_dark.png> <out_lit.png>
+  venv\\Scripts\\python art\\grade.py <painting.png> <out_dark.png> <out_lit.png> [night|storybook]
+
+night (high school): dark = moonless night, lit = lantern-lit.
+storybook (the younger worlds, painted in daylight): dark = the world faded to grey ("the Muddle"),
+lit = its full colour, a little warmer. Teaching brings the colour back.
 """
 import sys
 
@@ -42,9 +46,29 @@ def lit_grade(bgr: np.ndarray) -> np.ndarray:
     return (out.clip(0, 1) * 255).astype(np.uint8)
 
 
+def faded_grade(bgr: np.ndarray) -> np.ndarray:
+    """Storybook, unlit: the colour drained out, a soft grey-blue haze, quieter contrast. Still readable."""
+    hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV).astype(np.float32)
+    hsv[..., 1] *= 0.16
+    hsv[..., 2] = hsv[..., 2] * 0.72 + 30
+    out = cv2.cvtColor(hsv.clip(0, 255).astype(np.uint8), cv2.COLOR_HSV2BGR).astype(np.float32)
+    haze = np.array([196, 186, 176], np.float32)  # B, G, R: a cool grey mist
+    return (out * 0.82 + haze * 0.18).clip(0, 255).astype(np.uint8)
+
+
+def vivid_grade(bgr: np.ndarray) -> np.ndarray:
+    """Storybook, lit: the painting's own colour, a touch richer and warmer, like late sun coming out."""
+    hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV).astype(np.float32)
+    hsv[..., 1] = np.clip(hsv[..., 1] * 1.12, 0, 255)
+    out = cv2.cvtColor(hsv.astype(np.uint8), cv2.COLOR_HSV2BGR).astype(np.float32)
+    warm = np.array([0.97, 1.0, 1.05], np.float32)
+    return (out * warm).clip(0, 255).astype(np.uint8)
+
+
 if __name__ == "__main__":
     src, out_dark, out_lit = sys.argv[1:4]
+    mode = sys.argv[4] if len(sys.argv) > 4 else "night"
     img = cv2.imread(src)
-    cv2.imwrite(out_dark, dark_grade(img))
-    cv2.imwrite(out_lit, lit_grade(img))
+    cv2.imwrite(out_dark, faded_grade(img) if mode == "storybook" else dark_grade(img))
+    cv2.imwrite(out_lit, vivid_grade(img) if mode == "storybook" else lit_grade(img))
     print("wrote", out_dark, out_lit)
