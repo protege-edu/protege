@@ -50,6 +50,10 @@ AI_MODEL=qwen3:4b-instruct
 ```
 Any model from `ollama list` works. Bigger models are smarter but slower. Any OpenAI-compatible server works too: change `AI_BASE_URL`.
 
+**A whole class at once:** at most `AI_CONCURRENCY` AI calls run together (default 2); everyone else waits in a fair line, and Gloam tells them in character ("3 gloams are thinking before me"). Students always go before lesson drafting. Once a student's message starts being answered, its next calls go to the front, so every message finishes promptly.
+
+**What to expect** (measured with `npm run load-test`, 30 students at a real pace, on the development laptop with an Intel Arc GPU): every message answered, no errors, a typical reply in about 13 seconds, 1 in 10 over 20 seconds, the slowest about 45. While Gloam waits, it says where it is in line. When many students are waiting, Gloam answers with its hand-written lines for that moment instead of writing new ones (the judging of what they taught always uses the AI), so nobody waits much longer. A laptop with a faster GPU (for example NVIDIA) answers several times faster. Try `AI_CONCURRENCY=3` or `4` there and keep whichever `npm run load-test` says is fastest.
+
 ## Useful commands
 
 | Command | What it does |
@@ -58,6 +62,8 @@ Any model from `ollama list` works. Bigger models are smarter but slower. Any Op
 | `npm run eval` | Talks to Gloam with pretend students (good, wrong, off-topic, rude) and prints the transcripts and a report |
 | `npm run screenshots` | Takes screenshots at Chromebook, desktop and phone sizes (app must be running) |
 | `npm run test:logic` | Tests the non-AI rules (grading, progress, giveaways, safety). Takes a second |
+| `npm run class` | Runs Protégé for a real class (see "Putting Protégé online") |
+| `npm run load-test -- --code GLOW-42` | A pretend class of 30 teaching Gloam at once, with the real AI. Reports reply times and any errors. Use a class made just for this |
 | `npm run test:accounts` | Tests accounts and safety (passwords, picture keys, lock-outs, invites, nicknames, each teacher seeing only their own things) on a throwaway database |
 | `npm run typecheck` | Checks the TypeScript |
 | `npx tsx scripts/perf.ts --rate 4` | Measures how smooth the game is with the CPU slowed 4x, like a cheap Chromebook (app must be running) |
@@ -73,12 +79,12 @@ Development-only pages (they don't exist in a production build): `/dev/style` (e
 
 Protégé and the AI run on the teacher's laptop. To let students reach it from their Chromebooks, use a free **tunnel**: it gives the laptop a secure https address. No credit card for either option.
 
-1. Run Protégé in **real mode** (faster, and test mode and the `/dev` pages don't exist there):
+1. Run, in this folder:
    ```
-   npm run build
-   npm start
+   npm run class
    ```
-2. Start a tunnel, either:
+   It checks that Ollama and Gloam's model are ready, builds Protégé in **real mode** (faster, and test mode and the `/dev` pages don't exist there), starts it, and prints the address for students with a QR code. Students on the same Wi-Fi can use that address straight away.
+2. For students anywhere else, add a tunnel: `npm run class -- --tunnel` starts one for you if Tailscale or cloudflared is installed. To set one up:
    - **Tailscale Funnel** (a fixed address, needed for Google sign-in): install [Tailscale](https://tailscale.com/download) (free personal plan), sign in, then run `tailscale funnel 3000`. The first time, it gives you a link to switch Funnel on. Your address looks like `https://your-laptop.your-tailnet.ts.net`.
    - **Cloudflare quick tunnel** (no account at all, but the address changes every time): install [cloudflared](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/), then run `cloudflared tunnel --url http://localhost:3000`.
 3. On your class page, press **Show the code** and put it on the projector. Students open the address (or scan the QR code), type the class code, pick a nickname and 3 secret pictures (2 for K–2). Their nicknames pop up on the screen as they arrive. Next time, they tap their nickname and their pictures, on any Chromebook.

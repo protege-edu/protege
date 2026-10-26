@@ -4,6 +4,7 @@ import { db } from "@/lib/db/client";
 import { classLessons, classes, students } from "@/lib/db/schema";
 import { googleEnabled } from "@/lib/auth/google";
 import { studentAddress } from "@/lib/hosting/address";
+import { queueStats } from "@/lib/ai/queue";
 import { bad, notYours, requireTeacher } from "@/lib/teacher/api";
 import { assignLesson, dashboard, getClass } from "@/lib/teacher/classes";
 import { canSee, getApprovedLesson, getLessonRow } from "@/lib/teacher/lessons";
@@ -42,6 +43,7 @@ export async function GET(request: Request, ctx: RouteContext<"/api/teacher/clas
   const lesson = row && canSee(row, me.id) ? getApprovedLesson(lessonId) : null;
   if (!lesson) return bad("Pick an approved lesson to see the dashboard.", 404);
   return Response.json({
+    line: queueStats(),
     class: cls,
     lesson: { id: lesson.id, title: lesson.title, concepts: lesson.concepts.map((c) => ({ id: c.id, name: c.name, misconception: c.misconception })) },
     ...dashboard(id, lesson),

@@ -6,7 +6,9 @@
  *   AI_MODEL     model name (default: qwen3:4b-instruct, the fairest judge in our evals)
  *   AI_API_KEY   only for providers that need one (Ollama doesn't)
  *   AI_CONCURRENCY  how many AI calls run at once (the rest wait in line, see queue.ts).
- *                   Match Ollama's OLLAMA_NUM_PARALLEL; 2 suits a typical laptop.
+ *                   2 measured best on the dev laptop (Intel Arc) with a real class: 4 at once helps short
+ *                   judge questions but slows Gloam's longer reply prompts, and a class got slower overall.
+ *                   Try other numbers with `npm run load-test` on a faster GPU.
  */
 export const aiConfig = {
   baseUrl: process.env.AI_BASE_URL ?? "http://localhost:11434/v1",

@@ -69,6 +69,8 @@ export interface StudentRow {
   messages: number;
   finished: boolean;
   lastActive: Date | null;
+  /** on Protégé right now (seen in the last 90 seconds) */
+  online: boolean;
 }
 
 export interface Dashboard {
@@ -115,6 +117,7 @@ export function dashboard(classId: string, lesson: LessonBlueprint): Dashboard {
       messages: mine.length,
       finished: !!s?.finishedAt,
       lastActive: s?.updatedAt ?? null,
+      online: !!k.lastSeenAt && Date.now() - k.lastSeenAt.getTime() < 90_000,
     };
   });
 

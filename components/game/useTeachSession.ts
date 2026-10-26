@@ -401,6 +401,14 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle, test = fa
     });
   }, []);
 
+  // "still here", for the teacher's live view (only does anything for a student signed in to a class)
+  useEffect(() => {
+    const ping = () => void fetch("/api/me?ping").catch(() => undefined);
+    ping();
+    const t = setInterval(ping, 45_000);
+    return () => clearInterval(t);
+  }, []);
+
   // ---------- Gloam's mood right now ----------
   const mood: GloamMood = useMemo(() => {
     if ((status === "offline" || status === "paused") && phase !== "title") return "asleep";

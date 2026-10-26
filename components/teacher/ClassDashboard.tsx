@@ -20,7 +20,9 @@ interface Info {
 interface Data {
   class: { id: string; name: string; grade: number };
   lesson: { id: string; title: string; concepts: { id: string; name: string; misconception: string }[] };
-  students: { id: string; nickname: string; understanding: Record<string, number>; stuck: string[]; messages: number; finished: boolean; lastActive: string | null }[];
+  students: { id: string; nickname: string; understanding: Record<string, number>; stuck: string[]; messages: number; finished: boolean; lastActive: string | null; online: boolean }[];
+  /** Gloam's line right now: answering, and waiting */
+  line: { active: number; waiting: number; live: number };
   insights: { conceptId: string; count: number; total: number; text: string }[];
   litCount: Record<string, number>;
 }
@@ -102,7 +104,13 @@ export function ClassDashboard() {
       {data && (
         <>
           <p className="mt-6 text-sm text-ink-dim" aria-live="polite">
-            {started} of {data.students.length} students have started. Updated {updated ? updated.toLocaleTimeString([], { hour: "numeric", minute: "2-digit", second: "2-digit" }) : ""}
+            <span className="font-bold text-ink">{data.students.filter((s) => s.online).length} here now</span>, {started} of {data.students.length} have started.{" "}
+            {data.line.live > 0
+              ? `Gloam is answering ${data.line.active} and ${data.line.live} ${data.line.live === 1 ? "is" : "are"} waiting a moment.`
+              : data.line.active > 0
+                ? `Gloam is answering ${data.line.active}.`
+                : ""}{" "}
+            Updated {updated ? updated.toLocaleTimeString([], { hour: "numeric", minute: "2-digit", second: "2-digit" }) : ""}
           </p>
 
           {/* What the class thinks: the most useful thing a teacher can act on right now */}
@@ -155,8 +163,11 @@ export function ClassDashboard() {
                 {data.students.map((s) => (
                   <tr key={s.id} className="border-b border-line hover:bg-chip/60">
                     <th scope="row" className="py-2 pr-4">
-                      <button type="button" onClick={() => setOpen(s)} className="min-h-11 cursor-pointer rounded-sm text-left text-md font-bold text-ink underline-offset-4 hover:underline">
+                      <button type="button" onClick={() => setOpen(s)} className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-sm text-left text-md font-bold text-ink underline-offset-4 hover:underline">
                         {s.nickname}
+                        {s.online && (
+                          <span className="inline-block h-2 w-2 rounded-full bg-[#3f8f5a]" role="img" aria-label="here now" title="Here now" />
+                        )}
                       </button>
                     </th>
                     {data.lesson.concepts.map((c) => (

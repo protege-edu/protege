@@ -312,7 +312,7 @@ void (async () => {
       inLine(job("student1", 5)),
       inLine(job("student2", 5)),
     ]);
-    assert.ok(most <= Math.max(1, aiConfig.concurrency - 1), `${most} drafts at once`);
+    assert.ok(most <= Math.max(1, Math.floor(aiConfig.concurrency / 2)), `${most} drafts at once`);
     assert.ok(order.indexOf("student2") < order.indexOf("draft3"), order.join(","));
   });
   await at("everyone waiting hears their place in line, counting down to 'next'", async () => {

@@ -1,4 +1,5 @@
 import { chatJSON, type ChatMessage } from "./client";
+import { busy } from "./queue";
 import { comparisonsIn, gloamSystemPrompt, gloamTurnMessage } from "./prompts/gloam";
 import { conceptCheckMessage, conceptCheckPrompt, intentMessage, intentPrompt } from "./prompts/judge";
 import { checkSafety } from "./safety";
@@ -37,7 +38,8 @@ export interface TurnOutput extends JudgedEvent {
   onTopic: boolean;
   finished: boolean;
   /** Where the reply came from. "line" = hand-written, "offline" = the model isn't running. */
-  source: "ai" | "line" | "safety" | "fallback" | "offline";
+  /** busy: a hand-written line because the class's AI line was long (the judging was still the AI) */
+  source: "ai" | "line" | "safety" | "fallback" | "offline" | "busy";
   ms: number;
 }
 
@@ -82,12 +84,14 @@ export async function runTurn(input: TurnInput, hooks: { onJudged?: (e: JudgedEv
     return done({ ...unchanged, reply: voice(reply, style), emotion: "skeptical", intent: "chatting", onTopic: true, source: "line" });
   }
 
-  // 2. Judge
+  // 2. Judge (one small question per idea the message might be about, asked side by side)
   const judged: { id: string; quality: Quality }[] = [];
-  for (const concept of candidateConcepts(lesson, message)) {
-    const res = await ask(conceptCheckSchema, "concept_check", conceptCheckPrompt(concept), conceptCheckMessage(message));
-    if (res === "offline") return done({ ...offline(understanding) });
-    const quality = res ? gradeCheck(message, res) : null;
+  const checks = await Promise.all(
+    candidateConcepts(lesson, message).map(async (concept) => ({ concept, res: await ask(conceptCheckSchema, "concept_check", conceptCheckPrompt(concept), conceptCheckMessage(message)) })),
+  );
+  if (checks.some((c) => c.res === "offline")) return done({ ...offline(understanding) });
+  for (const { concept, res } of checks) {
+    const quality = res && res !== "offline" ? gradeCheck(message, res) : null;
     if (quality) judged.push({ id: concept.id, quality });
   }
   let intent: Intent = "explaining";
@@ -121,6 +125,8 @@ export async function runTurn(input: TurnInput, hooks: { onJudged?: (e: JudgedEv
 
   // 4a. Hand-written line: instant
   if (beat.kind === "line") return done({ ...result, reply: voice(beat.line, style), source: "line" });
+  // 4a'. A busy class: Gloam answers with its hand-written line for this moment, so everyone gets answered sooner
+  if (busy()) return done({ ...result, reply: voice(beat.line, style), source: "busy" });
 
   // 4b. The AI reacts to what the student actually said
   const beliefs = currentBeliefs(lesson, progress.understanding);

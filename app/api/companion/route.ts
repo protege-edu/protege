@@ -80,6 +80,8 @@ export async function POST(request: Request) {
           send({
             type: "reply",
             reply: out.reply,
+            // where the words came from (the AI, a hand-written line, busy mode); the load test counts these
+            source: out.source,
             emotion: out.emotion,
             understanding: out.understanding,
             improved: out.improved,

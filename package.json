@@ -12,7 +12,9 @@
     "screenshots": "tsx scripts/screenshot.ts",
     "test:logic": "tsx scripts/check-logic.ts",
     "test:accounts": "tsx --conditions=react-server scripts/check-accounts.ts",
-    "reset-teacher": "tsx --conditions=react-server scripts/reset-teacher.ts"
+    "reset-teacher": "tsx --conditions=react-server scripts/reset-teacher.ts",
+    "load-test": "tsx scripts/load-test.ts",
+    "class": "tsx scripts/class.ts"
   },
   "dependencies": {
     "better-sqlite3": "^13.0.3",
