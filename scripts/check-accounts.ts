@@ -272,6 +272,18 @@ async function main() {
     assert.ok(csv.includes("'=cmd Fox"), "a formula-looking nickname is defused");
     assert.ok(csv.includes('"Moss, ""Otter"""'), "commas and quotes are quoted");
   });
+  await test("changing a class's grade keeps keys, unless the key size changes", () => {
+    const k = C.createClass("Grade 2 to 3", 2, a.id);
+    const kid = S.createStudent(k, "Quiet Comet", ["moon", "owl"]);
+    assert.ok(kid.ok);
+    assert.equal(C.setClassGrade(k, 1), 0, "still 2 pictures");
+    assert.ok(S.checkKey(k, kid.student.id, ["moon", "owl"]).ok);
+    assert.equal(C.setClassGrade(k, 3), 1, "now 3 pictures: one student picks a new key");
+    assert.equal(S.classPreview(k)?.keySize, 3);
+    assert.ok(S.classPreview(k)?.nicknames.find((n) => n.nickname === "Quiet Comet")?.needsNewKey);
+    assert.ok(S.checkKey(k, kid.student.id, ["moon", "owl", "fern"]).ok, "their new key is set when they next join");
+    C.deleteClass(k);
+  });
   await test("deleting a class deletes its students and leaves other classes alone", () => {
     C.deleteClass(classA);
     assert.equal(C.getClass(classA, a.id), null);

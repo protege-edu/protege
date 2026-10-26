@@ -1,9 +1,10 @@
 import "server-only";
 import { randomInt, randomUUID } from "node:crypto";
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray, isNotNull } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { classLessons, classes, conceptEvents, gloams, messages, students, teachSessions } from "@/lib/db/schema";
 import type { Level, LessonBlueprint } from "@/lib/lesson/types";
+import { keySize } from "@/lib/student/pictures";
 
 export type ClassRow = typeof classes.$inferSelect;
 
@@ -168,6 +169,26 @@ export function deleteClass(classId: string) {
   db.transaction((tx) => {
     tx.delete(classLessons).where(eq(classLessons.classId, classId)).run();
     tx.delete(classes).where(eq(classes.id, classId)).run();
+  });
+}
+
+/**
+ * Move a class to another grade, which switches its age style (Gloam, world, wording) straight away.
+ * Crossing between K-2 (2-picture keys) and grade 3+ (3-picture keys) means the old keys can't be typed
+ * any more, so those students pick a new key the next time they join, like a teacher's key reset.
+ * Returns how many students will pick a new key.
+ */
+export function setClassGrade(classId: string, grade: number): number {
+  return db.transaction((tx) => {
+    const c = tx.select({ grade: classes.grade }).from(classes).where(eq(classes.id, classId)).get();
+    if (!c) return 0;
+    tx.update(classes).set({ grade }).where(eq(classes.id, classId)).run();
+    if (keySize(c.grade) === keySize(grade)) return 0;
+    return tx
+      .update(students)
+      .set({ keyHash: null, failedKeys: 0, lockedUntil: null })
+      .where(and(eq(students.classId, classId), isNotNull(students.keyHash)))
+      .run().changes;
   });
 }
 

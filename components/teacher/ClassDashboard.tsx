@@ -3,6 +3,8 @@
 import { AnimatePresence } from "motion/react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { styleForGrade } from "@/lib/age-styles";
+import { keySize } from "@/lib/student/pictures";
 import { Sheet } from "@/components/ui/Sheet";
 import { ClassTrail } from "./ClassTrail";
 import { Button, CandleMark, Shell, api, gradeLabel, json } from "./kit";
@@ -77,6 +79,7 @@ export function ClassDashboard() {
     const res = await api(`/api/teacher/classes/${id}`, json("POST", body));
     if (!res.ok) return setError(res.error);
     void loadInfo();
+    void load();
   };
   const paused = !!info?.class.pausedAt;
 
@@ -99,6 +102,7 @@ export function ClassDashboard() {
           onPause={() => void change({ paused: !paused })}
           onGoogle={(on) => void change({ googleSignIn: on })}
           onLanguage={(language) => void change({ language })}
+          onGrade={(grade) => void change({ grade })}
           onLesson={(lid) => router.replace(`/teacher/classes/${id}?lesson=${encodeURIComponent(lid)}`)}
           onAssigned={() => void loadInfo()}
         />
@@ -327,6 +331,7 @@ function ClassHeader({
   onPause,
   onGoogle,
   onLanguage,
+  onGrade,
   onLesson,
   onAssigned,
 }: {
@@ -337,9 +342,18 @@ function ClassHeader({
   onPause: () => void;
   onGoogle: (on: boolean) => void;
   onLanguage: (language: "en" | "fr") => void;
+  onGrade: (grade: number) => void;
   onLesson: (lessonId: string) => void;
   onAssigned: () => void;
 }) {
+  // a grade that changes the size of the secret key waits for the teacher to say yes
+  const [grade, setGrade] = useState<number | null>(null);
+  const withKeys = info.roster.filter((r) => r.hasKey).length;
+  const pickGrade = (g: number) => {
+    if (keySize(g) !== keySize(info.class.grade) && withKeys > 0) return setGrade(g);
+    setGrade(null);
+    onGrade(g);
+  };
   return (
     <div className="mt-4">
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -388,6 +402,16 @@ function ClassHeader({
           </label>
         )}
         <label className="flex items-center gap-2 font-bold text-ink">
+          Grade
+          <select value={grade ?? info.class.grade} onChange={(e) => pickGrade(Number(e.target.value))} className="min-h-11 rounded-md border border-line bg-panel px-3 font-normal">
+            {Array.from({ length: 13 }, (_, g) => (
+              <option key={g} value={g}>
+                {gradeLabel(g)}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="flex items-center gap-2 font-bold text-ink">
           Language
           <select value={info.class.language} onChange={(e) => onLanguage(e.target.value as "en" | "fr")} className="min-h-11 rounded-md border border-line bg-panel px-3 font-normal">
             <option value="en">English</option>
@@ -398,6 +422,33 @@ function ClassHeader({
           {info.roster.length} {info.roster.length === 1 ? "student" : "students"}
         </span>
       </div>
+
+      {grade !== null && (
+        <div role="alertdialog" aria-labelledby="grade-change" className="mt-4 rounded-md border border-dashed border-line bg-panel px-4 py-3 text-sm text-ink">
+          <p id="grade-change">
+            <span className="font-bold">
+              {gradeLabel(grade)} uses a {keySize(grade)}-picture secret key, not {keySize(info.class.grade)}.
+            </span>{" "}
+            {withKeys === 1 ? "Your student" : `Your ${withKeys} students`} will pick a new key the next time they join. What they taught Gloam stays.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button
+              onClick={() => {
+                onGrade(grade);
+                setGrade(null);
+              }}
+            >
+              Change to {gradeLabel(grade)}
+            </Button>
+            <Button variant="quiet" onClick={() => setGrade(null)}>
+              Keep {gradeLabel(info.class.grade)}
+            </Button>
+          </div>
+        </div>
+      )}
+      <p className="mt-2 text-xs text-ink-dim">
+        <span className="font-bold text-ink">{styleForGrade(info.class.grade).label}:</span> {styleForGrade(info.class.grade).teacherBlurb}
+      </p>
     </div>
   );
 }

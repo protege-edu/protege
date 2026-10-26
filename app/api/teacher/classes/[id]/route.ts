@@ -6,7 +6,7 @@ import { googleEnabled } from "@/lib/auth/google";
 import { studentAddress } from "@/lib/hosting/address";
 import { queueStats } from "@/lib/ai/queue";
 import { bad, notYours, requireTeacher } from "@/lib/teacher/api";
-import { assignLesson, dashboard, deleteClass, getClass } from "@/lib/teacher/classes";
+import { assignLesson, dashboard, deleteClass, getClass, setClassGrade } from "@/lib/teacher/classes";
 import { canSee, getApprovedLesson, getLessonRow } from "@/lib/teacher/lessons";
 
 /** The live dashboard for one class and one lesson: ?lesson=<id> (no lesson: just the class) */
@@ -56,9 +56,10 @@ const Change = z.union([
   z.object({ paused: z.boolean() }),
   z.object({ name: z.string().trim().min(1).max(60) }),
   z.object({ language: z.enum(["en", "fr"]) }),
+  z.object({ grade: z.number().int().min(0).max(12) }),
 ]);
 
-/** Give a class an approved lesson, or change a class setting (Google sign-in, pause, name) */
+/** Give a class an approved lesson, or change a class setting (Google sign-in, pause, name, language, grade) */
 export async function POST(request: Request, ctx: RouteContext<"/api/teacher/classes/[id]">) {
   const me = await requireTeacher(request);
   if (me instanceof Response) return me;
@@ -77,6 +78,8 @@ export async function POST(request: Request, ctx: RouteContext<"/api/teacher/cla
     db.update(classes).set({ pausedAt: c.paused ? new Date() : null }).where(eq(classes.id, id)).run();
   } else if ("language" in c) {
     db.update(classes).set({ language: c.language }).where(eq(classes.id, id)).run();
+  } else if ("grade" in c) {
+    return Response.json({ ok: true, newKeys: setClassGrade(id, c.grade) });
   } else {
     db.update(classes).set({ name: c.name }).where(eq(classes.id, id)).run();
   }
