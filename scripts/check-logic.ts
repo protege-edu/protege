@@ -42,6 +42,12 @@ test("ideas are found by their evidence words", () => {
   assert.deepEqual(ids("nah its not about being closer to the sun"), ["distance"]);
   assert.ok(ids("australia has opposite seasons").includes("hemispheres"));
 });
+test("accents are folded, not deleted: French evidence matches with or without them", () => {
+  const french = { ...seasons, concepts: [{ ...seasons.concepts[0], id: "etre", evidence: ["être", "parlé"] }] };
+  assert.deepEqual(candidateConcepts(french, "on utilise être pour aller").map((c) => c.id), ["etre"]);
+  assert.deepEqual(candidateConcepts(french, "you use etre with going").map((c) => c.id), ["etre"]);
+  assert.deepEqual(candidateConcepts(french, "j'ai parle").map((c) => c.id), ["etre"]);
+});
 test("evidence words match at word starts only ('far' isn't in 'safari')", () => {
   assert.deepEqual(ids("we went on a safari"), []);
 });

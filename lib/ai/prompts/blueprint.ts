@@ -11,6 +11,8 @@ const voiceRules = (style: AgeStyle) =>
  * The teacher reviews and edits everything before students see it.
  */
 
+// No example values anywhere in these prompts: small models copy examples word for word
+// (an early French lesson came back with an idea called "The tilt", from a seasons example).
 export function outlinePrompt(opts: { source: string; grade: number; titleHint?: string }) {
   return [
     {
@@ -19,11 +21,11 @@ export function outlinePrompt(opts: { source: string; grade: number; titleHint?:
 Students will TEACH a confused character, so we need the key ideas and the realistic wrong ideas students (and the character) start with.
 
 Return JSON:
-- title: a short question or title for the lesson, like "Why do we have seasons?"
-- topic: 1 to 3 words, lowercase, like "seasons"
-- subject: like "Grade 9 science"
+- title: a short question a student might wonder about, answered by these notes
+- topic: 1 to 3 lowercase words naming what the notes are about
+- subject: the grade and the school subject of these notes
 - concepts: 3 to 5 key ideas from the notes, in teaching order. For each:
-  - name: 2 to 4 words a student would say, like "The tilt"
+  - name: 2 to 4 plain words a student would use to name this idea, taken from these notes
   - truth: the correct idea in 1 or 2 plain sentences, including WHY. Only facts that are in the notes or are standard for this grade.
   - misconception: the most common realistic WRONG idea students have about it, in one plain sentence.
     If the notes list common mistakes or traps, use those first: they're what this class actually gets wrong.
@@ -67,7 +69,7 @@ For ONE idea in the lesson "${opts.lessonTitle}", return JSON:
 - giveaways: 3 to 6 key phrases of 1 to 4 words each (lowercase) that only someone who already KNOWS the true idea would say,
    like the key result, the key number, or the rule itself. Never a full sentence. NOT everyday topic words Gloam needs just to talk
    about this idea, and nothing from the idea's name or the wrong idea.
-- evidence: 5 to 12 short lowercase word stems a student would almost certainly use when explaining this idea, right OR wrong (e.g. "tilt", "lean", "axis")
+- evidence: 5 to 12 short lowercase word stems a student would almost certainly use when explaining this idea, right OR wrong (words from this idea and these notes)
 - recap: the correct idea in 1 or 2 plain, friendly sentences for students (not in Gloam's voice)
 
 Other ideas in this lesson (don't mix them in): ${opts.otherIdeas.join("; ") || "none"}`,

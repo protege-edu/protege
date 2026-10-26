@@ -4,9 +4,13 @@ import type { Concept, LessonBlueprint } from "@/lib/lesson/types";
 // Words that usually mean the student explained WHY, not just WHAT
 const REASON = /\b(because|cuz|cause|since|so|which means|that means|means|that's why|thats why|makes|causes|so that)\b/;
 
+// Accents are folded, not deleted (être -> etre, mangé -> mange), so lessons in French and other
+// languages match whether or not students type the accents.
 const normalize = (s: string) =>
   s
     .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
     .replace(/[^a-z0-9\s.']/g, " ")
     .replace(/\s+/g, " ")
     .trim();
@@ -20,7 +24,7 @@ const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
  */
 export function candidateConcepts(lesson: LessonBlueprint, message: string): Concept[] {
   const msg = normalize(message);
-  return lesson.concepts.filter((c) => c.evidence.some((e) => new RegExp(`\\b${escape(e.toLowerCase())}`).test(msg)));
+  return lesson.concepts.filter((c) => c.evidence.some((e) => new RegExp(`\\b${escape(normalize(e))}`).test(msg)));
 }
 
 /** Turn the judge's answer about one idea into a grade. NEITHER means "not about this idea". */

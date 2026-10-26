@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { TEST_MODE_POSSIBLE } from "@/lib/testMode";
 import { useCallback, useEffect, useState } from "react";
 import type { LessonBlueprint } from "@/lib/lesson/types";
 import { Button, Shell, StatusPill, api, gradeLabel, json } from "./kit";
@@ -173,6 +174,12 @@ export function LessonReview({ id }: { id: string }) {
               {row.status === "approved" && (
                 <a href={`/play/${row.id}`} target="_blank" rel="noreferrer" className="min-h-11 content-center rounded-md border border-line px-4 text-sm font-bold text-ink hover:bg-chip">
                   Try it as a student
+                </a>
+              )}
+              {row.status === "approved" && TEST_MODE_POSSIBLE && (
+                // only while developing: pasting works and there are shortcuts to every moment
+                <a href={`/play/${row.id}?test`} target="_blank" rel="noreferrer" className="min-h-11 content-center rounded-md border border-dashed border-line px-4 text-sm font-bold text-ink-dim hover:bg-chip">
+                  Try it in test mode
                 </a>
               )}
               {!readOnly && dirty && (
