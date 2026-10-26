@@ -4,6 +4,7 @@
  *
  *   npx tsx scripts/perf.ts                 4x slower CPU (default)
  *   npx tsx scripts/perf.ts --rate 6        6x slower
+ *   npx tsx scripts/perf.ts --path /play/seasons-little   another age style's lesson
  * The app must be running (APP_URL, default http://localhost:3000).
  */
 import { chromium } from "@playwright/test";
@@ -11,14 +12,16 @@ import { chromium } from "@playwright/test";
 const BASE = process.env.APP_URL ?? "http://localhost:3000";
 const i = process.argv.indexOf("--rate");
 const rate = i >= 0 ? Number(process.argv[i + 1]) : 4;
+const j = process.argv.indexOf("--path");
+const path = j >= 0 ? process.argv[j + 1] : "/";
 
 async function main() {
   // use the real graphics card (headless browsers otherwise draw WebGL in software, which no Chromebook does)
   const browser = await chromium.launch({ args: ["--enable-gpu", "--ignore-gpu-blocklist", "--use-angle=default"] });
   const page = await browser.newPage({ viewport: { width: 1366, height: 768 } });
   const cdp = await page.context().newCDPSession(page);
-  await page.goto(BASE, { waitUntil: "load" });
-  await page.getByRole("button", { name: /^(start teaching|continue)$/i }).click({ timeout: 120_000 });
+  await page.goto(BASE + path, { waitUntil: "load" });
+  await page.getByRole("button", { name: /^(start teaching|continue|practice first|keep practicing|let's play!|keep playing|on y va !|continuer)$/i }).click({ timeout: 120_000 });
   const skip = page.getByRole("button", { name: /skip intro/i });
   if (await skip.count()) await skip.click();
   await page.waitForTimeout(3000);
@@ -39,7 +42,7 @@ async function main() {
   })`)) as { fps: number; worst: number };
   const gpu = await page.evaluate(`(() => { const gl = document.createElement("canvas").getContext("webgl"); const i = gl && gl.getExtension("WEBGL_debug_renderer_info"); return i ? gl.getParameter(i.UNMASKED_RENDERER_WEBGL) : "unknown"; })()`);
   console.log(`renderer: ${gpu}`);
-  console.log(`CPU ${rate}x slower: ${result.fps.toFixed(1)} fps, slowest frame ${result.worst.toFixed(0)} ms`);
+  console.log(`${path} CPU ${rate}x slower: ${result.fps.toFixed(1)} fps, slowest frame ${result.worst.toFixed(0)} ms`);
   await browser.close();
 }
 

@@ -129,6 +129,14 @@
   --text-lg: 2rem;
   --text-xl: 2.6rem;
 }
+@media (max-width: 40rem) {
+  /* on a phone, one step smaller, so Gloam's words don't stand taller than Gloam */
+  [data-age-style="little"] {
+    --text-md: 1.3rem;
+    --text-lg: 1.6rem;
+    --text-xl: 2.1rem;
+  }
+}
 [data-age-style="junior"] {
   /* Grades 3-5: lavender dusk storybook paper */
   --t-bg: #f3ecf7;

@@ -80,10 +80,9 @@ function GloamName({ style, line }: { style: AgeStyle; line?: string }) {
     };
   }, [style.input.readAloud, lang]);
   return (
-    <span className="mb-1 flex items-center justify-between gap-3">
-      <span className="voice block text-xs text-accent" style={{ ["--casual" as string]: 1, ["--voice-weight" as string]: 750 }}>
-        {style.copy.gloamName}
-      </span>
+    // the bubble's tail already shows who's talking, so the name is only for screen readers
+    <span className={voiced && line ? "-mt-1 mb-1 flex justify-end" : "contents"}>
+      <span className="sr-only">{style.copy.gloamName}: </span>
       {voiced && line && (
         <button
           type="button"
@@ -194,8 +193,13 @@ export function DialogueBand({ s, style, gloam, wide, onOpenLog }: { s: TeachSes
           {!wide && <SpeechPanel gloam={gloam} wide={false} seed="speech-narrow">{speech}</SpeechPanel>}
 
           {style.input.modes.includes("choices") && (
-            <div className="mb-2 flex flex-wrap items-center gap-2" role="group" aria-label={style.copy.startersLabel}>
-              <span className="text-xs font-bold text-ink-dim">{style.copy.startersLabel}</span>
+            // one row that scrolls sideways on phones, so the starters never push the speech over Gloam
+            <div
+              className="-mx-4 mb-2 flex items-center gap-2 overflow-x-auto px-4 py-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0"
+              role="group"
+              aria-label={style.copy.startersLabel}
+            >
+              <span className="shrink-0 text-xs font-bold text-ink-dim">{style.copy.startersLabel}</span>
               {style.copy.starters.map((st) => (
                 <button
                   key={st}
@@ -207,7 +211,7 @@ export function DialogueBand({ s, style, gloam, wide, onOpenLog }: { s: TeachSes
                     setDraft((d) => (d.trim() ? `${d.trimEnd()} ${start}` : start));
                     input.current?.focus();
                   }}
-                  className="min-h-11 cursor-pointer rounded-full border border-line bg-panel px-4 text-sm font-bold text-ink hover:bg-chip disabled:cursor-default disabled:opacity-50"
+                  className="min-h-11 shrink-0 cursor-pointer rounded-full border border-line bg-panel px-4 text-sm font-bold text-ink hover:bg-chip disabled:cursor-default disabled:opacity-50"
                 >
                   {st}
                 </button>

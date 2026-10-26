@@ -26,13 +26,15 @@ async function main() {
     if (shot) await page.screenshot({ path: `screenshots/kbd-${shot}.png` });
   };
   await page.goto(BASE, { waitUntil: "load" });
-  await page.getByRole("button", { name: /^(start teaching|continue)$/i }).waitFor({ timeout: 120_000 });
+  await page.getByRole("button", { name: /^(start teaching|continue|practice first|keep practicing)$/i }).waitFor({ timeout: 120_000 });
   await page.waitForTimeout(1500);
   await note("title opens", "title");
   await page.keyboard.press("Tab");
   await note("Tab");
   await page.keyboard.press("Shift+Tab");
   await note("Shift+Tab");
+  // the first button joins a class; the practice lesson is the next one
+  await page.keyboard.press("Tab");
   await page.keyboard.press("Enter");
   await page.waitForTimeout(1200);
   await note("Enter (start)", "intro");
