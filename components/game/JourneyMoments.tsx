@@ -10,6 +10,7 @@ import type { GloamBox } from "./Stage";
 export function TravelQuip({ text, gloam }: { text: string | null; gloam: GloamBox | null }) {
   const calm = useCalmMotion();
   return (
+    // the old line fades out quickly while the new one waits a beat, so they never pile up
     <AnimatePresence>
       {text && gloam && (
         <motion.p
@@ -19,8 +20,8 @@ export function TravelQuip({ text, gloam }: { text: string | null; gloam: GloamB
           style={{ left: gloam.cx, top: Math.max(70, gloam.top - 56), ["--casual" as string]: 0.9, ["--slant" as string]: -6 }}
           initial={calm ? false : { opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={calm ? undefined : { opacity: 0, y: -6, transition: { duration: 0.6 } }}
-          transition={{ duration: 0.5 }}
+          exit={calm ? undefined : { opacity: 0, y: -6, transition: { duration: 0.18 } }}
+          transition={{ duration: 0.45, delay: calm ? 0 : 0.18 }}
         >
           {text}
         </motion.p>

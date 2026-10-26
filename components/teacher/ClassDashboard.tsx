@@ -1,10 +1,21 @@
 "use client";
 
-import { useParams, useSearchParams } from "next/navigation";
+import { AnimatePresence } from "motion/react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Sheet } from "@/components/ui/Sheet";
 import { ClassTrail } from "./ClassTrail";
-import { CandleMark, Shell, api, gradeLabel } from "./kit";
+import { Button, CandleMark, Shell, api, gradeLabel, json } from "./kit";
+import { ShowCode } from "./ShowCode";
+
+/** The class itself (no lesson): settings, its lessons, who's in it, and where students go */
+interface Info {
+  class: { id: string; name: string; grade: number; code: string; googleSignIn: boolean; pausedAt: string | null };
+  lessons: { id: string; title: string }[];
+  roster: { id: string; nickname: string; google: boolean; hasKey: boolean }[];
+  google: boolean;
+  address: { url: string; local: boolean };
+}
 
 interface Data {
   class: { id: string; name: string; grade: number };
@@ -20,13 +31,25 @@ interface Data {
  */
 export function ClassDashboard() {
   const { id } = useParams<{ id: string }>();
+  const router = useRouter();
   const lessonId = useSearchParams().get("lesson") ?? "";
+  const [info, setInfo] = useState<Info | null>(null);
   const [data, setData] = useState<Data | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [updated, setUpdated] = useState<Date | null>(null);
   const [open, setOpen] = useState<Data["students"][number] | null>(null);
+  const [showCode, setShowCode] = useState(false);
+
+  const loadInfo = useCallback(async () => {
+    const res = await api<Info>(`/api/teacher/classes/${id}`);
+    if (!res.ok) return setError(res.error);
+    setInfo(res.data);
+    // no lesson picked yet: open the newest one this class was given
+    if (!lessonId && res.data.lessons[0]) router.replace(`/teacher/classes/${id}?lesson=${encodeURIComponent(res.data.lessons[0].id)}`);
+  }, [id, lessonId, router]);
 
   const load = useCallback(async () => {
+    if (!lessonId) return;
     const res = await api<Data>(`/api/teacher/classes/${id}?lesson=${encodeURIComponent(lessonId)}`);
     if (!res.ok) return setError(res.error);
     setError(null);
@@ -40,6 +63,20 @@ export function ClassDashboard() {
     return () => clearInterval(t);
   }, [load]);
 
+  // the class's settings and roster: quickly while the code is up (students arriving), slowly otherwise
+  useEffect(() => {
+    void Promise.resolve().then(loadInfo);
+    const t = setInterval(loadInfo, showCode ? 2500 : 15000);
+    return () => clearInterval(t);
+  }, [loadInfo, showCode]);
+
+  const change = async (body: object) => {
+    const res = await api(`/api/teacher/classes/${id}`, json("POST", body));
+    if (!res.ok) return setError(res.error);
+    void loadInfo();
+  };
+  const paused = !!info?.class.pausedAt;
+
   const name = (cid: string) => data?.lesson.concepts.find((c) => c.id === cid)?.name ?? cid;
   const started = data?.students.filter((s) => s.messages > 0).length ?? 0;
 
@@ -50,19 +87,23 @@ export function ClassDashboard() {
           {error}
         </p>
       )}
+      {info && (
+        <ClassHeader
+          info={info}
+          lessonId={lessonId}
+          paused={paused}
+          onShowCode={() => setShowCode(true)}
+          onPause={() => void change({ paused: !paused })}
+          onGoogle={(on) => void change({ googleSignIn: on })}
+          onLesson={(lid) => router.replace(`/teacher/classes/${id}?lesson=${encodeURIComponent(lid)}`)}
+          onAssigned={() => void loadInfo()}
+        />
+      )}
       {data && (
         <>
-          <div className="mt-4 flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <h1 className="text-xl font-bold text-ink">{data.class.name}</h1>
-              <p className="mt-1 text-md text-ink-dim">
-                {data.lesson.title} <span className="text-sm">({gradeLabel(data.class.grade)})</span>
-              </p>
-            </div>
-            <p className="text-sm text-ink-dim" aria-live="polite">
-              {started} of {data.students.length} students have started. Updated {updated ? updated.toLocaleTimeString([], { hour: "numeric", minute: "2-digit", second: "2-digit" }) : ""}
-            </p>
-          </div>
+          <p className="mt-6 text-sm text-ink-dim" aria-live="polite">
+            {started} of {data.students.length} students have started. Updated {updated ? updated.toLocaleTimeString([], { hour: "numeric", minute: "2-digit", second: "2-digit" }) : ""}
+          </p>
 
           {/* What the class thinks: the most useful thing a teacher can act on right now */}
           {data.insights.length > 0 && (
@@ -150,13 +191,57 @@ export function ClassDashboard() {
         </>
       )}
 
-      {open && data && <Transcript classId={id} lessonId={lessonId} student={open} onClose={() => setOpen(null)} />}
+      {open && data && (
+        <Transcript
+          classId={id}
+          lessonId={lessonId}
+          student={open}
+          account={info?.roster.find((r) => r.id === open.id)}
+          onClose={() => setOpen(null)}
+          onRemoved={() => {
+            setOpen(null);
+            void load();
+            void loadInfo();
+          }}
+        />
+      )}
+      <AnimatePresence>
+        {showCode && info && (
+          <ShowCode key="code" code={info.class.code} address={info.address.url} local={info.address.local} roster={info.roster} onClose={() => setShowCode(false)} />
+        )}
+      </AnimatePresence>
     </Shell>
   );
 }
 
-function Transcript({ classId, lessonId, student, onClose }: { classId: string; lessonId: string; student: { id: string; nickname: string }; onClose: () => void }) {
+function Transcript({
+  classId,
+  lessonId,
+  student,
+  account,
+  onClose,
+  onRemoved,
+}: {
+  classId: string;
+  lessonId: string;
+  student: { id: string; nickname: string };
+  account?: { google: boolean; hasKey: boolean };
+  onClose: () => void;
+  onRemoved: () => void;
+}) {
   const [msgs, setMsgs] = useState<{ from: string; text: string }[] | null>(null);
+  const [note, setNote] = useState<string | null>(null);
+  const [confirmRemove, setConfirmRemove] = useState(false);
+  const base = `/api/teacher/classes/${classId}/students/${student.id}`;
+  const resetKey = async () => {
+    const res = await api(base, json("POST", { resetKey: true }));
+    setNote(res.ok ? `Done. Next time ${student.nickname} signs in, they pick new pictures. Best done while they're with you.` : res.error);
+  };
+  const remove = async () => {
+    const res = await api(base, { method: "DELETE" });
+    if (res.ok) onRemoved();
+    else setNote(res.error);
+  };
   const close = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     close.current?.focus();
@@ -177,6 +262,33 @@ function Transcript({ classId, lessonId, student, onClose }: { classId: string; 
             Close
           </button>
         </header>
+        <div className="flex flex-wrap items-center gap-2 border-b border-line px-5 py-3">
+          {account && !account.google && (
+            <Button variant="quiet" onClick={() => void resetKey()}>
+              {account.hasKey ? "Reset their pictures" : "Waiting for new pictures"}
+            </Button>
+          )}
+          {confirmRemove ? (
+            <>
+              <Button variant="danger" onClick={() => void remove()}>
+                Yes, remove {student.nickname}
+              </Button>
+              <Button variant="quiet" className="border-0" onClick={() => setConfirmRemove(false)}>
+                Keep them
+              </Button>
+            </>
+          ) : (
+            <Button variant="danger" onClick={() => setConfirmRemove(true)}>
+              Remove from class
+            </Button>
+          )}
+          {confirmRemove && <p className="w-full text-sm text-ink-dim">This deletes everything {student.nickname} taught Gloam in this class. It can&apos;t be undone.</p>}
+          {note && (
+            <p role="status" className="w-full text-sm text-ink">
+              {note}
+            </p>
+          )}
+        </div>
         <ol className="flex-1 space-y-3 overflow-y-auto px-5 py-5">
           {msgs === null && <li className="text-sm text-ink-dim">Loading…</li>}
           {msgs?.length === 0 && <li className="text-sm text-ink-dim">No conversation yet.</li>}
@@ -189,5 +301,115 @@ function Transcript({ classId, lessonId, student, onClose }: { classId: string; 
         </ol>
       </section>
     </div>
+  );
+}
+
+/** The class at a glance: its name, its code, the buttons a teacher needs during class */
+function ClassHeader({
+  info,
+  lessonId,
+  paused,
+  onShowCode,
+  onPause,
+  onGoogle,
+  onLesson,
+  onAssigned,
+}: {
+  info: Info;
+  lessonId: string;
+  paused: boolean;
+  onShowCode: () => void;
+  onPause: () => void;
+  onGoogle: (on: boolean) => void;
+  onLesson: (lessonId: string) => void;
+  onAssigned: () => void;
+}) {
+  return (
+    <div className="mt-4">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-bold text-ink">{info.class.name}</h1>
+          <p className="mt-1 text-md text-ink-dim">
+            {gradeLabel(info.class.grade)}, class code <span className="font-bold tracking-wider text-ink">{info.class.code}</span>
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button onClick={onShowCode}>Show the code</Button>
+          <Button variant="quiet" onClick={onPause}>
+            {paused ? "Wake the class up" : "Pause the class"}
+          </Button>
+        </div>
+      </div>
+
+      {paused && (
+        <p role="status" className="mt-4 rounded-md border border-dashed border-line bg-panel px-4 py-3 text-sm text-ink">
+          <span className="font-bold">The class is paused.</span> Gloam is asleep for everyone, and students can&apos;t teach until you wake the class up.
+        </p>
+      )}
+
+      <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-3 border-y border-line py-3 text-sm">
+        {info.lessons.length > 1 && (
+          <label className="flex items-center gap-2 font-bold text-ink">
+            Lesson
+            <select value={lessonId} onChange={(e) => onLesson(e.target.value)} className="min-h-11 rounded-md border border-line bg-panel px-3 font-normal">
+              {info.lessons.map((l) => (
+                <option key={l.id} value={l.id}>
+                  {l.title}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+        {info.lessons.length === 1 && <span className="font-bold text-ink">{info.lessons[0].title}</span>}
+        {info.lessons.length === 0 && <GiveLesson classId={info.class.id} onDone={onAssigned} />}
+        {info.google && (
+          <label className="flex min-h-11 cursor-pointer items-center gap-2 text-ink">
+            <input type="checkbox" checked={info.class.googleSignIn} onChange={(e) => onGoogle(e.target.checked)} className="h-5 w-5 accent-[var(--t-accent)]" />
+            <span>
+              <span className="font-bold">Let students use Google</span>
+              <span className="block text-xs text-ink-dim">Only if your school allows it. Protégé only learns it&apos;s the same account, never a name or email.</span>
+            </span>
+          </label>
+        )}
+        <span className="text-ink-dim">
+          {info.roster.length} {info.roster.length === 1 ? "student" : "students"}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/** A class with no lesson yet: give it one */
+function GiveLesson({ classId, onDone }: { classId: string; onDone: () => void }) {
+  const [lessons, setLessons] = useState<{ id: string; title: string; status: string }[] | null>(null);
+  const [pick, setPick] = useState("");
+  useEffect(() => {
+    void api<{ id: string; title: string; status: string }[]>("/api/teacher/lessons").then((r) => {
+      if (!r.ok) return;
+      const ok = r.data.filter((l) => l.status === "approved");
+      setLessons(ok);
+      setPick(ok[0]?.id ?? "");
+    });
+  }, []);
+  if (!lessons) return null;
+  if (!lessons.length) return <span className="text-ink-dim">Approve a lesson first, then give it to this class.</span>;
+  const give = async () => {
+    const res = await api(`/api/teacher/classes/${classId}`, json("POST", { lessonId: pick }));
+    if (res.ok) onDone();
+  };
+  return (
+    <span className="flex flex-wrap items-center gap-2">
+      <label htmlFor="give-lesson" className="font-bold text-ink">
+        No lesson yet
+      </label>
+      <select id="give-lesson" value={pick} onChange={(e) => setPick(e.target.value)} className="min-h-11 rounded-md border border-line bg-panel px-3">
+        {lessons.map((l) => (
+          <option key={l.id} value={l.id}>
+            {l.title}
+          </option>
+        ))}
+      </select>
+      <Button onClick={() => void give()}>Give to class</Button>
+    </span>
   );
 }

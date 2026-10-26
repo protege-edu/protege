@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { clear, readSigned } from "@/lib/auth/cookies";
-import { clientIp, forbidden, limit, sameOrigin, tooMany } from "@/lib/auth/request";
+import { clientIp, forbidden, limit, sameOrigin, strike, struckOut, tooMany } from "@/lib/auth/request";
 import { checkKey, classPreview, createStudent, signInStudent, suggestNicknames } from "@/lib/student/auth";
 import { classByCode } from "@/lib/teacher/classes";
 
@@ -23,15 +23,17 @@ const bad = (error: string, status = 400) => Response.json({ error }, { status }
 export async function POST(request: Request) {
   if (!sameOrigin(request)) return forbidden();
   const ip = clientIp(request);
-  if (!limit(`join:${ip}`, 60, 5 * 60 * 1000)) return tooMany();
+  // a whole class can share one school address, so this is generous; wrong codes are limited separately
+  if (!limit(`join:${ip}`, 600, 5 * 60 * 1000)) return tooMany();
   const body = Body.safeParse(await request.json().catch(() => null));
   if (!body.success) return bad("Something went wrong. Try again.");
   const b = body.data;
 
   if (b.action === "code") {
-    // guessing codes is slowed down hard
-    if (!limit(`join-code:${ip}`, 15, 5 * 60 * 1000)) return tooMany();
+    // guessing codes is slowed down hard: 20 wrong codes from one place, then wait 10 minutes
+    if (struckOut(`join-wrong:${ip}`, 20)) return tooMany();
     const c = classByCode(b.code);
+    if (!c) strike(`join-wrong:${ip}`, 10 * 60 * 1000);
     if (!c) return bad("That code isn't a class. Check it with your teacher (it looks like GLOW-42).", 404);
     return Response.json(classPreview(c.id));
   }

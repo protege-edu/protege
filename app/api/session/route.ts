@@ -5,13 +5,14 @@ import { createSession, findSession, getSession } from "@/lib/companion/session"
 import { db } from "@/lib/db/client";
 import { classLessons } from "@/lib/db/schema";
 import { DEFAULT_LESSON_ID } from "@/lib/lesson";
-import { currentStudent } from "@/lib/student/auth";
+import { currentStudent, maySeeStudent } from "@/lib/student/auth";
 
 /** Resume a session */
 export async function GET(request: Request) {
   const id = new URL(request.url).searchParams.get("id");
   const session = id ? getSession(id) : null;
-  if (!session) return Response.json({ error: "We couldn't find that session. Starting a fresh one is fine!" }, { status: 404 });
+  // someone else's session (e.g. the last student on this Chromebook): the browser then asks for its own
+  if (!session || !(await maySeeStudent(session.studentId))) return Response.json({ error: "We couldn't find that session. Starting a fresh one is fine!" }, { status: 404 });
   return Response.json(session);
 }
 

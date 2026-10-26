@@ -7,6 +7,7 @@ import { clear, readSigned, setSigned } from "@/lib/auth/cookies";
 import { hash, keyedHash, verify } from "@/lib/auth/crypto";
 import { db } from "@/lib/db/client";
 import { classes, gloams, students } from "@/lib/db/schema";
+import { PICTURES, keySize } from "./pictures";
 
 /**
  * Students: a nickname in a class, and a secret picture key. No real names, emails or birthdays, ever.
@@ -18,12 +19,7 @@ const DAYS = 30;
 const MAX_TRIES = 5;
 const LOCK_MINUTES = 5;
 
-/** The pictures a key is made from (drawn in components/join/KeyPicture.tsx) */
-export const PICTURES = ["moon", "fern", "lantern", "owl", "star", "mushroom", "leaf", "moth", "stone"] as const;
-export type Picture = (typeof PICTURES)[number];
-
-/** Little kids (K–2) remember 2 pictures; everyone else 3 */
-export const keySize = (grade: number) => (grade <= 2 ? 2 : 3);
+export { PICTURES, keySize, type Picture } from "./pictures";
 
 export type Student = { id: string; nickname: string; classId: string };
 
@@ -56,7 +52,13 @@ export function classPreview(classId: string) {
     keySize: keySize(c.grade),
     google: c.googleSignIn,
     // returning students tap their nickname (nicknames only; nothing else about anyone)
-    nicknames: db.select({ id: students.id, nickname: students.nickname, hasKey: students.keyHash }).from(students).where(eq(students.classId, c.id)).orderBy(asc(students.nickname)).all().map((s) => ({ id: s.id, nickname: s.nickname, needsNewKey: !s.hasKey })),
+    nicknames: db
+      .select({ id: students.id, nickname: students.nickname, hasKey: students.keyHash, google: students.googleIdHash })
+      .from(students)
+      .where(eq(students.classId, c.id))
+      .orderBy(asc(students.nickname))
+      .all()
+      .map((s) => ({ id: s.id, nickname: s.nickname, google: !!s.google && !s.hasKey, needsNewKey: !s.hasKey && !s.google })),
   };
 }
 
@@ -100,6 +102,8 @@ export function checkKey(classId: string, studentId: string, key: string[]): { o
   if (!s || !c) return { ok: false, error: "We couldn't find you in this class. Ask your teacher." };
   if (!validKey(key, keySize(c.grade))) return { ok: false, error: "Pick your secret pictures." };
   if (s.lockedUntil && s.lockedUntil.getTime() > Date.now()) return { ok: false, error: "Too many tries. Wait a few minutes, or ask your teacher to reset your pictures." };
+  // a Google student has no pictures: only Google gets them back in (otherwise anyone could set some)
+  if (!s.keyHash && s.googleIdHash) return { ok: false, error: "This one signs in with Google. Press \"Continue with Google\"." };
   if (!s.keyHash) {
     db.update(students).set({ keyHash: hash(keyString(key)), failedKeys: 0 }).where(eq(students.id, s.id)).run();
     return { ok: true, student: { id: s.id, nickname: s.nickname, classId } };
@@ -114,6 +118,25 @@ export function checkKey(classId: string, studentId: string, key: string[]): { o
   }
   db.update(students).set({ failedKeys: 0, lockedUntil: null }).where(eq(students.id, s.id)).run();
   return { ok: true, student: { id: s.id, nickname: s.nickname, classId } };
+}
+
+/**
+ * May the person on this device use this student's session? A class student's sessions belong to
+ * whoever is signed in as them (a shared Chromebook must never open the last student's session).
+ * The practice student (no class) belongs to the browser that made it.
+ */
+export async function maySeeStudent(studentId: string): Promise<boolean> {
+  const s = db.select({ classId: students.classId }).from(students).where(eq(students.id, studentId)).get();
+  if (!s) return false;
+  if (!s.classId) return true;
+  return (await currentStudent())?.id === studentId;
+}
+
+/** Has this student's teacher paused the class? */
+export function classPaused(studentId: string): boolean {
+  const s = db.select({ classId: students.classId }).from(students).where(eq(students.id, studentId)).get();
+  if (!s?.classId) return false;
+  return !!db.select({ p: classes.pausedAt }).from(classes).where(eq(classes.id, s.classId)).get()?.p;
 }
 
 /** Continue with Google: the student in this class with this Google account, if they've been here before */

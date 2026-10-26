@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { EurekaMoment } from "@/components/scene/EurekaMoment";
 import { getAgeStyle, pickLine } from "@/lib/age-styles";
@@ -11,7 +12,7 @@ import { TrailMap } from "./TrailMap";
 import { useCalmMotion } from "@/lib/useCalmMotion";
 import type { ClientLesson } from "@/lib/lesson/types";
 import { DialogueBand, IntroBand } from "./DialogueBand";
-import { EndingPanel, HelpDialog, LogDrawer, PauseMenu, StoryCaption, TitleScreen, TopBar } from "./Overlays";
+import { EndingPanel, HelpDialog, LogDrawer, PauseMenu, StoryCaption, TitleScreen, TopBar, type Account } from "./Overlays";
 import { ChapterCard, LevelUpCard, TravelQuip } from "./JourneyMoments";
 import { Stage, type GloamBox } from "./Stage";
 import { useTeachSession } from "./useTeachSession";
@@ -35,7 +36,8 @@ function useWide() {
  * The whole game: title → intro → teaching → ending, plus pause, help and the conversation log.
  * Everything visual and every word comes from the lesson's age style.
  */
-export function GameScreen({ lesson }: { lesson: ClientLesson }) {
+export function GameScreen({ lesson, account = "preview" }: { lesson: ClientLesson; account?: Account }) {
+  const router = useRouter();
   const style = getAgeStyle(lesson.ageStyle);
   const test = useTestMode();
   const s = useTeachSession(lesson, style, test);
@@ -139,8 +141,10 @@ export function GameScreen({ lesson }: { lesson: ClientLesson }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [s.phase, overlay, s.moment]);
 
+  // a student in a class goes back to their Gloam's home; everyone else to the title screen
   const toTitle = () => {
     setOverlay(null);
+    if (account === "student") return router.push("/me");
     s.setPhase("title");
   };
 
@@ -183,10 +187,27 @@ export function GameScreen({ lesson }: { lesson: ClientLesson }) {
           <LevelUpCard style={style} level={s.levelUp && !s.moment ? s.levelUp.level : null} line={levelLine} onDone={s.clearLevelUp} />
           <EurekaMoment moment={s.moment} style={style} x={focus} onPeak={s.onPeak} onDone={s.onMomentDone} />
           <AnimatePresence>
-            {s.phase === "title" && <TitleScreen key="title" style={style} lesson={lesson} resumable={s.resumable} onStart={s.start} onHelp={() => setOverlay("help")} />}
+            {s.phase === "title" && <TitleScreen
+                key="title"
+                style={style}
+                lesson={lesson}
+                resumable={s.resumable}
+                account={account}
+                onStart={s.start}
+                onHelp={() => setOverlay("help")}
+                onGo={(href) => router.push(href)}
+              />}
           </AnimatePresence>
           {s.phase === "ending" && s.recap && (!world || finaleArrived) && (
-            <EndingPanel style={style} recap={s.recap} gloam={s.gloam} onKeepTalking={() => s.setPhase("teach")} onTeachAgain={s.startOver} onTitle={toTitle} />
+            <EndingPanel
+              style={style}
+              recap={s.recap}
+              gloam={s.gloam}
+              onKeepTalking={() => s.setPhase("teach")}
+              onTeachAgain={s.startOver}
+              onTitle={toTitle}
+              titleLabel={account === "student" ? style.copy.toMyGloam : undefined}
+            />
           )}
         </Stage>
       </div>
@@ -221,6 +242,7 @@ export function GameScreen({ lesson }: { lesson: ClientLesson }) {
               void s.startOver();
             }}
             onTitle={toTitle}
+            titleLabel={account === "student" ? style.copy.toMyGloam : undefined}
             canSeeRecap={s.finished && !!s.recap}
             onRecap={() => {
               setOverlay(null);

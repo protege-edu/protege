@@ -70,6 +70,96 @@ const storybookCopy = (big: boolean): AgeStyle["copy"] => ({
   offlineBody: "Gloam's brain (the AI) isn't running. Ask your teacher to start Ollama, then press Try again.",
   offlineRetryBody: (tries) => `Still asleep (tried ${tries} ${tries === 1 ? "time" : "times"}). Ask your teacher to check Ollama.`,
   retry: "Try again",
+  titleJoin: big ? "Find my class" : "Join your class",
+  slowDown: big ? "Whoa! One at a time, please!" : "whoa, slow down! one at a time. my brain is tiny.",
+  queued: (ahead) =>
+    big
+      ? ahead === 0
+        ? "I'm next! Here I go…"
+        : `${ahead} Gloams are thinking first. Then me!`
+      : ahead === 0
+        ? "i'm next! warming up my brain…"
+        : `${ahead} gloams in line ahead of me. i'm doing stretches.`,
+  titlePractice: big ? "Just play" : "Practice first",
+  toMyGloam: "My Gloam",
+  join: {
+    codeTitle: big ? "Find your class" : "Join your class",
+    codeLabel: "Class code",
+    codeHint: big ? "Your teacher will show you. It looks like GLOW-42." : "Your teacher has it. It looks like GLOW-42.",
+    codeButton: big ? "Go!" : "Find my class",
+    codeWrong: big ? "Hmm, that code didn't work. Ask your teacher to check it." : "That code doesn't open a class. Check it with your teacher.",
+    whoTitle: big ? "Which one is you?" : "Which one are you?",
+    whoHint: (name) => (big ? `${name}! Tap your name.` : `${name}! Tap your nickname, then your secret pictures.`),
+    whoNew: big ? "I'm new!" : "I'm new here",
+    nickTitle: big ? "Pick a fun name" : "Pick a nickname",
+    nickLabel: big ? "Fun name" : "Nickname",
+    nickHint: big ? "Not your real name! Tap \"Surprise me\" for one." : "Not your real name. It's what Gloam and your class will see.",
+    nickSurprise: "Surprise me",
+    nickButton: big ? "That's me!" : "That's me",
+    keyTitle: (n) => (big ? `Pick ${n} secret pictures` : `Pick ${n} secret pictures`),
+    keyHint: big ? "Remember them! They let you back in." : "In order. They're how you get back in, so keep them secret.",
+    keyCount: (picked, n) => `${picked} of ${n}`,
+    keyClear: "Start over",
+    keyRememberTitle: big ? "Your secret pictures!" : "Remember these, in this order",
+    keyRememberHint: big ? "Next time, tap your name, then these." : "Next time, tap your nickname and these pictures.",
+    keyRememberButton: big ? "I'll remember!" : "I'll remember",
+    keyRedo: big ? "Pick again" : "Pick different ones",
+    keyEnterTitle: (nick) => (big ? `Hi ${nick}! Tap your secret pictures.` : `${nick}, your secret pictures?`),
+    keyEnterHint: big ? "In order!" : "Tap them in order.",
+    keyResetHint: big ? "Your teacher gave you new pictures to pick. Pick them and remember them!" : "Your teacher reset your pictures. Pick new ones, in order, and remember them.",
+    google: "Continue with Google",
+    googleNick: "Google only tells Protégé it's you. Pick the nickname your class will see.",
+    back: "Back",
+    gloam: big
+      ? {
+          code: "Hi! What's your class code?",
+          typing: "Ooh, letters!",
+          wrong: "Hmm! That one didn't work.",
+          found: (name) => `${name}! Yay!`,
+          nick: "What should I call you?",
+          key: "Pick your secret pictures! I won't peek.",
+          remember: "Can you remember them? I can't!",
+          welcome: (nick) => `Hi ${nick}! I'm Gloam!`,
+          welcomeBack: (nick) => `${nick}! You came back! Yay!`,
+        }
+      : {
+          code: "a code! very secret. very official.",
+          typing: "ooh, keep going…",
+          wrong: "nope. that code is a mystery to me too.",
+          found: (name) => `${name}! i've heard great things. probably.`,
+          nick: "pick a good one. i'll be yelling it a lot.",
+          key: "secret pictures! i'm not looking. okay i'm looking a little.",
+          remember: "i already forgot them. you better not!",
+          welcome: (nick) => `${nick}! what a name. i'm gloam!`,
+          welcomeBack: (nick) => `${nick}!! you're back! i totally didn't miss you. (i did.)`,
+        },
+  },
+  home: {
+    title: (nick) => `${nick}'s Gloam`,
+    level: (level) => `Level ${level}`,
+    levelHint: big ? "Gloam's lantern grows when you teach it!" : "Its lantern grows with every idea you teach it.",
+    tricksTitle: big ? "Gloam can…" : "Tricks Gloam knows",
+    trickNames: big
+      ? { spin: "Twirl its lantern", hum: "Hum a song", firefly: "Play with a firefly", pose: "Do a ta-da pose" }
+      : { spin: "Twirls its lantern", hum: "Hums a little song", firefly: "Has a firefly friend", pose: "Does a big pose" },
+    noTricks: big ? "No tricks yet. Teach Gloam to see one!" : "No tricks yet. Teach it a few ideas and see what happens!",
+    lessonsTitle: big ? "Things to teach" : "Lessons",
+    lessonNew: "New",
+    lessonProgress: (lit, total) => `${lit} of ${total} ${big ? "candles" : "ideas"} lit`,
+    lessonDone: big ? "All done!" : "All lit",
+    start: big ? "Let's go!" : "Start",
+    keepGoing: "Keep going",
+    visit: big ? "Play again" : "Visit again",
+    noLessons: big ? "Nothing here yet. Your teacher will add something soon!" : "Nothing to teach yet. Your teacher will add a lesson.",
+    journalTitle: big ? "Things you taught Gloam" : "What you've taught Gloam",
+    journalEmpty: big ? "Nothing yet! When you teach Gloam, it goes here." : "Empty for now. Every idea you teach Gloam gets written here.",
+    signOut: big ? "I'm done" : "Sign out",
+    paused: big ? "Your teacher paused the game. Gloam is having a nap!" : "Your teacher paused the class. Gloam is napping until they're back.",
+    hello: (nick) =>
+      big
+        ? [`Hi ${nick}! Let's learn!`, "You're back! I missed you!", "Look, my lantern got bigger!", "I'm ready! Are you?"]
+        : [`${nick}! finally. i have SO many wrong ideas to show you.`, "you're back! i practised. it didn't help.", "my lantern's bigger than last time. that's your fault.", "ready when you are. i am not ready."],
+  },
 });
 
 const storybookLines = (simple: boolean): AgeStyle["lines"] => ({
@@ -95,6 +185,7 @@ const storybookLines = (simple: boolean): AgeStyle["lines"] => ({
 export const little: AgeStyle = {
   id: "little",
   label: "Grades K–2",
+  teacherBlurb: "A gentle, silly Gloam with tiny words, big buttons and 2 secret pictures to sign in.",
   grades: [0, 2],
   polished: false,
   voice: {
@@ -116,6 +207,7 @@ export const junior: AgeStyle = {
   ...little,
   id: "junior",
   label: "Grades 3–5",
+  teacherBlurb: "A playful, slightly silly Gloam with simple words and big buttons.",
   grades: [3, 5],
   voice: {
     persona: "You are Gloam, a small, round creature with a lantern on your head. You are playful, curious and a bit silly.",
@@ -131,6 +223,7 @@ export const junior: AgeStyle = {
 export const middle: AgeStyle = {
   id: "middle",
   label: "Grades 6–8",
+  teacherBlurb: "A goofy, dramatic Gloam who loves its own bad theories.",
   grades: [6, 8],
   polished: false,
   voice: {

@@ -1,7 +1,9 @@
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/lib/db/client";
-import { classes } from "@/lib/db/schema";
+import { classLessons, classes, students } from "@/lib/db/schema";
+import { googleEnabled } from "@/lib/auth/google";
+import { studentAddress } from "@/lib/hosting/address";
 import { bad, notYours, requireTeacher } from "@/lib/teacher/api";
 import { assignLesson, dashboard, getClass } from "@/lib/teacher/classes";
 import { canSee, getApprovedLesson, getLessonRow } from "@/lib/teacher/lessons";
@@ -14,7 +16,28 @@ export async function GET(request: Request, ctx: RouteContext<"/api/teacher/clas
   const cls = getClass(id, me.id);
   if (!cls) return notYours();
   const lessonId = new URL(request.url).searchParams.get("lesson");
-  if (!lessonId) return Response.json({ class: cls });
+  // the class itself: its lessons (newest first), its code and where students go
+  if (!lessonId) {
+    const lessons = db
+      .select({ id: classLessons.lessonId })
+      .from(classLessons)
+      .where(eq(classLessons.classId, id))
+      .orderBy(desc(classLessons.assignedAt))
+      .all()
+      .flatMap(({ id: lid }) => {
+        const l = getApprovedLesson(lid);
+        return l ? [{ id: l.id, title: l.title }] : [];
+      });
+    // who's in the class, in the order they joined (the code screen shows them arriving)
+    const roster = db
+      .select({ id: students.id, nickname: students.nickname, google: students.googleIdHash, key: students.keyHash })
+      .from(students)
+      .where(eq(students.classId, id))
+      .orderBy(students.createdAt)
+      .all()
+      .map((r) => ({ id: r.id, nickname: r.nickname, google: !!r.google, hasKey: !!r.key }));
+    return Response.json({ class: cls, lessons, roster, google: googleEnabled(), address: studentAddress(request) });
+  }
   const row = getLessonRow(lessonId);
   const lesson = row && canSee(row, me.id) ? getApprovedLesson(lessonId) : null;
   if (!lesson) return bad("Pick an approved lesson to see the dashboard.", 404);

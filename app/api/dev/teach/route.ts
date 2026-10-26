@@ -2,6 +2,7 @@ import { z } from "zod";
 import { voice } from "@/lib/ai/companion";
 import { getAgeStyle } from "@/lib/age-styles";
 import { getSession, recordTurn } from "@/lib/companion/session";
+import { maySeeStudent } from "@/lib/student/auth";
 import { lessonRecap } from "@/lib/lesson";
 import { getApprovedLesson } from "@/lib/teacher/lessons";
 
@@ -16,7 +17,8 @@ export async function POST(request: Request) {
   if (process.env.NODE_ENV === "production") return new Response("Not found", { status: 404 });
   const parsed = Body.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return Response.json({ error: "Bad request" }, { status: 400 });
-  const session = getSession(parsed.data.sessionId);
+  const found = getSession(parsed.data.sessionId);
+  const session = found && (await maySeeStudent(found.studentId)) ? found : null;
   const lesson = session && getApprovedLesson(session.lessonId);
   if (!session || !lesson) return Response.json({ error: "No such session" }, { status: 404 });
 

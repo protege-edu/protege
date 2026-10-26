@@ -8,7 +8,11 @@ import type { Level, LessonBlueprint } from "@/lib/lesson/types";
 export type ClassRow = typeof classes.$inferSelect;
 
 // Join codes: a short word and two numbers, like GLOW-42. Easy to read off a projector and say out loud.
-const WORDS = ["GLOW", "MOSS", "FERN", "MOTH", "STAR", "LAMP", "WICK", "OWL", "PINE", "MIST", "DUSK", "LEAF", "BEAM", "RAIN", "WAVE", "SEED", "HILL", "COVE", "REED", "ECHO"];
+// (40 words x 90 numbers = 3600 codes; wrong guesses are rate-limited in app/api/join)
+const WORDS = [
+  "GLOW", "MOSS", "FERN", "MOTH", "STAR", "LAMP", "WICK", "OWL", "PINE", "MIST", "DUSK", "LEAF", "BEAM", "RAIN", "WAVE", "SEED", "HILL", "COVE", "REED", "ECHO",
+  "OAK", "BAY", "SKY", "DEW", "FOX", "ELM", "BRIM", "CLAY", "DUNE", "FAWN", "GALE", "HAZE", "KITE", "LARK", "MAPLE", "NEST", "PEAK", "ROOK", "TIDE", "WREN",
+];
 
 export function newClassCode(): string {
   for (;;) {

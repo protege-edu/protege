@@ -12,7 +12,8 @@ import type { ClientLesson, RecapItem } from "@/lib/lesson/types";
 import { chime, pip } from "@/lib/sound";
 
 export type Phase = "loading" | "title" | "intro" | "teach" | "ending";
-export type Status = "loading" | "ready" | "thinking" | "offline";
+/** paused: the teacher paused the class (Gloam sleeps until they wake it) */
+export type Status = "loading" | "ready" | "thinking" | "offline" | "paused";
 
 export type Entry =
   | { id: string; kind: "gloam"; text: string; emotion: GloamMood; fresh: boolean }
@@ -267,6 +268,18 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle, test = fa
           // in test mode, pasted answers are allowed to teach Gloam (only works while developing)
           body: JSON.stringify({ sessionId, message: text, pasted: test ? false : pasted, test }),
         });
+        if (res.status === 423) {
+          setThinking(null);
+          setStatus("paused");
+          return;
+        }
+        if (res.status === 429) {
+          // far too many messages, far too fast: Gloam asks for one at a time (nothing is lost)
+          setThinking(null);
+          setEntries((xs) => [...xs, { id: nextId(), kind: "gloam", text: style.copy.slowDown, emotion: "sheepish", fresh: true }]);
+          setStatus("ready");
+          return;
+        }
         if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
@@ -281,7 +294,10 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle, test = fa
             buffer = buffer.slice(nl + 1);
             if (!line) continue;
             const ev = JSON.parse(line);
-            if (ev.type === "judged") {
+            if (ev.type === "queued") {
+              // a busy class: Gloam says where it is in line, in its own voice
+              setThinking(style.copy.queued(ev.ahead));
+            } else if (ev.type === "judged") {
               // Gloam reacts before it has the words: you can SEE it start to get it
               if (ev.clicked.length) setThinking(pickLine(style.lines.clicking, fill, []));
               else if (ev.improved.length) setThinking(pickLine(style.lines.almost, fill, []));
@@ -387,7 +403,7 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle, test = fa
 
   // ---------- Gloam's mood right now ----------
   const mood: GloamMood = useMemo(() => {
-    if (status === "offline" && phase !== "title") return "asleep";
+    if ((status === "offline" || status === "paused") && phase !== "title") return "asleep";
     if (phase === "title") return resumable ? "proud" : "asleep";
     if (status === "thinking" && !moment) {
       if (thinking && (style.lines.clicking.includes(thinking) || style.lines.almost.includes(thinking))) return "curious";

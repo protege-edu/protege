@@ -86,3 +86,23 @@ SHRINE = (
     "night, cool blue-green moonlight, hand-painted, gouache and oil brushwork, soft painterly shading, indie game prop design, "
     "isolated on a plain flat very dark teal background, no text, no watermark, no candle, no fire"
 )
+
+# The secret-picture key students sign in with (components/join/KeyPictures.tsx). Each one has to be
+# recognised in a split second by a 5-year-old, so: one object, a bold clear silhouette, its own colour.
+# No gold or warm lantern glow anywhere (lantern gold only ever means understanding).
+_KEY_TAIL = (
+    "single object, centered, front view, full object visible, bold simple readable silhouette, "
+    "hand-painted, gouache and oil brushwork, soft painterly shading, indie game item icon, "
+    "isolated on a plain flat very dark teal background, no text, no watermark, no frame, no glow"
+)
+KEY_PICTURES = {
+    "key_moon": "a pale silvery-blue crescent moon with soft painted craters, " + _KEY_TAIL,
+    "key_fern": "a single curling green fern frond, bright fresh green leaves, " + _KEY_TAIL,
+    "key_lantern": "a small old iron lantern with blue-green glass panes, unlit, dark metal, " + _KEY_TAIL,
+    "key_owl": "a small round brown owl sitting, big round eyes, fluffy feathers, cute, " + _KEY_TAIL,
+    "key_star": "a chunky five-pointed star made of pale pink crystal, " + _KEY_TAIL,
+    "key_mushroom": "a single red mushroom with white spots, short white stem, " + _KEY_TAIL,
+    "key_leaf": "a single bright orange-red maple leaf, autumn, " + _KEY_TAIL,
+    "key_moth": "a fluffy pale lilac moth with wings spread open, feathery antennae, cute, " + _KEY_TAIL,
+    "key_stone": "a small stack of three smooth grey river stones, " + _KEY_TAIL,
+}

@@ -1,0 +1,131 @@
+"use client";
+
+import { AnimatePresence, motion } from "motion/react";
+import QRCode from "qrcode";
+import { useEffect, useRef, useState } from "react";
+import { InkButton } from "@/components/ui/InkButton";
+import { Cut, useSize } from "@/components/ui/Cut";
+import { LogoMark } from "@/components/ui/Logo";
+import { useCalmMotion } from "@/lib/useCalmMotion";
+
+export interface RosterEntry {
+  id: string;
+  nickname: string;
+}
+
+/**
+ * "Show the code": made for the classroom projector, readable from the back row.
+ * The address, the class code (huge), and a QR code that opens the join page with the code already in.
+ * Nicknames pop in as students join, so the class watches itself arrive.
+ * The QR is drawn right here (the qrcode package), nothing is sent anywhere.
+ */
+export function ShowCode({ code, address, local, roster, onClose }: { code: string; address: string; local: boolean; roster: RosterEntry[]; onClose: () => void }) {
+  const calm = useCalmMotion();
+  const [svg, setSvg] = useState<string>("");
+  const close = useRef<HTMLButtonElement>(null);
+  const joinUrl = `${address}/join?code=${encodeURIComponent(code)}`;
+  // nicknames already here when the screen opened don't pop; new ones do
+  const [firstSeen] = useState(() => new Set(roster.map((r) => r.id)));
+
+  useEffect(() => {
+    void QRCode.toString(joinUrl, { type: "svg", margin: 0, errorCorrectionLevel: "M", color: { dark: "#0d1613", light: "#00000000" } }).then(setSvg);
+  }, [joinUrl]);
+
+  useEffect(() => {
+    const opener = document.activeElement as HTMLElement | null;
+    close.current?.focus({ preventScroll: true });
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      opener?.focus?.({ preventScroll: true });
+    };
+  }, [onClose]);
+
+  const shownAddress = address.replace(/^https?:\/\//, "");
+
+  return (
+    <motion.div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="show-code-title"
+      data-age-style="senior"
+      className="fixed inset-0 z-50 overflow-y-auto bg-[#0d1613] text-[#d3ddd6]"
+      initial={calm ? false : { opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={calm ? undefined : { opacity: 0, transition: { duration: 0.25 } }}
+    >
+      <div aria-hidden="true" className="absolute inset-0 bg-cover bg-center opacity-50" style={{ backgroundImage: "url(/art/senior/journey-map-lit.webp)" }} />
+      <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(ellipse_at_30%_45%,rgb(13_22_19/0.55),rgb(13_22_19/0.92)_70%)]" />
+
+      <div className="relative mx-auto flex min-h-full max-w-[1400px] flex-col px-[5vw] py-[3vh]">
+        <header className="flex items-center justify-between">
+          <span className="flex items-center gap-3">
+            <LogoMark tone="dark" className="h-12 w-12" />
+            <span className="text-lg font-bold">Join your class</span>
+          </span>
+          <InkButton ref={close} variant="quiet" onClick={onClose}>
+            Close
+          </InkButton>
+        </header>
+
+        <div className="mt-[2vh] grid flex-1 items-center gap-[4vw] md:grid-cols-[1.4fr_1fr]">
+          <div>
+            <p className="text-[clamp(1rem,min(2vw,3.4vh),1.8rem)] text-[#9fb2a8]">Go to</p>
+            <p className="text-[clamp(1.4rem,min(3.4vw,6vh),3.2rem)] font-bold break-all">{shownAddress}</p>
+            <p id="show-code-title" className="mt-[3vh] text-[clamp(1rem,min(2vw,3.4vh),1.8rem)] text-[#9fb2a8]">
+              and type the class code
+            </p>
+            <p className="text-[clamp(3rem,min(8.5vw,17vh),10rem)] leading-[1] font-bold tracking-[0.05em] whitespace-nowrap text-[#f4f1e8]" aria-label={`Class code ${code.split("").join(" ")}`}>
+              {code}
+            </p>
+            {local && (
+              <p className="mt-[2vh] max-w-[52ch] text-sm text-[#9fb2a8]">
+                This address only works on the school network. For anywhere else, start a tunnel (see the README) and set PUBLIC_URL.
+              </p>
+            )}
+          </div>
+
+          <QrCard svg={svg} />
+        </div>
+
+        <section aria-labelledby="joined-title" className="mt-[2vh] min-h-[14vh]">
+          <h2 id="joined-title" className="text-md font-bold text-[#9fb2a8]" aria-live="polite">
+            {roster.length === 0 ? "Nobody's here yet. Gloam is waiting." : `${roster.length} ${roster.length === 1 ? "student has" : "students have"} joined`}
+          </h2>
+          <ul className="mt-3 flex flex-wrap gap-2.5">
+            <AnimatePresence>
+              {roster.map((r) => (
+                <motion.li
+                  key={r.id}
+                  layout={!calm}
+                  initial={calm || firstSeen.has(r.id) ? false : { opacity: 0, scale: 0.4, y: 16 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  transition={{ type: "spring", stiffness: 380, damping: 18 }}
+                  className="rounded-full border border-[#2c4844] bg-[#121e1a]/80 px-4 py-1.5 text-[clamp(1rem,1.5vw,1.35rem)] font-bold"
+                >
+                  {r.nickname}
+                </motion.li>
+              ))}
+            </AnimatePresence>
+          </ul>
+        </section>
+      </div>
+    </motion.div>
+  );
+}
+
+/** The QR code on a piece of light paper (cameras need light behind it) */
+function QrCard({ svg }: { svg: string }) {
+  const [box, { w, h }] = useSize<HTMLDivElement>();
+  return (
+    <div className="justify-self-center">
+      <div ref={box} className="relative w-[min(34vw,420px,48vh)] p-[6%] max-md:w-[min(70vw,320px)]">
+        <Cut w={w} h={h} seed="qr" radius={22} wobble={2} fill="#f4f1e8" stroke="#c9c2ad" depth={8} depthFill="rgb(0 0 0 / 0.45)" />
+        {/* the library's own SVG output (a QR of our join address), not user content */}
+        <div className="relative z-[1] aspect-square [&>svg]:h-full [&>svg]:w-full" role="img" aria-label="QR code that opens the join page" dangerouslySetInnerHTML={{ __html: svg }} />
+      </div>
+      <p className="mt-4 text-center text-sm text-[#9fb2a8]">Or scan this with a camera</p>
+    </div>
+  );
+}

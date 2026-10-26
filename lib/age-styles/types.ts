@@ -64,10 +64,81 @@ export interface JourneyWorld {
   };
 }
 
+/** Joining a class, and coming back (app/join). Gloam talks the student through it. */
+export interface JoinCopy {
+  codeTitle: string;
+  codeLabel: string;
+  codeHint: string;
+  codeButton: string;
+  codeWrong: string;
+  whoTitle: string;
+  whoHint: (className: string) => string;
+  whoNew: string;
+  nickTitle: string;
+  nickLabel: string;
+  nickHint: string;
+  nickSurprise: string;
+  nickButton: string;
+  keyTitle: (size: number) => string;
+  keyHint: string;
+  /** "2 of 3" while picking */
+  keyCount: (picked: number, size: number) => string;
+  keyClear: string;
+  keyRememberTitle: string;
+  keyRememberHint: string;
+  keyRememberButton: string;
+  keyRedo: string;
+  keyEnterTitle: (nickname: string) => string;
+  keyEnterHint: string;
+  /** after a teacher reset: the pictures they pick now become the new key */
+  keyResetHint: string;
+  google: string;
+  googleNick: string;
+  back: string;
+  /** what Gloam says at each step (its own voice) */
+  gloam: {
+    code: string;
+    typing: string;
+    wrong: string;
+    found: (className: string) => string;
+    nick: string;
+    key: string;
+    remember: string;
+    welcome: (nickname: string) => string;
+    welcomeBack: (nickname: string) => string;
+  };
+}
+
+/** The student's home ("your Gloam", app/me) */
+export interface HomeCopy {
+  title: (nickname: string) => string;
+  level: (level: number) => string;
+  levelHint: string;
+  tricksTitle: string;
+  trickNames: Record<"spin" | "hum" | "firefly" | "pose", string>;
+  noTricks: string;
+  lessonsTitle: string;
+  lessonNew: string;
+  lessonProgress: (lit: number, total: number) => string;
+  lessonDone: string;
+  start: string;
+  keepGoing: string;
+  visit: string;
+  noLessons: string;
+  journalTitle: string;
+  journalEmpty: string;
+  signOut: string;
+  paused: string;
+  /** Gloam greets the student (picked by the level, no randomness) */
+  hello: (nickname: string) => string[];
+}
+
 export interface AgeStyle {
   id: AgeStyleId;
   /** Shown to teachers: "Grades 9–12" */
   label: string;
+  /** For teachers, when they pick a grade: what this age's Gloam and world are like */
+  teacherBlurb: string;
   grades: [number, number];
   /** false = exists so nothing is hard-wired, but not polished yet */
   polished: boolean;
@@ -164,6 +235,18 @@ export interface AgeStyle {
     offlineBody: string;
     offlineRetryBody: (tries: number) => string;
     retry: string;
+    /** Title screen of the practice lesson: the way into a real class */
+    titleJoin: string;
+    /** a student sent far too many messages too fast (Gloam asks for one at a time) */
+    slowDown: string;
+    /** a busy class: other Gloams are thinking first (ahead = how many are in line before this one, 0 = next) */
+    queued: (ahead: number) => string;
+    /** ...and next to it, trying the practice lesson without a class */
+    titlePractice: string;
+    /** Signed in to a class: back to "your Gloam" (the student's home) */
+    toMyGloam: string;
+    join: JoinCopy;
+    home: HomeCopy;
   };
 
   look: {

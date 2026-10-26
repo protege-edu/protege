@@ -77,7 +77,7 @@ async function ask<T>(
   let last = "";
   for (let i = 0; i < tries; i++) {
     // Writing a lesson takes a laptop model much longer than a chat reply, so each step gets up to 5 minutes
-    const res = await chatJSON({ name, schema, messages, temperature: i === 0 ? 0.4 : 0.7, timeoutMs: 300_000 });
+    const res = await chatJSON({ name, schema, messages, temperature: i === 0 ? 0.4 : 0.7, timeoutMs: 300_000, priority: "background" });
     // Small models sometimes slip into another script mid-word ("乘"): that answer can't be used
     if (res.ok && OTHER_SCRIPT.test(JSON.stringify(res.data))) {
       last = "text in an unexpected alphabet";

@@ -169,7 +169,7 @@ async function main() {
   console.log("class codes");
   await test("codes look like GLOW-42 and are all different", () => {
     const codes = new Set(C.listClasses(a.id).map((c) => c.code));
-    for (const c of codes) assert.match(c ?? "", /^[A-Z]{3,4}-\d{2}$/);
+    for (const c of codes) assert.match(c ?? "", /^[A-Z]{3,5}-\d{2}$/);
     assert.equal(codes.size, C.listClasses(a.id).length);
   });
   await test("students can type a code however they like", () => {
@@ -224,13 +224,29 @@ async function main() {
   });
   await test("a class preview shows nicknames only, nothing else about anyone", () => {
     const p = S.classPreview(classA)!;
-    assert.deepEqual(Object.keys(p.nicknames[0]).sort(), ["id", "needsNewKey", "nickname"]);
+    assert.deepEqual(Object.keys(p.nicknames[0]).sort(), ["google", "id", "needsNewKey", "nickname"]);
   });
   await test("Google students are found by a hash, never by their Google id", () => {
     const g = S.createStudent(classA, "Quiet Comet", null, keyedHash("google-sub-9"));
     assert.ok(g.ok);
     assert.equal(S.studentByGoogle(classA, "google-sub-9")?.nickname, "Quiet Comet");
     assert.equal(S.studentByGoogle(classB, "google-sub-9"), null);
+  });
+  await test("pausing a class pauses its students (and only them)", () => {
+    const id = otter.ok ? otter.student.id : "";
+    assert.equal(S.classPaused(id), false);
+    db.update(classes).set({ pausedAt: new Date() }).where(eq(classes.id, classA)).run();
+    assert.equal(S.classPaused(id), true);
+    const newt = S.classPreview(classB)!.nicknames.find((n) => n.nickname === "Tiny Newt")!;
+    assert.equal(S.classPaused(newt.id), false, "another class keeps going");
+    db.update(classes).set({ pausedAt: null }).where(eq(classes.id, classA)).run();
+    assert.equal(S.classPaused(id), false);
+  });
+  await test("nobody can set pictures on a Google student's account", () => {
+    const comet = S.classPreview(classA)!.nicknames.find((n) => n.nickname === "Quiet Comet")!;
+    assert.ok(comet.google && !comet.needsNewKey);
+    assert.ok(!S.checkKey(classA, comet.id, ["moon", "owl", "fern"]).ok);
+    assert.ok(!S.checkKey(classA, comet.id, ["moon", "owl", "fern"]).ok, "still not, the second time");
   });
 
   console.log(`\n${passed} passed${process.exitCode ? ", some FAILED" : ""}`);

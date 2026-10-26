@@ -22,7 +22,7 @@ interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
  * A tap sends a ripple of moonlight through the paper (it shows the press landed).
  * Keyboard focus draws a moonlight outline that follows the same cut edge.
  */
-export const InkButton = forwardRef<HTMLButtonElement, Props>(function InkButton({ variant = "primary", size = "md", children, className = "", onPointerDown, disabled, ...rest }, ref) {
+export const InkButton = forwardRef<HTMLButtonElement, Props>(function InkButton({ variant = "primary", size = "md", children, className = "", onPointerDown, disabled, type = "button", ...rest }, ref) {
   const [box, { w, h }] = useSize<HTMLSpanElement>();
   const calm = useCalmMotion();
   const [ripples, setRipples] = useState<{ id: number; x: number; y: number }[]>([]);
@@ -48,6 +48,8 @@ export const InkButton = forwardRef<HTMLButtonElement, Props>(function InkButton
   return (
     <button
       ref={ref}
+      // a plain button unless it says type="submit" (inside a form, a button would submit it by default)
+      type={type}
       disabled={disabled}
       onPointerDown={press}
       className={`group relative inline-flex shrink-0 cursor-pointer items-center justify-center font-bold outline-none select-none disabled:cursor-not-allowed disabled:opacity-45 ${pad} ${ink} ${className}`}

@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { Button, Shell, StatusPill, api, gradeLabel, json } from "./kit";
+import { styleForGrade } from "@/lib/age-styles";
+import { Button, Shell, StatusPill, api, gradeLabel, json, useTeacher } from "./kit";
+import { GettingStarted } from "./GettingStarted";
 
 interface ClassItem {
   id: string;
@@ -28,6 +30,8 @@ export function TeacherHome() {
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState("");
   const [grade, setGrade] = useState(9);
+  const teacher = useTeacher();
+  const [setupDone, setSetupDone] = useState(false);
 
   const load = useCallback(async () => {
     const [c, l] = await Promise.all([api<ClassItem[]>("/api/teacher/classes"), api<LessonItem[]>("/api/teacher/lessons")]);
@@ -53,14 +57,16 @@ export function TeacherHome() {
     void load();
   };
 
-  const approved = lessons?.filter((l) => l.status === "approved") ?? [];
-
   return (
     <Shell>
       {error && (
         <p role="alert" className="mt-6 rounded-md bg-[#f3d6d6] px-4 py-3 text-sm font-bold text-[#7a2330]">
           {error}
         </p>
+      )}
+
+      {teacher && !teacher.onboardedAt && !setupDone && classes && (
+        <GettingStarted classes={classes} onAddClass={() => setAdding(true)} onDone={() => setSetupDone(true)} />
       )}
 
       <section className="mt-8" aria-labelledby="classes-title">
@@ -94,6 +100,9 @@ export function TeacherHome() {
             <Button type="submit" disabled={!name.trim()}>
               Create class
             </Button>
+            <p className="w-full text-sm text-ink-dim" aria-live="polite">
+              <span className="font-bold text-ink">{styleForGrade(grade).label}:</span> {styleForGrade(grade).teacherBlurb}
+            </p>
             <Button variant="quiet" className="border-0" onClick={() => setAdding(false)}>
               Cancel
             </Button>
@@ -112,13 +121,12 @@ export function TeacherHome() {
                     {gradeLabel(c.grade)}, {c.students} {c.students === 1 ? "student" : "students"}
                   </p>
                 </div>
-                {firstLesson ? (
-                  <Link href={`/teacher/classes/${c.id}?lesson=${firstLesson}`} className="min-h-11 content-center rounded-md bg-accent px-4 text-sm font-bold text-accent-ink hover:bg-accent-hover">
-                    Open dashboard
-                  </Link>
-                ) : (
-                  <AssignLesson classId={c.id} lessons={approved} onDone={load} />
-                )}
+                <Link
+                  href={`/teacher/classes/${c.id}${firstLesson ? `?lesson=${encodeURIComponent(firstLesson)}` : ""}`}
+                  className="min-h-11 content-center rounded-md bg-accent px-4 text-sm font-bold text-accent-ink hover:bg-accent-hover"
+                >
+                  Open class
+                </Link>
               </li>
             );
           })}
@@ -191,29 +199,5 @@ function InviteTeacher() {
         </p>
       )}
     </section>
-  );
-}
-
-function AssignLesson({ classId, lessons, onDone }: { classId: string; lessons: LessonItem[]; onDone: () => void }) {
-  const [pick, setPick] = useState(lessons[0]?.id ?? "");
-  if (!lessons.length) return <span className="text-sm text-ink-dim">Approve a lesson to give it to this class</span>;
-  const assign = async () => {
-    const res = await api(`/api/teacher/classes/${classId}`, json("POST", { lessonId: pick }));
-    if (res.ok) onDone();
-  };
-  return (
-    <div className="flex items-center gap-2">
-      <label className="sr-only" htmlFor={`assign-${classId}`}>
-        Lesson for this class
-      </label>
-      <select id={`assign-${classId}`} value={pick} onChange={(e) => setPick(e.target.value)} className="min-h-11 rounded-md border border-line bg-panel px-3 text-sm">
-        {lessons.map((l) => (
-          <option key={l.id} value={l.id}>
-            {l.title}
-          </option>
-        ))}
-      </select>
-      <Button onClick={assign}>Give to class</Button>
-    </div>
   );
 }

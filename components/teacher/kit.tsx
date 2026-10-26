@@ -36,7 +36,7 @@ export function Shell({ children, title, back }: { children: ReactNode; title?: 
   // a full reload, so nothing from this teacher's pages stays in memory (shared computers)
   const signOut = async () => {
     await api("/api/teacher/auth", { method: "DELETE" });
-    window.location.assign("/teacher");
+    window.location.replace("/teacher");
   };
   return (
     <div className="mx-auto max-w-[1100px] px-5 pb-20 sm:px-8">
@@ -45,7 +45,9 @@ export function Shell({ children, title, back }: { children: ReactNode; title?: 
           <Wordmark tone="light" />
         </Link>
         <nav className="flex items-center gap-1 text-sm" aria-label="Teacher">
-          <span className="mr-2 hidden text-ink-dim sm:inline">Teacher</span>
+          <Link href="/teacher/help" className="mr-1 min-h-11 content-center rounded-md px-3 font-bold text-ink-dim hover:text-ink">
+            How it works
+          </Link>
           <Button variant="quiet" onClick={signOut} className="border-0">
             Sign out
           </Button>

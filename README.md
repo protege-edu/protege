@@ -81,7 +81,9 @@ Protégé and the AI run on the teacher's laptop. To let students reach it from 
 2. Start a tunnel, either:
    - **Tailscale Funnel** (a fixed address, needed for Google sign-in): install [Tailscale](https://tailscale.com/download) (free personal plan), sign in, then run `tailscale funnel 3000`. The first time, it gives you a link to switch Funnel on. Your address looks like `https://your-laptop.your-tailnet.ts.net`.
    - **Cloudflare quick tunnel** (no account at all, but the address changes every time): install [cloudflared](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/), then run `cloudflared tunnel --url http://localhost:3000`.
-3. Students open that address and type the class code.
+3. On your class page, press **Show the code** and put it on the projector. Students open the address (or scan the QR code), type the class code, pick a nickname and 3 secret pictures (2 for K–2). Their nicknames pop up on the screen as they arrive. Next time, they tap their nickname and their pictures, on any Chromebook.
+
+Everyone on the same Wi-Fi as the laptop can skip the tunnel: the code screen shows the laptop's school-network address.
 
 The laptop has to stay on and awake during class, because it runs the AI.
 
@@ -183,6 +185,7 @@ scripts/              eval and screenshot tools
 
 ## Troubleshooting
 - **The page keeps reloading by itself (while developing):** stop `npm run dev`, delete the `.next` folder, and start it again.
+- **Students on the school Wi-Fi can't open the address:** the first time, Windows asks whether Node.js may use the network. Allow it on private networks. Some school networks block devices from reaching each other; then use a tunnel.
 - **Forgot the setup code:** it's in `SETUP-CODE.txt` in the database folder, and printed again every time Protégé starts until the first account exists.
 - **A teacher forgot their password and lost the recovery code:** on the laptop running Protégé, run `npm run reset-teacher -- their@email`. It prints a new recovery code; they use it with "Forgot your password?". Only someone at the laptop can do this.
 - **A student forgot their pictures:** the teacher opens the class and presses "Reset pictures" next to that student. The student picks new ones next time.

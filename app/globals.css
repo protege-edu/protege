@@ -98,6 +98,9 @@
   --t-accent-hover: #8e2f45;
   --t-chip: #d5ddd0;
   --t-focus: #a83a50;
+  --t-warn: #9b2c2c;
+  /* what text sits on over the painted world (r g b): paper here, night for high school */
+  --t-scrim: 232 237 227;
   --t-voice-font: var(--font-shantell), system-ui, sans-serif;
 }
 
@@ -121,6 +124,8 @@
   --t-chip: #172723;
   --t-focus: #8ec5dc;
   --t-moon: #8ec5dc;
+  --t-warn: #f2a37a;
+  --t-scrim: 5 10 8;
   --t-voice-font: var(--font-recursive), system-ui, sans-serif;
 }
 
@@ -145,6 +150,7 @@
   --t-focus: #2f6f8c;
   --t-moon: #2f6f8c;
   --t-flame-off: #93a69d;
+  --t-warn: #9b2c2c;
   --t-voice-font: var(--font-recursive), system-ui, sans-serif;
   background: var(--t-bg);
   color: var(--t-ink);

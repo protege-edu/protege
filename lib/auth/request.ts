@@ -47,5 +47,12 @@ export function limit(key: string, max: number, windowMs: number): boolean {
   return b.count <= max;
 }
 
+/** Strikes: only failures count (a whole class behind one school address all typing the RIGHT code is fine) */
+export function struckOut(key: string, max: number): boolean {
+  const b = buckets.get(key);
+  return !!b && b.reset >= Date.now() && b.count >= max;
+}
+export const strike = (key: string, windowMs: number) => void limit(key, Number.MAX_SAFE_INTEGER, windowMs);
+
 export const tooMany = () => Response.json({ error: "That's a lot of tries in a short time. Wait a minute, then try again." }, { status: 429 });
 export const forbidden = () => Response.json({ error: "That request didn't come from Protégé. Reload the page and try again." }, { status: 403 });

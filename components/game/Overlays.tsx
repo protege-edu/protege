@@ -14,18 +14,31 @@ import type { Entry } from "./useTeachSession";
 
 /* ---------------- Title screen ---------------- */
 
+/**
+ * Who's looking at the title screen:
+ *   guest:   the practice lesson at "/", not in a class. The main way in is joining your class.
+ *   student: signed in to a class. Their Gloam's home is one tap away.
+ *   preview: a teacher trying a lesson
+ */
+export type Account = "guest" | "student" | "preview";
+
 export function TitleScreen({
   style,
   lesson,
   resumable,
+  account = "preview",
   onStart,
   onHelp,
+  onGo,
 }: {
   style: AgeStyle;
   lesson: ClientLesson;
   resumable: boolean;
+  account?: Account;
   onStart: () => void;
   onHelp: () => void;
+  /** go to another page (join, or the student's home) */
+  onGo: (href: string) => void;
 }) {
   const calm = useCalmMotion();
   const cta = useRef<HTMLButtonElement>(null);
@@ -44,18 +57,42 @@ export function TitleScreen({
           {lesson.title}
         </motion.p>
         <motion.div {...rise(0.7)} className="mt-8 flex flex-wrap items-center gap-3">
-          <InkButton ref={cta} size="lg" onClick={onStart}>
-            {resumable ? style.copy.titleContinue : style.copy.titleCta}
-          </InkButton>
-          <InkButton variant="quiet" size="lg" onClick={onHelp}>
-            {style.copy.titleHelp}
-          </InkButton>
+          {account === "guest" ? (
+            <>
+              <InkButton ref={cta} size="lg" onClick={() => onGo("/join")}>
+                {style.copy.titleJoin}
+              </InkButton>
+              <InkButton variant="quiet" size="lg" onClick={onStart}>
+                {resumable ? style.copy.titleContinue : style.copy.titlePractice}
+              </InkButton>
+              <InkButton variant="ghost" onClick={onHelp}>
+                {style.copy.titleHelp}
+              </InkButton>
+            </>
+          ) : (
+            <>
+              <InkButton ref={cta} size="lg" onClick={onStart}>
+                {resumable ? style.copy.titleContinue : style.copy.titleCta}
+              </InkButton>
+              {account === "student" ? (
+                <InkButton variant="quiet" size="lg" onClick={() => onGo("/me")}>
+                  {style.copy.toMyGloam}
+                </InkButton>
+              ) : (
+                <InkButton variant="quiet" size="lg" onClick={onHelp}>
+                  {style.copy.titleHelp}
+                </InkButton>
+              )}
+            </>
+          )}
         </motion.div>
       </div>
       {/* a quiet way in for teachers; students won't need it */}
+      {account !== "student" && (
       <a href="/teacher" className="absolute right-4 bottom-4 min-h-11 content-center rounded-md px-3 text-xs font-bold text-ink-dim underline-offset-4 hover:text-ink hover:underline">
         {style.copy.forTeachers}
       </a>
+      )}
     </motion.div>
   );
 }
@@ -148,6 +185,7 @@ export function PauseMenu({
   onToggleSound,
   onStartOver,
   onTitle,
+  titleLabel,
   canSeeRecap,
   onRecap,
   onMap,
@@ -160,6 +198,8 @@ export function PauseMenu({
   onToggleSound: () => void;
   onStartOver: () => void;
   onTitle: () => void;
+  /** what "back to title" says (a student goes back to their Gloam instead) */
+  titleLabel?: string;
   canSeeRecap: boolean;
   onRecap: () => void;
   /** the trail map (only in age styles with a journey world) */
@@ -196,7 +236,7 @@ export function PauseMenu({
           {style.copy.sound(sound)}
         </InkButton>
         <InkButton variant="ghost" className={row} onClick={onTitle}>
-          {style.copy.backToTitle}
+          {titleLabel ?? style.copy.backToTitle}
         </InkButton>
         {confirming ? (
           <InkButton className="mt-2 w-full" onClick={onStartOver}>
@@ -295,6 +335,7 @@ export function EndingPanel({
   onTeachAgain,
   onTitle,
   onKeepTalking,
+  titleLabel,
 }: {
   style: AgeStyle;
   recap: RecapItem[];
@@ -302,6 +343,7 @@ export function EndingPanel({
   onTeachAgain: () => void;
   onTitle: () => void;
   onKeepTalking: () => void;
+  titleLabel?: string;
 }) {
   const calm = useCalmMotion();
   const first = useRef<HTMLButtonElement>(null);
@@ -366,7 +408,7 @@ export function EndingPanel({
               {style.copy.teachAgain}
             </InkButton>
             <InkButton variant="ghost" onClick={onTitle}>
-              {style.copy.backToTitle}
+              {titleLabel ?? style.copy.backToTitle}
             </InkButton>
           </div>
         </div>

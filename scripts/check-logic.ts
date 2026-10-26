@@ -12,6 +12,8 @@ import { candidateConcepts, gradeCheck } from "@/lib/companion/grade";
 import { applyProgress, brightness, startingUnderstanding } from "@/lib/companion/progress";
 import { BORED, GloamBrain, TRICKS } from "@/lib/gloam-rig/brain";
 import { lanternFor, levelFor, newlyLit } from "@/lib/companion/level";
+import { aiConfig } from "@/lib/ai/config";
+import { inLine, queueStats } from "@/lib/ai/queue";
 import { seasons } from "@/lib/lesson/seasons";
 import { checkBlueprint } from "@/lib/teacher/checks";
 import { dropRunningLines, pdfLinesToText } from "@/lib/teacher/pdf-text";
@@ -264,4 +266,64 @@ test("reduced motion: no hops or eureka jump", () => {
   assert.ok(highest > -0.02, `moved ${highest}`);
 });
 
-console.log(`\n${passed} passed${process.exitCode ? ", some FAILED" : ""}`);
+// ---- the AI line (async, so it runs last) ----
+void (async () => {
+  console.log("the AI line");
+  const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+  const at = async (name: string, fn: () => Promise<void>) => {
+    try {
+      await fn();
+      passed++;
+      console.log(`  ok  ${name}`);
+    } catch (e) {
+      console.error(`  FAIL ${name}\n       ${(e as Error).message}`);
+      process.exitCode = 1;
+    }
+  };
+  await at("never more than AI_CONCURRENCY calls at once, and nobody is dropped", async () => {
+    let now = 0;
+    let most = 0;
+    const job = async () => {
+      now++;
+      most = Math.max(most, now);
+      await wait(5);
+      now--;
+      return 1;
+    };
+    const results = await Promise.all(Array.from({ length: 30 }, () => inLine(job)));
+    assert.equal(results.length, 30);
+    assert.ok(most <= aiConfig.concurrency, `ran ${most} at once`);
+    assert.equal(queueStats().active, 0);
+  });
+  await at("students go before lesson drafting, and drafting always leaves a slot free", async () => {
+    const order: string[] = [];
+    let drafting = 0;
+    let most = 0;
+    const job = (name: string, ms: number, bg = false) => async () => {
+      if (bg) most = Math.max(most, ++drafting);
+      await wait(ms);
+      if (bg) drafting--;
+      order.push(name);
+    };
+    await Promise.all([
+      inLine(job("draft1", 30, true), { priority: "background" }),
+      inLine(job("draft2", 30, true), { priority: "background" }),
+      inLine(job("draft3", 30, true), { priority: "background" }),
+      inLine(job("student1", 5)),
+      inLine(job("student2", 5)),
+    ]);
+    assert.ok(most <= Math.max(1, aiConfig.concurrency - 1), `${most} drafts at once`);
+    assert.ok(order.indexOf("student2") < order.indexOf("draft3"), order.join(","));
+  });
+  await at("everyone waiting hears their place in line, counting down to 'next'", async () => {
+    const heard: number[] = [];
+    const slow = () => wait(10);
+    const busy = Array.from({ length: aiConfig.concurrency + 2 }, () => inLine(slow));
+    await inLine(slow, { onWait: (ahead) => heard.push(ahead) });
+    await Promise.all(busy);
+    assert.deepEqual(heard, [...heard].sort((x, y) => y - x), "only ever moves forward");
+    assert.equal(heard[heard.length - 1], 0);
+    assert.equal(heard[0], 2);
+  });
+  console.log(`\n${passed} passed${process.exitCode ? ", some FAILED" : ""}`);
+})();

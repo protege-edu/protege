@@ -1,10 +1,15 @@
+import { connection } from "next/server";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { GameScreen } from "@/components/game/GameScreen";
 import { toClientLesson } from "@/lib/lesson";
+import { currentStudent } from "@/lib/student/auth";
 import { getApprovedLesson } from "@/lib/teacher/lessons";
 
-/** Play any APPROVED lesson as a student (teachers use this to try their own lessons). Drafts 404. */
+/**
+ * Play any APPROVED lesson. A signed-in student plays it as themselves (their class's lesson, their own
+ * session on any Chromebook); a teacher uses this to try their own lessons. Drafts 404.
+ */
 export default function Page({ params }: PageProps<"/play/[id]">) {
   return (
     <Suspense>
@@ -17,9 +22,11 @@ async function Lesson({ params }: { params: PageProps<"/play/[id]">["params"] })
   const { id } = await params;
   const lesson = getApprovedLesson(decodeURIComponent(id));
   if (!lesson) notFound();
+  await connection();
+  const me = await currentStudent();
   return (
     <div data-age-style={lesson.ageStyle}>
-      <GameScreen lesson={toClientLesson(lesson)} />
+      <GameScreen lesson={toClientLesson(lesson)} account={me ? "student" : "preview"} />
     </div>
   );
 }

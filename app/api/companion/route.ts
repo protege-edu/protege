@@ -1,6 +1,9 @@
 import { z } from "zod";
 import { runTurn } from "@/lib/ai/companion";
+import { hearingLine } from "@/lib/ai/queue";
+import { clientIp, forbidden, limit, sameOrigin, tooMany } from "@/lib/auth/request";
 import { getSession, recordTurn } from "@/lib/companion/session";
+import { classPaused, maySeeStudent } from "@/lib/student/auth";
 import { lessonRecap } from "@/lib/lesson";
 import { getApprovedLesson } from "@/lib/teacher/lessons";
 
@@ -20,14 +23,21 @@ const Body = z.object({
  *   {"type":"offline"}      the model isn't running
  */
 export async function POST(request: Request) {
+  if (!sameOrigin(request)) return forbidden();
+  // a real student types maybe 3 messages a minute; this only stops floods (one laptop runs the AI for a whole class)
+  if (!limit(`turn:${clientIp(request)}`, 240, 60 * 1000)) return tooMany();
   const parsed = Body.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
     return Response.json({ error: "That message didn't come through right. Try sending it again." }, { status: 400 });
   }
   const session = getSession(parsed.data.sessionId);
-  if (!session) {
+  if (session && !limit(`turn-session:${session.id}`, 12, 60 * 1000)) return tooMany();
+  if (!session || !(await maySeeStudent(session.studentId))) {
     return Response.json({ error: "This session ended. Refresh the page to start a new one." }, { status: 404 });
   }
+
+  // the teacher paused the class: Gloam sleeps (the message isn't lost; the student sends it again later)
+  if (classPaused(session.studentId)) return Response.json({ error: "Your teacher paused the class." }, { status: 423 });
 
   const lesson = getApprovedLesson(session.lessonId);
   if (!lesson) {
@@ -39,7 +49,9 @@ export async function POST(request: Request) {
     async start(controller) {
       const send = (event: object) => controller.enqueue(encoder.encode(JSON.stringify(event) + "\n"));
       try {
-        const out = await runTurn(
+        // while other students' Gloams are thinking, this one hears its place in line (and says so, in character)
+        const out = await hearingLine((ahead) => send({ type: "queued", ahead }), () =>
+          runTurn(
           {
             lesson,
             understanding: session.understanding,
@@ -49,6 +61,7 @@ export async function POST(request: Request) {
             allowCopied: parsed.data.test === true && process.env.NODE_ENV !== "production",
           },
           { onJudged: (e) => send({ type: "judged", ...e }) },
+          ),
         );
 
         if (out.source === "offline") {

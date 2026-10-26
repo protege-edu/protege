@@ -114,7 +114,14 @@ export function DialogueBand({ s, style, gloam, wide, onOpenLog }: { s: TeachSes
   const speech = (
     <div aria-live="polite">
       <GloamName style={style} />
-      {s.status === "offline" ? (
+      {s.status === "paused" ? (
+        <div role="status">
+          <p className="text-sm font-bold text-ink">{style.copy.home.paused}</p>
+          <InkButton onClick={s.retry} className="mt-3">
+            {style.copy.retry}
+          </InkButton>
+        </div>
+      ) : s.status === "offline" ? (
         <div role="alert">
           <p className="text-sm font-bold text-ink">{style.copy.offlineTitle}</p>
           <p className="mt-1 text-sm text-ink-dim">{s.offlineTries ? style.copy.offlineRetryBody(s.offlineTries) : style.copy.offlineBody}</p>

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { aiConfig } from "./config";
+import { inLine, type Priority } from "./queue";
 
 export interface ChatMessage {
   role: "system" | "user" | "assistant";
@@ -23,7 +24,16 @@ export async function chatJSON<T>(opts: {
   maxTokens?: number;
   /** Chat replies use the short default; long jobs (drafting a lesson) pass more */
   timeoutMs?: number;
+  /** live: a student is waiting (default). background: drafting, goes after every student */
+  priority?: Priority;
+  /** while waiting in line: how many calls are ahead */
+  onWait?: (ahead: number) => void;
 }): Promise<ChatResult<T>> {
+  // the clock for the timeout starts when it's this call's turn, not while it waits in line
+  return inLine(() => callModel(opts), { priority: opts.priority, onWait: opts.onWait });
+}
+
+async function callModel<T>(opts: { messages: ChatMessage[]; schema: z.ZodType<T>; name: string; temperature?: number; maxTokens?: number; timeoutMs?: number }): Promise<ChatResult<T>> {
   const start = Date.now();
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), opts.timeoutMs ?? aiConfig.timeoutMs);

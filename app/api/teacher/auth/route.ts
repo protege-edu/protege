@@ -2,7 +2,7 @@ import { z } from "zod";
 import { googleEnabled } from "@/lib/auth/google";
 import { clientIp, forbidden, limit, sameOrigin, tooMany } from "@/lib/auth/request";
 import { bad } from "@/lib/teacher/api";
-import { anyTeachers, currentTeacher, recover, signIn, signInAs, signOut, signUp, signUpGate } from "@/lib/teacher/auth";
+import { anyTeachers, currentTeacher, markOnboarded, recover, signIn, signInAs, signOut, signUp, signUpGate } from "@/lib/teacher/auth";
 
 /** Who's signed in, and what sign-in options exist */
 export async function GET() {
@@ -22,6 +22,7 @@ const Body = z.discriminatedUnion("action", [
   }),
   z.object({ action: z.literal("signin"), email, password: z.string().min(1, "Type your password.").max(200) }),
   z.object({ action: z.literal("recover"), email, code: z.string().trim().min(6, "Type your recovery code.").max(40), password }),
+  z.object({ action: z.literal("onboarded") }),
 ]);
 
 export async function POST(request: Request) {
@@ -30,6 +31,12 @@ export async function POST(request: Request) {
   const body = Body.safeParse(await request.json().catch(() => null));
   if (!body.success) return bad(body.error.issues[0]?.message ?? "Something's missing.");
   const b = body.data;
+  if (b.action === "onboarded") {
+    const me = await currentTeacher();
+    if (!me) return bad("Sign in first.", 401);
+    markOnboarded(me.id);
+    return Response.json({ ok: true });
+  }
   if (b.action === "signup") {
     const r = signUp(b);
     if (!r.ok) return bad(r.error);
