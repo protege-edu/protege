@@ -190,6 +190,8 @@ export function JourneyWorld(props: JourneyProps) {
       const grain = new PIXI.TilingSprite({ texture: grainTex, width: 10, height: 10 });
       grain.alpha = 0.06;
       const vignette = new PIXI.Sprite(vignetteTex);
+      // night worlds get the full dark edges; daylight storybook worlds only a soft one
+      vignette.alpha = world.vignette ?? 1;
       const bloom = new AdvancedBloomFilter({ threshold: 0.62, bloomScale: 0.8, brightness: 1, blur: 8, quality: 5 });
       if (!lite) litWorld.filters = [bloom];
       litWorld.filterArea = app.screen;

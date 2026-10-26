@@ -22,6 +22,7 @@ export const littleWorld: JourneyWorld = {
   start: 0.23,
   end: 0.83,
   fog: "#d9e2e6",
+  vignette: 0.3,
   firefly: "#fff2b3",
   map: { dark: "/art/little/journey-map-dark.webp", lit: "/art/little/journey-map-lit.webp" },
   // painted from art/worlds/little.json (seed 42; its painted candle erased: the game draws the real one), cut out by art/cutout.py
@@ -42,6 +43,7 @@ export const juniorWorld: JourneyWorld = {
   start: 0.23,
   end: 0.83,
   fog: "#c9c3da",
+  vignette: 0.4,
   firefly: "#ffe6a8",
   map: { dark: "/art/junior/journey-map-dark.webp", lit: "/art/junior/journey-map-lit.webp" },
   // painted from art/worlds/junior.json (seed 43, painted candle erased), cut out by art/cutout.py
@@ -62,6 +64,7 @@ export const middleWorld: JourneyWorld = {
   start: 0.23,
   end: 0.83,
   fog: "#aab4c8",
+  vignette: 0.7,
   firefly: "#ffd98a",
   map: { dark: "/art/middle/journey-map-dark.webp", lit: "/art/middle/journey-map-lit.webp" },
   // painted from art/worlds/middle.json (seed 41, painted candle erased), cut out by art/cutout.py

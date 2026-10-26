@@ -16,7 +16,7 @@ export function TravelQuip({ text, gloam }: { text: string | null; gloam: GloamB
         <motion.p
           key={text}
           aria-live="polite"
-          className="voice pointer-events-none absolute z-20 max-w-[30ch] -translate-x-1/2 text-center text-sm text-ink [text-shadow:0_1px_10px_rgb(0_0_0/0.95)]"
+          className="voice pointer-events-none absolute z-20 max-w-[30ch] -translate-x-1/2 text-center text-sm text-ink [text-shadow:0_1px_10px_rgb(var(--t-glow)/0.95)]"
           style={{ left: gloam.cx, top: Math.max(70, gloam.top - 56), ["--casual" as string]: 0.9, ["--slant" as string]: -6 }}
           initial={calm ? false : { opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
@@ -48,7 +48,7 @@ export function ChapterCard({ style, chapter, total, beat }: { style: AgeStyle; 
           exit={calm ? undefined : { opacity: 0, transition: { duration: 1.2 } }}
         >
           <motion.p
-            className="voice text-xl text-ink [text-shadow:0_2px_18px_rgb(0_0_0/0.9)] md:text-2xl"
+            className="voice text-xl text-ink [text-shadow:0_2px_18px_rgb(var(--t-glow)/0.9)] md:text-2xl"
             style={{ ["--casual" as string]: 1, ["--voice-weight" as string]: 800 }}
             initial={calm ? false : { opacity: 0, letterSpacing: "0.3em", filter: "blur(6px)" }}
             animate={{ opacity: 1, letterSpacing: "0em", filter: "blur(0px)" }}
@@ -65,7 +65,7 @@ export function ChapterCard({ style, chapter, total, beat }: { style: AgeStyle; 
             transition={{ delay: 0.5, duration: 1.1, ease: [0.22, 1, 0.36, 1] }}
           />
           <motion.p
-            className="voice mt-3 max-w-[38ch] text-md text-ink-dim [text-shadow:0_1px_12px_rgb(0_0_0/0.95)]"
+            className="voice mt-3 max-w-[38ch] text-md text-ink-dim [text-shadow:0_1px_12px_rgb(var(--t-glow)/0.95)]"
             style={{ ["--casual" as string]: 0.6, ["--slant" as string]: -8, ["--voice-weight" as string]: 500 }}
             initial={calm ? false : { opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}

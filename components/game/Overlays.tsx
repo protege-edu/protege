@@ -48,10 +48,10 @@ export function TitleScreen({
   return (
     <motion.div className="absolute inset-0 z-20 flex items-end md:items-center" exit={calm ? undefined : { opacity: 0, transition: { duration: 0.5 } }}>
       {/* darken the left side so the title reads, keep the right side (Gloam) clear */}
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgb(5_10_8/0.85)_0%,rgb(5_10_8/0.55)_38%,transparent_65%)] max-md:bg-[linear-gradient(0deg,rgb(5_10_8/0.92)_0%,rgb(5_10_8/0.6)_45%,transparent_70%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgb(var(--t-scrim)/0.85)_0%,rgb(var(--t-scrim)/0.55)_38%,transparent_65%)] max-md:bg-[linear-gradient(0deg,rgb(var(--t-scrim)/0.92)_0%,rgb(var(--t-scrim)/0.6)_45%,transparent_70%)]" />
       <div className="relative w-full px-6 pb-10 md:w-auto md:px-[7vw] md:pb-0">
         <motion.h1 {...rise(0.35)} className="mt-3 text-[4rem] text-ink md:text-[6.5rem]">
-          <Wordmark tone="dark" mark={false} />
+          <Wordmark tone={style.look.tone} mark={false} />
         </motion.h1>
         <motion.p {...rise(0.5)} className="mt-5 max-w-[24ch] text-lg text-ink">
           {lesson.title}
@@ -101,7 +101,7 @@ export function TitleScreen({
 
 export function TopBar({ style, lesson, levels, current, onPause }: { style: AgeStyle; lesson: ClientLesson; levels: Level[]; current: number; onPause: () => void }) {
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-4 bg-[linear-gradient(180deg,rgb(5_10_8/0.7),transparent)] px-4 pt-3 pb-10 sm:px-6">
+    <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-4 bg-[linear-gradient(180deg,rgb(var(--t-scrim)/0.7),transparent)] px-4 pt-3 pb-10 sm:px-6">
       <div className="min-w-0">
         <h1 className="truncate text-sm font-bold text-ink">{lesson.title}</h1>
         <TrailStrip style={style} concepts={lesson.concepts} levels={levels} current={Math.min(current, lesson.concepts.length - 1)} />
@@ -423,7 +423,7 @@ export function StoryCaption({ text }: { text: string | null }) {
         {text && (
           <motion.p
             key={text}
-            className="voice max-w-[40ch] text-center text-md text-ink [text-shadow:0_1px_10px_rgb(0_0_0/0.95)]"
+            className="voice max-w-[40ch] text-center text-md text-ink [text-shadow:0_1px_10px_rgb(var(--t-glow)/0.95)]"
             style={{ ["--casual" as string]: 0.7, ["--slant" as string]: -8, ["--voice-weight" as string]: 500 }}
             initial={calm ? false : { opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}

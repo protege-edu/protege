@@ -101,6 +101,8 @@
   --t-warn: #9b2c2c;
   /* what text sits on over the painted world (r g b): paper here, night for high school */
   --t-scrim: 232 237 227;
+  /* the halo behind words drawn straight on the world (r g b): light behind dark words, dark behind light ones */
+  --t-glow: 255 250 238;
   --t-voice-font: var(--font-shantell), system-ui, sans-serif;
 }
 
@@ -164,6 +166,7 @@
   --t-moon: #7fd3ff;
   --t-warn: #ffb38a;
   --t-scrim: 12 18 33;
+  --t-glow: 0 0 0;
 }
 
 /*
@@ -188,6 +191,7 @@
   --t-moon: #8ec5dc;
   --t-warn: #f2a37a;
   --t-scrim: 5 10 8;
+  --t-glow: 0 0 0;
   --t-voice-font: var(--font-recursive), system-ui, sans-serif;
 }
 

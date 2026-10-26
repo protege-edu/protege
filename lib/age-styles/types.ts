@@ -35,6 +35,8 @@ export interface JourneyWorld {
   end: number;
   fog: string;
   firefly: string;
+  /** How dark the screen's edges get (0..1, default 1 = the night valley's full vignette) */
+  vignette?: number;
   /** The whole journey, small, for the trail map (dark and lit) */
   map?: { dark: string; lit: string };
   /** Short, hand-written things Gloam notices while walking between checkpoints (no AI) */

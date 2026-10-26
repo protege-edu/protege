@@ -124,12 +124,14 @@ Gloam itself is an **animated rig** (`lib/gloam-rig/`, `components/gloam/rig/`):
 
 Protégé is for every grade, K–12. The core idea never changes, but **how it feels** adapts to the class. Each age group has one profile in `lib/age-styles/`:
 
-| Style | Grades | Gloam is… | Looks like… | Status |
+| Style | Grades | Gloam is… | Its world | Its screens |
 |---|---|---|---|---|
-| `little` | K–2 | silly, gentle, tiny words | bright storybook | basic |
-| `junior` | 3–5 | playful, a bit silly | bright storybook | basic |
-| `middle` | 6–8 | goofy, dramatic | storybook | basic |
-| `senior` | 9–12 | dry, deadpan, smugly wrong | moody indie game at night | **polished** |
+| `little` | K–2 | a round, bright fluffball with huge eyes; silly, gentle, tiny words | a sunny storybook meadow | cream paper, bigger text and buttons, read-aloud, sentence starters, 2 secret pictures |
+| `junior` | 3–5 | a playful buddy with a tuft and a cheeky grin | a storybook forest with mushroom houses | lavender paper, bigger text, read-aloud, sentence starters |
+| `middle` | 6–8 | goofy and dramatic, in a scarf, with big eyebrows | windy sea cliffs at twilight | twilight navy, game-like |
+| `senior` | 9–12 | dry, deadpan, smugly wrong | a moody night valley | night paper, lantern-lit |
+
+The younger worlds are painted in daylight: unlit, they're faded to grey, and every idea a student teaches brings the colour back. Each world and Gloam is made by scripts (`art/world.py`, `art/gloam2_rig.py` with `art/worlds/*.json` and `art/rigs/*.json`) and can be replaced 1:1 by an artist.
 
 A profile controls Gloam's personality and AI rules, its **hand-written lines** (most of the jokes live here, so they're consistent and never repeat), every word on screen, the visuals (Gloam's skin, the valley, colors, Gloam's voice font), how big the celebrations are, how strict safety is (stricter for younger kids), and input options (bigger buttons, read-aloud and voice later). Nothing outside `lib/age-styles/` should be written for one age group.
 

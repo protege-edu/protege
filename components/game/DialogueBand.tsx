@@ -189,7 +189,7 @@ export function DialogueBand({ s, style, gloam, wide, onOpenLog }: { s: TeachSes
   return (
     <>
       {wide && gloam && <SpeechPanel gloam={gloam} wide seed="speech">{speech}</SpeechPanel>}
-      <div className="absolute inset-x-0 bottom-0 z-20 bg-[linear-gradient(0deg,rgb(5_10_8/0.92)_0%,rgb(5_10_8/0.7)_55%,transparent_100%)] pt-10">
+      <div className="absolute inset-x-0 bottom-0 z-20 bg-[linear-gradient(0deg,rgb(var(--t-scrim)/0.92)_0%,rgb(var(--t-scrim)/0.7)_55%,transparent_100%)] pt-10">
         <div className="mx-auto flex max-w-[860px] flex-col gap-4 px-4 pb-4 sm:px-8 md:pb-6">
           {!wide && <SpeechPanel gloam={gloam} wide={false} seed="speech-narrow">{speech}</SpeechPanel>}
 
@@ -311,6 +311,6 @@ export function IntroBand({ s, style, steps, gloam, wide }: { s: TeachSession; s
   return wide && gloam ? (
     panel
   ) : (
-    <div className="absolute inset-x-0 bottom-0 z-20 bg-[linear-gradient(0deg,rgb(5_10_8/0.92)_0%,rgb(5_10_8/0.7)_55%,transparent_100%)] px-4 pt-10 pb-5">{panel}</div>
+    <div className="absolute inset-x-0 bottom-0 z-20 bg-[linear-gradient(0deg,rgb(var(--t-scrim)/0.92)_0%,rgb(var(--t-scrim)/0.7)_55%,transparent_100%)] px-4 pt-10 pb-5">{panel}</div>
   );
 }
