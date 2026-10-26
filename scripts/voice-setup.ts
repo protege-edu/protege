@@ -31,7 +31,8 @@ async function download(url: string, to: string) {
   console.log("");
 }
 
-async function main() {
+/** Download whisper.cpp and the speech model into the voice folder (skips what's already there) */
+export async function setupVoice() {
   const dir = voiceConfig.dir;
   fs.mkdirSync(dir, { recursive: true });
   console.log(`Voice typing lives in ${dir}`);
@@ -65,7 +66,10 @@ async function main() {
   console.log("Voice typing is ready. Start it with `npm run voice` (or `npm run class`).");
 }
 
-main().catch((e) => {
-  console.error(e instanceof Error ? e.message : e);
-  process.exit(1);
-});
+// run directly (npm run voice:setup), not when the launcher imports it
+if (process.argv[1] && /voice-setup/.test(process.argv[1])) {
+  setupVoice().catch((e) => {
+    console.error(e instanceof Error ? e.message : e);
+    process.exit(1);
+  });
+}

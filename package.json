@@ -2,6 +2,8 @@
   "name": "protege",
   "version": "0.1.0",
   "private": true,
+  "license": "AGPL-3.0-or-later",
+  "description": "Students teach Gloam, a confused, funny companion, and learn by explaining. Runs on one school laptop, with local AI.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -17,7 +19,10 @@
     "class": "tsx scripts/class.ts",
     "voice:setup": "tsx scripts/voice-setup.ts",
     "voice": "tsx scripts/voice.ts",
-    "restore": "tsx --conditions=react-server scripts/restore.ts"
+    "restore": "tsx --conditions=react-server scripts/restore.ts",
+    "licenses": "tsx scripts/licenses.ts",
+    "release": "tsx scripts/release.ts",
+    "access-log": "tsx --conditions=react-server scripts/access-log.ts"
   },
   "dependencies": {
     "@fontsource/opendyslexic": "^5.3.0",

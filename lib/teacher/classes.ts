@@ -5,6 +5,7 @@ import { db } from "@/lib/db/client";
 import { classLessons, classes, conceptEvents, gloams, messages, students, teachSessions } from "@/lib/db/schema";
 import type { Level, LessonBlueprint } from "@/lib/lesson/types";
 import { keySize } from "@/lib/student/pictures";
+import { newClassDeleteOn } from "@/lib/privacy/retention";
 
 export type ClassRow = typeof classes.$inferSelect;
 
@@ -53,7 +54,8 @@ export function getClass(id: string, teacherId: string) {
 
 export function createClass(name: string, grade: number, teacherId: string, language: "en" | "fr" = "en") {
   const id = randomUUID();
-  db.insert(classes).values({ id, name, grade, teacherId, language, code: newClassCode(), createdAt: new Date() }).run();
+  // the board's retention rule decides when it's cleared out (lib/privacy/retention.ts); the teacher can set a date
+  db.insert(classes).values({ id, name, grade, teacherId, language, code: newClassCode(), createdAt: new Date(), deleteOn: newClassDeleteOn() }).run();
   return id;
 }
 
@@ -150,7 +152,11 @@ export function studentSessionId(classId: string, studentId: string, lessonId: s
 /** Remove a student from a class, with everything they did (sessions, messages, candle history, their Gloam) */
 export function removeStudent(classId: string, studentId: string) {
   const kid = db.select().from(students).where(and(eq(students.id, studentId), eq(students.classId, classId))).get();
-  if (!kid) return;
+  if (kid) eraseStudent(studentId);
+}
+
+/** Delete one student and everything they did: their sessions, messages, candle history and Gloam */
+export function eraseStudent(studentId: string) {
   db.transaction((tx) => {
     const sessions = tx.select({ id: teachSessions.id }).from(teachSessions).where(eq(teachSessions.studentId, studentId)).all().map((s) => s.id);
     if (sessions.length) {
@@ -161,6 +167,22 @@ export function removeStudent(classId: string, studentId: string) {
     tx.delete(gloams).where(eq(gloams.studentId, studentId)).run();
     tx.delete(students).where(eq(students.id, studentId)).run();
   });
+}
+
+/**
+ * The teacher corrects one of Gloam's candles for a student (Gloam's AI judged it wrong). The teacher has
+ * the last word: the student's journey and the dashboard follow. False if they haven't started the lesson.
+ */
+export function correctCandle(classId: string, studentId: string, lessonId: string, conceptId: string, level: Level): boolean {
+  const id = studentSessionId(classId, studentId, lessonId);
+  if (!id) return false;
+  const s = db.select().from(teachSessions).where(eq(teachSessions.id, id)).get();
+  if (!s) return false;
+  const understanding = { ...s.understanding, [conceptId]: level };
+  // a lit candle is a checkpoint on the journey; an unlit one isn't
+  const checkpoints = level === 3 ? (s.checkpoints.includes(conceptId) ? s.checkpoints : [...s.checkpoints, conceptId]) : s.checkpoints.filter((c) => c !== conceptId);
+  db.update(teachSessions).set({ understanding, checkpoints, updatedAt: new Date() }).where(eq(teachSessions.id, id)).run();
+  return true;
 }
 
 /** Delete a class and everything in it: its students, what they taught Gloam, their Gloams, and the class itself */

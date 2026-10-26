@@ -3,6 +3,8 @@ import { z } from "zod";
 import { db } from "@/lib/db/client";
 import { classLessons, classes, students } from "@/lib/db/schema";
 import { googleEnabled } from "@/lib/auth/google";
+import { logAccess } from "@/lib/privacy/log";
+import { retentionRule } from "@/lib/privacy/retention";
 import { studentAddress } from "@/lib/hosting/address";
 import { queueStats } from "@/lib/ai/queue";
 import { bad, notYours, requireTeacher } from "@/lib/teacher/api";
@@ -37,7 +39,7 @@ export async function GET(request: Request, ctx: RouteContext<"/api/teacher/clas
       .orderBy(students.createdAt)
       .all()
       .map((r) => ({ id: r.id, nickname: r.nickname, google: !!r.google, hasKey: !!r.key }));
-    return Response.json({ class: cls, lessons, roster, google: googleEnabled(), address: studentAddress(request) });
+    return Response.json({ class: cls, lessons, roster, google: googleEnabled(), address: studentAddress(request), retention: retentionRule() });
   }
   const row = getLessonRow(lessonId);
   const lesson = row && canSee(row, me.id) ? getApprovedLesson(lessonId) : null;
@@ -57,6 +59,8 @@ const Change = z.union([
   z.object({ name: z.string().trim().min(1).max(60) }),
   z.object({ language: z.enum(["en", "fr"]) }),
   z.object({ grade: z.number().int().min(0).max(12) }),
+  // when the class and its students' work are deleted by themselves (a time in ms), or null: only when the teacher deletes it
+  z.object({ deleteOn: z.number().int().positive().nullable() }),
 ]);
 
 /** Give a class an approved lesson, or change a class setting (Google sign-in, pause, name, language, grade) */
@@ -78,6 +82,10 @@ export async function POST(request: Request, ctx: RouteContext<"/api/teacher/cla
     db.update(classes).set({ pausedAt: c.paused ? new Date() : null }).where(eq(classes.id, id)).run();
   } else if ("language" in c) {
     db.update(classes).set({ language: c.language }).where(eq(classes.id, id)).run();
+  } else if ("deleteOn" in c) {
+    const when = c.deleteOn === null ? null : new Date(c.deleteOn);
+    if (when && (when.getTime() < Date.now() || when.getTime() > Date.now() + 3 * 366 * 86_400_000)) return bad("Pick a date between tomorrow and three years from now.");
+    db.update(classes).set({ deleteOn: when }).where(eq(classes.id, id)).run();
   } else if ("grade" in c) {
     return Response.json({ ok: true, newKeys: setClassGrade(id, c.grade) });
   } else {
@@ -93,5 +101,6 @@ export async function DELETE(request: Request, ctx: RouteContext<"/api/teacher/c
   const { id } = await ctx.params;
   if (!getClass(id, me.id)) return notYours();
   deleteClass(id);
+  logAccess(me.id, "deleted-class", { classId: id });
   return Response.json({ ok: true });
 }

@@ -14,11 +14,13 @@ import { ShowCode } from "./ShowCode";
 
 /** The class itself (no lesson): settings, its lessons, who's in it, and where students go */
 interface Info {
-  class: { id: string; name: string; grade: number; code: string; googleSignIn: boolean; pausedAt: string | null; language: "en" | "fr" };
+  class: { id: string; name: string; grade: number; code: string; googleSignIn: boolean; pausedAt: string | null; language: "en" | "fr"; deleteOn: string | null };
   lessons: { id: string; title: string }[];
   roster: { id: string; nickname: string; google: boolean; hasKey: boolean }[];
   google: boolean;
   address: { url: string; local: boolean };
+  /** the school board's rule for how long classes are kept (lib/privacy/retention.ts) */
+  retention: "after-a-year" | "end-of-school-year" | "never";
 }
 
 interface Data {
@@ -104,6 +106,7 @@ export function ClassDashboard() {
           onGoogle={(on) => void change({ googleSignIn: on })}
           onLanguage={(language) => void change({ language })}
           onGrade={(grade) => void change({ grade })}
+          onDeleteOn={(deleteOn) => void change({ deleteOn })}
           onLesson={(lid) => router.replace(`/teacher/classes/${id}?lesson=${encodeURIComponent(lid)}`)}
           onAssigned={() => void loadInfo()}
         />
@@ -119,6 +122,7 @@ export function ClassDashboard() {
                 : ""}{" "}
             Updated {updated ? updated.toLocaleTimeString([], { hour: "numeric", minute: "2-digit", second: "2-digit" }) : ""}
           </p>
+          <p className="mt-1 text-xs text-ink-dim">Candles are Gloam&apos;s AI estimate of each explanation, not marks. Open a student to read their conversation and correct any candle.</p>
 
           {/* What the class thinks: the most useful thing a teacher can act on right now */}
           {data.insights.length > 0 && (
@@ -214,6 +218,9 @@ export function ClassDashboard() {
           classId={id}
           lessonId={lessonId}
           student={open}
+          concepts={data?.lesson.concepts ?? []}
+          understanding={data?.students.find((x) => x.id === open.id)?.understanding ?? {}}
+          onCorrected={() => void load()}
           account={info?.roster.find((r) => r.id === open.id)}
           onClose={() => setOpen(null)}
           onRemoved={() => {
@@ -237,6 +244,9 @@ function Transcript({
   classId,
   lessonId,
   student,
+  concepts,
+  understanding,
+  onCorrected,
   account,
   onClose,
   onRemoved,
@@ -244,6 +254,9 @@ function Transcript({
   classId: string;
   lessonId: string;
   student: { id: string; nickname: string };
+  concepts: { id: string; name: string }[];
+  understanding: Record<string, number>;
+  onCorrected: () => void;
   account?: { google: boolean; hasKey: boolean };
   onClose: () => void;
   onRemoved: () => void;
@@ -252,7 +265,16 @@ function Transcript({
   const [access, setAccessState] = useState<Access | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [confirmRemove, setConfirmRemove] = useState(false);
+  const [renaming, setRenaming] = useState(false);
+  const [newName, setNewName] = useState(student.nickname);
   const base = `/api/teacher/classes/${classId}/students/${student.id}`;
+  const rename = async () => {
+    const res = await api<{ nickname: string }>(base, json("POST", { nickname: newName }));
+    if (res.ok) {
+      setRenaming(false);
+      setNote(`Done. They're ${res.data.nickname} now (they'll see it next time a page loads).`);
+    } else setNote(res.error);
+  };
   const resetKey = async () => {
     const res = await api(base, json("POST", { resetKey: true }));
     setNote(res.ok ? `Done. Next time ${student.nickname} signs in, they pick new pictures. Best done while they're with you.` : res.error);
@@ -296,6 +318,28 @@ function Transcript({
               {account.hasKey ? "Reset their pictures" : "Waiting for new pictures"}
             </Button>
           )}
+          <Button variant="quiet" onClick={() => setRenaming((r) => !r)}>
+            Change nickname
+          </Button>
+          {/* everything stored about them, for a student's or family's request to see it */}
+          <a href={`${base}/export`} download className="min-h-11 content-center rounded-md border border-line px-4 text-sm font-bold text-ink hover:bg-chip">
+            Download their data
+          </a>
+          {renaming && (
+            <form
+              className="flex w-full flex-wrap items-end gap-2"
+              onSubmit={(e) => {
+                e.preventDefault();
+                void rename();
+              }}
+            >
+              <label className="flex flex-col gap-1 text-xs font-bold text-ink">
+                New nickname
+                <input value={newName} onChange={(e) => setNewName(e.target.value)} maxLength={24} className="min-h-11 rounded-md border border-line bg-bg px-3 text-sm font-normal" />
+              </label>
+              <Button type="submit">Save nickname</Button>
+            </form>
+          )}
           {confirmRemove ? (
             <>
               <Button variant="danger" onClick={() => void remove()}>
@@ -317,6 +361,18 @@ function Transcript({
             </p>
           )}
         </div>
+        {concepts.length > 0 && (
+          <Candles
+            nickname={student.nickname}
+            concepts={concepts}
+            understanding={understanding}
+            onSet={async (conceptId, level) => {
+              const res = await api(base, json("POST", { lessonId, conceptId, level }));
+              setNote(res.ok ? "Corrected. The candle and the dashboard follow your call." : res.error);
+              if (res.ok) onCorrected();
+            }}
+          />
+        )}
         {access && <AccessSettings nickname={student.nickname} access={access} onChange={(p) => void changeAccess(p)} />}
         <ol className="flex-1 space-y-3 overflow-y-auto px-5 py-5">
           {msgs === null && <li className="text-sm text-ink-dim">Loading…</li>}
@@ -343,6 +399,7 @@ function ClassHeader({
   onGoogle,
   onLanguage,
   onGrade,
+  onDeleteOn,
   onLesson,
   onAssigned,
 }: {
@@ -354,6 +411,7 @@ function ClassHeader({
   onGoogle: (on: boolean) => void;
   onLanguage: (language: "en" | "fr") => void;
   onGrade: (grade: number) => void;
+  onDeleteOn: (when: number | null) => void;
   onLesson: (lessonId: string) => void;
   onAssigned: () => void;
 }) {
@@ -460,6 +518,7 @@ function ClassHeader({
       <p className="mt-2 text-xs text-ink-dim">
         <span className="font-bold text-ink">{styleForGrade(info.class.grade).label}:</span> {styleForGrade(info.class.grade).teacherBlurb}
       </p>
+      <DeleteDate when={info.class.deleteOn} rule={info.retention} onChange={onDeleteOn} />
     </div>
   );
 }
@@ -509,7 +568,10 @@ function AccessSettings({ nickname, access, onChange }: { nickname: string; acce
   return (
     <details className="border-b border-line px-5 py-3 text-sm">
       <summary className="min-h-11 cursor-pointer content-center font-bold text-ink">Ways to play for {nickname}</summary>
-      <p className="mt-1 text-xs text-ink-dim">Switch on what helps (for example from a student&apos;s learning plan). {nickname} can change these too. Nobody else sees them.</p>
+      <p className="mt-1 text-xs text-ink-dim">
+        Switch on what helps (for example from a student&apos;s learning plan). {nickname} can still change them. This shows only what you switch on here, never what {nickname} picks for
+        themselves, and nobody else sees it.
+      </p>
       <div className="mt-3 grid gap-x-6 gap-y-2 sm:grid-cols-2">
         <label className="flex min-h-11 items-center gap-2 text-ink">
           <input type="checkbox" className={box} checked={access.voice} onChange={(e) => onChange({ voice: e.target.checked })} />
@@ -552,6 +614,109 @@ function AccessSettings({ nickname, access, onChange }: { nickname: string; acce
           </select>
         </label>
       </div>
+    </details>
+  );
+}
+
+/**
+ * When the class clears itself out (privacy by default: the end of the school year). Students' work
+ * shouldn't be kept longer than it's useful, so the teacher always sees the date and can change it.
+ */
+function DeleteDate({ when, rule, onChange }: { when: string | null; rule: Info["retention"]; onChange: (when: number | null) => void }) {
+  const [editing, setEditing] = useState(false);
+  const day = when ? new Date(when) : null;
+  const [pick, setPick] = useState(day ? day.toISOString().slice(0, 10) : "");
+  const [tomorrow] = useState(() => new Date(Date.now() + 86_400_000).toISOString().slice(0, 10));
+  const nice = (d: Date) => d.toLocaleDateString("en-CA", { month: "long", day: "numeric", year: "numeric" });
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-ink-dim">
+      <span>
+        {day ? (
+          <>
+            This class and its students&apos; work will be deleted by itself on <span className="font-bold text-ink">{nice(day)}</span>.
+          </>
+        ) : rule === "after-a-year" ? (
+          "This class and its students' work are deleted a year after the class was last used (unless your school board sets a different time)."
+        ) : (
+          "This class and its students' work are kept until you delete them."
+        )}
+      </span>
+      {editing ? (
+        <span className="flex flex-wrap items-center gap-2">
+          <label className="flex items-center gap-2 font-bold text-ink">
+            Delete on
+            <input type="date" value={pick} min={tomorrow} onChange={(e) => setPick(e.target.value)} className="min-h-11 rounded-md border border-line bg-panel px-2 font-normal" />
+          </label>
+          <Button
+            variant="quiet"
+            disabled={!pick}
+            onClick={() => {
+              const [y, m, d] = pick.split("-").map(Number);
+              onChange(new Date(y, m - 1, d, 23, 59).getTime());
+              setEditing(false);
+            }}
+          >
+            Save date
+          </Button>
+          <Button
+            variant="quiet"
+            className="border-0"
+            onClick={() => {
+              onChange(null);
+              setEditing(false);
+            }}
+          >
+            {rule === "after-a-year" ? "Use the school's rule" : "Keep until I delete it"}
+          </Button>
+        </span>
+      ) : (
+        <button type="button" onClick={() => setEditing(true)} className="min-h-11 cursor-pointer rounded-md px-2 font-bold text-ink underline underline-offset-4">
+          Change
+        </button>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Gloam's candles for one student, which the teacher can correct. They're the AI's estimate of how well each
+ * idea was explained, not a mark: the teacher has the last word (human oversight of the AI).
+ */
+function Candles({
+  nickname,
+  concepts,
+  understanding,
+  onSet,
+}: {
+  nickname: string;
+  concepts: { id: string; name: string }[];
+  understanding: Record<string, number>;
+  onSet: (conceptId: string, level: number) => void;
+}) {
+  const words = ["Not yet", "A spark", "Flickering", "Lit"];
+  return (
+    <details className="border-b border-line px-5 py-3 text-sm">
+      <summary className="min-h-11 cursor-pointer content-center font-bold text-ink">Correct {nickname}&apos;s candles</summary>
+      <p className="mt-1 text-xs text-ink-dim">The candles are Gloam&apos;s AI estimate, not a mark. If you read the conversation and Gloam got it wrong, change it here.</p>
+      <ul className="mt-3 space-y-2">
+        {concepts.map((c) => (
+          <li key={c.id}>
+            <label className="flex items-center justify-between gap-3 text-ink">
+              <span className="flex min-w-0 items-center gap-2">
+                <CandleMark level={understanding[c.id] ?? 0} size={20} />
+                <span className="truncate">{c.name}</span>
+              </span>
+              <select value={understanding[c.id] ?? 0} onChange={(e) => onSet(c.id, Number(e.target.value))} className="min-h-11 rounded-md border border-line bg-bg px-2">
+                {words.map((w, i) => (
+                  <option key={w} value={i}>
+                    {w}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </li>
+        ))}
+      </ul>
     </details>
   );
 }

@@ -282,6 +282,7 @@ export function JoinScreen({ initialCode, googleFor, guess = "en" }: { initialCo
                 <p id="code-hint" className="mt-2 text-sm text-ink-dim">
                   {t.codeHint}
                 </p>
+                <p className="mt-1 max-w-[46ch] text-xs text-ink-dim">{style.copy.about.aiNote}</p>
                 <Problem text={error} />
                 <InkButton type="submit" size="lg" className="mt-6" disabled={busy || code.length < 4}>
                   {t.codeButton}

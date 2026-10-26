@@ -18,8 +18,6 @@ export function dbFile(): string {
   return path.join(dataDir(), "protege.db");
 }
 
-/** The old place (data/ inside the project), used once to bring existing data along */
-export const OLD_DB_FILE = path.join(process.cwd(), "data", "protege.db");
 
 export function ensureDataDir() {
   fs.mkdirSync(dataDir(), { recursive: true });

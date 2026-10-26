@@ -92,6 +92,10 @@ export function TitleScreen({
             </>
           )}
         </motion.div>
+        {/* students always know they're talking to an AI, and who reads what they write */}
+        <motion.p {...rise(0.85)} className="mt-6 max-w-[48ch] text-xs text-ink-dim">
+          {style.copy.about.aiNote}
+        </motion.p>
       </div>
       {/* a quiet way in for teachers; students won't need it */}
       {account !== "student" && (
@@ -205,6 +209,14 @@ export function HelpDialog({ style, lesson, onClose }: { style: AgeStyle; lesson
           <p key={p}>{p}</p>
         ))}
       </div>
+      {/* what Gloam is, and what it remembers: every student's right to know */}
+      <h3 className="mt-5 text-sm font-bold text-ink">{style.copy.about.title}</h3>
+      <ul className="mt-2 list-disc space-y-1.5 pl-5 text-sm text-ink-dim">
+        {style.copy.about.lines.map((l) => (
+          <li key={l}>{l}</li>
+        ))}
+      </ul>
+      <ReadAloudButton style={style} className="-ml-2 mt-1" text={[style.copy.howItWorksTitle, ...style.copy.howItWorks(lesson.title, lesson.concepts.length), style.copy.about.title, ...style.copy.about.lines].join(" ")} />
       <InkButton onClick={onClose} className="mt-5">
         {style.copy.close}
       </InkButton>

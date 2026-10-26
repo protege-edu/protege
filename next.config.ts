@@ -40,7 +40,13 @@ const nextConfig: NextConfig = {
   devIndicators: false,
   partialPrefetching: true,
   // `npm run release` builds a self-contained copy a teacher can run without installing anything else
+  // (into its own folder, so building a release never disturbs a running dev server)
   output: process.env.PROTEGE_RELEASE ? "standalone" : undefined,
+  distDir: process.env.PROTEGE_RELEASE ? ".next-release" : ".next",
+  // never ship a database (or the art workshop, screenshots and tools) inside a release: data stays on each school's laptop
+  outputFileTracingExcludes: {
+    "*": ["data/**", "**/*.db", "**/*.db-*", "**/*.sqlite", "art/**", "screenshots/**", "scripts/**", "release/**", "app/**/*.ts", "app/**/*.tsx", "lib/**/*.ts"],
+  },
   // no "X-Powered-By: Next.js" (one less thing to tell a stranger)
   poweredByHeader: false,
   async headers() {

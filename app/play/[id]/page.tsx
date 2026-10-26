@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { GameScreen } from "@/components/game/GameScreen";
 import { toClientLesson } from "@/lib/lesson";
-import { studentAccess } from "@/lib/student/access";
+import { studentAccessParts } from "@/lib/student/access";
 import { currentStudent } from "@/lib/student/auth";
 import { getApprovedLesson, playedBy } from "@/lib/teacher/lessons";
 
@@ -28,7 +28,7 @@ async function Lesson({ params }: { params: PageProps<"/play/[id]">["params"] })
   const lesson = playedBy(approved, me?.id);
   return (
     <div data-age-style={lesson.ageStyle} lang={lesson.language ?? "en"}>
-      <GameScreen lesson={toClientLesson(lesson)} account={me ? "student" : "preview"} access={me ? studentAccess(me.id) : null} />
+      <GameScreen lesson={toClientLesson(lesson)} account={me ? "student" : "preview"} access={me ? studentAccessParts(me.id) : null} />
     </div>
   );
 }

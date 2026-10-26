@@ -39,7 +39,7 @@ function useWide() {
  * The whole game: title → intro → teaching → ending, plus pause, help and the conversation log.
  * Everything visual and every word comes from the lesson's age style.
  */
-export function GameScreen({ lesson, account = "preview", access = null }: { lesson: ClientLesson; account?: Account; access?: AccessPatch | null }) {
+export function GameScreen({ lesson, account = "preview", access = null }: { lesson: ClientLesson; account?: Account; access?: { own: AccessPatch | null; accommodations: AccessPatch | null } | null }) {
   const router = useRouter();
   const style = getAgeStyle(lesson.ageStyle, lesson.language);
   const test = useTestMode();

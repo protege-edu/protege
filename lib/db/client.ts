@@ -1,5 +1,4 @@
 import "server-only";
-import fs from "node:fs";
 import path from "node:path";
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
@@ -8,19 +7,11 @@ import { BUILT_IN } from "@/lib/lesson";
 import * as schema from "./schema";
 
 import { scheduleBackups } from "./backup";
-import { OLD_DB_FILE, dbFile, ensureDataDir } from "./location";
+import { dbFile, ensureDataDir } from "./location";
 
 function open() {
   ensureDataDir();
   const DB_FILE = dbFile();
-  // One time: bring the database along from its old place inside the project (data/protege.db)
-  if (!process.env.PROTEGE_DATA_DIR && !fs.existsSync(DB_FILE) && fs.existsSync(OLD_DB_FILE)) {
-    const old = new Database(OLD_DB_FILE);
-    old.pragma("wal_checkpoint(TRUNCATE)");
-    old.close();
-    fs.copyFileSync(OLD_DB_FILE, DB_FILE);
-    fs.writeFileSync(path.join(path.dirname(OLD_DB_FILE), "MOVED.txt"), `Protégé's database now lives at ${DB_FILE}\nThis old copy isn't used any more. You can delete this folder.\n`);
-  }
   const sqlite = new Database(DB_FILE);
   // WAL lets many students read while one writes. Matters for Phase 4 classroom mode.
   sqlite.pragma("journal_mode = WAL");
@@ -36,6 +27,8 @@ function open() {
       .run();
   }
   scheduleBackups(sqlite);
+  // the daily clean-up of classes past their delete date (loaded after the database is ready)
+  void import("@/lib/privacy/sweep").then((m) => m.scheduleSweeps());
   return db;
 }
 

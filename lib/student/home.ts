@@ -7,7 +7,7 @@ import { classLessons, classes, gloams, students, teachSessions } from "@/lib/db
 import type { AccessPatch } from "@/lib/access/settings";
 import { TRICKS, type TrickName } from "@/lib/gloam-rig/brain";
 import { getApprovedLesson } from "@/lib/teacher/lessons";
-import { studentAccess } from "./access";
+import { studentAccessParts } from "./access";
 
 export interface StudentHome {
   nickname: string;
@@ -18,8 +18,8 @@ export interface StudentHome {
   paused: boolean;
   gloam: GloamLevel & { tricks: TrickName[]; lessonsFinished: number };
   lessons: { id: string; title: string; ideas: number; lit: number; finished: boolean; started: boolean }[];
-  /** their Ways to play (null: their age's defaults) */
-  access: AccessPatch | null;
+  /** their Ways to play: their own choices and their teacher's accommodations (null: none) */
+  access: { own: AccessPatch | null; accommodations: AccessPatch | null };
   /** every idea this student has taught Gloam, newest lesson first (Gloam's journal across the year) */
   journal: { lesson: string; ideas: { name: string; recap: string }[] }[];
 }
@@ -60,7 +60,7 @@ export function studentHome(studentId: string): StudentHome | null {
     gloam: { ...level, tricks: TRICKS.filter((t) => level.level >= t.level).map((t) => t.name), lessonsFinished: g?.lessons ?? 0 },
     lessons,
     journal,
-    access: studentAccess(studentId),
+    access: studentAccessParts(studentId),
   };
 }
 

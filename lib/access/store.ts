@@ -2,7 +2,7 @@
 
 import { useMemo, useSyncExternalStore } from "react";
 import type { AgeStyle } from "@/lib/age-styles/types";
-import { ACCESS_KEY } from "./boot";
+import { ACCESS_KEY, ACCOMMODATIONS_KEY } from "./boot";
 import { type Access, type AccessPatch, cleanAccess, defaultAccess } from "./settings";
 
 /**
@@ -15,6 +15,10 @@ const OLD_SOUND_KEY = "protege.sound";
 const EMPTY: AccessPatch = {};
 
 let saved: AccessPatch = EMPTY;
+// what their teacher switched on (an accommodation): under the student's own choices
+let accommodations: AccessPatch = EMPTY;
+// the two together, one object until either changes (what screens read)
+let merged: AccessPatch = EMPTY;
 let loaded = false;
 let signedIn = false;
 const listeners = new Set<() => void>();
@@ -32,8 +36,10 @@ function load() {
   loaded = true;
   const raw = storage(() => JSON.parse(localStorage.getItem(ACCESS_KEY) ?? "null"), null);
   saved = cleanAccess(raw);
+  accommodations = cleanAccess(storage(() => JSON.parse(localStorage.getItem(ACCOMMODATIONS_KEY) ?? "null"), null));
   // sound used to be its own switch
   if (saved.sound === undefined && storage(() => localStorage.getItem(OLD_SOUND_KEY), null) === "on") saved = { ...saved, sound: true };
+  merged = { ...accommodations, ...saved };
 }
 
 /** Put the look-changing settings on <html>, where CSS can see them */
@@ -47,10 +53,13 @@ export function applyAccess(a: AccessPatch) {
   else delete d.motion;
 }
 
-function commit(next: AccessPatch) {
+function commit(next: AccessPatch, acc = accommodations) {
   saved = next;
+  accommodations = acc;
+  merged = { ...acc, ...next };
   storage(() => localStorage.setItem(ACCESS_KEY, JSON.stringify(next)), undefined);
-  applyAccess(next);
+  storage(() => localStorage.setItem(ACCOMMODATIONS_KEY, JSON.stringify(acc)), undefined);
+  applyAccess(merged);
   for (const fn of listeners) fn();
 }
 
@@ -60,10 +69,10 @@ function subscribe(fn: () => void) {
 }
 const snapshot = () => {
   load();
-  return saved;
+  return merged;
 };
 
-/** What the student changed (no defaults filled in) */
+/** What the student and their teacher changed (no age defaults filled in) */
 export function useSavedAccess(): AccessPatch {
   return useSyncExternalStore(subscribe, snapshot, () => EMPTY);
 }
@@ -87,11 +96,12 @@ export function setAccess(patch: AccessPatch) {
  * A signed-in student's page: their account's settings win over whatever this (maybe shared) Chromebook had.
  * null = they never changed anything, so they start from their age's defaults, not the last student's.
  */
-export function adoptAccess(server: AccessPatch | null) {
+export function adoptAccess(parts: { own: AccessPatch | null; accommodations: AccessPatch | null } | null) {
   load();
   signedIn = true;
-  const next = server ? cleanAccess(server) : EMPTY;
-  if (JSON.stringify(next) !== JSON.stringify(saved)) commit(next);
+  const own = parts?.own ? cleanAccess(parts.own) : EMPTY;
+  const acc = parts?.accommodations ? cleanAccess(parts.accommodations) : EMPTY;
+  if (JSON.stringify(own) !== JSON.stringify(saved) || JSON.stringify(acc) !== JSON.stringify(accommodations)) commit(own, acc);
 }
 
 /** Leaving a signed-in page for practice or another student: stop saving to the account */

@@ -261,7 +261,7 @@ async function main() {
 
   console.log("class data");
   const { seasons } = await import("@/lib/lesson/seasons");
-  const { students: studentsTable } = await import("@/lib/db/schema");
+  const { students: studentsTable, classes: classesTable, teachSessions: sessionsTable } = await import("@/lib/db/schema");
   await test("the progress spreadsheet: nicknames only, commas and formulas can't break it", () => {
     S.createStudent(classA, "=cmd Fox", ["moon", "moon", "moon"]);
     S.createStudent(classA, "Moss, \"Otter\"", ["moon", "moon", "moon"]);
@@ -301,6 +301,103 @@ async function main() {
     updateStudentAccess(one.student.id, { contrast: true });
     assert.deepEqual(studentAccess(one.student.id), { text: 2, contrast: true });
     assert.equal(studentAccess(two.student.id), null);
+    C.deleteClass(k);
+  });
+  await test("a teacher's accommodations are kept apart: the teacher never sees what the student chose themselves", async () => {
+    const { studentAccessParts, updateAccommodations, updateStudentAccess } = await import("@/lib/student/access");
+    const k = C.createClass("Accommodations", 9, a.id);
+    const kid = S.createStudent(k, "Quiet Lynx", ["moon", "owl", "fern"]);
+    assert.ok(kid.ok);
+    updateStudentAccess(kid.student.id, { reading: "dyslexic" });
+    updateAccommodations(kid.student.id, { readAloud: "auto" });
+    const parts = studentAccessParts(kid.student.id);
+    assert.deepEqual(parts.accommodations, { readAloud: "auto" }, "what the teacher's panel shows");
+    assert.deepEqual(parts.own, { reading: "dyslexic" });
+    C.deleteClass(k);
+  });
+  console.log("privacy");
+  await test("retention is the board's rule: a year after last use by default, or the end of the school year", async () => {
+    const { endOfSchoolYear } = await import("@/lib/privacy/retention");
+    assert.equal(endOfSchoolYear(new Date(2026, 9, 26)).toDateString(), new Date(2027, 5, 30).toDateString());
+    assert.equal(endOfSchoolYear(new Date(2027, 2, 1)).toDateString(), new Date(2027, 5, 30).toDateString());
+    const k = C.createClass("Retention", 9, a.id);
+    assert.equal(C.getClass(k, a.id)?.deleteOn, null, "default: no fixed date, the a-year-after-use rule applies");
+    process.env.PROTEGE_RETENTION = "end-of-school-year";
+    const y = C.createClass("School year", 9, a.id);
+    assert.ok(C.getClass(y, a.id)?.deleteOn, "end-of-school-year boards: a date");
+    delete process.env.PROTEGE_RETENTION;
+    C.deleteClass(k);
+    C.deleteClass(y);
+  });
+  await test("a class nobody has used for a year is cleared out; one used recently stays", async () => {
+    const { sweep } = await import("@/lib/privacy/sweep");
+    const stale = C.createClass("Two years ago", 9, a.id);
+    db.update(classesTable).set({ createdAt: new Date(Date.now() - 400 * 86_400_000) }).where(eq(classesTable.id, stale)).run();
+    const recent = C.createClass("Last month", 9, a.id);
+    db.update(classesTable).set({ createdAt: new Date(Date.now() - 400 * 86_400_000) }).where(eq(classesTable.id, recent)).run();
+    const kid = S.createStudent(recent, "Busy Wren", ["moon", "owl", "fern"]);
+    assert.ok(kid.ok);
+    db.update(studentsTable).set({ lastSeenAt: new Date(Date.now() - 30 * 86_400_000) }).where(eq(studentsTable.id, kid.student.id)).run();
+    sweep();
+    assert.equal(C.getClass(stale, a.id), null);
+    assert.ok(C.getClass(recent, a.id), "used a month ago: kept");
+    C.deleteClass(recent);
+  });
+  await test("the daily clean-up deletes classes past their date (with their students), and nothing else", async () => {
+    const { sweep } = await import("@/lib/privacy/sweep");
+    const old = C.createClass("Last year", 9, a.id);
+    const kid = S.createStudent(old, "Old Owl", ["moon", "owl", "fern"]);
+    assert.ok(kid.ok);
+    db.update(classesTable).set({ deleteOn: new Date(Date.now() - 1000) }).where(eq(classesTable.id, old)).run();
+    const keep = C.createClass("This year", 9, a.id);
+    const out = sweep();
+    assert.ok(out.classes >= 1);
+    assert.equal(C.getClass(old, a.id), null);
+    assert.equal(db.select().from(studentsTable).where(eq(studentsTable.id, kid.student.id)).get(), undefined, "its students are gone too");
+    assert.ok(C.getClass(keep, a.id), "other classes stay");
+    C.deleteClass(keep);
+  });
+  await test("practice-mode chats nobody used for 30 days are cleared out; recent ones stay", async () => {
+    const { sweep } = await import("@/lib/privacy/sweep");
+    const now = Date.now();
+    db.insert(studentsTable).values({ id: "practice-old", nickname: "Test Pilot", classId: null, createdAt: new Date(now - 40 * 86_400_000) }).run();
+    db.insert(studentsTable).values({ id: "practice-new", nickname: "Test Pilot", classId: null, createdAt: new Date(now - 2 * 86_400_000) }).run();
+    sweep();
+    assert.equal(db.select().from(studentsTable).where(eq(studentsTable.id, "practice-old")).get(), undefined);
+    assert.ok(db.select().from(studentsTable).where(eq(studentsTable.id, "practice-new")).get());
+  });
+  await test("a student's data download has everything about them, and never their picture key", async () => {
+    const { studentExport } = await import("@/lib/privacy/export");
+    const k = C.createClass("Export", 9, a.id);
+    const kid = S.createStudent(k, "Brave Fern", ["moon", "owl", "fern"]);
+    assert.ok(kid.ok);
+    const out = studentExport(kid.student.id)!;
+    assert.equal(out.student.nickname, "Brave Fern");
+    assert.match(out.student.signsInWith, /scrambled/);
+    const text = JSON.stringify(out);
+    const row = db.select().from(studentsTable).where(eq(studentsTable.id, kid.student.id)).get()!;
+    assert.ok(row.keyHash && !text.includes(row.keyHash), "no key hash");
+    C.deleteClass(k);
+  });
+  await test("a teacher can correct a candle (the journey follows), and it's in the access log", async () => {
+    const { createSession } = await import("@/lib/companion/session");
+    const { logAccess } = await import("@/lib/privacy/log");
+    const { accessLog } = await import("@/lib/db/schema");
+    const k = C.createClass("Oversight", 9, a.id);
+    const kid = S.createStudent(k, "Fair Heron", ["moon", "owl", "fern"]);
+    assert.ok(kid.ok);
+    assert.equal(C.correctCandle(k, kid.student.id, "seasons", seasons.concepts[0].id, 3), false, "not started yet");
+    createSession("seasons", kid.student.id, k);
+    assert.ok(C.correctCandle(k, kid.student.id, "seasons", seasons.concepts[0].id, 3));
+    const row = db.select().from(sessionsTable).where(eq(sessionsTable.studentId, kid.student.id)).get()!;
+    assert.equal(row.understanding[seasons.concepts[0].id], 3);
+    assert.ok(row.checkpoints.includes(seasons.concepts[0].id), "a lit candle is a checkpoint");
+    C.correctCandle(k, kid.student.id, "seasons", seasons.concepts[0].id, 1);
+    assert.ok(!db.select().from(sessionsTable).where(eq(sessionsTable.studentId, kid.student.id)).get()!.checkpoints.includes(seasons.concepts[0].id));
+    logAccess(a.id, "corrected-candles", { classId: k, studentId: kid.student.id });
+    const logged = db.select().from(accessLog).all().at(-1)!;
+    assert.equal(logged.action, "corrected-candles");
+    assert.equal(Object.keys(logged).includes("text"), false, "ids only, no content");
     C.deleteClass(k);
   });
   await test("deleting a class deletes its students and leaves other classes alone", () => {

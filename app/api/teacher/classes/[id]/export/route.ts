@@ -1,3 +1,4 @@
+import { logAccess } from "@/lib/privacy/log";
 import { bad, notYours, requireTeacher } from "@/lib/teacher/api";
 import { getClass, progressCsv } from "@/lib/teacher/classes";
 import { canSee, getApprovedLesson, getLessonRow } from "@/lib/teacher/lessons";
@@ -14,6 +15,7 @@ export async function GET(request: Request, ctx: RouteContext<"/api/teacher/clas
   const lesson = row && canSee(row, me.id) ? getApprovedLesson(lessonId) : null;
   if (!lesson) return bad("Pick a lesson first.", 404);
   const name = `${cls.name} - ${lesson.title}`.replace(/[^\p{L}\p{N} ._-]+/gu, "").slice(0, 80) || "class";
+  logAccess(me.id, "downloaded-class-progress", { classId: id });
   // the byte-order mark tells Excel it's UTF-8 (so accents in names and ideas come through)
   return new Response("\uFEFF" + progressCsv(id, lesson), {
     headers: {

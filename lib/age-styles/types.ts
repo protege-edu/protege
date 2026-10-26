@@ -106,6 +106,14 @@ export interface AccessCopy {
   micEmpty: string;
 }
 
+/** Telling students Gloam is an AI, and what it remembers (title screen, join screen, "How this works") */
+export interface AboutCopy {
+  /** one line, under the title screen's buttons and on the join screen */
+  aiNote: string;
+  title: string;
+  lines: string[];
+}
+
 export interface JoinCopy {
   codeTitle: string;
   codeLabel: string;
@@ -316,6 +324,7 @@ export interface AgeStyle {
     join: JoinCopy;
     home: HomeCopy;
     access: AccessCopy;
+    about: AboutCopy;
   };
 
   look: {

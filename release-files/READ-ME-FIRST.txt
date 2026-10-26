@@ -1,0 +1,34 @@
+PROTÉGÉ: students teach, Gloam learns
+=====================================
+
+Protégé runs on this laptop, with its own AI. Students join from their Chromebooks with a class code.
+Nothing about your students leaves this laptop.
+
+THE FIRST TIME (about 15 minutes, mostly downloading)
+1. Double-click "Start Protégé".
+   - If Ollama (the free program that runs Gloam's AI) isn't installed, its download page opens.
+     Install it; the Protégé window waits and carries on by itself.
+   - Then it downloads Gloam's AI model (about 2.5 GB, once).
+2. Your browser opens the teacher page. The Protégé window shows a SETUP CODE:
+   type it to make the first teacher account.
+3. Make a class, add a lesson (or use the built-in one), and press "Show the code".
+
+EVERY CLASS
+- Double-click "Start Protégé". Keep the window open and the laptop plugged in and awake.
+- Students go to the address it shows (or scan the QR code) and type the class code.
+- Students on a different network, or at home? Use "Start Protégé online" instead
+  (it needs Tailscale or cloudflared, both free: see the guide on the Protégé website).
+
+VOICE TYPING (optional)
+- Double-click "Set up voice typing" once (downloads a few hundred MB). Students can then talk to
+  Gloam instead of typing. Their voice is turned into words on this laptop and never saved.
+
+YOUR DATA
+- Everything is saved in your user folder: %LOCALAPPDATA%\Protege on Windows, ~/.local/share/Protege on Mac.
+- A backup is made every day (the last 7 are kept). Updating Protégé never touches your data.
+
+UPDATING
+- On the teacher page, "Ready for class?" -> "Check for updates". Download the new version,
+  unzip it, and use it instead of this folder. Your classes and students stay.
+
+Protégé is free software (GNU AGPL v3, see LICENSE). No ads, no tracking, no paid anything.

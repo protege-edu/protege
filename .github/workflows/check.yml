@@ -1,0 +1,22 @@
+# Every change: the code still type-checks, lints, passes its tests, and every library's licence fits.
+name: Check
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npx eslint app components lib
+      - run: npm run test:logic
+      - run: npm run test:accounts
+      - run: npm run licenses

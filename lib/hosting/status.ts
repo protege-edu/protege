@@ -64,7 +64,9 @@ export async function laptopStatus(address: { url: string; local: boolean }): Pr
       : { id: "voice", ok: "optional", title: "Voice typing is off", detail: "Optional. To turn it on, run `npm run voice:setup` once, then start class with `npm run class`." },
     address.local
       ? { id: "address", ok: true, title: `Students go to ${address.url}`, detail: "Works when students are on the same Wi-Fi as this laptop. To reach it from anywhere, see \"Putting Protégé online\" in the README." }
-      : { id: "address", ok: true, title: `Students go to ${address.url}`, detail: "Reachable from anywhere, over https." },
+      : /trycloudflare\.com/.test(address.url)
+        ? { id: "address", ok: false, title: `Students go to ${address.url}`, detail: "This is a Cloudflare quick tunnel: students' messages pass through Cloudflare's servers. Use the school network or Tailscale instead, unless your school approved it." }
+        : { id: "address", ok: true, title: `Students go to ${address.url}`, detail: "Reachable from anywhere, over https, encrypted all the way to this laptop." },
     diskCheck(),
     backupCheck(),
   ];

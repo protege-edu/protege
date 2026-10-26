@@ -2,7 +2,7 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { GameScreen } from "@/components/game/GameScreen";
 import { BUILT_IN, DEFAULT_LESSON_ID, toClientLesson } from "@/lib/lesson";
-import { studentAccess } from "@/lib/student/access";
+import { studentAccessParts } from "@/lib/student/access";
 import { currentStudent } from "@/lib/student/auth";
 
 /** The front door: the practice lesson, and the way into a class */
@@ -21,5 +21,5 @@ export default function Home() {
 async function Front({ lesson }: { lesson: ReturnType<typeof toClientLesson> }) {
   await connection();
   const me = await currentStudent();
-  return <GameScreen lesson={lesson} account={me ? "student" : "guest"} access={me ? studentAccess(me.id) : null} />;
+  return <GameScreen lesson={lesson} account={me ? "student" : "guest"} access={me ? studentAccessParts(me.id) : null} />;
 }

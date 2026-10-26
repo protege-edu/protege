@@ -1,0 +1,1 @@
+ALTER TABLE `classes` ADD `delete_on` integer;

@@ -43,6 +43,11 @@ export const classes = sqliteTable("classes", {
   googleSignIn: integer("google_sign_in", { mode: "boolean" }).notNull().default(false),
   /** the teacher paused the class (every Gloam falls asleep) */
   pausedAt: integer("paused_at", { mode: "timestamp_ms" }),
+  /**
+   * When this class and all its students' work are deleted by themselves (privacy by default: the end of
+   * the school year, set when the class is made; the teacher can change it). null = only when the teacher deletes it.
+   */
+  deleteOn: integer("delete_on", { mode: "timestamp_ms" }),
   /** the language of the screens around the lessons (joining, your Gloam): "en" or "fr" */
   language: text("language").notNull().default("en"),
   createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
@@ -69,6 +74,11 @@ export const students = sqliteTable("students", {
    * It can hint at a disability, so it's only ever shown to the student and their own teacher, never in summaries or exports.
    */
   access: text("access", { mode: "json" }).$type<Record<string, unknown>>(),
+  /**
+   * Ways to play their TEACHER switched on (an accommodation). Kept apart from `access` so a teacher only
+   * ever sees what they set, never what the student chose for themselves. The student's own choices win.
+   */
+  accommodations: text("accommodations", { mode: "json" }).$type<Record<string, unknown>>(),
   lastSeenAt: integer("last_seen_at", { mode: "timestamp_ms" }),
   createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
 });
@@ -168,6 +178,20 @@ export const conceptEvents = sqliteTable("concept_events", {
   levelBefore: integer("level_before").notNull(),
   levelAfter: integer("level_after").notNull(),
   createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+});
+
+/**
+ * Who looked at or changed a student's information, and when (for the school board's privacy officer:
+ * MFIPPA safeguards, breach investigations). Ids and the kind of action only, never what anyone wrote.
+ * Read it with `npm run access-log`. Kept for two years (lib/privacy/sweep.ts).
+ */
+export const accessLog = sqliteTable("access_log", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  at: integer("at", { mode: "timestamp_ms" }).notNull(),
+  teacherId: text("teacher_id").notNull(),
+  action: text("action").notNull(),
+  classId: text("class_id"),
+  studentId: text("student_id"),
 });
 
 /** Small settings, like the teacher passcode (stored as a hash, never plain text) */
