@@ -72,6 +72,13 @@ const storybookCopy = (big: boolean): AgeStyle["copy"] => ({
   retry: "Try again",
   titleJoin: big ? "Find my class" : "Join your class",
   slowDown: big ? "Whoa! One at a time, please!" : "whoa, slow down! one at a time. my brain is tiny.",
+  journalLevel: (level) => `Gloam's lantern: level ${level}`,
+  levelUpTitle: big ? "Gloam's lantern got bigger!" : "Gloam's lantern grew!",
+  levelBadge: (level) => `Level ${level}!`,
+  journalTaught: (light, toGo) =>
+    big
+      ? `You taught Gloam ${light} ${light === 1 ? "thing" : "things"}!${toGo !== null ? ` ${toGo} more and its lantern gets bigger!` : ""}`
+      : `You've taught Gloam ${light} ${light === 1 ? "idea" : "ideas"} so far.${toGo !== null ? ` ${toGo} more and its lantern grows again.` : ""}`,
   queued: (ahead) =>
     big
       ? ahead === 0
@@ -197,7 +204,7 @@ export const little: AgeStyle = {
   },
   lines: storybookLines(true),
   copy: storybookCopy(true),
-  look: { theme: "little", gloamSkin: "storybook", motion: 1, voiceAxis: "bounce", candleLabels: true },
+  look: { theme: "little", tone: "light", gloamSkin: "storybook", motion: 1, voiceAxis: "bounce", candleLabels: true },
   celebrate: { style: "big", particles: 60 },
   safety: { level: "strict" },
   input: { modes: ["type", "choices", "voice"], targetScale: 1.4, readAloud: true },
@@ -216,7 +223,7 @@ export const junior: AgeStyle = {
     maxWords: 22,
     lowercase: false,
   },
-  look: { theme: "junior", gloamSkin: "storybook", motion: 1, voiceAxis: "bounce", candleLabels: true },
+  look: { theme: "junior", tone: "light", gloamSkin: "storybook", motion: 1, voiceAxis: "bounce", candleLabels: true },
   input: { modes: ["type", "choices"], targetScale: 1.2, readAloud: true },
 };
 
@@ -235,7 +242,7 @@ export const middle: AgeStyle = {
   },
   lines: storybookLines(false),
   copy: storybookCopy(false),
-  look: { theme: "middle", gloamSkin: "storybook", motion: 1, voiceAxis: "bounce", candleLabels: true },
+  look: { theme: "middle", tone: "light", gloamSkin: "storybook", motion: 1, voiceAxis: "bounce", candleLabels: true },
   celebrate: { style: "big", particles: 40 },
   safety: { level: "standard" },
   input: { modes: ["type"], targetScale: 1, readAloud: false },

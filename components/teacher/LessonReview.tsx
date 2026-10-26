@@ -18,6 +18,8 @@ interface Row {
   builtIn: boolean;
   hasSource: boolean;
   problems: { conceptId?: string; field: string; message: string }[];
+  /** worth a look, but they don't stop approving (e.g. two ideas that overlap) */
+  warnings?: { conceptId?: string; field: string; message: string }[];
   createdAt: string;
 }
 
@@ -198,7 +200,7 @@ export function LessonReview({ id }: { id: string }) {
           {readOnly && <p className="mt-4 text-sm text-ink-dim">This lesson comes with Protégé, so it can&apos;t be edited.</p>}
 
           {/* everything to check, in one place */}
-          {(row.problems.length > 0 || (bp.reviewNotes?.length ?? 0) > 0) && (
+          {(row.problems.length > 0 || (bp.reviewNotes?.length ?? 0) > 0 || (row.warnings?.length ?? 0) > 0) && (
             <section aria-labelledby="checks" className="mt-6 rounded-lg border border-[#d9b36a] bg-[#f8eed8] p-5">
               <h2 id="checks" className="text-md font-bold text-[#6b4510]">
                 Check before approving
@@ -209,6 +211,9 @@ export function LessonReview({ id }: { id: string }) {
                 ))}
                 {bp.reviewNotes?.map((n, i) => (
                   <li key={`n${i}`}>{n.note}</li>
+                ))}
+                {row.warnings?.map((w, i) => (
+                  <li key={`w${i}`}>{w.message}</li>
                 ))}
               </ul>
             </section>

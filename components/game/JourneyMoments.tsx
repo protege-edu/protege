@@ -96,9 +96,9 @@ export function LevelUpCard({ style, level, line, onDone }: { style: AgeStyle; l
           onAnimationComplete={() => setTimeout(onDone, 4200)}
         >
           <Sheet seed="level-up" className="px-5 py-4 text-center">
-            <p className="text-xs font-bold text-[var(--color-lantern)]">Gloam&apos;s lantern grew</p>
+            <p className="text-xs font-bold text-[var(--color-lantern)]">{style.copy.levelUpTitle}</p>
             <p className="voice mt-1 text-lg text-ink" style={{ ["--casual" as string]: 1, ["--voice-weight" as string]: 800 }}>
-              {style.id === "senior" ? `level ${level}` : `Level ${level}!`}
+              {style.copy.levelBadge(level)}
             </p>
             <p className="voice mt-1 text-sm text-ink-dim">{line}</p>
             {style.copy.trickLearned(level) && <p className="mt-2 border-t border-dashed border-line pt-2 text-xs text-ink">{style.copy.trickLearned(level)}</p>}

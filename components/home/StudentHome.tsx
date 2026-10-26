@@ -81,7 +81,7 @@ export function StudentHome({ home }: { home: Home }) {
 
       <header className="absolute inset-x-0 top-0 z-10 flex items-center justify-between px-5 py-3 md:px-[5vw]">
         <span className="text-lg text-ink">
-          <Wordmark tone={style.id === "senior" ? "dark" : "light"} mark={false} />
+          <Wordmark tone={style.look.tone} mark={false} />
         </span>
         <InkButton variant="ghost" onClick={() => void signOut()}>
           {t.signOut}
@@ -205,7 +205,7 @@ function Journal({ home, onClose }: { home: Home; onClose: () => void }) {
           <div className="flex h-[calc(100dvh-24px)] flex-col">
             <div className="flex-1 overflow-y-auto bg-[repeating-linear-gradient(180deg,transparent_0,transparent_31px,rgb(211_221_214/0.07)_31px,rgb(211_221_214/0.07)_32px)] px-6 pt-8 pb-4 md:px-8">
               <h2 id="journal-title" className="voice text-xl text-ink" style={{ ["--casual" as string]: 1, ["--voice-weight" as string]: 800, ["--slant" as string]: -4 }}>
-                {style.id === "senior" ? t.journalTitle.toLowerCase() : t.journalTitle}
+                {style.voice.lowercase ? t.journalTitle.toLowerCase() : t.journalTitle}
               </h2>
               {home.journal.length === 0 && <p className="mt-4 text-sm text-ink-dim">{t.journalEmpty}</p>}
               {home.journal.map((j) => (

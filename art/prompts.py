@@ -106,3 +106,31 @@ KEY_PICTURES = {
     "key_moth": "a fluffy pale lilac moth with wings spread open, feathery antennae, cute, " + _KEY_TAIL,
     "key_stone": "a small stack of three smooth grey river stones, " + _KEY_TAIL,
 }
+
+# ---- The younger Gloams (M5 concept round) ----
+# The SAME creature as the high school Gloam (c2_felt: rust-orange felted wool, a cream belly patch, faint stitched
+# seams, a paper lantern on a curly stalk), grown into each age's personality and world. Front view, arms down,
+# plain background: the chosen one gets cut into parts for the rig, like art/gloam2_rig.py.
+_YOUNG_CORE = (
+    "a small round creature made of orange felted wool with soft fuzzy fibres and faint stitched seams, a cream-coloured belly patch, "
+    "a curly green vine stalk with a spiral tip grows from the top of its head and curves over to hold a small round paper lantern, "
+    "full body, centered, front view, standing, both short arms down at its sides, two tiny feet, "
+)
+YOUNG_GLOAMS = {
+    # K-2: rounder, brighter, bouncy, huge sparkly eyes, a big happy smile
+    "gloam_little": "an extra round chubby " + _YOUNG_CORE.replace("a small round creature", "small creature")
+    + "bright tangerine orange, huge sparkly round eyes with big white highlights, rosy pink cheeks, a big happy open smile, "
+    "cheerful children's picture book illustration, soft watercolour and gouache, bright warm sunny daylight colours, "
+    "isolated on a plain flat soft pale sky-blue background, no text, no watermark",
+    # 3-5: playful, a bit silly, curious
+    "gloam_junior": _YOUNG_CORE
+    + "big curious round eyes, one eyebrow raised, a lopsided cheeky grin showing one tooth, a little tuft of fuzz on top of its head, "
+    "storybook illustration, gouache and coloured pencil texture, warm golden dusk light, "
+    "isolated on a plain flat soft dusky lavender background, no text, no watermark",
+    # 6-8: goofy, dramatic, theatrical
+    "gloam_middle": _YOUNG_CORE
+    + "a short tattered teal scarf wrapped around its neck with the ends blowing sideways in the wind, big expressive eyes, "
+    "huge dramatic bushy eyebrows, a theatrical wide-eyed gasp expression with a small open mouth, "
+    "stylised indie animation character design, bold shapes, gouache texture, dramatic twilight rim light, "
+    "isolated on a plain flat deep twilight blue background, no text, no watermark",
+}

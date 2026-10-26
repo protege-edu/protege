@@ -249,6 +249,26 @@ async function main() {
     assert.ok(!S.checkKey(classA, comet.id, ["moon", "owl", "fern"]).ok, "still not, the second time");
   });
 
+  console.log("class data");
+  const { seasons } = await import("@/lib/lesson/seasons");
+  const { students: studentsTable } = await import("@/lib/db/schema");
+  await test("the progress spreadsheet: nicknames only, commas and formulas can't break it", () => {
+    S.createStudent(classA, "=cmd Fox", ["moon", "moon", "moon"]);
+    S.createStudent(classA, "Moss, \"Otter\"", ["moon", "moon", "moon"]);
+    const csv = C.progressCsv(classA, seasons);
+    const lines = csv.trim().split("\r\n");
+    assert.equal(lines[0].split(",")[0], "Nickname");
+    assert.equal(lines.length, 1 + S.classPreview(classA)!.nicknames.length);
+    assert.ok(csv.includes("'=cmd Fox"), "a formula-looking nickname is defused");
+    assert.ok(csv.includes('"Moss, ""Otter"""'), "commas and quotes are quoted");
+  });
+  await test("deleting a class deletes its students and leaves other classes alone", () => {
+    C.deleteClass(classA);
+    assert.equal(C.getClass(classA, a.id), null);
+    assert.equal(db.select().from(studentsTable).where(eq(studentsTable.classId, classA)).all().length, 0);
+    assert.ok(S.classPreview(classB)!.nicknames.length > 0);
+  });
+
   console.log(`\n${passed} passed${process.exitCode ? ", some FAILED" : ""}`);
 }
 

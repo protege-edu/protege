@@ -15,7 +15,7 @@ import { lanternFor, levelFor, newlyLit } from "@/lib/companion/level";
 import { aiConfig } from "@/lib/ai/config";
 import { inLine, queueStats } from "@/lib/ai/queue";
 import { seasons } from "@/lib/lesson/seasons";
-import { checkBlueprint } from "@/lib/teacher/checks";
+import { blueprintWarnings, checkBlueprint } from "@/lib/teacher/checks";
 import { dropRunningLines, pdfLinesToText } from "@/lib/teacher/pdf-text";
 
 let passed = 0;
@@ -191,6 +191,21 @@ test("pasted answers ask for the student's own words", () => {
 
 console.log("teacher material");
 test("the built-in lesson passes every blueprint check", () => assert.deepEqual(checkBlueprint(seasons), []));
+test("two ideas that share their words get a warning (that never blocks approving)", () => {
+  assert.deepEqual(blueprintWarnings(seasons), [], "the built-in ideas are distinct");
+  const twin = structuredClone(seasons);
+  twin.concepts[1].evidence = [...twin.concepts[0].evidence.slice(0, 3), ...twin.concepts[1].evidence.slice(0, 1)];
+  const w = blueprintWarnings(twin);
+  assert.equal(w.length, 1);
+  assert.match(w[0].message, /overlap/);
+  assert.deepEqual(checkBlueprint(twin), [], "still approvable");
+});
+test("accents don't hide an overlap (être and etre are the same word)", () => {
+  const twin = structuredClone(seasons);
+  twin.concepts[0].evidence = ["être", "avoir", "passé", "auxiliaire"];
+  twin.concepts[1].evidence = ["etre", "AVOIR", "verbe"];
+  assert.equal(blueprintWarnings(twin).length, 1);
+});
 const piece = (str: string, y: number, h: number, hasEOL = false) => ({ str, transform: [h, 0, 0, h, 0, y], height: h, hasEOL });
 test("PDF exponents stay exponents (2³ is not 23)", () => {
   assert.equal(pdfLinesToText([piece("we write 2", 630, 10), piece("5", 635, 8), piece(". done", 630, 10)]), "we write 2⁵. done");

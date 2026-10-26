@@ -190,6 +190,11 @@ export const senior: AgeStyle = {
     retry: "Try again",
     titleJoin: "Join your class",
     slowDown: "whoa. one at a time. my brain is the size of a grape.",
+    journalLevel: (level) => `gloam's lantern: level ${level}`,
+    levelUpTitle: "Gloam's lantern grew",
+    levelBadge: (level) => `level ${level}`,
+    journalTaught: (light, toGo) =>
+      `You've taught Gloam ${light} ${light === 1 ? "idea" : "ideas"} so far.${toGo !== null ? ` ${toGo} more and its lantern grows again.` : ""}`,
     queued: (ahead) =>
       ahead === 0
         ? "i'm next. i can feel it."
@@ -268,6 +273,7 @@ export const senior: AgeStyle = {
 
   look: {
     theme: "senior",
+    tone: "dark",
     gloamSkin: "rig",
     rig: seniorGloam,
     // The adventure: the valley grown into a long journey (art/panorama.py), cut into depth layers
@@ -308,22 +314,6 @@ export const senior: AgeStyle = {
     motion: 0.75,
     voiceAxis: "casual",
     candleLabels: false,
-    // Painted with local FLUX.1-schnell (art/prompts.py VALLEY_LIT, seed 101), relit with art/grade.py,
-    // cut into depth layers with art/layers.py. A human artist can replace these files 1:1.
-    scene: {
-      width: 1344,
-      height: 768,
-      layers: [0, 1, 2, 3].map((k) => ({
-        id: `valley-${k}`,
-        dark: `/art/senior/valley-${k}-dark.webp`,
-        lit: `/art/senior/valley-${k}-lit.webp`,
-        depth: k / 3,
-      })),
-      // Gloam stands where the painter put the light, on the meadow
-      ground: { x: 0.512, y: 0.68 },
-      fog: "#7fa294",
-      firefly: "#ffd98a",
-    },
   },
   celebrate: { style: "understated", particles: 28 },
   safety: { level: "standard" },

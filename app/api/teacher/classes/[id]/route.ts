@@ -6,7 +6,7 @@ import { googleEnabled } from "@/lib/auth/google";
 import { studentAddress } from "@/lib/hosting/address";
 import { queueStats } from "@/lib/ai/queue";
 import { bad, notYours, requireTeacher } from "@/lib/teacher/api";
-import { assignLesson, dashboard, getClass } from "@/lib/teacher/classes";
+import { assignLesson, dashboard, deleteClass, getClass } from "@/lib/teacher/classes";
 import { canSee, getApprovedLesson, getLessonRow } from "@/lib/teacher/lessons";
 
 /** The live dashboard for one class and one lesson: ?lesson=<id> (no lesson: just the class) */
@@ -77,5 +77,15 @@ export async function POST(request: Request, ctx: RouteContext<"/api/teacher/cla
   } else {
     db.update(classes).set({ name: c.name }).where(eq(classes.id, id)).run();
   }
+  return Response.json({ ok: true });
+}
+
+/** Delete the class and everything in it (the page asks the teacher to type the class name first) */
+export async function DELETE(request: Request, ctx: RouteContext<"/api/teacher/classes/[id]">) {
+  const me = await requireTeacher(request);
+  if (me instanceof Response) return me;
+  const { id } = await ctx.params;
+  if (!getClass(id, me.id)) return notYours();
+  deleteClass(id);
   return Response.json({ ok: true });
 }

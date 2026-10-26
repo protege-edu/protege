@@ -83,3 +83,29 @@ export function slug(s: string): string {
       .slice(0, 32) || "idea"
   );
 }
+
+/**
+ * Things worth a second look that DON'T stop a teacher approving (they may be on purpose).
+ * Right now: two ideas that overlap, judged by the words students would use to explain them.
+ * When they overlap, one explanation lights both candles, or the judge files it under the wrong one.
+ */
+export function blueprintWarnings(bp: LessonBlueprint): BlueprintProblem[] {
+  const fold = (w: string) => w.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+  const words = bp.concepts.map((c) => new Set(c.evidence.map(fold).filter(Boolean)));
+  const out: BlueprintProblem[] = [];
+  for (let i = 0; i < bp.concepts.length; i++) {
+    for (let j = i + 1; j < bp.concepts.length; j++) {
+      const shared = [...words[i]].filter((w) => words[j].has(w));
+      const smaller = Math.min(words[i].size, words[j].size) || 1;
+      if (shared.length >= 2 && shared.length / smaller >= 0.5) {
+        const [a, b] = [bp.concepts[i], bp.concepts[j]];
+        out.push({
+          conceptId: b.id,
+          field: "evidence",
+          message: `"${a.name}" and "${b.name}" overlap (they share the words ${shared.slice(0, 4).map((w) => `"${w}"`).join(", ")}). One explanation might light both. If they're really one idea, merge them; if not, give each its own words.`,
+        });
+      }
+    }
+  }
+  return out;
+}

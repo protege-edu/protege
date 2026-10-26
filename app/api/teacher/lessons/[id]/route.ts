@@ -1,6 +1,6 @@
 import { BUILT_IN } from "@/lib/lesson";
 import { BlueprintInput, bad, notYours, requireTeacher } from "@/lib/teacher/api";
-import { checkBlueprint } from "@/lib/teacher/checks";
+import { blueprintWarnings, checkBlueprint } from "@/lib/teacher/checks";
 import { canSee, deleteLesson, getLessonRow, saveBlueprint } from "@/lib/teacher/lessons";
 
 export async function GET(request: Request, ctx: RouteContext<"/api/teacher/lessons/[id]">) {
@@ -10,7 +10,7 @@ export async function GET(request: Request, ctx: RouteContext<"/api/teacher/less
   const row = getLessonRow(id);
   if (!row || !canSee(row, me.id)) return notYours();
   const { sourceText, ...rest } = row;
-  return Response.json({ ...rest, hasSource: !!sourceText, builtIn: id in BUILT_IN, problems: row.blueprint ? checkBlueprint(row.blueprint) : [] });
+  return Response.json({ ...rest, hasSource: !!sourceText, builtIn: id in BUILT_IN, problems: row.blueprint ? checkBlueprint(row.blueprint) : [], warnings: row.blueprint ? blueprintWarnings(row.blueprint) : [] });
 }
 
 /** Save the teacher's edits (an approved lesson goes back to draft until re-approved) */
@@ -24,7 +24,7 @@ export async function PUT(request: Request, ctx: RouteContext<"/api/teacher/less
   const body = BlueprintInput.safeParse(await request.json().catch(() => null));
   if (!body.success) return bad("Some of the lesson details are missing or too long. Check each idea and try again.");
   saveBlueprint(id, body.data);
-  return Response.json({ ok: true, problems: checkBlueprint(body.data) });
+  return Response.json({ ok: true, problems: checkBlueprint(body.data), warnings: blueprintWarnings(body.data) });
 }
 
 export async function DELETE(request: Request, ctx: RouteContext<"/api/teacher/lessons/[id]">) {

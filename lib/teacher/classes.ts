@@ -161,3 +161,36 @@ export function removeStudent(classId: string, studentId: string) {
     tx.delete(students).where(eq(students.id, studentId)).run();
   });
 }
+
+/** Delete a class and everything in it: its students, what they taught Gloam, their Gloams, and the class itself */
+export function deleteClass(classId: string) {
+  for (const k of db.select({ id: students.id }).from(students).where(eq(students.classId, classId)).all()) removeStudent(classId, k.id);
+  db.transaction((tx) => {
+    tx.delete(classLessons).where(eq(classLessons.classId, classId)).run();
+    tx.delete(classes).where(eq(classes.id, classId)).run();
+  });
+}
+
+/**
+ * A class's progress in one lesson, as a spreadsheet (CSV): nickname, then each idea's candle.
+ * Nicknames only, nothing else about anyone (it's for the teacher's own records).
+ */
+export function progressCsv(classId: string, lesson: LessonBlueprint): string {
+  const words = ["not yet", "a spark", "flickering", "lit"];
+  // a nickname like `Moss, Otter` mustn't split a column; spreadsheets can also run cells starting with = + - @
+  const cell = (v: string) => {
+    const safe = /^[=+\-@]/.test(v) ? `'${v}` : v;
+    return /[",\r\n]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
+  };
+  const d = dashboard(classId, lesson);
+  const head = ["Nickname", ...lesson.concepts.map((c) => c.name), "Stuck on", "Messages", "Finished"];
+  const rows = d.students.map((s) => [
+    s.nickname,
+    ...lesson.concepts.map((c) => words[s.understanding[c.id] ?? 0]),
+    s.stuck.map((id) => lesson.concepts.find((c) => c.id === id)?.name ?? id).join("; "),
+    String(s.messages),
+    s.finished ? "yes" : "no",
+  ]);
+  return [head, ...rows].map((r) => r.map(cell).join(",")).join("\r\n") + "\r\n";
+}
+

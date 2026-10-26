@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Sheet } from "@/components/ui/Sheet";
 import { ClassTrail } from "./ClassTrail";
 import { Button, CandleMark, Shell, api, gradeLabel, json } from "./kit";
+import { ClassData } from "./ClassData";
 import { ShowCode } from "./ShowCode";
 
 /** The class itself (no lesson): settings, its lessons, who's in it, and where students go */
@@ -216,6 +217,7 @@ export function ClassDashboard() {
           }}
         />
       )}
+      {info && <ClassData classId={id} className={info.class.name} lessonId={lessonId} />}
       <AnimatePresence>
         {showCode && info && (
           <ShowCode key="code" code={info.class.code} address={info.address.url} local={info.address.local} roster={info.roster} onClose={() => setShowCode(false)} />

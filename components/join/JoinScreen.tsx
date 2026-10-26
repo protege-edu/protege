@@ -238,7 +238,7 @@ export function JoinScreen({ initialCode, googleFor }: { initialCode?: string; g
 
       <main className="relative flex h-full flex-col justify-end overflow-y-auto px-6 pb-8 md:w-[min(560px,48vw)] md:justify-center md:px-[6vw] md:pb-0">
         <p className="text-2xl text-ink">
-          <Wordmark tone={style.id === "senior" ? "dark" : "light"} mark={false} />
+          <Wordmark tone={style.look.tone} mark={false} />
         </p>
 
         <AnimatePresence mode="wait">

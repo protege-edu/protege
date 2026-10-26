@@ -15,25 +15,9 @@ export type AgeStyleId = "little" | "junior" | "middle" | "senior";
 export type Line = string;
 
 /**
- * A painted world in layers. Each layer has a DARK painting and a LIT painting of the same thing;
- * Gloam's lantern light reveals the lit one, spreading further the more Gloam understands.
- */
-export interface CinematicScene {
-  /** Size the paintings were made at (all layers share it) */
-  width: number;
-  height: number;
-  /** Back to front. depth 0 = sky (barely moves), 1 = foreground (moves most with the camera) */
-  layers: { id: string; dark: string; lit: string; depth: number }[];
-  /** Where Gloam's feet are in the painting (0..1), so the light and Gloam line up with the ground */
-  ground: { x: number; y: number };
-  /** Colour grade and mood */
-  fog: string;
-  firefly: string;
-}
-
-/**
  * The adventure: a long painted panorama Gloam walks across, with a checkpoint shrine for each idea.
- * Same painting rules as CinematicScene (dark + lit copies of every depth layer).
+ * Each depth layer has a DARK painting and a LIT painting of the same thing; Gloam's lantern light
+ * reveals the lit one. Layers go back to front: depth 0 = sky (barely moves), 1 = foreground.
  */
 export interface JourneyWorld {
   name: string;
@@ -239,6 +223,12 @@ export interface AgeStyle {
     titleJoin: string;
     /** a student sent far too many messages too fast (Gloam asks for one at a time) */
     slowDown: string;
+    /** the bottom of Gloam's journal: its level, and how much it's been taught (toGo: ideas to the next level, or null at the top) */
+    journalLevel: (level: number) => string;
+    /** the card when Gloam levels up */
+    levelUpTitle: string;
+    levelBadge: (level: number) => string;
+    journalTaught: (light: number, toGo: number | null) => string;
     /** a busy class: other Gloams are thinking first (ahead = how many are in line before this one, 0 = next) */
     queued: (ahead: number) => string;
     /** ...and next to it, trying the practice lesson without a class */
@@ -252,8 +242,10 @@ export interface AgeStyle {
   look: {
     /** Sets [data-age-style] on the page; colors, fonts and layout read it from CSS */
     theme: AgeStyleId;
+    /** Is the world dark (light ink on night) or light (dark ink on paper)? Picks the logo's colours. */
+    tone: "dark" | "light";
     /** How Gloam is drawn ("rig" = the animated painted rig in `rig`) */
-    gloamSkin: "storybook" | "painterly" | "painted" | "rig";
+    gloamSkin: "storybook" | "rig";
     /** This age's own animated Gloam: a painted body + rig file (see lib/gloam-rig) */
     rig?: RigSpec;
     /** 0..1, scales idle motion, hops, flicker */
@@ -262,8 +254,6 @@ export interface AgeStyle {
     voiceAxis: "bounce" | "casual";
     /** Show each candle's name under it (younger), or only on hover/tap (cleaner, older) */
     candleLabels: boolean;
-    /** The painted, cinematic world. Without it, the simpler vector valley is used. */
-    scene?: CinematicScene;
     /** The adventure world (Phase 3). With it, Gloam walks from checkpoint to checkpoint. */
     world?: JourneyWorld;
   };

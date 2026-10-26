@@ -392,12 +392,9 @@ export function EndingPanel({
               transition={{ delay: calm ? 0 : 0.9 + recap.length * 0.22 }}
             >
               <p className="voice text-md text-ink" style={{ ["--casual" as string]: 1, ["--slant" as string]: -6 }}>
-                {style.id === "senior" ? `gloam's lantern: level ${gloam.level}` : `Gloam's lantern: level ${gloam.level}`}
+                {style.copy.journalLevel(gloam.level)}
               </p>
-              <p className="mt-1 text-sm text-ink-dim">
-                You&apos;ve taught Gloam {gloam.light} {gloam.light === 1 ? "idea" : "ideas"} so far.
-                {toGo !== null && ` ${toGo} more and its lantern grows again.`}
-              </p>
+              <p className="mt-1 text-sm text-ink-dim">{style.copy.journalTaught(gloam.light, toGo)}</p>
             </motion.div>
           </div>
           <div className="flex flex-wrap gap-2 border-t border-dashed border-line px-6 py-4 md:px-8">
