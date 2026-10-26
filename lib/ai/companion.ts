@@ -102,8 +102,21 @@ export async function runTurn(input: TurnInput, hooks: { onJudged?: (e: JudgedEv
       if (res === "offline") return done({ ...offline(understanding) });
       intent = res?.intent ?? "chatting";
     }
+    // An explanation in words the lesson didn't expect (no idea's evidence words matched at all):
+    // ask about every idea. If it seems to be about more than 2, it's too vague to count.
+    if (intent === "explaining" && checks.length === 0 && message.trim().split(/\s+/).length >= 5) {
+      const all = await Promise.all(
+        lesson.concepts.map(async (concept) => ({ concept, res: await ask(conceptCheckSchema, "concept_check", conceptCheckPrompt(concept), conceptCheckMessage(message)) })),
+      );
+      if (all.some((c) => c.res === "offline")) return done({ ...offline(understanding) });
+      const hits = all.flatMap(({ concept, res }) => {
+        const quality = res && res !== "offline" ? gradeCheck(message, res) : null;
+        return quality && quality !== "vague" ? [{ id: concept.id, quality }] : [];
+      });
+      if (hits.length > 0 && hits.length <= 2) judged.push(...hits);
+    }
     // "explaining" but it touched no idea: a vague attempt, not a lesson point
-    if (intent === "explaining") intent = "chatting";
+    if (intent === "explaining" && judged.length === 0) intent = "chatting";
     // "the sun", "summer?" are about the lesson even if they explain nothing: never call them off topic
     if (intent === "off_topic" && mentionsLesson(lesson, message)) intent = "chatting";
   }

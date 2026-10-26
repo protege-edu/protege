@@ -180,7 +180,10 @@ test("high school Gloam is lowercase but keeps SHOUTED words", () => {
 });
 test("every age style has every line bank filled", () => {
   for (const st of Object.values(AGE_STYLES))
-    for (const [k, v] of Object.entries(st.lines)) assert.ok(typeof v === "string" ? v.length > 0 : v.length > 0, `${st.id}.${k}`);
+    for (const [k, v] of Object.entries(st.lines)) {
+      const filled = typeof v === "string" ? v.length > 0 : Array.isArray(v) ? v.length > 0 : Object.values(v).every((x) => x.length > 0);
+      assert.ok(filled, `${st.id}.${k}`);
+    }
 });
 
 test("pasted answers ask for the student's own words", () => {

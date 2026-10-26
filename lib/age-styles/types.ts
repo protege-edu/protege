@@ -194,6 +194,8 @@ export interface AgeStyle {
     welcomeBack: Line[];
     /** Gloam's lantern just grew (it levelled up from everything this student taught it) */
     levelUp: Line[];
+    /** Short follow-ups the director adds when the AI's reply can't be used (said after Gloam's belief) */
+    followUps: { why: string; missing: string; how: string; hm: string };
   };
 
   /** Every word on screen comes from here */

@@ -2,7 +2,8 @@ import type { ConceptCheck, Quality } from "@/lib/ai/schemas";
 import type { Concept, LessonBlueprint } from "@/lib/lesson/types";
 
 // Words that usually mean the student explained WHY, not just WHAT
-const REASON = /\b(because|cuz|cause|since|so|which means|that means|means|that's why|thats why|makes|causes|so that)\b/;
+// (French too: the message is accent-folded first, so "ça" is "ca")
+const REASON = /\b(because|cuz|cause|since|so|which means|that means|means|that's why|thats why|makes|causes|so that|parce que|parce qu|car|donc|puisque|alors|c'est pour ca|ca veut dire|ce qui fait|ca fait que)\b/;
 
 // Accents are folded, not deleted (être -> etre, mangé -> mange), so lessons in French and other
 // languages match whether or not students type the accents.

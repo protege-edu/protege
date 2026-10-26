@@ -112,6 +112,7 @@ export const senior: AgeStyle = {
       "the internet already tried to teach me. didn't work. your words, even messy ones.",
       "ok that was extremely textbook. now the version that lives in your head?",
     ],
+    followUps: { why: "ok but why?", missing: "what am i still missing?", how: "ok but how does that actually work?", hm: "hm." },
     brainGlitch: [
       "sorry, my brain just blue-screened. say that again?",
       "lost the thought. it was probably a good one. one more time?",

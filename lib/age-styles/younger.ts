@@ -197,6 +197,9 @@ const storybookLines = (simple: boolean): AgeStyle["lines"] => ({
     ? ["Those are big words! Can you tell me in your words?", "Hmm, say it like you'd tell a friend!"]
     : ["whoa, that sounds like a textbook. say it your way? i learn better from you.", "that's a lot of fancy words. how would YOU explain it?"],
   brainGlitch: ["Oops, I got mixed up. Can you say that again?"],
+  followUps: simple
+    ? { why: "But why?", missing: "What am I missing?", how: "But how does it work?", hm: "Hmm." }
+    : { why: "ok but WHY?", missing: "what am i still missing?", how: "but how does it actually work?", hm: "hmm." },
 });
 
 export const little: AgeStyle = {

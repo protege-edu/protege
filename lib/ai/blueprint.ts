@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { chatJSON } from "./client";
 import { checkSafety } from "./safety";
-import { beliefCheckPrompt, conceptPrompt, factCheckPrompt, fixQuestionPrompt, outlinePrompt, questionCheckPrompt, storyPrompt } from "./prompts/blueprint";
+import { almostPrompt, beliefCheckPrompt, conceptPrompt, factCheckPrompt, fixQuestionPrompt, outlinePrompt, questionCheckPrompt, storyPrompt } from "./prompts/blueprint";
 import { getAgeStyle, styleForGrade } from "@/lib/age-styles";
 import { detectLanguage } from "@/lib/lesson/language";
 import type { Concept, LessonBlueprint } from "@/lib/lesson/types";
@@ -50,7 +50,8 @@ const FixedQuestion = z.object({ question: z.string().min(5).max(200) });
 
 const QuestionCheck = (n: number) => z.object({ checks: z.array(z.object({ revealsAnswer: z.boolean() })).length(n) });
 
-const BeliefCheck = z.object({ startIsWrong: z.boolean(), endIsTrue: z.boolean() });
+const BeliefCheck = z.object({ startIsWrong: z.boolean(), almostIsTrue: z.boolean(), endIsTrue: z.boolean() });
+const AlmostLine = z.object({ almost: z.string().min(2).max(300) });
 
 const FactCheck = z.object({ inNotes: z.boolean(), truthIsCorrect: z.boolean(), wrongIsActuallyWrong: z.boolean(), note: z.string().max(300) });
 
@@ -121,13 +122,23 @@ export async function draftBlueprint(opts: { source: string; grade: number; titl
     const vetLines = (l: z.infer<typeof ConceptLines>) => unsafe([...Object.values(l.beliefs), ...l.questions]);
     let lines = await ask("concept", ConceptLines, prompt, 3, vetLines);
     // Gloam starts with the wrong idea and ends with the true one. Check it, and redo it if it's backwards.
+    const checkStages = () => ask("belief_check", BeliefCheck, beliefCheckPrompt({ truth: c.truth, misconception: c.misconception, ...lines.beliefs }), 2).catch(() => null);
     let stagesOk = false;
-    for (let attempt = 0; attempt < 3; attempt++) {
-      const check = await ask("belief_check", BeliefCheck, beliefCheckPrompt({ truth: c.truth, misconception: c.misconception, ...lines.beliefs }), 2).catch(() => null);
-      stagesOk = !check || (check.startIsWrong && check.endIsTrue);
-      if (stagesOk || attempt === 2) break;
+    let check = await checkStages();
+    for (let attempt = 0; attempt < 2 && check && !(check.startIsWrong && check.endIsTrue); attempt++) {
       lines = await ask("concept", ConceptLines, prompt, 3, vetLines);
+      check = await checkStages();
     }
+    // The "almost" stage is where Gloam lands after ONE good explanation, so it must already be right
+    // (it can leave out why). Small models often write it as the wrong idea again: rewrite just that line,
+    // and if that fails too, Gloam says its final, checked line (a wrong belief after a good explanation is worse).
+    if (check && check.startIsWrong && check.endIsTrue && !check.almostIsTrue) {
+      const fix = await ask("almost", AlmostLine, almostPrompt({ style, truth: c.truth, misconception: c.misconception, gotIt: lines.beliefs.gotIt }), 2).catch(() => null);
+      if (fix) lines = { ...lines, beliefs: { ...lines.beliefs, almost: fix.almost } };
+      check = await checkStages();
+      if (check && !check.almostIsTrue) lines = { ...lines, beliefs: { ...lines.beliefs, almost: lines.beliefs.gotIt } };
+    }
+    stagesOk = !check || (check.startIsWrong && check.endIsTrue);
     if (!stagesOk) stageNotes.push(c.name);
     // Evidence also includes the real content words from the idea's own name (never "what", "need"…)
     // (accents folded first, so "être" gives "etre", not "tre")
@@ -192,7 +203,7 @@ export async function draftBlueprint(opts: { source: string; grade: number; titl
   const reviewNotes: NonNullable<LessonBlueprint["reviewNotes"]> = [];
   for (const name of stageNotes) {
     const c = concepts.find((x) => x.name === name)!;
-    reviewNotes.push({ conceptId: c.id, note: `Check Gloam's lines for "${name}": the first should be the wrong idea and the last should be fully correct.` });
+    reviewNotes.push({ conceptId: c.id, note: `Check Gloam's lines for "${name}": the first should be the wrong idea, the third already right (it can leave out why), and the last fully correct.` });
   }
   for (const c of concepts) {
     try {

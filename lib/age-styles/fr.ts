@@ -101,6 +101,7 @@ export const frSenior: FrenchStyle = {
       "internet a déjà essayé de m'apprendre. ça a pas marché. tes mots à toi, même tout croches.",
       "ok, c'était extrêmement manuel scolaire. maintenant la version qui vit dans ta tête?",
     ],
+    followUps: { why: "ok mais pourquoi?", missing: "il me manque quoi encore?", how: "ok mais comment ça marche, en vrai?", hm: "hm." },
     brainGlitch: ["désolé, mon cerveau vient de planter. tu peux répéter?", "j'ai perdu l'idée. elle était sûrement bonne. encore une fois?", "ma lanterne a clignoté et j'ai tout oublié. encore?"],
   },
   copy: {
@@ -303,6 +304,9 @@ export function frStorybook(big: boolean): FrenchStyle {
         ? ["Ce sont de grands mots! Tu peux me le dire avec tes mots?", "Hmm, dis-le comme à un ami!"]
         : ["wow, on dirait un manuel. dis-le à ta façon? j'apprends mieux avec toi.", "ça fait beaucoup de mots compliqués. comment TOI tu l'expliquerais?"],
       brainGlitch: ["Oups, je me suis mélangé. Tu peux répéter?"],
+      followUps: big
+        ? { why: "Mais pourquoi?", missing: "Qu'est-ce qui me manque?", how: "Mais comment ça marche?", hm: "Hmm." }
+        : { why: "ok mais POURQUOI?", missing: "il me manque quoi encore?", how: "mais comment ça marche, en vrai?", hm: "hmm." },
     },
     copy: {
       appName: "Protégé",

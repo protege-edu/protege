@@ -88,13 +88,13 @@ export function directBeat(opts: DirectInput): Beat {
       return perform(
         "sheepish",
         `The student just made you doubt your old idea about "${c.name}". You used to think: "${c.beliefs[0]}". Now you're wondering: "${c.beliefs[1]}". React to what they said, then ask them WHY, in your style.`,
-        `${c.beliefs[1]} ok but why?`,
+        `${c.beliefs[1]} ${style.lines.followUps.why}`,
       );
     }
     return perform(
       "excited",
       `Something is clicking about "${c.name}". You now think: "${c.beliefs[level]}". Say that back in your own words, not fully sure yet, then ask ONE question about the missing piece.`,
-      `${c.beliefs[level]} what am i still missing?`,
+      `${c.beliefs[level]} ${style.lines.followUps.missing}`,
     );
   }
 
@@ -108,7 +108,7 @@ export function directBeat(opts: DirectInput): Beat {
       before[c.id] === 0
         ? `What the student said agrees with your OWN wrong idea ("${c.beliefs[0]}"). Be smug about it for a second, then get a nagging doubt and ask: "${q}". Do NOT tell them they're wrong.`
         : `What they said doesn't fit what you've been learning, and it confuses you. Don't say they're wrong. Puzzle over it, then ask: "${q}"`,
-      `hm. ${q}`,
+      `${style.lines.followUps.hm} ${q}`,
     );
   }
 
@@ -117,7 +117,7 @@ export function directBeat(opts: DirectInput): Beat {
   return perform(
     "curious",
     `The student mentioned "${c.name}" but didn't explain HOW or WHY. You still believe: "${c.beliefs[u[c.id]]}". React to what they said, then ask them to explain how it actually works.`,
-    `ok but how does that actually work?`,
+    style.lines.followUps.how,
   );
 }
 

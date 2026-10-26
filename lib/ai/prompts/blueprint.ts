@@ -111,6 +111,24 @@ True ideas (for the finale only): ${opts.truths.join(" ")}${writeIn(style.langua
   ];
 }
 
+/** Rewrite only Gloam's "almost" line: it already has the TRUE idea, it just can't say why yet */
+export function almostPrompt(opts: { style: AgeStyle; truth: string; misconception: string; gotIt: string }) {
+  const { style } = opts;
+  return [
+    {
+      role: "system" as const,
+      content: `You write ONE line for Gloam, a character who is learning an idea.
+${style.voice.persona}
+Gloam's voice: ${voiceRules(style)}
+
+Return JSON:
+- almost: Gloam has just been taught the TRUE idea and now believes it, but can't explain WHY yet. One or two short sentences
+   in Gloam's voice. It must say the TRUE idea. It must NOT say the WRONG idea in any way.${writeIn(style.language)}`,
+    },
+    { role: "user" as const, content: `TRUE: ${opts.truth}\nWRONG: ${opts.misconception}\nGLOAM'S FINAL LINE (for its voice): ${opts.gotIt}` },
+  ];
+}
+
 /** Rewrite one question that gives too much away. `problem` says what's wrong with it, in plain words. */
 export function fixQuestionPrompt(opts: { style: AgeStyle; question: string; problem: string; name: string; misconception: string }) {
   return [
@@ -145,17 +163,18 @@ ${opts.questions.map((q, i) => `${i + 1}. ${q}`).join("\n")}`,
   ];
 }
 
-/** Are Gloam's first and last beliefs the right way round? (Small models sometimes shuffle the stages.) */
-export function beliefCheckPrompt(opts: { truth: string; misconception: string; wrong: string; gotIt: string }) {
+/** Are Gloam's beliefs the right way round: wrong at the start, right (if incomplete) at "almost", fully right at the end? */
+export function beliefCheckPrompt(opts: { truth: string; misconception: string; wrong: string; almost: string; gotIt: string }) {
   return [
     {
       role: "system" as const,
-      content: `You check two lines a character says while learning an idea.
+      content: `You check three lines a character says while learning an idea.
 Return JSON:
 - startIsWrong: true if START says the same thing as WRONG (the mistaken idea)
+- almostIsTrue: true if ALMOST agrees with TRUE (it may leave out the reason why), and does NOT say the WRONG idea
 - endIsTrue: true if END says the same thing as TRUE and contains nothing incorrect`,
     },
-    { role: "user" as const, content: `TRUE: ${opts.truth}\nWRONG: ${opts.misconception}\n\nSTART: ${opts.wrong}\nEND: ${opts.gotIt}` },
+    { role: "user" as const, content: `TRUE: ${opts.truth}\nWRONG: ${opts.misconception}\n\nSTART: ${opts.wrong}\nALMOST: ${opts.almost}\nEND: ${opts.gotIt}` },
   ];
 }
 
