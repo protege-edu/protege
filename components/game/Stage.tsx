@@ -122,7 +122,7 @@ export function Stage({
   const onJourneyBox = useCallback((b: GloamBox) => onGloamBox?.(b), [onGloamBox]);
 
   return (
-    <section ref={box} aria-label="Gloam's valley" className="absolute inset-0 overflow-hidden bg-bg">
+    <section ref={box} aria-label={style.copy.valleyLabel} className="absolute inset-0 overflow-hidden bg-bg">
       {world && journey ? (
         <JourneyWorld
           world={world.world}

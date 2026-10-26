@@ -253,6 +253,15 @@ export interface AgeStyle {
     titleJoin: string;
     /** a student sent far too many messages too fast (Gloam asks for one at a time) */
     slowDown: string;
+    /** what a screen reader calls the game world */
+    valleyLabel: string;
+    /** the button that reads Gloam's line aloud (age styles with input.readAloud) */
+    readAloud: string;
+    /** ways to start a sentence, to tap (age styles with the "choices" input); "…" marks where the student carries on */
+    starters: string[];
+    startersLabel: string;
+    /** screen readers: where we are in Gloam's intro */
+    introPart: (n: number, total: number) => string;
     /** the bottom of Gloam's journal: its level, and how much it's been taught (toGo: ideas to the next level, or null at the top) */
     journalLevel: (level: number) => string;
     /** the card when Gloam levels up */

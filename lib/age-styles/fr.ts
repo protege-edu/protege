@@ -171,6 +171,11 @@ export const frSenior: FrenchStyle = {
     titleJoin: "Rejoindre ma classe",
     titlePractice: "M'entraîner d'abord",
     toMyGloam: "Mon Gloam",
+    valleyLabel: "La vallée de Gloam",
+    readAloud: "Lis-le-moi",
+    starters: ["Je pense que…", "C'est parce que…", "Non, Gloam…", "Voici pourquoi :…"],
+    startersLabel: "Commence par",
+    introPart: (n, total) => `Partie ${n} sur ${total}`,
     slowDown: "wow. un à la fois. j'ai un cerveau de la taille d'un raisin.",
     journalLevel: (level) => `lanterne de gloam : niveau ${level}`,
     journalTaught: (light, toGo) =>
@@ -367,6 +372,11 @@ export function frStorybook(big: boolean): FrenchStyle {
       titleJoin: big ? "Trouver ma classe" : "Rejoindre ma classe",
       titlePractice: big ? "Juste jouer" : "M'entraîner d'abord",
       toMyGloam: "Mon Gloam",
+      valleyLabel: "La vallée de Gloam",
+      readAloud: "Lis-le-moi",
+      starters: big ? ["Je pense que…", "C'est parce que…", "Non, Gloam!…", "Comme quand…"] : ["Je pense que…", "C'est parce que…", "Non, Gloam…", "Voici pourquoi :…", "C'est comme quand…"],
+      startersLabel: "Commence par",
+      introPart: (n, total) => `Partie ${n} sur ${total}`,
       slowDown: big ? "Wow! Un à la fois, s'il te plaît!" : "wow, ralentis! un à la fois. j'ai un tout petit cerveau.",
       journalLevel: (level) => `Lanterne de Gloam : niveau ${level}`,
       journalTaught: (light, toGo) =>

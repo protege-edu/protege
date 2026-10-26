@@ -6,6 +6,7 @@ import { POSES } from "@/components/gloam/poses";
 import { InkButton } from "@/components/ui/InkButton";
 import { Sheet } from "@/components/ui/Sheet";
 import type { AgeStyle } from "@/lib/age-styles";
+import { canReadAloud, readAloud, stopReading } from "@/lib/speech";
 import { useCalmMotion } from "@/lib/useCalmMotion";
 import type { GloamBox } from "./Stage";
 import { TypedLine } from "./TypedLine";
@@ -64,10 +65,38 @@ function SpeechPanel({ gloam, wide, children, seed }: { gloam: GloamBox | null; 
   );
 }
 
-function GloamName({ style }: { style: AgeStyle }) {
+function GloamName({ style, line }: { style: AgeStyle; line?: string }) {
+  // read-aloud, for age styles that need it, and only with a voice that runs on this device
+  const lang = style.language ?? "en";
+  const [voiced, setVoiced] = useState(false);
+  useEffect(() => {
+    if (!style.input.readAloud || typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    const check = () => setVoiced(canReadAloud(lang));
+    check();
+    window.speechSynthesis.addEventListener("voiceschanged", check);
+    return () => {
+      window.speechSynthesis.removeEventListener("voiceschanged", check);
+      stopReading();
+    };
+  }, [style.input.readAloud, lang]);
   return (
-    <span className="voice mb-1 block text-xs text-accent" style={{ ["--casual" as string]: 1, ["--voice-weight" as string]: 750 }}>
-      {style.copy.gloamName}
+    <span className="mb-1 flex items-center justify-between gap-3">
+      <span className="voice block text-xs text-accent" style={{ ["--casual" as string]: 1, ["--voice-weight" as string]: 750 }}>
+        {style.copy.gloamName}
+      </span>
+      {voiced && line && (
+        <button
+          type="button"
+          onClick={() => readAloud(line, lang)}
+          className="flex min-h-11 cursor-pointer items-center gap-1.5 rounded-md px-2 text-xs font-bold text-ink-dim hover:text-ink"
+        >
+          <svg viewBox="0 0 20 20" className="h-4 w-4" aria-hidden="true">
+            <path d="M3 8h3l4-3.5v11L6 12H3z" fill="currentColor" />
+            <path d="M13 7.2c1 .8 1.5 1.8 1.5 2.8s-.5 2-1.5 2.8M15.3 5c1.6 1.4 2.4 3.1 2.4 5s-.8 3.6-2.4 5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+          {style.copy.readAloud}
+        </button>
+      )}
     </span>
   );
 }
@@ -113,7 +142,7 @@ export function DialogueBand({ s, style, gloam, wide, onOpenLog }: { s: TeachSes
 
   const speech = (
     <div aria-live="polite">
-      <GloamName style={style} />
+      <GloamName style={style} line={s.status === "ready" && lastGloam?.kind === "gloam" ? lastGloam.text : undefined} />
       {s.status === "paused" ? (
         <div role="status">
           <p className="text-sm font-bold text-ink">{style.copy.home.paused}</p>
@@ -163,6 +192,28 @@ export function DialogueBand({ s, style, gloam, wide, onOpenLog }: { s: TeachSes
       <div className="absolute inset-x-0 bottom-0 z-20 bg-[linear-gradient(0deg,rgb(5_10_8/0.92)_0%,rgb(5_10_8/0.7)_55%,transparent_100%)] pt-10">
         <div className="mx-auto flex max-w-[860px] flex-col gap-4 px-4 pb-4 sm:px-8 md:pb-6">
           {!wide && <SpeechPanel gloam={gloam} wide={false} seed="speech-narrow">{speech}</SpeechPanel>}
+
+          {style.input.modes.includes("choices") && (
+            <div className="mb-2 flex flex-wrap items-center gap-2" role="group" aria-label={style.copy.startersLabel}>
+              <span className="text-xs font-bold text-ink-dim">{style.copy.startersLabel}</span>
+              {style.copy.starters.map((st) => (
+                <button
+                  key={st}
+                  type="button"
+                  disabled={!canSend}
+                  onClick={() => {
+                    // "I think…" starts the sentence; the student carries on after it
+                    const start = st.replace(/…$/, "").replace(/\s*$/, " ");
+                    setDraft((d) => (d.trim() ? `${d.trimEnd()} ${start}` : start));
+                    input.current?.focus();
+                  }}
+                  className="min-h-11 cursor-pointer rounded-full border border-line bg-panel px-4 text-sm font-bold text-ink hover:bg-chip disabled:cursor-default disabled:opacity-50"
+                >
+                  {st}
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* Gloam's notebook: where you teach */}
           <form
@@ -236,7 +287,7 @@ export function IntroBand({ s, style, steps, gloam, wide }: { s: TeachSession; s
   const panel = (
     <SpeechPanel gloam={gloam} wide={wide} seed="intro">
       <div aria-live="polite" className="min-h-[4.2em]">
-        <GloamName style={style} />
+        <GloamName style={style} line={steps[i].text} />
         <TypedLine key={i} text={steps[i].text} shape={POSES[steps[i].mood as keyof typeof POSES]?.bounce ?? 20} animate className="text-md text-ink" />
       </div>
       <div className="mt-4 flex items-center gap-2">
@@ -248,7 +299,7 @@ export function IntroBand({ s, style, steps, gloam, wide }: { s: TeachSession; s
             {style.copy.introSkip}
           </InkButton>
         )}
-        <span className="ml-auto flex gap-1.5" role="img" aria-label={`Part ${i + 1} of ${steps.length}`}>
+        <span className="ml-auto flex gap-1.5" role="img" aria-label={style.copy.introPart(i + 1, steps.length)}>
           {steps.map((_, n) => (
             <span key={n} className={`h-1.5 rounded-full transition-[width,background-color] duration-300 ${n === i ? "w-5 bg-[var(--t-moon,var(--t-ink))]" : n < i ? "w-2 bg-ink-dim" : "w-2 bg-line"}`} />
           ))}
