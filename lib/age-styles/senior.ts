@@ -200,7 +200,8 @@ export const senior: AgeStyle = {
         [0, 0.74],
         [1, 0.74],
       ],
-      start: 0.16,
+      // far enough in that the title shot can stand Gloam right of the title with painting all around
+      start: 0.23,
       end: 0.93,
       fog: "#7fa294",
       firefly: "#ffd98a",

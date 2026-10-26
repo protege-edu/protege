@@ -171,7 +171,7 @@ export function GameScreen({ lesson }: { lesson: ClientLesson }) {
           <LevelUpCard style={style} level={s.levelUp && !s.moment ? s.levelUp.level : null} line={levelLine} onDone={s.clearLevelUp} />
           <EurekaMoment moment={s.moment} style={style} x={focus} onPeak={s.onPeak} onDone={s.onMomentDone} />
           <AnimatePresence>
-            {s.phase === "title" && <TitleScreen key="title" style={style} lesson={lesson} resumable={s.resumable} light={s.light} onStart={s.start} onHelp={() => setOverlay("help")} />}
+            {s.phase === "title" && <TitleScreen key="title" style={style} lesson={lesson} resumable={s.resumable} onStart={s.start} onHelp={() => setOverlay("help")} />}
           </AnimatePresence>
           {s.phase === "ending" && s.recap && (!world || finaleArrived) && (
             <EndingPanel style={style} recap={s.recap} gloam={s.gloam} onKeepTalking={() => s.setPhase("teach")} onTeachAgain={s.startOver} onTitle={toTitle} />

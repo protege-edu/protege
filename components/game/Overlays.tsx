@@ -5,7 +5,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { InkButton } from "@/components/ui/InkButton";
 import { Sheet } from "@/components/ui/Sheet";
 import { TrailStrip } from "@/components/ui/TrailStrip";
-import { Wordmark } from "@/components/ui/Wordmark";
+import { Wordmark } from "@/components/ui/Logo";
 import type { AgeStyle } from "@/lib/age-styles";
 import type { GloamLevel } from "@/lib/companion/level";
 import type { ClientLesson, Level, RecapItem } from "@/lib/lesson/types";
@@ -18,15 +18,12 @@ export function TitleScreen({
   style,
   lesson,
   resumable,
-  light,
   onStart,
   onHelp,
 }: {
   style: AgeStyle;
   lesson: ClientLesson;
   resumable: boolean;
-  /** How much the student has taught Gloam so far (the wordmark's flames light up) */
-  light: number;
   onStart: () => void;
   onHelp: () => void;
 }) {
@@ -41,7 +38,7 @@ export function TitleScreen({
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgb(5_10_8/0.85)_0%,rgb(5_10_8/0.55)_38%,transparent_65%)] max-md:bg-[linear-gradient(0deg,rgb(5_10_8/0.92)_0%,rgb(5_10_8/0.6)_45%,transparent_70%)]" />
       <div className="relative w-full px-6 pb-10 md:w-auto md:px-[7vw] md:pb-0">
         <motion.h1 {...rise(0.35)} className="mt-3 text-[4rem] text-ink md:text-[6.5rem]">
-          <Wordmark lit={light} />
+          <Wordmark tone="dark" mark={false} />
         </motion.h1>
         <motion.p {...rise(0.5)} className="mt-5 max-w-[24ch] text-lg text-ink">
           {lesson.title}

@@ -3,7 +3,7 @@
 import { InkButton } from "@/components/ui/InkButton";
 import { Sheet } from "@/components/ui/Sheet";
 import { TrailStrip } from "@/components/ui/TrailStrip";
-import { Wordmark } from "@/components/ui/Wordmark";
+import { Wordmark } from "@/components/ui/Logo";
 import { TypedLine } from "@/components/game/TypedLine";
 import { senior } from "@/lib/age-styles/senior";
 import { toClientLesson } from "@/lib/lesson";
@@ -25,7 +25,7 @@ export function StyleTile() {
     <main data-age-style="senior" className="min-h-dvh bg-bg p-10 text-ink" style={{ backgroundImage: "linear-gradient(rgb(13 22 19 / 0.82), rgb(13 22 19 / 0.82)), url(/art/senior/valley-1-dark.webp)", backgroundSize: "cover" }}>
       <div className="flex flex-wrap items-end gap-12">
         <Wordmark className="text-3xl text-ink" />
-        <Wordmark lit={1} className="text-3xl text-ink" />
+        <Wordmark mark={false} className="text-3xl text-ink" />
         <TrailStrip style={senior} concepts={seasons.concepts} levels={[3, 3, 1, 2, 0]} current={2} />
       </div>
 

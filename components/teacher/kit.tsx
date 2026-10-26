@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, type ButtonHTMLAttributes, type ReactNode } from "react";
 import { InkButton } from "@/components/ui/InkButton";
-import { Wordmark } from "@/components/ui/Wordmark";
+import { Wordmark } from "@/components/ui/Logo";
 
 /* ---------------- fetch helper ---------------- */
 
@@ -43,7 +43,7 @@ export function Shell({ children, title, back }: { children: ReactNode; title?: 
     <div className="mx-auto max-w-[1100px] px-5 pb-20 sm:px-8">
       <header className="flex items-center justify-between gap-4 border-b border-line py-4">
         <Link href="/teacher" className="text-lg text-ink" aria-label="Protégé, teacher home">
-          <Wordmark />
+          <Wordmark tone="light" />
         </Link>
         <nav className="flex items-center gap-1 text-sm" aria-label="Teacher">
           <span className="mr-2 hidden text-ink-dim sm:inline">Teacher</span>
@@ -93,7 +93,7 @@ export function TeacherGate({ children }: { children: ReactNode }) {
   return (
     <main className="mx-auto flex min-h-dvh max-w-[400px] flex-col justify-center px-6">
       <p className="text-2xl text-ink">
-        <Wordmark />
+        <Wordmark tone="light" />
       </p>
       <h1 className="mt-6 text-lg font-bold text-ink">{state === "setup" ? "Set up the teacher side" : "Teacher sign in"}</h1>
       <p className="mt-2 text-sm text-ink-dim">
