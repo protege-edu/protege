@@ -7,6 +7,7 @@ import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import { BUILT_IN } from "@/lib/lesson";
 import * as schema from "./schema";
 
+import { scheduleBackups } from "./backup";
 import { OLD_DB_FILE, dbFile, ensureDataDir } from "./location";
 
 function open() {
@@ -34,6 +35,7 @@ function open() {
       .onConflictDoNothing()
       .run();
   }
+  scheduleBackups(sqlite);
   return db;
 }
 

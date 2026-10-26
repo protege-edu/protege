@@ -45,6 +45,9 @@ export function Shell({ children, title, back }: { children: ReactNode; title?: 
           <Wordmark tone="light" />
         </Link>
         <nav className="flex items-center gap-1 text-sm" aria-label="Teacher">
+          <Link href="/teacher/status" className="min-h-11 content-center rounded-md px-3 font-bold text-ink-dim hover:text-ink">
+            Ready for class?
+          </Link>
           <Link href="/teacher/help" className="mr-1 min-h-11 content-center rounded-md px-3 font-bold text-ink-dim hover:text-ink">
             How it works
           </Link>

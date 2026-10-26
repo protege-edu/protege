@@ -95,7 +95,8 @@ export async function POST(request: Request) {
           });
         }
       } catch (err) {
-        console.error("[companion] turn failed", err);
+        // only what KIND of error: an AI error can quote what the student wrote, and logs never hold students' words
+        console.error("[companion] turn failed:", err instanceof Error ? err.name : typeof err);
         send({ type: "offline" });
       } finally {
         controller.close();
