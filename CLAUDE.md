@@ -129,6 +129,10 @@ LET'S BUILD SOMETHING INSANE.
 - Hosting: Protégé and Ollama run on the teacher's laptop; students reach it through a free tunnel (Tailscale Funnel or Cloudflare). Hosting settings stay in one place so a move (e.g. Vercel) later is contained.
 - Languages: English and French. A lesson's language (guessed from the notes, teacher can change it) is what students explain in and Gloam speaks; a class's language is for the screens around lessons. Every word comes from the age style in that language (lib/age-styles/fr.ts); nothing on a student screen is hard-coded.
 - Teacher sign-up is closed by default: the first account needs the setup code Protégé prints in its terminal; later teachers need a one-use invite from a signed-in teacher.
+- Going public: EACH SCHOOL RUNS ITS OWN COPY (free installer for a teacher laptop + a free public website on GitHub Pages). No shared paid server. The code is open source under AGPL-3.0. Ask before creating the public repo or publishing anything.
+- Laws: built for Ontario first (MFIPPA, Education Act, Bill 194, AODA), but designed to meet the strictest rules worldwide (GDPR, UK Children's Code, COPPA, FERPA, EU AI Act) because Protégé may go global later.
+- Accessibility: every student can pick "Ways to play" (voice typing, read-aloud, bigger text, high contrast, easier reading, less motion), saved on their account; teachers can switch them on for a student. Aim for WCAG 2.2 AA everywhere.
+- Voice: a student's voice is only ever heard by their own device (browser speech recognition ONLY when it guarantees on-device processing) or the teacher's laptop (local whisper.cpp). Never a cloud speech service. Clips are never stored.
 
 ## AGE STYLES (Protégé is for every grade, K–12)
 

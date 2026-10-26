@@ -4,12 +4,15 @@
  *   npm run class -- --tunnel     ...and open a free tunnel, so students can join from anywhere
  *   npm run class -- --no-build   start the last build again (faster)
  *
- * It checks the AI first (Ollama running, Gloam's model downloaded), so class doesn't start with a broken Gloam.
+ * It checks the AI first (Ollama running, Gloam's model downloaded), so class doesn't start with a broken Gloam,
+ * and starts voice typing (whisper.cpp, on this laptop only) if `npm run voice:setup` was run once.
  */
 import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 import os from "node:os";
 import { loadEnvConfig } from "@next/env";
 import QRCode from "qrcode";
+import { voiceConfig } from "@/lib/voice/config";
+import { voiceCommand } from "./voice";
 
 loadEnvConfig(process.cwd());
 const PORT = Number(process.env.PORT ?? 3000);
@@ -38,6 +41,16 @@ async function checkAI() {
     process.exit(1);
   }
   say(`✓ Gloam's brain is ready (${model})`);
+}
+
+/** Voice typing: start whisper.cpp on this laptop (only this computer can reach it), if it's set up */
+async function startVoice() {
+  const up = await fetch(voiceConfig.url, { signal: AbortSignal.timeout(1500) }).then(() => true, () => false);
+  if (up) return say("✓ Voice typing is ready");
+  const cmd = voiceCommand();
+  if ("missing" in cmd) return say("· Voice typing is off (optional: run `npm run voice:setup` once to turn it on)");
+  children.push(spawn(cmd.exe, cmd.args, { cwd: voiceConfig.dir, stdio: "ignore" }));
+  say("✓ Voice typing is starting");
 }
 
 async function qr(url: string) {
@@ -77,6 +90,7 @@ function tunnel(): Promise<string | null> {
 async function main() {
   say("\nProtégé: getting ready for class\n");
   await checkAI();
+  await startVoice();
 
   if (!has("--no-build")) {
     say("… building (about a minute)");

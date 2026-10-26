@@ -48,7 +48,7 @@ export function LogoMark({ tone = "dark", className = "", title }: { tone?: "dar
 /** The full logo: Gloam's face + "protégé" in Gloam's handwriting (Recursive, casual) */
 export function Wordmark({ tone = "dark", className = "", mark = true }: { tone?: "dark" | "light"; className?: string; mark?: boolean }) {
   return (
-    <span className={`voice inline-flex items-center gap-[0.18em] leading-none ${className}`} style={{ ["--casual" as string]: 1, ["--voice-weight" as string]: 800 }} role="img" aria-label="Protégé">
+    <span className={`voice inline-flex items-center gap-[0.18em] leading-none ${className}`} style={{ ["--casual" as string]: 1, ["--voice-weight" as string]: 800 }} role="img" aria-label="Protégé" data-brand>
       {mark && <LogoMark tone={tone} className="h-[1.25em] w-[1.25em] shrink-0 translate-y-[0.04em]" />}
       <span aria-hidden="true">protégé</span>
     </span>

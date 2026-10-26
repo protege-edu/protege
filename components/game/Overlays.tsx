@@ -1,8 +1,10 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
+import { WaysToPlayButton } from "@/components/access/WaysToPlay";
 import { InkButton } from "@/components/ui/InkButton";
+import { Modal } from "@/components/ui/Modal";
 import { Sheet } from "@/components/ui/Sheet";
 import { TrailStrip } from "@/components/ui/TrailStrip";
 import { Wordmark } from "@/components/ui/Logo";
@@ -48,7 +50,7 @@ export function TitleScreen({
   return (
     <motion.div className="absolute inset-0 z-20 flex items-end md:items-center" exit={calm ? undefined : { opacity: 0, transition: { duration: 0.5 } }}>
       {/* darken the left side so the title reads, keep the right side (Gloam) clear */}
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgb(var(--t-scrim)/0.85)_0%,rgb(var(--t-scrim)/0.55)_38%,transparent_65%)] max-md:bg-[linear-gradient(0deg,rgb(var(--t-scrim)/0.92)_0%,rgb(var(--t-scrim)/0.6)_45%,transparent_70%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgb(var(--t-scrim)/calc(0.85_+_var(--scrim-boost)))_0%,rgb(var(--t-scrim)/calc(0.55_+_var(--scrim-boost)))_38%,transparent_65%)] max-md:bg-[linear-gradient(0deg,rgb(var(--t-scrim)/calc(0.92_+_var(--scrim-boost)))_0%,rgb(var(--t-scrim)/calc(0.6_+_var(--scrim-boost)))_45%,transparent_70%)]" />
       <div className="relative w-full px-6 pb-10 md:w-auto md:px-[7vw] md:pb-0">
         <motion.h1 {...rise(0.35)} className="mt-3 text-[4rem] text-ink md:text-[6.5rem]">
           <Wordmark tone={style.look.tone} mark={false} />
@@ -56,7 +58,8 @@ export function TitleScreen({
         <motion.p {...rise(0.5)} className="mt-5 max-w-[24ch] text-lg text-ink">
           {lesson.title}
         </motion.p>
-        <motion.div {...rise(0.7)} className="mt-8 flex flex-wrap items-center gap-3">
+        {/* wraps before it reaches Gloam, even with the biggest text */}
+        <motion.div {...rise(0.7)} className="mt-8 flex max-w-[min(40rem,54vw)] flex-wrap items-center gap-3 max-md:max-w-none">
           {account === "guest" ? (
             <>
               <InkButton ref={cta} size="lg" onClick={() => onGo("/join")}>
@@ -68,6 +71,7 @@ export function TitleScreen({
               <InkButton variant="ghost" onClick={onHelp}>
                 {style.copy.titleHelp}
               </InkButton>
+              <WaysToPlayButton style={style} />
             </>
           ) : (
             <>
@@ -83,6 +87,7 @@ export function TitleScreen({
                   {style.copy.titleHelp}
                 </InkButton>
               )}
+              <WaysToPlayButton style={style} />
             </>
           )}
         </motion.div>
@@ -101,7 +106,7 @@ export function TitleScreen({
 
 export function TopBar({ style, lesson, levels, current, onPause }: { style: AgeStyle; lesson: ClientLesson; levels: Level[]; current: number; onPause: () => void }) {
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-4 bg-[linear-gradient(180deg,rgb(var(--t-scrim)/0.7),transparent)] px-4 pt-3 pb-10 sm:px-6">
+    <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-4 bg-[linear-gradient(180deg,rgb(var(--t-scrim)/calc(0.7_+_var(--scrim-boost))),transparent)] px-4 pt-3 pb-10 sm:px-6">
       <div className="min-w-0">
         <h1 className="truncate text-sm font-bold text-ink">{lesson.title}</h1>
         <TrailStrip style={style} concepts={lesson.concepts} levels={levels} current={Math.min(current, lesson.concepts.length - 1)} />
@@ -113,76 +118,12 @@ export function TopBar({ style, lesson, levels, current, onPause }: { style: Age
   );
 }
 
-/* ---------------- Modal shell (pause, help, log) ---------------- */
-
-function Modal({ onClose, label, children, side = false }: { onClose: () => void; label: string; children: ReactNode; side?: boolean }) {
-  const calm = useCalmMotion();
-  const box = useRef<HTMLDivElement>(null);
-  // give focus back to whatever had it (the notebook) when the panel closes
-  const returnTo = useRef<HTMLElement | null>(typeof document === "undefined" ? null : (document.activeElement as HTMLElement | null));
-  useEffect(() => {
-    const back = returnTo.current;
-    return () => {
-      if (back && document.contains(back)) back.focus({ preventScroll: true });
-    };
-  }, []);
-  useEffect(() => {
-    const first = box.current?.querySelector<HTMLElement>("button, [href], textarea, input");
-    first?.focus();
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-      // keep keyboard focus inside the panel
-      if (e.key === "Tab" && box.current) {
-        const items = [...box.current.querySelectorAll<HTMLElement>("button, [href], textarea, input")];
-        if (!items.length) return;
-        const [a, z] = [items[0], items[items.length - 1]];
-        if (e.shiftKey && document.activeElement === a) {
-          e.preventDefault();
-          z.focus();
-        } else if (!e.shiftKey && document.activeElement === z) {
-          e.preventDefault();
-          a.focus();
-        }
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
-  return (
-    <motion.div
-      className={`fixed inset-0 z-40 flex ${side ? "justify-end" : "items-center justify-center"} bg-[rgb(3_7_5/0.72)]`}
-      initial={calm ? false : { opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={calm ? undefined : { opacity: 0 }}
-      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <motion.div
-        ref={box}
-        role="dialog"
-        aria-modal="true"
-        aria-label={label}
-        initial={calm ? false : side ? { x: 40, opacity: 0 } : { y: 12, opacity: 0 }}
-        animate={{ x: 0, y: 0, opacity: 1 }}
-        exit={calm ? undefined : side ? { x: 40, opacity: 0 } : { y: 8, opacity: 0 }}
-        transition={{ type: "spring", stiffness: 320, damping: 32 }}
-        className={side ? "flex h-full w-full max-w-[460px] flex-col p-3" : "w-[min(420px,calc(100%-32px))]"}
-      >
-        <Sheet seed={label} radius={20} className={side ? "flex min-h-0 flex-1 flex-col" : "p-6"}>
-          {side ? <div className="flex h-[calc(100dvh-24px)] flex-col">{children}</div> : children}
-        </Sheet>
-      </motion.div>
-    </motion.div>
-  );
-}
-
 export function PauseMenu({
   style,
-  sound,
   onResume,
   onHelp,
   onLog,
-  onToggleSound,
+  onAccess,
   onStartOver,
   onTitle,
   titleLabel,
@@ -191,11 +132,11 @@ export function PauseMenu({
   onMap,
 }: {
   style: AgeStyle;
-  sound: boolean;
   onResume: () => void;
   onHelp: () => void;
   onLog: () => void;
-  onToggleSound: () => void;
+  /** Ways to play: voice, read-aloud, text size, contrast, motion, sound */
+  onAccess: () => void;
   onStartOver: () => void;
   onTitle: () => void;
   /** what "back to title" says (a student goes back to their Gloam instead) */
@@ -232,8 +173,8 @@ export function PauseMenu({
         <InkButton variant="ghost" className={row} onClick={onHelp}>
           {style.copy.titleHelp}
         </InkButton>
-        <InkButton variant="ghost" className={row} onClick={onToggleSound} aria-pressed={sound}>
-          {style.copy.sound(sound)}
+        <InkButton variant="ghost" className={row} onClick={onAccess} aria-haspopup="dialog">
+          {style.copy.access.open}
         </InkButton>
         <InkButton variant="ghost" className={row} onClick={onTitle}>
           {titleLabel ?? style.copy.backToTitle}

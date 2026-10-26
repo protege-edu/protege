@@ -10,6 +10,7 @@ import { brightness, type Understanding } from "@/lib/companion/progress";
 import type { SessionState } from "@/lib/companion/session";
 import type { ClientLesson, RecapItem } from "@/lib/lesson/types";
 import { chime, pip } from "@/lib/sound";
+import { setAccess, useAccess } from "@/lib/access/store";
 
 export type Phase = "loading" | "title" | "intro" | "teach" | "ending";
 /** paused: the teacher paused the class (Gloam sleeps until they wake it) */
@@ -22,7 +23,6 @@ export type Entry =
 
 // Each lesson remembers its own session, so switching lessons never resumes the wrong one
 const sessionKey = (lessonId: string) => `protege.session.${lessonId}`;
-const SOUND_KEY = "protege.sound";
 // The browser's practice student (a random id, nickname "Test Pilot"), so Gloam keeps growing across lessons
 const STUDENT_KEY = "protege.student";
 // Story beats appear when the valley reaches these brightness levels
@@ -93,7 +93,8 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle, test = fa
   const [moment, setMoment] = useState<Moment | null>(null);
   const [eurekaTick, setEurekaTick] = useState(0);
   const [flash, setFlash] = useState<string | null>(null);
-  const [sound, setSound] = useState(false);
+  // sound is one of the student's Ways to play (lib/access)
+  const sound = useAccess(style).sound;
   const [finished, setFinished] = useState(false);
   const [recap, setRecap] = useState<RecapItem[] | null>(null);
   const [typingTick, setTypingTick] = useState(0);
@@ -163,7 +164,6 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle, test = fa
     let cancelled = false;
     (async () => {
       await Promise.resolve();
-      setSound(safeStorage(() => localStorage.getItem(SOUND_KEY) === "on", false));
       const healthP = checkHealth();
       const session = await loadSession(lesson.id);
       if (cancelled) return;
@@ -394,12 +394,9 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle, test = fa
   }, [lesson.id, applySession]);
 
   const toggleSound = useCallback(() => {
-    setSound((s) => {
-      safeStorage(() => localStorage.setItem(SOUND_KEY, s ? "off" : "on"), undefined);
-      if (!s) pip();
-      return !s;
-    });
-  }, []);
+    setAccess({ sound: !sound });
+    if (!sound) pip();
+  }, [sound]);
 
   // "still here", for the teacher's live view (only does anything for a student signed in to a class)
   useEffect(() => {

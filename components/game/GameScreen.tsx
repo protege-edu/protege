@@ -6,6 +6,9 @@ import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore
 import { EurekaMoment } from "@/components/scene/EurekaMoment";
 import { getAgeStyle, pickLine } from "@/lib/age-styles";
 import { step } from "@/lib/sound";
+import { adoptAccess, forgetAccount } from "@/lib/access/store";
+import type { AccessPatch } from "@/lib/access/settings";
+import { WaysToPlay } from "@/components/access/WaysToPlay";
 import { useTestMode } from "@/lib/testMode";
 import { TestPanel } from "./TestPanel";
 import { TrailMap } from "./TrailMap";
@@ -17,7 +20,7 @@ import { ChapterCard, LevelUpCard, TravelQuip } from "./JourneyMoments";
 import { Stage, type GloamBox } from "./Stage";
 import { useTeachSession } from "./useTeachSession";
 
-type Overlay = null | "pause" | "help" | "log" | "map";
+type Overlay = null | "pause" | "help" | "log" | "map" | "access";
 
 const WIDE = "(min-width: 56rem)";
 function useWide() {
@@ -36,7 +39,7 @@ function useWide() {
  * The whole game: title → intro → teaching → ending, plus pause, help and the conversation log.
  * Everything visual and every word comes from the lesson's age style.
  */
-export function GameScreen({ lesson, account = "preview" }: { lesson: ClientLesson; account?: Account }) {
+export function GameScreen({ lesson, account = "preview", access = null }: { lesson: ClientLesson; account?: Account; access?: AccessPatch | null }) {
   const router = useRouter();
   const style = getAgeStyle(lesson.ageStyle, lesson.language);
   const test = useTestMode();
@@ -44,6 +47,8 @@ export function GameScreen({ lesson, account = "preview" }: { lesson: ClientLess
   const [dozeTick, setDozeTick] = useState(0);
   const wide = useWide();
   const calm = useCalmMotion();
+  // a signed-in student's Ways to play come from their account; practice and previews keep this device's
+  useEffect(() => (account === "student" ? adoptAccess(access) : forgetAccount()), [account, access]);
   const [overlay, setOverlay] = useState<Overlay>(null);
   const [caption, setCaption] = useState<string | null>(null);
   const [gloamBox, setGloamBox] = useState<GloamBox | null>(null);
@@ -232,11 +237,10 @@ export function GameScreen({ lesson, account = "preview" }: { lesson: ClientLess
           <PauseMenu
             key="pause"
             style={style}
-            sound={s.sound}
             onResume={() => setOverlay(null)}
             onHelp={() => setOverlay("help")}
             onLog={() => setOverlay("log")}
-            onToggleSound={s.toggleSound}
+            onAccess={() => setOverlay("access")}
             onStartOver={() => {
               setOverlay(null);
               void s.startOver();
@@ -251,6 +255,7 @@ export function GameScreen({ lesson, account = "preview" }: { lesson: ClientLess
             onMap={world ? () => setOverlay("map") : undefined}
           />
         )}
+        {overlay === "access" && <WaysToPlay key="access" style={style} onClose={() => setOverlay("pause")} />}
         {overlay === "help" && <HelpDialog key="help" style={style} lesson={lesson} onClose={() => setOverlay(null)} />}
         {overlay === "log" && <LogDrawer key="log" style={style} entries={s.entries} onClose={() => setOverlay(null)} />}
         {overlay === "map" && world && <TrailMap key="map" style={style} world={world} concepts={lesson.concepts} levels={levels} stop={walkLit} onClose={() => setOverlay(null)} />}

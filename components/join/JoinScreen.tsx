@@ -1,5 +1,6 @@
 "use client";
 
+import { WaysToPlayButton } from "@/components/access/WaysToPlay";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -239,7 +240,7 @@ export function JoinScreen({ initialCode, googleFor, guess = "en" }: { initialCo
       </div>
 
       {/* darken where the words are, keep Gloam clear */}
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgb(var(--t-scrim)/0.9)_0%,rgb(var(--t-scrim)/0.7)_40%,transparent_68%)] max-md:bg-[linear-gradient(0deg,rgb(var(--t-scrim)/0.95)_0%,rgb(var(--t-scrim)/0.8)_55%,transparent_75%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgb(var(--t-scrim)/calc(0.9_+_var(--scrim-boost)))_0%,rgb(var(--t-scrim)/calc(0.7_+_var(--scrim-boost)))_40%,transparent_68%)] max-md:bg-[linear-gradient(0deg,rgb(var(--t-scrim)/calc(0.95_+_var(--scrim-boost)))_0%,rgb(var(--t-scrim)/calc(0.8_+_var(--scrim-boost)))_55%,transparent_75%)]" />
 
       <main className="relative flex h-full flex-col justify-end overflow-y-auto px-6 pb-8 md:w-[min(560px,48vw)] md:justify-center md:px-[6vw] md:pb-0">
         <p className="text-2xl text-ink">
@@ -426,6 +427,8 @@ export function JoinScreen({ initialCode, googleFor, guess = "en" }: { initialCo
           </motion.section>
         </AnimatePresence>
       </main>
+
+      <WaysToPlayButton style={style} className="!absolute top-3 right-4 z-10" />
 
       {step.k === "code" && (
         <Link href="/" className="absolute right-4 bottom-4 min-h-11 content-center rounded-md px-3 text-xs font-bold text-ink-dim underline-offset-4 hover:text-ink hover:underline">

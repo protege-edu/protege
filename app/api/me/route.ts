@@ -6,7 +6,8 @@ import { studentHome } from "@/lib/student/home";
 /** The signed-in student's home: their Gloam, their lessons, their journal. ?ping: just "still here" (the teacher's live view) */
 export async function GET(request: Request) {
   const me = await currentStudent();
-  if (new URL(request.url).searchParams.has("ping")) return new Response(null, { status: me ? 204 : 401 });
+  // "still here": counted for a student in a class; anyone else's ping (practice, a teacher's preview) is simply ignored
+  if (new URL(request.url).searchParams.has("ping")) return new Response(null, { status: 204 });
   const home = me && studentHome(me.id);
   if (!home) return Response.json({ error: "You're not signed in to a class on this device." }, { status: 401 });
   return Response.json(home);

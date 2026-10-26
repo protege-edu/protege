@@ -290,6 +290,19 @@ async function main() {
     assert.equal(playedBy(seasons, null).ageStyle, "senior", "practice and teacher previews keep the lesson's own");
     C.deleteClass(k);
   });
+  await test("Ways to play: saved per student, merged, cleaned, and nobody else's change", async () => {
+    const { studentAccess, updateStudentAccess } = await import("@/lib/student/access");
+    const k = C.createClass("Access", 9, a.id);
+    const one = S.createStudent(k, "Calm Heron", ["moon", "owl", "fern"]);
+    const two = S.createStudent(k, "Loud Otter", ["moon", "owl", "fern"]);
+    assert.ok(one.ok && two.ok);
+    assert.equal(studentAccess(one.student.id), null, "starts with the age's defaults");
+    updateStudentAccess(one.student.id, { text: 2 });
+    updateStudentAccess(one.student.id, { contrast: true });
+    assert.deepEqual(studentAccess(one.student.id), { text: 2, contrast: true });
+    assert.equal(studentAccess(two.student.id), null);
+    C.deleteClass(k);
+  });
   await test("deleting a class deletes its students and leaves other classes alone", () => {
     C.deleteClass(classA);
     assert.equal(C.getClass(classA, a.id), null);

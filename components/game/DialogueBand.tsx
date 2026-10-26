@@ -2,12 +2,15 @@
 
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { MicButton } from "@/components/access/MicButton";
 import { POSES } from "@/components/gloam/poses";
 import { InkButton } from "@/components/ui/InkButton";
 import { Sheet } from "@/components/ui/Sheet";
+import { useAccess } from "@/lib/access/store";
 import type { AgeStyle } from "@/lib/age-styles";
 import { canReadAloud, readAloud, stopReading } from "@/lib/speech";
 import { useCalmMotion } from "@/lib/useCalmMotion";
+import { useVoiceReady } from "@/lib/voice/client";
 import type { GloamBox } from "./Stage";
 import { TypedLine } from "./TypedLine";
 import type { TeachSession } from "./useTeachSession";
@@ -24,8 +27,27 @@ function SpeechPanel({ gloam, wide, children, seed }: { gloam: GloamBox | null; 
   const [tailTo, setTailTo] = useState<{ x: number; y: number } | undefined>();
   const mouth = gloam ? { x: gloam.cx + gloam.w * (wide ? 0.4 : 0), y: gloam.top + gloam.h * (wide ? 0.62 : 0.86) } : null;
 
-  // Where the panel goes: beside Gloam's head (wide), or below Gloam (narrow)
-  const place = gloam && wide ? { left: Math.min(gloam.cx + gloam.w * 0.5 + 28, gloam.stageW - 460), top: Math.max(84, gloam.top + gloam.h * 0.12) } : null;
+  // Where the panel goes: beside Gloam's head (wide), or below Gloam (narrow). Long lines or bigger text
+  // make it taller: then it slides up (never under the top bar), so it never runs under the teach box.
+  const [height, setHeight] = useState(0);
+  // the teach box takes about 13.5rem at the bottom (it grows with the student's text size)
+  const rem = typeof window === "undefined" ? 16 : parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+  const floor = gloam ? gloam.stageH - 13.5 * rem : 0;
+  const place =
+    gloam && wide
+      ? {
+          left: Math.min(gloam.cx + gloam.w * 0.5 + 28, gloam.stageW - Math.min(gloam.stageW * 0.4, 600) - 24),
+          top: Math.max(84, Math.min(gloam.top + gloam.h * 0.12, floor - height)),
+          maxHeight: Math.max(160, floor - 84),
+        }
+      : null;
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setHeight(el.offsetHeight));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   // Re-aim the tail whenever Gloam moves, or the panel moves or changes size
   const mx = mouth?.x;
@@ -52,13 +74,14 @@ function SpeechPanel({ gloam, wide, children, seed }: { gloam: GloamBox | null; 
   return (
     <motion.div
       ref={ref}
-      className={place ? "absolute z-20 w-[min(440px,36vw)]" : "relative"}
+      className={place ? "absolute z-20 flex w-[min(28rem,40vw)] flex-col" : "relative"}
       style={place ?? undefined}
       initial={calm ? false : { opacity: 0, scale: 0.96, y: 6 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       transition={{ type: "spring", stiffness: 260, damping: 24 }}
     >
-      <Sheet seed={seed} className="px-5 py-4 sm:px-6" tailTo={tailTo}>
+      {/* only scrolls in an extreme case (the biggest text on a short screen): never hidden */}
+      <Sheet seed={seed} className="flex min-h-0 flex-col px-5 py-4 sm:px-6" bodyClassName="min-h-0 overflow-y-auto" tailTo={tailTo}>
         {children}
       </Sheet>
     </motion.div>
@@ -66,11 +89,12 @@ function SpeechPanel({ gloam, wide, children, seed }: { gloam: GloamBox | null; 
 }
 
 function GloamName({ style, line }: { style: AgeStyle; line?: string }) {
-  // read-aloud, for age styles that need it, and only with a voice that runs on this device
+  // read-aloud, when the student wants it (Ways to play), and only with a voice that runs on this device
   const lang = style.language ?? "en";
+  const wanted = useAccess(style).readAloud !== "off";
   const [voiced, setVoiced] = useState(false);
   useEffect(() => {
-    if (!style.input.readAloud || typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    if (!wanted || typeof window === "undefined" || !("speechSynthesis" in window)) return;
     const check = () => setVoiced(canReadAloud(lang));
     check();
     window.speechSynthesis.addEventListener("voiceschanged", check);
@@ -78,12 +102,12 @@ function GloamName({ style, line }: { style: AgeStyle; line?: string }) {
       window.speechSynthesis.removeEventListener("voiceschanged", check);
       stopReading();
     };
-  }, [style.input.readAloud, lang]);
+  }, [wanted, lang]);
   return (
     // the bubble's tail already shows who's talking, so the name is only for screen readers
-    <span className={voiced && line ? "-mt-1 mb-1 flex justify-end" : "contents"}>
+    <span className={wanted && voiced && line ? "-mt-1 mb-1 flex justify-end" : "contents"}>
       <span className="sr-only">{style.copy.gloamName}: </span>
-      {voiced && line && (
+      {wanted && voiced && line && (
         <button
           type="button"
           onClick={() => readAloud(line, lang)}
@@ -115,13 +139,31 @@ export function DialogueBand({ s, style, gloam, wide, onOpenLog }: { s: TeachSes
   const neverTaught = !s.entries.some((e) => e.kind === "student");
   const canSend = s.status === "ready" && !s.moment;
   const ready = canSend && draft.trim().length > 0;
+  const access = useAccess(style);
+  const lang = style.language ?? "en";
+  const voiceReady = useVoiceReady(lang);
+  const showMic = access.voice && voiceReady === true;
+  // the little kids' mic is big and comes first: talking is their main way in
+  const bigMic = style.id === "little";
+  const heard = (text: string) => {
+    setDraft((d) => (d.trim() ? `${d.trimEnd()} ${text}` : text));
+    input.current?.focus();
+  };
+
+  // "Every line": Gloam's new lines are read aloud by themselves
+  const autoRead = access.readAloud === "auto" && lastGloam?.kind === "gloam" && lastGloam.fresh ? lastGloam : null;
+  useEffect(() => {
+    if (autoRead) readAloud(autoRead.text, lang);
+  }, [autoRead, lang]);
 
   // Grow with the text, up to about 4 lines
   useEffect(() => {
     const el = input.current;
     if (!el) return;
     el.style.height = "auto";
-    el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
+    // about 4 lines, at whatever text size the student picked
+    const line = parseFloat(getComputedStyle(el).lineHeight) || 24;
+    el.style.height = `${Math.min(el.scrollHeight, line * 4 + 20)}px`;
   }, [draft]);
 
   // Put the cursor where the student teaches when the notebook appears
@@ -188,7 +230,7 @@ export function DialogueBand({ s, style, gloam, wide, onOpenLog }: { s: TeachSes
   return (
     <>
       {wide && gloam && <SpeechPanel gloam={gloam} wide seed="speech">{speech}</SpeechPanel>}
-      <div className="absolute inset-x-0 bottom-0 z-20 bg-[linear-gradient(0deg,rgb(var(--t-scrim)/0.92)_0%,rgb(var(--t-scrim)/0.7)_55%,transparent_100%)] pt-10">
+      <div className="absolute inset-x-0 bottom-0 z-20 bg-[linear-gradient(0deg,rgb(var(--t-scrim)/calc(0.92_+_var(--scrim-boost)))_0%,rgb(var(--t-scrim)/calc(0.7_+_var(--scrim-boost)))_55%,transparent_100%)] pt-10">
         <div className="mx-auto flex max-w-[860px] flex-col gap-4 px-4 pb-4 sm:px-8 md:pb-6">
           {!wide && <SpeechPanel gloam={gloam} wide={false} seed="speech-narrow">{speech}</SpeechPanel>}
 
@@ -231,6 +273,7 @@ export function DialogueBand({ s, style, gloam, wide, onOpenLog }: { s: TeachSes
             </label>
             <Sheet seed="notebook" tone="slate" radius={16} className="px-4 py-2.5 focus-within:[--t-line:var(--t-focus)]">
               <div className="flex items-end gap-3">
+                {showMic && bigMic && <MicButton style={style} onText={heard} disabled={!canSend} big />}
                 <textarea
                   id="teach"
                   ref={input}
@@ -255,6 +298,7 @@ export function DialogueBand({ s, style, gloam, wide, onOpenLog }: { s: TeachSes
                   className="min-h-11 flex-1 resize-none bg-transparent py-2.5 text-sm text-ink caret-[var(--t-moon,var(--t-focus))] placeholder:text-ink-dim focus:outline-none"
                   style={{ outline: "none" }}
                 />
+                {showMic && !bigMic && <MicButton style={style} onText={heard} disabled={!canSend} />}
                 <InkButton type="submit" disabled={!ready}>
                   {style.copy.sendButton}
                 </InkButton>
@@ -288,6 +332,13 @@ export function IntroBand({ s, style, steps, gloam, wide }: { s: TeachSession; s
     next.current?.focus({ preventScroll: true });
   }, [i, steps, setEmotion]);
 
+  // "Every line" read-aloud covers the intro too
+  const auto = useAccess(style).readAloud === "auto";
+  const lang = style.language ?? "en";
+  useEffect(() => {
+    if (auto) readAloud(steps[i].text, lang);
+  }, [auto, i, steps, lang]);
+
   const panel = (
     <SpeechPanel gloam={gloam} wide={wide} seed="intro">
       <div aria-live="polite" className="min-h-[4.2em]">
@@ -315,6 +366,6 @@ export function IntroBand({ s, style, steps, gloam, wide }: { s: TeachSession; s
   return wide && gloam ? (
     panel
   ) : (
-    <div className="absolute inset-x-0 bottom-0 z-20 bg-[linear-gradient(0deg,rgb(var(--t-scrim)/0.92)_0%,rgb(var(--t-scrim)/0.7)_55%,transparent_100%)] px-4 pt-10 pb-5">{panel}</div>
+    <div className="absolute inset-x-0 bottom-0 z-20 bg-[linear-gradient(0deg,rgb(var(--t-scrim)/calc(0.92_+_var(--scrim-boost)))_0%,rgb(var(--t-scrim)/calc(0.7_+_var(--scrim-boost)))_55%,transparent_100%)] px-4 pt-10 pb-5">{panel}</div>
   );
 }

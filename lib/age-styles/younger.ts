@@ -1,6 +1,7 @@
 import { juniorGloam } from "./rigs/junior-gloam";
 import { littleGloam } from "./rigs/little-gloam";
 import { middleGloam } from "./rigs/middle-gloam";
+import { accessCopy } from "./access-copy";
 import type { AgeStyle } from "./types";
 import { juniorWorld, littleWorld, middleWorld } from "./worlds";
 
@@ -155,6 +156,7 @@ const storybookCopy = (big: boolean): AgeStyle["copy"] => ({
           welcomeBack: (nick) => `${nick}!! you're back! i totally didn't miss you. (i did.)`,
         },
   },
+  access: accessCopy("en", big ? "big" : "small"),
   home: {
     title: (nick) => `${nick}'s Gloam`,
     level: (level) => `Level ${level}`,

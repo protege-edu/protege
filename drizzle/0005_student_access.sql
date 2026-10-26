@@ -1,0 +1,1 @@
+ALTER TABLE `students` ADD `access` text;

@@ -36,6 +36,13 @@
       "when": 1793030390100,
       "tag": "0004_class_language",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1793055392289,
+      "tag": "0005_student_access",
+      "breakpoints": true
     }
   ]
 }

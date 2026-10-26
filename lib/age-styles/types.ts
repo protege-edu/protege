@@ -71,6 +71,41 @@ export type JoinError =
   | "google_timeout";
 
 /** Joining a class, and coming back (app/join). Gloam talks the student through it. */
+/** "Ways to play" (components/access) and the microphone in the teach box */
+export interface AccessCopy {
+  /** the button that opens the panel, and its title */
+  open: string;
+  title: string;
+  intro: string;
+  voice: string;
+  voiceHint: string;
+  /** neither this device nor the teacher's laptop can turn speech into words */
+  voiceMissing: string;
+  voicePrivate: string;
+  readAloud: string;
+  readAloudChoices: [string, string, string];
+  readAloudMissing: string;
+  text: string;
+  textChoices: [string, string, string];
+  contrast: string;
+  contrastHint: string;
+  reading: string;
+  readingChoices: [string, string, string];
+  calm: string;
+  calmHint: string;
+  /** the device already asks for less motion */
+  calmDevice: string;
+  sound: string;
+  done: string;
+  micStart: string;
+  micStop: string;
+  micListening: string;
+  micWorking: string;
+  micDenied: string;
+  micFailed: string;
+  micEmpty: string;
+}
+
 export interface JoinCopy {
   codeTitle: string;
   codeLabel: string;
@@ -280,6 +315,7 @@ export interface AgeStyle {
     toMyGloam: string;
     join: JoinCopy;
     home: HomeCopy;
+    access: AccessCopy;
   };
 
   look: {

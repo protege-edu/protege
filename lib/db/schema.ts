@@ -64,6 +64,11 @@ export const students = sqliteTable("students", {
   lockedUntil: integer("locked_until", { mode: "timestamp_ms" }),
   /** they've met Gloam (first-time intro done) */
   metGloamAt: integer("met_gloam_at", { mode: "timestamp_ms" }),
+  /**
+   * Their "Ways to play" (lib/access/settings.ts): only what they or their teacher changed; null = their age's defaults.
+   * It can hint at a disability, so it's only ever shown to the student and their own teacher, never in summaries or exports.
+   */
+  access: text("access", { mode: "json" }).$type<Record<string, unknown>>(),
   lastSeenAt: integer("last_seen_at", { mode: "timestamp_ms" }),
   createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
 });

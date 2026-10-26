@@ -104,6 +104,7 @@
   /* the halo behind words drawn straight on the world (r g b): light behind dark words, dark behind light ones */
   --t-glow: 255 250 238;
   --t-voice-font: var(--font-shantell), system-ui, sans-serif;
+  --t-brand-font: var(--font-shantell), system-ui, sans-serif;
 }
 
 /* Each younger age's own paper, matched to its painted world and its orange Gloam (M5) */
@@ -201,6 +202,7 @@
   --t-scrim: 5 10 8;
   --t-glow: 0 0 0;
   --t-voice-font: var(--font-recursive), system-ui, sans-serif;
+  --t-brand-font: var(--font-recursive), system-ui, sans-serif;
 }
 
 /*
@@ -226,6 +228,7 @@
   --t-flame-off: #93a69d;
   --t-warn: #9b2c2c;
   --t-voice-font: var(--font-recursive), system-ui, sans-serif;
+  --t-brand-font: var(--font-recursive), system-ui, sans-serif;
   background: var(--t-bg);
   color: var(--t-ink);
 }
@@ -309,6 +312,66 @@ body {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* ---------- Ways to play (lib/access): set on <html> by the student's settings ---------- */
+
+/* Less motion, even when the device doesn't ask for it */
+html[data-motion="calm"] *,
+html[data-motion="calm"] *::before,
+html[data-motion="calm"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* Bigger text: everything sized in rem grows with it, like zooming in, so layouts keep their shape */
+html[data-text="1"] {
+  font-size: 115%;
+}
+html[data-text="2"] {
+  font-size: 132%;
+}
+
+/* Stronger contrast: near-solid shading behind words on the painted world, full-strength ink, firm lines */
+:root {
+  --scrim-boost: 0;
+}
+html[data-contrast="more"],
+html[data-contrast="more"] [data-age-style],
+html[data-contrast="more"] [data-theme="teacher"] {
+  --scrim-boost: 0.35;
+  --t-ink-dim: var(--t-ink);
+  --t-line: color-mix(in srgb, var(--t-ink) 60%, transparent);
+}
+html[data-contrast="more"] .grain::after {
+  display: none;
+}
+
+/* Easier reading: room between letters, words and lines (WCAG text spacing), or a dyslexia-friendly font */
+html[data-reading="spaced"] body *:not([data-brand], [data-brand] *) {
+  letter-spacing: 0.05em !important;
+  word-spacing: 0.14em !important;
+}
+/* OpenDyslexic is already widely spaced: only a little more room between words */
+html[data-reading="dyslexic"] body *:not([data-brand], [data-brand] *) {
+  word-spacing: 0.08em !important;
+}
+html[data-reading="spaced"] :is(p, li, label, textarea, input, .voice),
+html[data-reading="dyslexic"] :is(p, li, label, textarea, input, .voice) {
+  line-height: 1.6 !important;
+}
+html[data-reading="dyslexic"] {
+  --font-body: var(--font-dyslexic), var(--font-atkinson), system-ui, sans-serif;
+}
+html[data-reading="dyslexic"] [data-age-style],
+html[data-reading="dyslexic"] [data-theme="teacher"] {
+  --t-voice-font: var(--font-dyslexic), var(--font-atkinson), system-ui, sans-serif;
+}
+/* the Protégé wordmark is a logo, not reading: it keeps its own lettering */
+[data-brand] {
+  font-family: var(--t-brand-font, var(--t-voice-font));
 }
 
 /* A tap on a button: a ring of moonlight spreading through the paper */

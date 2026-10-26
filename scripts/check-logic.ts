@@ -18,6 +18,8 @@ import { inLine, queueStats } from "@/lib/ai/queue";
 import { seasons } from "@/lib/lesson/seasons";
 import { blueprintWarnings, checkBlueprint } from "@/lib/teacher/checks";
 import { dropRunningLines, pdfLinesToText } from "@/lib/teacher/pdf-text";
+import { AccessPatch, cleanAccess, defaultAccess } from "@/lib/access/settings";
+import { checkWav, cleanTranscript } from "@/lib/voice/wav";
 
 let passed = 0;
 function test(name: string, fn: () => void) {
@@ -283,6 +285,53 @@ test("reduced motion: no hops or eureka jump", () => {
   let highest = 0;
   for (let i = 0; i < 120; i++) highest = Math.min(highest, b.update(1 / 60, { ...still, calm: true, eurekaTick: i > 10 ? 1 : 0 }).y);
   assert.ok(highest > -0.02, `moved ${highest}`);
+});
+
+console.log("ways to play");
+test("each age starts with its own defaults: read-aloud and the mic for little kids, off for high school", () => {
+  assert.deepEqual([defaultAccess(AGE_STYLES.little).voice, defaultAccess(AGE_STYLES.little).readAloud], [true, "button"]);
+  assert.deepEqual([defaultAccess(AGE_STYLES.senior).voice, defaultAccess(AGE_STYLES.senior).readAloud], [false, "off"]);
+});
+test("saved settings are cleaned: unknown or broken values are dropped, never break a page", () => {
+  assert.deepEqual(cleanAccess({ text: 2, contrast: true, reading: "comic sans", voice: "yes", hack: "<script>" }), { text: 2, contrast: true });
+  assert.deepEqual(cleanAccess(null), {});
+  assert.deepEqual(cleanAccess("text=2"), {});
+});
+test("a settings change can't carry anything extra", () => {
+  assert.ok(AccessPatch.safeParse({ calm: true }).success);
+  assert.ok(!AccessPatch.safeParse({ calm: true, nickname: "x" }).success);
+  assert.ok(!AccessPatch.safeParse({ text: 7 }).success);
+});
+
+console.log("voice typing");
+const wavOf = (seconds: number, rate = 16000, channels = 1) => {
+  const bytes = Math.round(seconds * rate) * 2 * channels;
+  const v = new DataView(new ArrayBuffer(44 + bytes));
+  const tag = (o: number, t: string) => [...t].forEach((c, i) => v.setUint8(o + i, c.charCodeAt(0)));
+  tag(0, "RIFF");
+  tag(8, "WAVE");
+  tag(12, "fmt ");
+  v.setUint16(20, 1, true);
+  v.setUint16(22, channels, true);
+  v.setUint32(24, rate, true);
+  v.setUint16(34, 16, true);
+  tag(36, "data");
+  return v.buffer;
+};
+test("only real 16 kHz mono clips up to a minute reach whisper.cpp", () => {
+  assert.equal(checkWav(wavOf(5)), "ok");
+  assert.equal(checkWav(wavOf(90)), "long");
+  assert.equal(checkWav(wavOf(5, 44100)), "bad");
+  assert.equal(checkWav(wavOf(5, 16000, 2)), "bad");
+  assert.equal(checkWav(new TextEncoder().encode("not a wav at all, just some text pretending").buffer), "bad");
+});
+test("whisper's sound tags aren't words a student said", () => {
+  assert.equal(cleanTranscript(" [BLANK_AUDIO] "), "");
+  assert.equal(cleanTranscript("(music) I think it's the tilt [ Silence ]"), "I think it's the tilt");
+  assert.equal(cleanTranscript(" *coughs* the earth is   tilted  "), "the earth is tilted");
+});
+test("what was said goes through the same safety checks as typing", () => {
+  assert.notEqual(checkSafety(cleanTranscript("you're a f*cking idiot"), hs), "ok");
 });
 
 console.log("français");

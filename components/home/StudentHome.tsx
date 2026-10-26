@@ -3,11 +3,13 @@
 import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { WaysToPlayButton } from "@/components/access/WaysToPlay";
 import { TravelQuip } from "@/components/game/JourneyMoments";
 import { Stage, type GloamBox } from "@/components/game/Stage";
 import { InkButton } from "@/components/ui/InkButton";
 import { Sheet } from "@/components/ui/Sheet";
 import { Wordmark } from "@/components/ui/Logo";
+import { adoptAccess } from "@/lib/access/store";
 import { getAgeStyle, type AgeStyleId } from "@/lib/age-styles";
 import type { StudentHome as Home } from "@/lib/student/home";
 import { useCalmMotion } from "@/lib/useCalmMotion";
@@ -28,6 +30,9 @@ export function StudentHome({ home }: { home: Home }) {
   const [line, setLine] = useState<string | null>(null);
   const level = home.gloam.level;
   const taught = home.journal.reduce((n, j) => n + j.ideas.length, 0);
+
+  // their Ways to play follow them from their account, whatever this Chromebook had before
+  useEffect(() => adoptAccess(home.access), [home.access]);
 
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 768px)");
@@ -77,15 +82,18 @@ export function StudentHome({ home }: { home: Home }) {
           <TravelQuip text={line} gloam={gloamBox} />
         </Stage>
       </div>
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgb(var(--t-scrim)/0.92)_0%,rgb(var(--t-scrim)/0.75)_42%,transparent_66%)] max-md:bg-[linear-gradient(0deg,rgb(var(--t-scrim)/0.96)_0%,rgb(var(--t-scrim)/0.85)_60%,transparent_80%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgb(var(--t-scrim)/calc(0.92_+_var(--scrim-boost)))_0%,rgb(var(--t-scrim)/calc(0.75_+_var(--scrim-boost)))_42%,transparent_66%)] max-md:bg-[linear-gradient(0deg,rgb(var(--t-scrim)/calc(0.96_+_var(--scrim-boost)))_0%,rgb(var(--t-scrim)/calc(0.85_+_var(--scrim-boost)))_60%,transparent_80%)]" />
 
       <header className="absolute inset-x-0 top-0 z-10 flex items-center justify-between px-5 py-3 md:px-[5vw]">
         <span className="text-lg text-ink">
           <Wordmark tone={style.look.tone} mark={false} />
         </span>
-        <InkButton variant="ghost" onClick={() => void signOut()}>
-          {t.signOut}
-        </InkButton>
+        <span className="flex items-center gap-1">
+          <WaysToPlayButton style={style} />
+          <InkButton variant="ghost" onClick={() => void signOut()}>
+            {t.signOut}
+          </InkButton>
+        </span>
       </header>
 
       <main className="relative flex h-full flex-col justify-end overflow-y-auto px-5 pt-20 pb-6 md:w-[min(620px,52vw)] md:justify-center md:px-[5vw] md:pb-0">

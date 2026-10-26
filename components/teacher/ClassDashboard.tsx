@@ -3,6 +3,7 @@
 import { AnimatePresence } from "motion/react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { Access } from "@/lib/access/settings";
 import { styleForGrade } from "@/lib/age-styles";
 import { keySize } from "@/lib/student/pictures";
 import { Sheet } from "@/components/ui/Sheet";
@@ -248,12 +249,18 @@ function Transcript({
   onRemoved: () => void;
 }) {
   const [msgs, setMsgs] = useState<{ from: string; text: string }[] | null>(null);
+  const [access, setAccessState] = useState<Access | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [confirmRemove, setConfirmRemove] = useState(false);
   const base = `/api/teacher/classes/${classId}/students/${student.id}`;
   const resetKey = async () => {
     const res = await api(base, json("POST", { resetKey: true }));
     setNote(res.ok ? `Done. Next time ${student.nickname} signs in, they pick new pictures. Best done while they're with you.` : res.error);
+  };
+  const changeAccess = async (patch: Partial<Access>) => {
+    setAccessState((a) => (a ? { ...a, ...patch } : a));
+    const res = await api(base, json("POST", { access: patch }));
+    setNote(res.ok ? `Saved. ${student.nickname} sees it the next time a page loads.` : res.error);
   };
   const remove = async () => {
     const res = await api(base, { method: "DELETE" });
@@ -265,7 +272,10 @@ function Transcript({
     close.current?.focus();
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);
-    void api<{ messages: { from: string; text: string }[] }>(`/api/teacher/classes/${classId}/students/${student.id}?lesson=${encodeURIComponent(lessonId)}`).then((r) => setMsgs(r.ok ? r.data.messages : []));
+    void api<{ messages: { from: string; text: string }[]; access: Access }>(`/api/teacher/classes/${classId}/students/${student.id}?lesson=${encodeURIComponent(lessonId)}`).then((r) => {
+      setMsgs(r.ok ? r.data.messages : []);
+      if (r.ok) setAccessState(r.data.access);
+    });
     return () => window.removeEventListener("keydown", onKey);
   }, [classId, lessonId, student.id, onClose]);
 
@@ -307,6 +317,7 @@ function Transcript({
             </p>
           )}
         </div>
+        {access && <AccessSettings nickname={student.nickname} access={access} onChange={(p) => void changeAccess(p)} />}
         <ol className="flex-1 space-y-3 overflow-y-auto px-5 py-5">
           {msgs === null && <li className="text-sm text-ink-dim">Loading…</li>}
           {msgs?.length === 0 && <li className="text-sm text-ink-dim">No conversation yet.</li>}
@@ -485,5 +496,62 @@ function GiveLesson({ classId, onDone }: { classId: string; onDone: () => void }
       </select>
       <Button onClick={() => void give()}>Give to class</Button>
     </span>
+  );
+}
+
+/**
+ * A student's Ways to play, for an accommodation (from their plan, or because they asked). They can still
+ * change these themselves. Only this teacher sees them here: never in summaries, the spreadsheet or exports.
+ */
+function AccessSettings({ nickname, access, onChange }: { nickname: string; access: Access; onChange: (patch: Partial<Access>) => void }) {
+  const box = "h-5 w-5 accent-[var(--t-accent)]";
+  const select = "min-h-11 rounded-md border border-line bg-bg px-2 font-normal";
+  return (
+    <details className="border-b border-line px-5 py-3 text-sm">
+      <summary className="min-h-11 cursor-pointer content-center font-bold text-ink">Ways to play for {nickname}</summary>
+      <p className="mt-1 text-xs text-ink-dim">Switch on what helps (for example from a student&apos;s learning plan). {nickname} can change these too. Nobody else sees them.</p>
+      <div className="mt-3 grid gap-x-6 gap-y-2 sm:grid-cols-2">
+        <label className="flex min-h-11 items-center gap-2 text-ink">
+          <input type="checkbox" className={box} checked={access.voice} onChange={(e) => onChange({ voice: e.target.checked })} />
+          Talk instead of typing
+        </label>
+        <label className="flex min-h-11 items-center gap-2 text-ink">
+          <input type="checkbox" className={box} checked={access.contrast} onChange={(e) => onChange({ contrast: e.target.checked })} />
+          Stronger contrast
+        </label>
+        <label className="flex min-h-11 items-center gap-2 text-ink">
+          <input type="checkbox" className={box} checked={access.calm} onChange={(e) => onChange({ calm: e.target.checked })} />
+          Less motion
+        </label>
+        <label className="flex min-h-11 items-center gap-2 text-ink">
+          <input type="checkbox" className={box} checked={access.sound} onChange={(e) => onChange({ sound: e.target.checked })} />
+          Sound effects
+        </label>
+        <label className="flex items-center justify-between gap-2 font-bold text-ink">
+          Read aloud
+          <select className={select} value={access.readAloud} onChange={(e) => onChange({ readAloud: e.target.value as Access["readAloud"] })}>
+            <option value="off">Off</option>
+            <option value="button">With a button</option>
+            <option value="auto">Every line</option>
+          </select>
+        </label>
+        <label className="flex items-center justify-between gap-2 font-bold text-ink">
+          Text size
+          <select className={select} value={access.text} onChange={(e) => onChange({ text: Number(e.target.value) as Access["text"] })}>
+            <option value={0}>Normal</option>
+            <option value={1}>Bigger</option>
+            <option value={2}>Biggest</option>
+          </select>
+        </label>
+        <label className="flex items-center justify-between gap-2 font-bold text-ink sm:col-span-2">
+          Easier reading
+          <select className={select} value={access.reading} onChange={(e) => onChange({ reading: e.target.value as Access["reading"] })}>
+            <option value="normal">Normal</option>
+            <option value="spaced">More space</option>
+            <option value="dyslexic">Dyslexia-friendly font</option>
+          </select>
+        </label>
+      </div>
+    </details>
   );
 }

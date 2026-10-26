@@ -14,6 +14,7 @@ export function Sheet({
   tone = "night",
   radius = 18,
   className = "",
+  bodyClassName = "",
   style,
   tailTo,
 }: {
@@ -22,6 +23,8 @@ export function Sheet({
   tone?: "night" | "slate" | "day";
   radius?: number;
   className?: string;
+  /** classes for the box the children sit in (e.g. "min-h-0 overflow-y-auto" to let a tall panel scroll) */
+  bodyClassName?: string;
   style?: CSSProperties;
   /** A speech tail from the panel's edge to this point (px, relative to the panel's top-left) */
   tailTo?: { x: number; y: number };
@@ -47,7 +50,7 @@ export function Sheet({
   return (
     <div ref={box} className={`grain relative ${className}`} style={style}>
       <Cut w={w} h={h} seed={seed} radius={radius} wobble={1.6} fill={fill} stroke="var(--t-line)" strokeWidth={1.5} depth={6} depthFill="rgb(0 0 0 / 0.35)" extra={extra} />
-      <div className="relative z-[2]">{children}</div>
+      <div className={`relative z-[2] ${bodyClassName}`}>{children}</div>
     </div>
   );
 }

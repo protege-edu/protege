@@ -1,3 +1,4 @@
+import { accessCopy } from "./access-copy";
 import type { AgeStyle } from "./types";
 
 /**
@@ -249,6 +250,7 @@ export const frSenior: FrenchStyle = {
         welcomeBack: (nick) => `${nick.toLowerCase()}. t'es revenu. je suis pas ému. du tout.`,
       },
     },
+    access: accessCopy("fr", "senior"),
     home: {
       title: (nick) => `Le Gloam de ${nick}`,
       level: (level) => `Niveau ${level}`,
@@ -473,6 +475,7 @@ export function frStorybook(big: boolean): FrenchStyle {
               welcomeBack: (nick) => `${nick}!! t'es revenu! tu m'as pas manqué du tout. (oui.)`,
             },
       },
+      access: accessCopy("fr", big ? "big" : "small"),
       home: {
         title: (nick) => `Le Gloam de ${nick}`,
         level: (level) => `Niveau ${level}`,

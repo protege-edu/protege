@@ -1,4 +1,5 @@
 import { seniorGloam } from "./rigs/senior-gloam";
+import { accessCopy } from "./access-copy";
 import type { AgeStyle } from "./types";
 
 /**
@@ -254,6 +255,7 @@ export const senior: AgeStyle = {
         welcomeBack: (nick) => `${nick.toLowerCase()}. you came back. i'm not emotional about it.`,
       },
     },
+    access: accessCopy("en", "senior"),
     home: {
       title: (nick) => `${nick}'s Gloam`,
       level: (level) => `Level ${level}`,
