@@ -3,7 +3,8 @@ import { randomUUID } from "node:crypto";
 import { desc, eq, inArray, isNull, or } from "drizzle-orm";
 import { DraftFailed, draftBlueprint } from "@/lib/ai/blueprint";
 import { db } from "@/lib/db/client";
-import { classLessons, conceptEvents, lessons, messages, teachSessions } from "@/lib/db/schema";
+import { classLessons, classes, conceptEvents, lessons, messages, students, teachSessions } from "@/lib/db/schema";
+import { styleForGrade } from "@/lib/age-styles";
 import { BUILT_IN } from "@/lib/lesson";
 import type { LessonBlueprint } from "@/lib/lesson/types";
 import { checkBlueprint } from "./checks";
@@ -56,6 +57,16 @@ export function getApprovedLesson(id: string): LessonBlueprint | null {
   return { ...row.blueprint, id: row.id };
 }
 
+/**
+ * The lesson as this student plays it. In a class, Gloam, its world and its wording follow the CLASS's
+ * grade (the teacher set it for who the students are), whatever grade the lesson was drafted for.
+ */
+export function playedBy(lesson: LessonBlueprint, studentId: string | null | undefined): LessonBlueprint {
+  if (!studentId) return lesson;
+  const c = db.select({ grade: classes.grade }).from(students).innerJoin(classes, eq(students.classId, classes.id)).where(eq(students.id, studentId)).get();
+  return c ? { ...lesson, ageStyle: styleForGrade(c.grade).id } : lesson;
+}
+
 /** Start drafting. Returns right away; the AI works in the background (a few minutes on a laptop). */
 export function startDraft(opts: { source: string; sourceName: string; grade: number; titleHint?: string; teacherId: string }): string {
   const id = randomUUID();
@@ -105,8 +116,9 @@ export function retryDraft(id: string) {
 
 /** Save the teacher's edits. Editing an approved lesson sends it back to draft until re-approved. */
 export function saveBlueprint(id: string, blueprint: LessonBlueprint) {
+  // the grade picks the age style (never trusted from the page)
   db.update(lessons)
-    .set({ blueprint: { ...blueprint, id }, title: blueprint.title, grade: blueprint.grade, status: "draft", approvedAt: null, updatedAt: new Date() })
+    .set({ blueprint: { ...blueprint, id, ageStyle: styleForGrade(blueprint.grade).id }, title: blueprint.title, grade: blueprint.grade, status: "draft", approvedAt: null, updatedAt: new Date() })
     .where(eq(lessons.id, id))
     .run();
 }

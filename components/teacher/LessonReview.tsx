@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { TEST_MODE_POSSIBLE } from "@/lib/testMode";
 import { useCallback, useEffect, useState } from "react";
+import { styleForGrade } from "@/lib/age-styles";
 import type { LessonBlueprint } from "@/lib/lesson/types";
 import { Button, Shell, StatusPill, api, gradeLabel, json } from "./kit";
 
@@ -42,6 +43,8 @@ export function LessonReview({ id }: { id: string }) {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  // the grade was changed on this visit: Gloam's lines below still sound like the old grade
+  const [regraded, setRegraded] = useState(false);
 
   const load = useCallback(async () => {
     const res = await api<Row>(`/api/teacher/lessons/${id}`);
@@ -111,6 +114,13 @@ export function LessonReview({ id }: { id: string }) {
     void load();
   };
 
+  // save the new grade, then draft again from the same notes so every line fits it
+  const rewrite = async () => {
+    if (dirty && !(await save())) return;
+    setRegraded(false);
+    await retry();
+  };
+
   const readOnly = row?.builtIn ?? false;
   const problemsFor = (cid?: string) => row?.problems.filter((p) => p.conceptId === cid) ?? [];
   const notesFor = (cid?: string) => bp?.reviewNotes?.filter((n) => n.conceptId === cid) ?? [];
@@ -164,12 +174,46 @@ export function LessonReview({ id }: { id: string }) {
                 readOnly={readOnly}
                 onKeyDown={noNewLines}
                 onChange={(e) => edit((b) => void (b.title = e.target.value))}
-                className="block w-full resize-none rounded-md bg-transparent text-xl font-bold text-ink [field-sizing:content] focus:bg-panel focus:outline-none"
+                className="block w-full resize-none rounded-md bg-transparent text-xl font-bold text-ink [field-sizing:content] supports-[field-sizing:content]:overflow-hidden focus:bg-panel focus:outline-none"
               />
               <p className="mt-1 text-sm text-ink-dim">
-                {gradeLabel(bp.grade)}. Gloam talks like it&apos;s in {bp.ageStyle === "senior" ? "high school" : bp.ageStyle === "middle" ? "middle school" : "elementary school"}.
-                {row.sourceName ? ` From ${row.sourceName}.` : ""}
+                Gloam talks like it&apos;s in {bp.ageStyle === "senior" ? "high school" : bp.ageStyle === "middle" ? "middle school" : "elementary school"}.
+                {row.sourceName ? ` From ${row.sourceName}.` : ""} In a class, Gloam matches the class&apos;s grade.
               </p>
+              <label className="mt-2 flex items-center gap-2 text-sm font-bold text-ink">
+                Grade
+                <select
+                  value={bp.grade}
+                  disabled={readOnly}
+                  onChange={(e) => {
+                    const g = Number(e.target.value);
+                    edit((b) => {
+                      b.grade = g;
+                      b.ageStyle = styleForGrade(g).id;
+                    });
+                    setRegraded(true);
+                  }}
+                  className="min-h-11 rounded-md border border-line bg-panel px-3 font-normal"
+                >
+                  {Array.from({ length: 13 }, (_, g) => (
+                    <option key={g} value={g}>
+                      {gradeLabel(g)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {regraded && !readOnly && (
+                <p role="status" className="mt-2 max-w-[68ch] rounded-md border border-dashed border-line bg-panel px-4 py-3 text-sm text-ink">
+                  Gloam&apos;s lines below were written for the old grade.{" "}
+                  {row.hasSource ? "Rewrite them so they fit, or save and edit them yourself." : "Edit them so they fit, then save."}
+                  {row.hasSource && (
+                    <span className="mt-2 flex flex-wrap gap-2">
+                      <Button onClick={rewrite}>Rewrite for {gradeLabel(bp.grade)}</Button>
+                    </span>
+                  )}
+                  {row.hasSource && <span className="mt-1 block text-xs text-ink-dim">Rewriting takes a few minutes and replaces your edits to this lesson.</span>}
+                </p>
+              )}
               <label className="mt-2 flex items-center gap-2 text-sm font-bold text-ink">
                 Students explain in
                 <select
@@ -246,7 +290,7 @@ export function LessonReview({ id }: { id: string }) {
                     readOnly={readOnly}
                     onKeyDown={noNewLines}
                     onChange={(e) => edit((b) => void (b.concepts[ci].name = e.target.value))}
-                    className="max-w-full resize-none rounded-md bg-transparent align-top [field-sizing:content] focus:bg-panel focus:outline-none"
+                    className="max-w-full resize-none rounded-md bg-transparent align-top [field-sizing:content] supports-[field-sizing:content]:overflow-hidden focus:bg-panel focus:outline-none"
                   />
                 </h2>
                 {!readOnly && bp.concepts.length > 2 && (

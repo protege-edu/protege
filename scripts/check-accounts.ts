@@ -33,7 +33,7 @@ async function main() {
   const T = await import("@/lib/teacher/auth");
   const C = await import("@/lib/teacher/classes");
   const S = await import("@/lib/student/auth");
-  const { canSee, listLessons } = await import("@/lib/teacher/lessons");
+  const { canSee, getApprovedLesson, listLessons, playedBy } = await import("@/lib/teacher/lessons");
   const { eq } = await import("drizzle-orm");
 
   console.log("secrets");
@@ -272,7 +272,7 @@ async function main() {
     assert.ok(csv.includes("'=cmd Fox"), "a formula-looking nickname is defused");
     assert.ok(csv.includes('"Moss, ""Otter"""'), "commas and quotes are quoted");
   });
-  await test("changing a class's grade keeps keys, unless the key size changes", () => {
+  await test("changing a class's grade: keys stay unless their size changes, and lessons follow the class", () => {
     const k = C.createClass("Grade 2 to 3", 2, a.id);
     const kid = S.createStudent(k, "Quiet Comet", ["moon", "owl"]);
     assert.ok(kid.ok);
@@ -282,6 +282,12 @@ async function main() {
     assert.equal(S.classPreview(k)?.keySize, 3);
     assert.ok(S.classPreview(k)?.nicknames.find((n) => n.nickname === "Quiet Comet")?.needsNewKey);
     assert.ok(S.checkKey(k, kid.student.id, ["moon", "owl", "fern"]).ok, "their new key is set when they next join");
+    const seasons = getApprovedLesson("seasons")!;
+    assert.equal(seasons.ageStyle, "senior");
+    assert.equal(playedBy(seasons, kid.student.id).ageStyle, "junior", "a grade 3 class meets the grade 3-5 Gloam, even in a high school lesson");
+    C.setClassGrade(k, 1);
+    assert.equal(playedBy(seasons, kid.student.id).ageStyle, "little");
+    assert.equal(playedBy(seasons, null).ageStyle, "senior", "practice and teacher previews keep the lesson's own");
     C.deleteClass(k);
   });
   await test("deleting a class deletes its students and leaves other classes alone", () => {

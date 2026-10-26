@@ -5,7 +5,7 @@ import { clientIp, forbidden, limit, sameOrigin, tooMany } from "@/lib/auth/requ
 import { getSession, recordTurn } from "@/lib/companion/session";
 import { classPaused, maySeeStudent } from "@/lib/student/auth";
 import { lessonRecap } from "@/lib/lesson";
-import { getApprovedLesson } from "@/lib/teacher/lessons";
+import { getApprovedLesson, playedBy } from "@/lib/teacher/lessons";
 
 const Body = z.object({
   sessionId: z.string().min(1),
@@ -39,7 +39,8 @@ export async function POST(request: Request) {
   // the teacher paused the class: Gloam sleeps (the message isn't lost; the student sends it again later)
   if (classPaused(session.studentId)) return Response.json({ error: "Your teacher paused the class." }, { status: 423 });
 
-  const lesson = getApprovedLesson(session.lessonId);
+  const approved = getApprovedLesson(session.lessonId);
+  const lesson = approved && playedBy(approved, session.studentId);
   if (!lesson) {
     return Response.json({ error: "This lesson isn't available right now. Ask your teacher to check it's approved." }, { status: 404 });
   }

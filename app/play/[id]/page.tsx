@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { GameScreen } from "@/components/game/GameScreen";
 import { toClientLesson } from "@/lib/lesson";
 import { currentStudent } from "@/lib/student/auth";
-import { getApprovedLesson } from "@/lib/teacher/lessons";
+import { getApprovedLesson, playedBy } from "@/lib/teacher/lessons";
 
 /**
  * Play any APPROVED lesson. A signed-in student plays it as themselves (their class's lesson, their own
@@ -20,10 +20,11 @@ export default function Page({ params }: PageProps<"/play/[id]">) {
 
 async function Lesson({ params }: { params: PageProps<"/play/[id]">["params"] }) {
   const { id } = await params;
-  const lesson = getApprovedLesson(decodeURIComponent(id));
-  if (!lesson) notFound();
+  const approved = getApprovedLesson(decodeURIComponent(id));
+  if (!approved) notFound();
   await connection();
   const me = await currentStudent();
+  const lesson = playedBy(approved, me?.id);
   return (
     <div data-age-style={lesson.ageStyle}>
       <GameScreen lesson={toClientLesson(lesson)} account={me ? "student" : "preview"} />
