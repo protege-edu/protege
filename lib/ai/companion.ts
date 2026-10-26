@@ -54,7 +54,7 @@ export interface TurnOutput extends JudgedEvent {
  */
 export async function runTurn(input: TurnInput, hooks: { onJudged?: (e: JudgedEvent) => void } = {}): Promise<TurnOutput> {
   const { lesson, understanding, history, message } = input;
-  const style = getAgeStyle(lesson.ageStyle);
+  const style = getAgeStyle(lesson.ageStyle, lesson.language);
   const start = Date.now();
   const gloamSaid = history.filter((m) => m.from === "gloam").map((m) => m.text);
   const done = (o: Omit<TurnOutput, "ms">): TurnOutput => ({ ...o, ms: Date.now() - start });

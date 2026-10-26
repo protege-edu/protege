@@ -15,6 +15,7 @@ export function toClientLesson(lesson: LessonBlueprint): ClientLesson {
   return {
     id: lesson.id,
     ageStyle: lesson.ageStyle,
+    language: lesson.language ?? "en",
     topic: lesson.topic,
     subject: lesson.subject,
     title: lesson.title,

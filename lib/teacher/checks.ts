@@ -30,7 +30,7 @@ export function checkBlueprint(bp: LessonBlueprint): BlueprintProblem[] {
   const openerLeak = findGiveaway(bp, nothing, bp.opener, "");
   if (openerLeak) out.push({ field: "opener", message: `Gloam's first line gives away "${openerLeak}" before anyone teaches it.` });
   if (bp.storyBeats.length !== 5) out.push({ field: "storyBeats", message: "There should be 5 story beats, from dark to fully lit." });
-  const style = getAgeStyle(bp.ageStyle);
+  const style = getAgeStyle(bp.ageStyle, bp.language);
   if (checkSafety(bp.opener, style) !== "ok") out.push({ field: "opener", message: "Gloam's first line has words that aren't right for school. Please rewrite it." });
   if (checkSafety(bp.finale, style) !== "ok") out.push({ field: "finale", message: "Gloam's last line has words that aren't right for school. Please rewrite it." });
   bp.storyBeats.forEach((b, i) => {
@@ -62,7 +62,7 @@ export function checkConcept(c: Concept, bp: LessonBlueprint, nothing: Record<st
   });
 
   // Everything Gloam says has to be school-appropriate (the same filter students' messages go through)
-  const style = getAgeStyle(bp.ageStyle);
+  const style = getAgeStyle(bp.ageStyle, bp.language);
   c.beliefs.forEach((b, i) => {
     if (checkSafety(b, style) !== "ok") at(`beliefs.${i}`, `One of Gloam's lines for "${c.name}" has words that aren't right for school. Please rewrite it.`);
   });

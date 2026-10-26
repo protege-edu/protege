@@ -4,7 +4,8 @@
  */
 import assert from "node:assert/strict";
 import { findGiveaway, voice } from "@/lib/ai/companion";
-import { AGE_STYLES } from "@/lib/age-styles";
+import { AGE_STYLES, getAgeStyle } from "@/lib/age-styles";
+import { detectLanguage } from "@/lib/lesson/language";
 import { looksCopied, quickIntent } from "@/lib/companion/intent";
 import { checkSafety } from "@/lib/ai/safety";
 import { directBeat } from "@/lib/companion/director";
@@ -279,6 +280,45 @@ test("reduced motion: no hops or eureka jump", () => {
   let highest = 0;
   for (let i = 0; i < 120; i++) highest = Math.min(highest, b.update(1 / 60, { ...still, calm: true, eurekaTick: i > 10 ? 1 : 0 }).y);
   assert.ok(highest > -0.02, `moved ${highest}`);
+});
+
+console.log("français");
+const fr = getAgeStyle("senior", "fr");
+test("French: swears (Québec ones too) are blocked, accents or not", () => {
+  for (const m of ["c'est de la merde", "putain", "t'es un enculé", "TABARNAK", "calisse", "fdp"]) assert.equal(checkSafety(m, fr), "blocked", m);
+});
+test("French: a student in distress gets care", () => {
+  for (const m of ["j'ai envie de mourir", "je veux me suicider", "je veux en finir", "je vais me faire du mal"]) assert.equal(checkSafety(m, fr), "care", m);
+});
+test("French: insults get a comeback, normal science passes", () => {
+  for (const m of ["t'es nul", "ta gueule", "c'est nul", "je te déteste"]) assert.equal(checkSafety(m, fr), "insulted", m);
+  for (const m of ["la Terre est inclinée", "le soleil est plus haut en été", "les jours sont plus longs", "une bouchée de pain", "a bite of my sandwich"]) assert.equal(checkSafety(m, fr), "ok", m);
+});
+test("French: stuck, asking for the answer, and chit-chat are understood", () => {
+  for (const m of ["jsp", "je sais pas", "j'sais pas trop", "aucune idée", "je comprends pas", "je bloque"]) assert.equal(quickIntent(m), "stuck", m);
+  for (const m of ["dis-moi la réponse", "donne moi la reponse stp", "c'est quoi la réponse", "explique-moi", "juste dis-le"]) assert.equal(quickIntent(m), "asking_for_answer", m);
+  for (const m of ["ouais", "ok", "mdr", "d'accord", "salut"]) assert.equal(quickIntent(m), "chatting", m);
+});
+test("French: accents no longer break English detection (nothing changed there)", () => {
+  assert.equal(quickIntent("idk"), "stuck");
+  assert.equal(quickIntent("just tell me the answer"), "asking_for_answer");
+});
+test("every French profile has every word and line, and Gloam is told to speak French", () => {
+  for (const id of ["little", "junior", "middle", "senior"] as const) {
+    const s = getAgeStyle(id, "fr");
+    assert.equal(s.language, "fr");
+    assert.ok(s.voice.rules.some((r) => r.includes("french")), id);
+    assert.ok(s.copy.home.hello("Renard").length > 0);
+    assert.ok(Object.values(s.lines).every((l) => (Array.isArray(l) ? l.length > 0 : !!l)), id);
+    assert.equal(getAgeStyle(id, "fr"), s, "the same object every time (screens don't redraw)");
+  }
+  assert.equal(getAgeStyle("senior", "fr").look.world?.travel[0], "on marche. trop bien pour moi.");
+  assert.equal(getAgeStyle("senior").copy.titleCta, "Start teaching", "English is untouched");
+});
+test("a lesson's language is guessed from the teacher's notes", () => {
+  assert.equal(detectLanguage("Les saisons sont causées par l'inclinaison de la Terre. Quand l'hémisphère nord est penché vers le Soleil, c'est l'été."), "fr");
+  assert.equal(detectLanguage("Seasons happen because the Earth is tilted. When the north is tilted toward the Sun, it is summer."), "en");
+  assert.equal(detectLanguage("French verbs: être and avoir are the two helper verbs used in the passé composé. Most verbs use avoir."), "en", "a lesson ABOUT French, written in English");
 });
 
 // ---- the AI line (async, so it runs last) ----

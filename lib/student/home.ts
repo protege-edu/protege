@@ -11,6 +11,7 @@ export interface StudentHome {
   nickname: string;
   className: string;
   ageStyle: string;
+  language: "en" | "fr";
   metGloam: boolean;
   paused: boolean;
   gloam: GloamLevel & { tricks: TrickName[]; lessonsFinished: number };
@@ -49,6 +50,7 @@ export function studentHome(studentId: string): StudentHome | null {
     nickname: s.nickname,
     className: c.name,
     ageStyle: styleForGrade(c.grade).id,
+    language: c.language === "fr" ? "fr" : "en",
     metGloam: !!s.metGloamAt,
     paused: !!c.pausedAt,
     gloam: { ...level, tricks: TRICKS.filter((t) => level.level >= t.level).map((t) => t.name), lessonsFinished: g?.lessons ?? 0 },

@@ -18,7 +18,7 @@ import { useCalmMotion } from "@/lib/useCalmMotion";
  * the lessons their teacher gave them, and Gloam's journal of every idea they've taught it, all year.
  */
 export function StudentHome({ home }: { home: Home }) {
-  const style = getAgeStyle(home.ageStyle as AgeStyleId);
+  const style = getAgeStyle(home.ageStyle as AgeStyleId, home.language);
   const t = style.copy.home;
   const calm = useCalmMotion();
   const router = useRouter();
@@ -177,7 +177,7 @@ function Wicks({ lit, total }: { lit: number; total: number }) {
 
 /** Gloam's journal: every idea this student has taught it, newest lesson first, in the blueprint's own words */
 function Journal({ home, onClose }: { home: Home; onClose: () => void }) {
-  const style = getAgeStyle(home.ageStyle as AgeStyleId);
+  const style = getAgeStyle(home.ageStyle as AgeStyleId, home.language);
   const t = style.copy.home;
   const calm = useCalmMotion();
   const close = useRef<HTMLButtonElement>(null);

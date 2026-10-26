@@ -127,6 +127,7 @@ LET'S BUILD SOMETHING INSANE.
 - Phase 1 isn't done until real people (me and friends) have play-tested it.
 - Accounts: teachers use email + password (or Google). Students join with a class code + nickname + secret picture key (2 pictures for K–2, 3 after). A teacher can switch on "Continue with Google" for a class; then Protégé asks Google ONLY for "openid" and stores ONLY a keyed hash of the Google account id (no name, email or photo), and the student still picks a nickname. This keeps Rule 3.
 - Hosting: Protégé and Ollama run on the teacher's laptop; students reach it through a free tunnel (Tailscale Funnel or Cloudflare). Hosting settings stay in one place so a move (e.g. Vercel) later is contained.
+- Languages: English and French. A lesson's language (guessed from the notes, teacher can change it) is what students explain in and Gloam speaks; a class's language is for the screens around lessons. Every word comes from the age style in that language (lib/age-styles/fr.ts); nothing on a student screen is hard-coded.
 - Teacher sign-up is closed by default: the first account needs the setup code Protégé prints in its terminal; later teachers need a one-use invite from a signed-in teacher.
 
 ## AGE STYLES (Protégé is for every grade, K–12)

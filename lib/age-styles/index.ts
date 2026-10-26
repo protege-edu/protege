@@ -1,8 +1,10 @@
+import { frSenior, frStorybook, type FrenchStyle } from "./fr";
 import { senior } from "./senior";
-import type { AgeStyle, AgeStyleId, Line } from "./types";
+import type { AgeStyle, AgeStyleId, Language, Line } from "./types";
 import { junior, little, middle } from "./younger";
 
-export type { AgeStyle, AgeStyleId } from "./types";
+export type { AgeStyle, AgeStyleId, Language } from "./types";
+export { LANGUAGES } from "./types";
 
 export const AGE_STYLES: Record<AgeStyleId, AgeStyle> = { little, junior, middle, senior };
 
@@ -11,8 +13,29 @@ export function styleForGrade(grade: number): AgeStyle {
   return Object.values(AGE_STYLES).find((s) => grade >= s.grades[0] && grade <= s.grades[1]) ?? senior;
 }
 
-export function getAgeStyle(id: string | undefined): AgeStyle {
-  return AGE_STYLES[id as AgeStyleId] ?? senior;
+const FRENCH: Record<AgeStyleId, FrenchStyle> = { senior: frSenior, little: frStorybook(true), junior: frStorybook(true), middle: frStorybook(false) };
+// one object per style and language, so screens that depend on it don't redraw for nothing
+const translated = new Map<string, AgeStyle>();
+
+/** An age style, speaking a language: the same Gloam, the same look, every word and line in that language */
+export function getAgeStyle(id: string | undefined, language: Language | string = "en"): AgeStyle {
+  const base = AGE_STYLES[id as AgeStyleId] ?? senior;
+  if (language !== "fr") return base;
+  const key = `${base.id}:fr`;
+  const hit = translated.get(key);
+  if (hit) return hit;
+  const fr = FRENCH[base.id];
+  const world = base.look.world && fr.travel ? { ...base.look.world, travel: fr.travel } : base.look.world;
+  const style: AgeStyle = {
+    ...base,
+    language: "fr",
+    copy: fr.copy,
+    lines: fr.lines,
+    voice: { ...base.voice, rules: [...base.voice.rules, ...fr.voiceRules], banned: [...base.voice.banned, ...fr.banned] },
+    look: { ...base.look, world },
+  };
+  translated.set(key, style);
+  return style;
 }
 
 /**

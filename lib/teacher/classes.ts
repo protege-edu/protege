@@ -50,9 +50,9 @@ export function getClass(id: string, teacherId: string) {
   return c;
 }
 
-export function createClass(name: string, grade: number, teacherId: string) {
+export function createClass(name: string, grade: number, teacherId: string, language: "en" | "fr" = "en") {
   const id = randomUUID();
-  db.insert(classes).values({ id, name, grade, teacherId, code: newClassCode(), createdAt: new Date() }).run();
+  db.insert(classes).values({ id, name, grade, teacherId, language, code: newClassCode(), createdAt: new Date() }).run();
   return id;
 }
 

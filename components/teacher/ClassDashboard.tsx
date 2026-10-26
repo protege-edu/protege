@@ -11,7 +11,7 @@ import { ShowCode } from "./ShowCode";
 
 /** The class itself (no lesson): settings, its lessons, who's in it, and where students go */
 interface Info {
-  class: { id: string; name: string; grade: number; code: string; googleSignIn: boolean; pausedAt: string | null };
+  class: { id: string; name: string; grade: number; code: string; googleSignIn: boolean; pausedAt: string | null; language: "en" | "fr" };
   lessons: { id: string; title: string }[];
   roster: { id: string; nickname: string; google: boolean; hasKey: boolean }[];
   google: boolean;
@@ -98,6 +98,7 @@ export function ClassDashboard() {
           onShowCode={() => setShowCode(true)}
           onPause={() => void change({ paused: !paused })}
           onGoogle={(on) => void change({ googleSignIn: on })}
+          onLanguage={(language) => void change({ language })}
           onLesson={(lid) => router.replace(`/teacher/classes/${id}?lesson=${encodeURIComponent(lid)}`)}
           onAssigned={() => void loadInfo()}
         />
@@ -325,6 +326,7 @@ function ClassHeader({
   onShowCode,
   onPause,
   onGoogle,
+  onLanguage,
   onLesson,
   onAssigned,
 }: {
@@ -334,6 +336,7 @@ function ClassHeader({
   onShowCode: () => void;
   onPause: () => void;
   onGoogle: (on: boolean) => void;
+  onLanguage: (language: "en" | "fr") => void;
   onLesson: (lessonId: string) => void;
   onAssigned: () => void;
 }) {
@@ -384,6 +387,13 @@ function ClassHeader({
             </span>
           </label>
         )}
+        <label className="flex items-center gap-2 font-bold text-ink">
+          Language
+          <select value={info.class.language} onChange={(e) => onLanguage(e.target.value as "en" | "fr")} className="min-h-11 rounded-md border border-line bg-panel px-3 font-normal">
+            <option value="en">English</option>
+            <option value="fr">Français</option>
+          </select>
+        </label>
         <span className="text-ink-dim">
           {info.roster.length} {info.roster.length === 1 ? "student" : "students"}
         </span>

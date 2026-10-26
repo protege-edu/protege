@@ -1,4 +1,11 @@
-import type { AgeStyle } from "@/lib/age-styles";
+import type { AgeStyle, Language } from "@/lib/age-styles";
+
+/** Students read and answer in the lesson's language, so every word the AI writes for them has to be in it */
+const writeIn = (language: Language | undefined) =>
+  language === "fr"
+    ? `
+Write every text value in French (Canadian French is welcome). No English.`
+    : "";
 
 /** The age style's voice rules, minus their example quotes (small models copy examples word for word) */
 const voiceRules = (style: AgeStyle) =>
@@ -13,7 +20,7 @@ const voiceRules = (style: AgeStyle) =>
 
 // No example values anywhere in these prompts: small models copy examples word for word
 // (an early French lesson came back with an idea called "The tilt", from a seasons example).
-export function outlinePrompt(opts: { source: string; grade: number; titleHint?: string }) {
+export function outlinePrompt(opts: { source: string; grade: number; titleHint?: string; language?: Language }) {
   return [
     {
       role: "system" as const,
@@ -31,7 +38,7 @@ Return JSON:
     If the notes list common mistakes or traps, use those first: they're what this class actually gets wrong.
     It must be FALSE. Double-check: if an expert would agree with it, it is not a misconception.
 
-Only use ideas that are actually in the teacher's notes. No made-up facts.`,
+Only use ideas that are actually in the teacher's notes. No made-up facts.${writeIn(opts.language)}`,
     },
     {
       role: "user" as const,
@@ -72,7 +79,7 @@ For ONE idea in the lesson "${opts.lessonTitle}", return JSON:
 - evidence: 5 to 12 short lowercase word stems a student would almost certainly use when explaining this idea, right OR wrong (words from this idea and these notes)
 - recap: the correct idea in 1 or 2 plain, friendly sentences for students (not in Gloam's voice)
 
-Other ideas in this lesson (don't mix them in): ${opts.otherIdeas.join("; ") || "none"}`,
+Other ideas in this lesson (don't mix them in): ${opts.otherIdeas.join("; ") || "none"}${writeIn(style.language)}`,
     },
     {
       role: "user" as const,
@@ -98,7 +105,7 @@ For the lesson "${opts.lessonTitle}", return JSON:
 - finale: Gloam's line when it finally understands everything. It sums up the true ideas briefly in its own words and thanks the student in its style.
 - topicWords: 8 to 16 everyday lowercase words that mean a message is about this topic, even if it explains nothing
 
-True ideas (for the finale only): ${opts.truths.join(" ")}`,
+True ideas (for the finale only): ${opts.truths.join(" ")}${writeIn(style.language)}`,
     },
     { role: "user" as const, content: `Write it for the topic "${opts.topic}".` },
   ];

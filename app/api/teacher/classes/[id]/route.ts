@@ -55,6 +55,7 @@ const Change = z.union([
   z.object({ googleSignIn: z.boolean() }),
   z.object({ paused: z.boolean() }),
   z.object({ name: z.string().trim().min(1).max(60) }),
+  z.object({ language: z.enum(["en", "fr"]) }),
 ]);
 
 /** Give a class an approved lesson, or change a class setting (Google sign-in, pause, name) */
@@ -74,6 +75,8 @@ export async function POST(request: Request, ctx: RouteContext<"/api/teacher/cla
     db.update(classes).set({ googleSignIn: c.googleSignIn }).where(eq(classes.id, id)).run();
   } else if ("paused" in c) {
     db.update(classes).set({ pausedAt: c.paused ? new Date() : null }).where(eq(classes.id, id)).run();
+  } else if ("language" in c) {
+    db.update(classes).set({ language: c.language }).where(eq(classes.id, id)).run();
   } else {
     db.update(classes).set({ name: c.name }).where(eq(classes.id, id)).run();
   }

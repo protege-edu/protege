@@ -22,6 +22,7 @@ export const notYours = () => bad("We couldn't find that. It might belong to ano
 export const BlueprintInput = z.object({
   id: z.string(),
   ageStyle: z.enum(["little", "junior", "middle", "senior"]),
+  language: z.enum(["en", "fr"]).optional(),
   grade: z.number().int().min(0).max(12),
   topic: z.string().min(1).max(40),
   topicWords: z.array(z.string().max(30)).max(30),

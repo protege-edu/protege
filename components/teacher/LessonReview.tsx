@@ -170,6 +170,19 @@ export function LessonReview({ id }: { id: string }) {
                 {gradeLabel(bp.grade)}. Gloam talks like it&apos;s in {bp.ageStyle === "senior" ? "high school" : bp.ageStyle === "middle" ? "middle school" : "elementary school"}.
                 {row.sourceName ? ` From ${row.sourceName}.` : ""}
               </p>
+              <label className="mt-2 flex items-center gap-2 text-sm font-bold text-ink">
+                Students explain in
+                <select
+                  value={bp.language ?? "en"}
+                  disabled={readOnly}
+                  onChange={(e) => edit((b) => void (b.language = e.target.value as "en" | "fr"))}
+                  className="min-h-11 rounded-md border border-line bg-panel px-3 font-normal"
+                >
+                  <option value="en">English</option>
+                  <option value="fr">French</option>
+                </select>
+                <span className="font-normal text-ink-dim">Gloam speaks it too.</span>
+              </label>
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <StatusPill status={row.status} />

@@ -18,8 +18,17 @@ export function looksCopied(message: string, pasted = false): boolean {
  * Only used when the message mentions none of the lesson's ideas.
  */
 export function quickIntent(message: string): Intent | null {
-  const m = message.toLowerCase().replace(/[^a-z0-9'\s?]/g, " ").replace(/\s+/g, " ").trim();
+  // accents folded first (French: "réponse" is "reponse", not "r ponse"), then only letters, numbers, ' and ?
+  const m = message
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9'\s?]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
   if (!m) return "chatting";
+  const fr = quickIntentFr(m);
+  if (fr) return fr;
 
   if (/\b(just|js|jus|pls|please|plz|can you|can u|could you)?\s*(tell|give|say|show) (me|us) (the )?(answer|it|why|reason)\b|\bwhat'?s the answer\b|\bwhat is the answer\b|\bjust say it\b|\byou (explain|tell me|say it)\b|\bu (explain|tell me)\b|\bexplain it to me\b|\bwhat'?s the (real )?reason\b|\bwhat is the (real )?reason\b/.test(m)) {
     return "asking_for_answer";
@@ -30,6 +39,23 @@ export function quickIntent(message: string): Intent | null {
   }
   const words = m.split(" ");
   if (words.length <= 3 && /^(y(e|a)+h?|yes|yep|yup|ya|ok(ay)?|k|kk|sure|no|nope|nah|hey|hi|hello|yo|sup|lol|lmao|haha|bruh|bro|hmm+|cool|nice|true|facts|fr|real|wow|oh|ah|right|mhm|maybe)\b/.test(m)) {
+    return "chatting";
+  }
+  return null;
+}
+
+/** The same, in French (accents already folded): "jsp", "dis-moi la réponse", "ouais" */
+function quickIntentFr(m: string): Intent | null {
+  if (
+    /\b(juste |stp |svp |s'il te plait )?(dis|donne|montre)( |-)?(moi|nous) (la |ta )?(reponse|solution|raison)\b|\bc'?est quoi la (vraie )?(reponse|raison)\b|\bquelle est la (bonne )?reponse\b|\b(juste )?dis( |-)?le\b|\bexplique( |-)?moi\b|\btoi explique\b/.test(m)
+  ) {
+    return "asking_for_answer";
+  }
+  if (/^(je sais pas|j'?sais pas|je ne sais pas|jsp|chais pas|sais pas|aucune idee|pas d'?idee|je comprends pas|j'?comprends pas|jcomprends pas|je suis perdu|chui perdu|perdu|aide|a l'?aide|je bloque|bloque|hein|quoi\??|j'?abandonne|euh)\b/.test(m)) {
+    return "stuck";
+  }
+  const words = m.split(" ");
+  if (words.length <= 3 && /^(oui|ouais|ouaip|non|nan|ok|d'?accord|dac|salut|allo|bonjour|coucou|mdr|ptdr|lol|cool|vrai|grave|ah|oh|bof|peut etre|mouais|genre)\b/.test(m)) {
     return "chatting";
   }
   return null;

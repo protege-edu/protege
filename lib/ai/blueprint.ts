@@ -2,7 +2,8 @@ import { z } from "zod";
 import { chatJSON } from "./client";
 import { checkSafety } from "./safety";
 import { beliefCheckPrompt, conceptPrompt, factCheckPrompt, fixQuestionPrompt, outlinePrompt, questionCheckPrompt, storyPrompt } from "./prompts/blueprint";
-import { styleForGrade } from "@/lib/age-styles";
+import { getAgeStyle, styleForGrade } from "@/lib/age-styles";
+import { detectLanguage } from "@/lib/lesson/language";
 import type { Concept, LessonBlueprint } from "@/lib/lesson/types";
 import { checkConcept, slug } from "@/lib/teacher/checks";
 
@@ -99,12 +100,14 @@ const lower = (xs: string[]) => [...new Set(xs.map((x) => x.toLowerCase().trim()
 
 export async function draftBlueprint(opts: { source: string; grade: number; titleHint?: string; onProgress?: DraftProgress }): Promise<LessonBlueprint> {
   const { source, grade, titleHint, onProgress } = opts;
-  const style = styleForGrade(grade);
+  // the lesson speaks the notes' language (the teacher can change it on the review page)
+  const language = detectLanguage(source);
+  const style = getAgeStyle(styleForGrade(grade).id, language);
   // Everything Gloam says goes through the same school-safety filter as students' messages
   const unsafe = (lines: string[]) => (lines.some((l) => checkSafety(l, style) !== "ok") ? "a line that isn't school-appropriate" : null);
 
   onProgress?.("Reading your notes and finding the key ideas");
-  const outline = await ask("outline", Outline, outlinePrompt({ source, grade, titleHint }));
+  const outline = await ask("outline", Outline, outlinePrompt({ source, grade, titleHint, language }));
 
   const ids = new Set<string>();
   const stageNotes: string[] = [];
@@ -172,6 +175,7 @@ export async function draftBlueprint(opts: { source: string; grade: number; titl
   const bp: LessonBlueprint = {
     id: "draft",
     ageStyle: style.id,
+    language,
     grade,
     topic: outline.topic.toLowerCase(),
     topicWords: lower(story.topicWords),

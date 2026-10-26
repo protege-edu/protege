@@ -2,21 +2,9 @@
 
 import { AnimatePresence, motion } from "motion/react";
 import { Cut } from "@/components/ui/Cut";
+import type { JoinCopy } from "@/lib/age-styles/types";
 import { PICTURES, type Picture } from "@/lib/student/pictures";
 import { useCalmMotion } from "@/lib/useCalmMotion";
-
-/** What a screen reader says for each picture */
-const NAMES: Record<Picture, string> = {
-  moon: "Moon",
-  fern: "Fern",
-  lantern: "Lantern",
-  owl: "Owl",
-  star: "Star",
-  mushroom: "Mushroom",
-  leaf: "Leaf",
-  moth: "Moth",
-  stone: "Stones",
-};
 
 export const pictureSrc = (p: Picture) => `/art/keys/${p}.webp`;
 
@@ -35,6 +23,7 @@ export function KeyPad({
   disabled = false,
   shake = 0,
   countLabel,
+  t,
 }: {
   size: number;
   picked: Picture[];
@@ -44,6 +33,8 @@ export function KeyPad({
   disabled?: boolean;
   shake?: number;
   countLabel: string;
+  /** the words (picture names for screen readers) in the class's language */
+  t: JoinCopy;
 }) {
   const calm = useCalmMotion();
   const tile = big ? 92 : 78;
@@ -57,19 +48,19 @@ export function KeyPad({
         aria-live="polite"
       >
         {Array.from({ length: size }, (_, i) => (
-          <Slot key={i} picture={picked[i]} reveal={reveal} size={big ? 64 : 54} index={i} />
+          <Slot key={i} picture={picked[i]} reveal={reveal} size={big ? 64 : 54} index={i} t={t} />
         ))}
         <span className="ml-1 text-sm font-bold text-ink-dim">{countLabel}</span>
       </motion.div>
 
-      <div role="group" aria-label="Secret pictures" className="mt-4 grid w-max grid-cols-3 gap-2.5">
+      <div role="group" aria-label={t.pictureGroup} className="mt-4 grid w-max grid-cols-3 gap-2.5">
         {PICTURES.map((p, i) => (
           <motion.button
             key={p}
             type="button"
             disabled={disabled || picked.length >= size}
             onClick={() => onPick(p)}
-            aria-label={NAMES[p]}
+            aria-label={t.pictures[p]}
             whileTap={calm ? undefined : { scale: 0.9, rotate: i % 2 ? 3 : -3 }}
             className="key-tile relative grid cursor-pointer place-items-center rounded-[14px] disabled:cursor-default"
             style={{ width: tile, height: tile }}
@@ -86,7 +77,7 @@ export function KeyPad({
   );
 }
 
-function Slot({ picture, reveal, size, index }: { picture?: Picture; reveal: boolean; size: number; index: number }) {
+function Slot({ picture, reveal, size, index, t }: { picture?: Picture; reveal: boolean; size: number; index: number; t: JoinCopy }) {
   const calm = useCalmMotion();
   return (
     <span className="relative grid place-items-center" style={{ width: size, height: size }}>
@@ -103,24 +94,24 @@ function Slot({ picture, reveal, size, index }: { picture?: Picture; reveal: boo
           >
             {reveal ? (
               // eslint-disable-next-line @next/next/no-img-element -- small local painted icons
-              <img src={pictureSrc(picture)} alt={NAMES[picture]} className="h-[84%] w-[84%] object-contain" />
+              <img src={pictureSrc(picture)} alt={t.pictures[picture]} className="h-[84%] w-[84%] object-contain" />
             ) : (
-              <span className="block h-3.5 w-3.5 rounded-full bg-ink" aria-label="picked" />
+              <span className="block h-3.5 w-3.5 rounded-full bg-ink" aria-label={t.slotPicked} />
             )}
           </motion.span>
         )}
       </AnimatePresence>
-      {!picture && <span className="sr-only">empty</span>}
+      {!picture && <span className="sr-only">{t.slotEmpty}</span>}
     </span>
   );
 }
 
 /** The key shown big, to remember (right after picking it) */
-export function KeyShow({ picture, big }: { picture: Picture[]; big?: boolean }) {
+export function KeyShow({ picture, big, t }: { picture: Picture[]; big?: boolean; t: JoinCopy }) {
   const calm = useCalmMotion();
   const size = big ? 104 : 92;
   return (
-    <ol className="flex gap-4" aria-label="Your secret pictures, in order">
+    <ol className="flex gap-4" aria-label={t.pictureOrder}>
       {picture.map((p, i) => (
         <motion.li
           key={i}
@@ -132,7 +123,7 @@ export function KeyShow({ picture, big }: { picture: Picture[]; big?: boolean })
         >
           <Cut w={size} h={size} seed={`show-${i}`} radius={16} wobble={1.6} fill="var(--t-panel-2, var(--t-panel))" stroke="var(--t-line)" depth={5} depthFill="rgb(0 0 0 / 0.35)" />
           {/* eslint-disable-next-line @next/next/no-img-element -- small local painted icons */}
-          <img src={pictureSrc(p)} alt={NAMES[p]} className="relative z-[1] h-[84%] w-[84%] object-contain" />
+          <img src={pictureSrc(p)} alt={t.pictures[p]} className="relative z-[1] h-[84%] w-[84%] object-contain" />
           <span className="absolute -bottom-6 text-sm font-bold text-ink-dim" aria-hidden="true">
             {i + 1}
           </span>

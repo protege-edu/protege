@@ -203,6 +203,16 @@ async function main() {
     assert.equal(new Set(names).size, 5);
     for (const n of names) assert.ok(S.checkNickname(classA, n).ok, n);
   });
+  await test("a French class gets French surprise nicknames, all allowed", () => {
+    const fr = C.createClass("Sciences 9", 9, a.id, "fr");
+    const names = S.suggestNicknames(fr, 6);
+    assert.equal(names.length, 6);
+    for (const n of names) {
+      assert.ok(S.checkNickname(fr, n).ok, n);
+      assert.match(n, /^(Renard|Hibou|Loutre|Comète|Fougère|Luciole|Castor|Héron|Érable|Grillon|Saule|Braise|Triton|Macareux|Blaireau|Galet|Lanterne|Narval|Écureuil|Chouette) /, n);
+    }
+    assert.equal(S.classPreview(fr)?.language, "fr");
+  });
   await test("little kids get 2 pictures, everyone else 3", () => {
     assert.equal(S.keySize(1), 2);
     assert.equal(S.keySize(9), 3);

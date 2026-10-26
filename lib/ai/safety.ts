@@ -67,9 +67,11 @@ const NICK_STEMS = [
   "fuck", "fuk", "fck", "phuck", "shit", "bitch", "biatch", "cunt", "penis", "vagina", "asshole", "dumbass", "jackass", "bastard",
   "douche", "porn", "horny", "nude", "boob", "titties", "nigg", "faggot", "retard", "slut", "whore", "killyourself", "hitler",
   "nazi", "rapist", "pedophile", "kkk", "stfu", "wtf",
+  // French (accents are folded before the scan)
+  "putain", "connard", "connasse", "salope", "encule", "niquer", "batard", "negre", "tapette", "gouine", "tabarnak", "tabarnac", "calisse", "filsdepute",
 ];
 // real words with a stem hidden inside (removed before the scan)
-const NICK_INNOCENT = ["scunthorpe", "shitake", "shiitake", "cocktail"];
+const NICK_INNOCENT = ["scunthorpe", "shitake", "shiitake", "cocktail", "computer"];
 const LEET: Record<string, string> = { "0": "o", "1": "i", "3": "e", "4": "a", "5": "s", "7": "t", "@": "a", $: "s", "!": "i" };
 
 export function nicknameSafe(nickname: string, style: AgeStyle): boolean {
@@ -84,10 +86,39 @@ export function nicknameSafe(nickname: string, style: AgeStyle): boolean {
   return !NICK_STEMS.some((s) => cleaned.includes(s));
 }
 
+// ---- French (checked with accents folded: "enculé" is "encule", so word edges work) ----
+const CARE_FR = [
+  /\bme (tuer|suicider)\b/,
+  /\bsuicid/,
+  /\b(envie de|je veux|veux|j'?ai envie de) mourir\b/,
+  /\bme (faire du mal|blesser|scarifier|couper)\b/,
+  /\ben finir\b/,
+  /\b(plus envie de vivre|aucune raison de vivre|plus de raison de vivre)\b/,
+];
+const BLOCK_FR = [
+  /\bputain\b|\bputes?\b|\bmerde\b|\bbordel de\b/,
+  /\bconnard|\bconnasse|\bsalope|\bsalaud|\bencule|\bnique\b|\bniquer|\bntm\b|\bfdp\b|\bfils de pute|\bbatard/,
+  // (not "bite": it's an everyday English word)
+  /\bcouilles?\b|\bporno?\b|\bsexe\b|\bsexy\b|\bnichons?\b|\bbaiser\b/,
+  /\bnegres?\b|\bpd\b|\btapettes?\b|\bgouines?\b/,
+  /\btabarna[kc]|\bcalis+e|\bcriss+e?\b|\bostie?\b|\besti\b/,
+  /\btue( |-)toi\b|\bva te tuer\b/,
+];
+const STRICT_EXTRA_FR = [/\bnul\b/, /\bidiot/, /\bstupide\b/, /\bbete\b/, /\bje (te )?deteste\b/, /\bferme( |-)la\b/];
+const MEAN_FR = [
+  /\bt'?es (trop |tellement |vraiment |juste )?(nul|con|conne|bete|debile|stupide|idiot|inutile|lent|chiant|ennuyant|pourri)\b/,
+  /\bta gueule\b|\btg\b|\bferme( |-)la\b|\bla ferme\b/,
+  /\bje (te )?deteste\b/,
+  /^\s*(nul|idiot|stupide|debile|bouffon|naze|loser)\W*$/,
+  /\bc'?est nul\b|\bon s'?en fout\b|\bosef\b|\bpersonne t'?a demande\b|\bva t'?en\b|\blaisse( |-)moi tranquille\b/,
+];
+const foldFr = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
 export function checkSafety(message: string, style: AgeStyle): SafetyKind {
-  if (CARE.some((r) => r.test(message))) return "care";
-  if (BLOCK.some((r) => r.test(message))) return "blocked";
-  if (style.safety.level === "strict" && STRICT_EXTRA.some((r) => r.test(message))) return "blocked";
-  if (MEAN.some((r) => r.test(message))) return "insulted";
+  const fr = foldFr(message);
+  if (CARE.some((r) => r.test(message)) || CARE_FR.some((r) => r.test(fr))) return "care";
+  if (BLOCK.some((r) => r.test(message)) || BLOCK_FR.some((r) => r.test(fr))) return "blocked";
+  if (style.safety.level === "strict" && (STRICT_EXTRA.some((r) => r.test(message)) || STRICT_EXTRA_FR.some((r) => r.test(fr)))) return "blocked";
+  if (MEAN.some((r) => r.test(message)) || MEAN_FR.some((r) => r.test(fr))) return "insulted";
   return "ok";
 }

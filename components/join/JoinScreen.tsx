@@ -10,7 +10,8 @@ import type { GloamMood } from "@/components/gloam/poses";
 import { InkButton } from "@/components/ui/InkButton";
 import { Cut, useSize } from "@/components/ui/Cut";
 import { Wordmark } from "@/components/ui/Logo";
-import { getAgeStyle, type AgeStyleId } from "@/lib/age-styles";
+import { getAgeStyle, type AgeStyleId, type Language } from "@/lib/age-styles";
+import type { JoinError } from "@/lib/age-styles/types";
 import type { Picture } from "@/lib/student/pictures";
 import { useCalmMotion } from "@/lib/useCalmMotion";
 import { KeyPad, KeyShow } from "./KeyPad";
@@ -19,6 +20,8 @@ export interface ClassPreview {
   classId: string;
   name: string;
   ageStyle: AgeStyleId;
+  /** the class's language: every word on this screen, and Gloam */
+  language: Language;
   keySize: number;
   google: boolean;
   nicknames: { id: string; nickname: string; google: boolean; needsNewKey: boolean }[];
@@ -33,11 +36,11 @@ type Step =
   | { k: "enter"; id: string; nickname: string; reset: boolean }
   | { k: "welcome"; nickname: string; back: boolean };
 
-async function post<T>(body: unknown): Promise<{ ok: true; data: T } | { ok: false; error: string }> {
+async function post<T>(body: unknown): Promise<{ ok: true; data: T } | { ok: false; error: string; code?: JoinError }> {
   try {
     const res = await fetch("/api/join", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     const data = await res.json().catch(() => ({}));
-    return res.ok ? { ok: true, data } : { ok: false, error: data.error ?? "Something went wrong. Try again." };
+    return res.ok ? { ok: true, data } : { ok: false, error: data.error ?? "Something went wrong. Try again.", code: data.code };
   } catch {
     return { ok: false, error: "Can't reach Protégé. Check the internet, then try again." };
   }
@@ -56,11 +59,12 @@ const formatCode = (raw: string) => {
  *   new here:   class code → nickname ("surprise me") → pick secret pictures → remember them → Gloam says hi
  * Gloam watches, leans in while you type, and has something to say at every step.
  */
-export function JoinScreen({ initialCode, googleFor }: { initialCode?: string; googleFor?: ClassPreview }) {
+export function JoinScreen({ initialCode, googleFor, guess = "en" }: { initialCode?: string; googleFor?: ClassPreview; guess?: Language }) {
   const calm = useCalmMotion();
   const router = useRouter();
   const [preview, setPreview] = useState<ClassPreview | null>(googleFor ?? null);
-  const style = getAgeStyle(preview?.ageStyle ?? "senior");
+  // before the class is found, the browser's language is the best guess
+  const style = getAgeStyle(preview?.ageStyle ?? "senior", preview?.language ?? guess);
   const t = style.copy.join;
   const big = style.input.targetScale > 1.1;
   const [step, setStep] = useState<Step>(googleFor ? { k: "nick" } : { k: "code" });
@@ -84,8 +88,9 @@ export function JoinScreen({ initialCode, googleFor }: { initialCode?: string; g
     return () => mq.removeEventListener("change", update);
   }, []);
 
-  const oops = (message: string) => {
-    setError(message);
+  // the server's problem, in this screen's language when the profile has words for it
+  const oops = (message: string, code?: JoinError) => {
+    setError((code && t.errors?.[code]) || message);
     setHurt(true);
     setTimeout(() => setHurt(false), 2600);
   };
@@ -95,7 +100,7 @@ export function JoinScreen({ initialCode, googleFor }: { initialCode?: string; g
     setError(null);
     const r = await post<ClassPreview>({ action: "code", code: raw });
     setBusy(false);
-    if (!r.ok) return oops(r.error);
+    if (!r.ok) return oops(r.error, r.code);
     setHurt(false);
     setPreview(r.data);
     setStep(r.data.nicknames.length ? { k: "who" } : { k: "nick" });
@@ -132,13 +137,13 @@ export function JoinScreen({ initialCode, googleFor }: { initialCode?: string; g
       setBusy(true);
       const r = await post<{ student: { nickname: string } }>({ action: "new", classId: preview.classId, nickname, key: null, google: true });
       setBusy(false);
-      if (!r.ok) return oops(r.error);
+      if (!r.ok) return oops(r.error, r.code);
       return signedIn(r.data.student.nickname, false);
     }
     // check the nickname now, so nobody picks pictures for a name they can't have
     const taken = preview.nicknames.some((n) => n.nickname.toLowerCase() === nickname.trim().toLowerCase());
-    if (nickname.trim().length < 2) return oops(big ? "Pick a name with at least 2 letters." : "Pick a nickname with at least 2 letters.");
-    if (taken) return oops("Someone in your class already has that one. Try another.");
+    if (nickname.trim().length < 2) return oops(big ? "Pick a name with at least 2 letters." : "Pick a nickname with at least 2 letters.", "nick_short");
+    if (taken) return oops("Someone in your class already has that one. Try another.", "nick_taken");
     setKey([]);
     setStep({ k: "key" });
   };
@@ -159,7 +164,7 @@ export function JoinScreen({ initialCode, googleFor }: { initialCode?: string; g
     if (!r.ok) {
       // most likely the nickname (someone took it a moment ago, or it isn't allowed): go back to it
       setStep({ k: "nick" });
-      return oops(r.error);
+      return oops(r.error, r.code);
     }
     signedIn(r.data.student.nickname, false);
   };
@@ -176,7 +181,7 @@ export function JoinScreen({ initialCode, googleFor }: { initialCode?: string; g
     if (!r.ok) {
       setShake((s) => s + 1);
       setTimeout(() => setKey([]), calm ? 0 : 450);
-      return oops(r.error);
+      return oops(r.error, r.code);
     }
     signedIn(r.data.student.nickname, !step.reset);
   };
@@ -373,6 +378,7 @@ export function JoinScreen({ initialCode, googleFor }: { initialCode?: string; g
                     disabled={busy}
                     shake={shake}
                     countLabel={t.keyCount(key.length, preview.keySize)}
+                    t={t}
                   />
                 </div>
                 <Problem text={error} />
@@ -392,7 +398,7 @@ export function JoinScreen({ initialCode, googleFor }: { initialCode?: string; g
                 <Title>{t.keyRememberTitle}</Title>
                 <p className="mt-2 text-sm text-ink-dim">{t.keyRememberHint}</p>
                 <div className="mt-6 mb-10">
-                  <KeyShow picture={key} big={big} />
+                  <KeyShow picture={key} big={big} t={t} />
                 </div>
                 <Problem text={error} />
                 <div className="flex flex-wrap items-center gap-3">

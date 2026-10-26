@@ -30,6 +30,7 @@ export function TeacherHome() {
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState("");
   const [grade, setGrade] = useState(9);
+  const [language, setLanguage] = useState<"en" | "fr">("en");
   const teacher = useTeacher();
   const [setupDone, setSetupDone] = useState(false);
 
@@ -50,7 +51,7 @@ export function TeacherHome() {
 
   const addClass = async (e: React.FormEvent) => {
     e.preventDefault();
-    const res = await api("/api/teacher/classes", json("POST", { name, grade }));
+    const res = await api("/api/teacher/classes", json("POST", { name, grade, language }));
     if (!res.ok) return setError(res.error);
     setAdding(false);
     setName("");
@@ -95,6 +96,13 @@ export function TeacherHome() {
                     {gradeLabel(g)}
                   </option>
                 ))}
+              </select>
+            </label>
+            <label className="flex flex-col gap-1 text-sm font-bold text-ink">
+              Language
+              <select value={language} onChange={(e) => setLanguage(e.target.value as "en" | "fr")} className="min-h-11 rounded-md border border-line bg-bg px-3 font-normal">
+                <option value="en">English</option>
+                <option value="fr">Français</option>
               </select>
             </label>
             <Button type="submit" disabled={!name.trim()}>

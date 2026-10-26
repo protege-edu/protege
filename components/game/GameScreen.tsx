@@ -38,7 +38,7 @@ function useWide() {
  */
 export function GameScreen({ lesson, account = "preview" }: { lesson: ClientLesson; account?: Account }) {
   const router = useRouter();
-  const style = getAgeStyle(lesson.ageStyle);
+  const style = getAgeStyle(lesson.ageStyle, lesson.language);
   const test = useTestMode();
   const s = useTeachSession(lesson, style, test);
   const [dozeTick, setDozeTick] = useState(0);

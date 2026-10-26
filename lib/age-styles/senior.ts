@@ -231,6 +231,11 @@ export const senior: AgeStyle = {
       google: "Continue with Google",
       googleNick: "Google only tells Protégé it's you. Pick the nickname your class will see.",
       back: "Back",
+      pictures: { moon: "Moon", fern: "Fern", lantern: "Lantern", owl: "Owl", star: "Star", mushroom: "Mushroom", leaf: "Leaf", moth: "Moth", stone: "Stones" },
+      pictureGroup: "Secret pictures",
+      pictureOrder: "Your secret pictures, in order",
+      slotEmpty: "empty",
+      slotPicked: "picked",
       gloam: {
         code: "a code. on a board. very official.",
         typing: "go on. i'm watching. respectfully.",

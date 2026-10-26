@@ -1,4 +1,4 @@
-import type { AgeStyleId } from "@/lib/age-styles/types";
+import type { AgeStyleId, Language } from "@/lib/age-styles/types";
 
 /**
  * A lesson blueprint is everything Gloam needs to "not get" a lesson.
@@ -51,6 +51,8 @@ export type ClientConcept = Pick<Concept, "id" | "name" | "beliefs">;
 export interface ClientLesson {
   id: string;
   ageStyle: AgeStyleId;
+  /** the language students explain in and Gloam speaks (English if missing) */
+  language?: Language;
   topic: string;
   subject: string;
   title: string;
@@ -63,6 +65,8 @@ export interface LessonBlueprint {
   id: string;
   /** The age style this blueprint's Gloam lines are written for (the class's grade picks it) */
   ageStyle: AgeStyleId;
+  /** The language of the lesson: students explain in it, Gloam speaks it (detected from the notes; English if missing) */
+  language?: Language;
   /** The class's grade, 0 = kindergarten */
   grade: number;
   /** Short name Gloam uses in lines: "seasons" */

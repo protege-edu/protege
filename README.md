@@ -135,6 +135,14 @@ A profile controls Gloam's personality and AI rules, its **hand-written lines** 
 
 Lessons say which style they're written for (`ageStyle` in the blueprint). In Phase 2 the teacher's grade level picks it.
 
+## Languages
+
+Gloam speaks **English** and **French** (more later: every word lives in `lib/age-styles/`, so a language is one more file like `fr.ts`).
+
+- **A lesson's language** is the language students explain in, and Gloam speaks it. Protégé guesses it from the teacher's notes (a lesson *about* French that's written in English stays English) and the teacher can change it on the review page.
+- **A class's language** is for the screens around the lessons: joining, and "your Gloam". The teacher picks it when making the class.
+- French has its own hand-written lines for every age style, and the safety filter, the "I'm stuck / just tell me" detector and the nickname check all understand French (Québec swears too).
+
 ## The art (how the painted world was made)
 
 The high school style's valley and Gloam are **hand-painted images made on this laptop** with a free local image model (FLUX.1-schnell, Apache 2.0) through ComfyUI. No paid tools, nothing uploaded. Every step is a script in `art/`, so any image can be re-made or **replaced 1:1 by a human artist**:

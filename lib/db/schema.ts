@@ -43,6 +43,8 @@ export const classes = sqliteTable("classes", {
   googleSignIn: integer("google_sign_in", { mode: "boolean" }).notNull().default(false),
   /** the teacher paused the class (every Gloam falls asleep) */
   pausedAt: integer("paused_at", { mode: "timestamp_ms" }),
+  /** the language of the screens around the lessons (joining, your Gloam): "en" or "fr" */
+  language: text("language").notNull().default("en"),
   createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
 });
 

@@ -14,6 +14,10 @@ export type AgeStyleId = "little" | "junior" | "middle" | "senior";
 /** A line can use {topic} (the lesson title) and {question} (Gloam's next question). */
 export type Line = string;
 
+/** The languages Gloam (and every screen around it) can speak. Lessons and classes each have one. */
+export type Language = "en" | "fr";
+export const LANGUAGES: Record<Language, string> = { en: "English", fr: "Français" };
+
 /**
  * The adventure: a long painted panorama Gloam walks across, with a checkpoint shrine for each idea.
  * Each depth layer has a DARK painting and a LIT painting of the same thing; Gloam's lantern light
@@ -48,6 +52,22 @@ export interface JourneyWorld {
   };
 }
 
+/** Problems a student can hit while joining (the server sends the code; each language words it) */
+export type JoinError =
+  | "code_wrong"
+  | "nick_short"
+  | "nick_long"
+  | "nick_unsafe"
+  | "nick_contact"
+  | "nick_taken"
+  | "class_gone"
+  | "key_missing"
+  | "key_locked"
+  | "key_google"
+  | "key_wrong"
+  | "not_found"
+  | "google_timeout";
+
 /** Joining a class, and coming back (app/join). Gloam talks the student through it. */
 export interface JoinCopy {
   codeTitle: string;
@@ -79,6 +99,14 @@ export interface JoinCopy {
   google: string;
   googleNick: string;
   back: string;
+  /** the server's problems in this language (missing ones: the server's English words are shown) */
+  errors?: Partial<Record<JoinError, string>>;
+  /** what a screen reader says for each secret picture, and around the picture pad */
+  pictures: Record<"moon" | "fern" | "lantern" | "owl" | "star" | "mushroom" | "leaf" | "moth" | "stone", string>;
+  pictureGroup: string;
+  pictureOrder: string;
+  slotEmpty: string;
+  slotPicked: string;
   /** what Gloam says at each step (its own voice) */
   gloam: {
     code: string;
@@ -118,6 +146,8 @@ export interface HomeCopy {
 }
 
 export interface AgeStyle {
+  /** the language every word and line is in (French versions come from getAgeStyle(id, "fr")) */
+  language?: Language;
   id: AgeStyleId;
   /** Shown to teachers: "Grades 9–12" */
   label: string;

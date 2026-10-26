@@ -1,4 +1,5 @@
 import { connection } from "next/server";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { readSigned } from "@/lib/auth/cookies";
@@ -29,5 +30,7 @@ async function Join({ searchParams }: { searchParams: PageProps<"/join">["search
     const classId = pending?.split("~")[0];
     if (classId && classId === one(q.class)) googleFor = classPreview(classId) ?? undefined;
   }
-  return <JoinScreen initialCode={one(q.code)} googleFor={googleFor} />;
+  // before a class is found: the browser's language, if it's one Gloam speaks
+  const guess = (await headers()).get("accept-language")?.toLowerCase().startsWith("fr") ? "fr" : "en";
+  return <JoinScreen initialCode={one(q.code)} googleFor={googleFor} guess={guess} />;
 }

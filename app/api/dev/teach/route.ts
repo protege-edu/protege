@@ -28,7 +28,7 @@ export async function POST(request: Request) {
   if (!teach.length) return Response.json({ error: "Gloam already gets everything" }, { status: 409 });
   const after = { ...before, ...Object.fromEntries(teach.map((c) => [c.id, 3 as const])) };
   const finished = lesson.concepts.every((c) => after[c.id] === 3);
-  const style = getAgeStyle(lesson.ageStyle);
+  const style = getAgeStyle(lesson.ageStyle, lesson.language);
   // Gloam says the idea it just got, in its own words (its "gets it" line from the lesson)
   const reply = voice(finished ? lesson.finale : teach[0].beliefs[3], style);
   const saved = recordTurn({
