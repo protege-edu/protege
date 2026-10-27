@@ -14,7 +14,7 @@ import numpy as np
 from PIL import Image
 from rembg import new_session, remove
 
-OUT = os.environ.get("ART_OUT", r"C:\Users\sonaw\ProtegeArt\out")
+OUT = os.environ.get("ART_OUT", os.path.expanduser(os.path.join("~", "ProtegeArt", "out")))
 DEST = os.path.join(os.path.dirname(__file__), "..", "public", "art", "keys")
 SIZE = 256
 # how much of the square the picture fills (the rest is breathing room)

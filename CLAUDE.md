@@ -158,7 +158,7 @@ Phase 1: build the age style system, but only fully polish ONE profile: high sch
 - **Its own celebrations, sounds and motion.**
 Every phase must keep raising the bar for ALL age styles, never just one. When a phase adds something (teacher tools, chapters, classroom mode), it has to feel native in every age style.
 
-**How the art is made** (so any session can continue it): local FLUX.1-schnell through ComfyUI in `C:\Users\sonaw\ProtegeArt` (free, Apache 2.0), then the scripts in `art/` (paint → erase → grade into dark/lit → depth layers; `gloam_rig.py` cuts a painted Gloam into an animatable rig with a code-drawn face). A human artist can replace any image 1:1. Before painting, stop other heavy Ollama models: they share the GPU.
+**How the art is made** (so any session can continue it): local FLUX.1-schnell through ComfyUI in `~/ProtegeArt` (in the user folder) (free, Apache 2.0), then the scripts in `art/` (paint → erase → grade into dark/lit → depth layers; `gloam_rig.py` cuts a painted Gloam into an animatable rig with a code-drawn face). A human artist can replace any image 1:1. Before painting, stop other heavy Ollama models: they share the GPU.
 
 ## TEACHER MATERIAL (Phase 2)
 

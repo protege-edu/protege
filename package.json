@@ -4,6 +4,9 @@
   "private": true,
   "license": "AGPL-3.0-or-later",
   "description": "Students teach Gloam, a confused, funny companion, and learn by explaining. Runs on one school laptop, with local AI.",
+  "homepage": "https://vedh-sonawane.github.io/protege/",
+  "repository": "github:vedh-sonawane/protege",
+  "bugs": "https://github.com/vedh-sonawane/protege/issues",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

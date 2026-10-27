@@ -9,6 +9,11 @@ candle lights up, and when it gets everything, the whole valley glows.
 - **Private by design:** nicknames, not names. Nothing leaves the school's computer.
 - **For every grade, K–12**, in English and French, with ways to play for every student.
 
+**[Download Protégé](https://github.com/vedh-sonawane/protege/releases/latest)** for Windows or Mac, or read
+the [setup guide on the website](https://vedh-sonawane.github.io/protege/).
+
+![Gloam, holding its unlit lantern, explains its wrong theory of the seasons. A text box below says "Explain it to Gloam…"](site/img/teach.webp)
+
 ---
 
 ## For teachers: get it running
@@ -20,6 +25,9 @@ candle lights up, and when it gets everything, the whole valley glows.
    account, and **save your recovery code**.
 4. **Make a class**, give it a lesson (upload your notes, or use the built-in one), and press **Show the code**.
    Students go to the address on the screen and type the class code.
+5. **Other teachers at your school:** at the bottom of your teacher page, press **Make an invite code** and give
+   it to them. They choose **Make an account** and type it in. Each code works once, for a week, and their
+   classes stay separate from yours.
 
 Optional:
 - **"Set up voices"** lets students talk instead of typing, and gives read-aloud Gloam's natural voice.
@@ -187,7 +195,7 @@ about 13 seconds typically.
 | `npm run class [-- --tunnel]` | Builds and runs Protégé for a real class, with the address and a QR code |
 | `npm run voice:setup` / `npm run voice` | Downloads / starts voice typing (whisper.cpp) and Gloam's read-aloud voice (Kokoro), both local |
 | `npm run release` | Builds the download teachers use (`release/*.zip`) |
-| `npm run test:logic` | 64 tests of the rules: grading, progress, giveaways, safety, voice, ways to play |
+| `npm run test:logic` | 68 tests of the rules: grading, progress, giveaways, safety, voice, ways to play |
 | `npm run test:accounts` | 45 tests of accounts, privacy and retention, on a throwaway database |
 | `npm run licenses` | Checks every library's licence and writes `THIRD-PARTY-NOTICES.md` |
 | `npm run restore` / `access-log` / `reset-teacher` | Jobs for whoever runs Protégé |
@@ -206,9 +214,14 @@ builds into `.next-release`, so it's safe.
 
 ### Releases
 
-Tag a version (`git tag v0.2.0 && git push --tags`). GitHub Actions runs the tests, builds the Windows and Mac
-downloads, and attaches them to a GitHub release. Teachers find it with **Check for updates**. Set the
-repository in `package.json` (`"repository": "github:owner/name"`) so the update check knows where to look.
+Raise `version` in `package.json`, then tag it (`git tag v0.2.0 && git push --tags`). GitHub Actions runs the
+tests, builds the Windows and Mac downloads, and attaches them to a GitHub release. Teachers find it with
+**Check for updates**, which looks at the repository named in `package.json`. A fork sets its own there (or
+`PROTEGE_REPO=owner/name`).
+
+### Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md). Security problems go to [SECURITY.md](SECURITY.md), never a public issue.
 
 ### Project map
 

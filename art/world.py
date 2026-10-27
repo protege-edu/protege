@@ -22,7 +22,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 import comfy  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-OUT = os.environ.get("ART_OUT", r"C:\Users\sonaw\ProtegeArt\out")
+OUT = os.environ.get("ART_OUT", os.path.expanduser(os.path.join("~", "ProtegeArt", "out")))
 PUBLIC = os.path.join(HERE, "..", "public", "art")
 PY = sys.executable
 

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: A security or privacy problem
+    url: https://github.com/vedh-sonawane/protege/security/advisories/new
+    about: Report it privately, so it can be fixed before anyone else knows about it.
+  - name: Setting up Protégé
+    url: https://vedh-sonawane.github.io/protege/guide.html
+    about: The setup guide answers most questions about installing and running a class.

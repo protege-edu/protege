@@ -14,7 +14,7 @@ import urllib.request
 import uuid
 
 SERVER = os.environ.get("COMFY_URL", "http://127.0.0.1:8188")
-COMFY_DIR = os.environ.get("COMFY_DIR", r"C:\Users\sonaw\ProtegeArt\ComfyUI")
+COMFY_DIR = os.environ.get("COMFY_DIR", os.path.expanduser(os.path.join("~", "ProtegeArt", "ComfyUI")))
 
 UNET = "flux1-schnell-Q5_K_S.gguf"
 T5 = "t5-v1_1-xxl-encoder-Q5_K_M.gguf"

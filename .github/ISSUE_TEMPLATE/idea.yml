@@ -1,0 +1,15 @@
+name: An idea
+description: Something that would make Protégé better for students or teachers
+labels: [idea]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: What's the idea?
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Who does it help, and how?
+      description: For example, which grade, which subject, or which way of playing.

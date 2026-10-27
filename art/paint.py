@@ -4,7 +4,7 @@ Paint candidates with local FLUX.1-schnell (ComfyUI must be running).
   venv\\Scripts\\python art\\paint.py valley_lit 4          4 candidates of the lit valley
   venv\\Scripts\\python art\\paint.py gloam 6 --size 1024x1024
 
-Candidates land in C:\\Users\\sonaw\\ProtegeArt\\out\\<name>\\seed-<n>.png for review.
+Candidates land in ~/ProtegeArt/out/<name>/seed-<n>.png (or $ART_OUT) for review.
 The chosen ones get copied into public/art/ by hand (with their seed noted), so every asset is reproducible.
 """
 import argparse
@@ -26,7 +26,7 @@ PROMPTS = {
     **prompts.YOUNG_GLOAMS,
 }
 
-OUT = os.environ.get("ART_OUT", r"C:\Users\sonaw\ProtegeArt\out")
+OUT = os.environ.get("ART_OUT", os.path.expanduser(os.path.join("~", "ProtegeArt", "out")))
 
 
 def main():
