@@ -79,6 +79,10 @@ ${Object.entries(ALLOWED)
 - **Qwen3 4B Instruct** (Apache 2.0) is Gloam's default model.
 - **whisper.cpp** (MIT), by the ggml authors, runs voice typing.
 - **Whisper speech models** (MIT), by OpenAI, converted by the whisper.cpp project.
+- **sherpa-onnx** (Apache 2.0), by the k2-fsa project, runs Gloam's read-aloud voice. It includes
+  **ONNX Runtime** (MIT, Microsoft) and **espeak-ng** (GPL 3.0) with its language data, which turns French
+  text and new English words into sounds.
+- **Kokoro-82M** (Apache 2.0), by hexgrad, is Gloam's read-aloud voice, packed for sherpa-onnx.
 
 ## Art
 

@@ -95,11 +95,14 @@ export function JoinScreen({ initialCode, googleFor, guess = "en" }: { initialCo
   }, []);
 
   // the server's problem, in this screen's language when the profile has words for it
-  const oops = (message: string, code?: JoinError) => {
-    setError((code && t.errors?.[code]) || message);
-    setHurt(true);
-    setTimeout(() => setHurt(false), 2600);
-  };
+  const oops = useCallback(
+    (message: string, code?: JoinError) => {
+      setError((code && t.errors?.[code]) || message);
+      setHurt(true);
+      setTimeout(() => setHurt(false), 2600);
+    },
+    [t],
+  );
 
   const findClass = useCallback(async (raw: string) => {
     setBusy(true);
@@ -110,7 +113,7 @@ export function JoinScreen({ initialCode, googleFor, guess = "en" }: { initialCo
     setHurt(false);
     setPreview(r.data);
     setStep(r.data.nicknames.length ? { k: "who" } : { k: "nick" });
-  }, []);
+  }, [oops]);
 
   // came from the QR code (the code is in the address): go straight in
   const tried = useRef(false);

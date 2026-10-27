@@ -16,8 +16,8 @@ Thanks for wanting to help. Protégé is used by real students, so a few rules m
 
 ## Getting set up
 
-Follow [Run it from the code](README.md#run-it-from-the-code) in the README. Then, before you open a pull
-request:
+Follow [Run it from the code](README.md#run-it-from-the-code) in the README. Start `npm run dev` once before
+type-checking: it makes the page types. Then, before you open a pull request:
 
 ```
 npm run typecheck
