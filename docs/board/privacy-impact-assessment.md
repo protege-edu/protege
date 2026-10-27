@@ -52,6 +52,10 @@ Dates are needed for "carry on where you left off" and for retention.
 Voice typing (optional): a short recording goes to the same computer, is turned into words by whisper.cpp,
 and is discarded. The words go back to the student to check before sending.
 
+Read-aloud in Gloam's voice (optional): the words on the student's screen go to the same computer, which
+turns them into sound with Kokoro. The sound is kept in memory for up to an hour, so a line the whole class
+hears is made once, and is never written to disk.
+
 ## 4. Use and disclosure
 
 - **Used for:** the student's learning activity, and the teacher's view of each student's understanding.

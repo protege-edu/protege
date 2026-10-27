@@ -21,6 +21,11 @@ computer running Protégé. It never runs in a cloud. It does three jobs:
 Optional **voice typing** uses **whisper.cpp** with a Whisper speech model (MIT), on the same computer, to turn
 speech into words the student checks before sending.
 
+Optional **read-aloud in Gloam's voice** uses **Kokoro** (Apache 2.0), a small speech model, run by
+sherpa-onnx (Apache 2.0) on the same computer. It only reads out words already on the student's screen
+(Gloam's lines, the steps to join, the recap). It never invents words. The voice is computer-made, as
+students are told in "About Gloam". Without it, read-aloud uses the device's own voices.
+
 ## What the AI doesn't do
 
 - **It doesn't grade.** Candles are labelled everywhere as the AI's estimate, not marks. The teacher sees them

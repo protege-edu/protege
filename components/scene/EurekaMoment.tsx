@@ -130,7 +130,7 @@ export function EurekaMoment({ moment, style, x = 0.5, onPeak, onDone }: { momen
           <span key={i} className="em-spark absolute h-1 w-1 rounded-full bg-[#ffd98a] opacity-0" style={{ left: (i % 7) * 3 - 9, top: (i % 5) * 3 - 6 }} />
         ))}
       </div>
-      <div className="pointer-events-none absolute inset-x-4 top-[9%] flex flex-col items-center text-center" aria-live="assertive">
+      <div data-near-gloam className="pointer-events-none absolute inset-x-4 top-[9%] flex flex-col items-center text-center" aria-live="assertive">
         <p className={`em-word voice font-bold text-lantern opacity-0 ${full || !quiet ? "text-2xl" : "text-xl"} [text-shadow:0_2px_24px_rgb(0_0_0/0.6)]`}>{word}</p>
         <p className="em-credit mt-3 rounded-md bg-[#030705]/70 px-3 py-1.5 text-sm font-bold text-[#ebe7dc] opacity-0">
           {moment.final ? style.copy.finaleCredit : style.copy.credit(moment.conceptName)}

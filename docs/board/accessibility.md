@@ -22,6 +22,8 @@ end.
    - **Each screen is checked for:**
      - the **axe-core** rules for WCAG 2.0, 2.1 and 2.2 A and AA
      - overlapping or cut-off text, and sideways scrolling
+     - words or buttons covering Gloam (the painted character can't be seen by other checks, so Protégé
+       marks where it stands and checks nothing sits on it)
      - tap targets (24 px minimum; 44 px flagged for young children)
      - browser errors
 2. **Keyboard only** (`scripts/keyboard.ts`): a whole lesson with Tab, Enter and Escape. Focus is always
@@ -34,7 +36,7 @@ end.
 
 | Need | What Protégé does | WCAG |
 |---|---|---|
-| Reading | Read-aloud of Gloam's words, the join steps and the recap (device voices); easier reading (spacing, OpenDyslexic); plain, short words per age | 1.4.12, 3.1.5 (AAA, partly) |
+| Reading | Read-aloud of Gloam's words, the join steps and the recap, in a natural voice made on the school's computer (or the device's own voices); easier reading (spacing, OpenDyslexic); plain, short words per age | 1.4.12, 3.1.5 (AAA, partly) |
 | Seeing | Up to 132% text that reflows; stronger contrast (near-solid backgrounds behind words, full-strength text, firm borders); layouts from phone to projector | 1.4.3, 1.4.4, 1.4.10, 1.4.11 |
 | Typing | Voice typing (private: on the school's computer); sentence starters for younger students; nothing is timed | 2.1.1, 2.2.1 |
 | Moving | Less motion (also follows the device's setting); no flashing; the "I get it" moment can be skipped | 2.3.1, 2.3.3 (AAA), 2.2.2 |
@@ -59,6 +61,12 @@ The run found:
   children. They were raised to 44 px after the run. Every age, in both languages, was then checked again at phone and
   tablet sizes, with and without the biggest text: **400 screens, 0 problems, 0 warnings**.
 
+**Gloam check, added after the run:** automated checks can't see the painted Gloam, so a person
+spotted the title's buttons over it on a big screen. Protégé now marks where Gloam stands, and the check
+fails anything sitting on it. The first run of that check found 102 such cases, mostly on phones, upright
+tablets and the biggest text. Gloam now stands above the words on every layout. Every student screen was
+then checked again (824 screens): **0 problems, 0 warnings**.
+
 The first full run found 77 problems. All were fixed before this one. For example:
 - On phones with the biggest text, Gloam's words covered the headings.
 - Some scrolling areas couldn't be reached by keyboard.
@@ -73,8 +81,10 @@ The first full run found 77 problems. All were fixed before this one. For exampl
 - **Contrast over the painted worlds** can't be measured by automated tools, because the background is a
   painting. Words over the world always have a shading layer behind them, made near-solid by "stronger
   contrast", and were checked by eye.
-- **Read-aloud** depends on the voices on the student's device. If there's no on-device voice for the
-  language, the button doesn't appear (rather than sending text to an online voice).
+- **Read-aloud** sounds natural when the school's computer has Gloam's voice set up ("Set up voices"). Without
+  it, it uses the voices on the student's device, which sound more robotic. If neither is there, the button
+  doesn't appear (rather than sending text to an online voice). Gloam's French voice sometimes misreads
+  slang and joined words (like "vas-y").
 - **Voice typing** is less accurate with background noise, young children's voices and strong accents.
   Students always see and can fix the words.
 - **Sounds** are decorative only. Nothing important is said only by sound.

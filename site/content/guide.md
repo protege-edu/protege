@@ -49,11 +49,14 @@ Other teachers on the same computer: press **Make an invite code** on your teach
 
 **Pause the class** puts every Gloam to sleep when you want everyone's attention.
 
-## Voice typing (optional)
+## Voices (optional)
 
-Double-click **Set up voice typing** once (a few hundred MB). Students can then press the mic and talk to
-Gloam instead of typing. Their words appear in the box to check before sending. Their voice is turned into
-words on your computer and never saved.
+Double-click **Set up voices** once (about 850 MB). Then:
+
+- **Voice typing:** students can press the mic and talk to Gloam instead of typing. Their words appear in
+  the box to check before sending. Their voice is turned into words on your computer and never saved.
+- **Gloam's voice:** read-aloud uses a natural voice (Kokoro) made on your computer, instead of each
+  device's own robotic one. Nothing is saved.
 
 ## Students outside the school network (optional)
 

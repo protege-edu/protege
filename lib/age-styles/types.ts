@@ -1,4 +1,5 @@
 import type { RigSpec } from "@/lib/gloam-rig/spec";
+import type { SpokenVoice } from "@/lib/voice/voices";
 import type { Emotion } from "@/lib/ai/schemas";
 
 /**
@@ -365,5 +366,7 @@ export interface AgeStyle {
     /** Touch target scale. Little kids get bigger buttons. */
     targetScale: number;
     readAloud: boolean;
+    /** Gloam's voice when it reads aloud on the teacher's laptop, per language (lib/voice/voices.ts) */
+    spoken: Record<Language, SpokenVoice>;
   };
 }

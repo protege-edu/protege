@@ -22,7 +22,10 @@ const MAX = 500;
  * Gloam's speech panel: a piece of night paper with a tail that points at Gloam's mouth.
  * On wide screens it floats beside Gloam's head; on narrow ones it sits under Gloam, tail pointing up.
  */
-function SpeechPanel({ gloam, wide, children, seed }: { gloam: GloamBox | null; wide: boolean; children: ReactNode; seed: string }) {
+/** A ref that tells the game where a block of words starts (Gloam stands above it): see useWordsTop */
+type WordsRef = (el: HTMLElement | null) => (() => void) | undefined;
+
+function SpeechPanel({ gloam, wide, children, seed, floorAt }: { gloam: GloamBox | null; wide: boolean; children: ReactNode; seed: string; floorAt?: number | null }) {
   const calm = useCalmMotion();
   const ref = useRef<HTMLDivElement>(null);
   const [tailTo, setTailTo] = useState<{ x: number; y: number } | undefined>();
@@ -31,9 +34,9 @@ function SpeechPanel({ gloam, wide, children, seed }: { gloam: GloamBox | null; 
   // Where the panel goes: beside Gloam's head (wide), or below Gloam (narrow). Long lines or bigger text
   // make it taller: then it slides up (never under the top bar), so it never runs under the teach box.
   const [height, setHeight] = useState(0);
-  // the teach box takes about 13.5rem at the bottom (it grows with the student's text size)
+  // the panel stops above the teach box (measured: it grows with sentence starters, long drafts and bigger text)
   const rem = typeof window === "undefined" ? 16 : parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-  const floor = gloam ? gloam.stageH - 13.5 * rem : 0;
+  const floor = gloam ? (floorAt ?? gloam.stageH - 13.5 * rem) - 16 : 0;
   const place =
     gloam && wide
       ? {
@@ -82,6 +85,7 @@ function SpeechPanel({ gloam, wide, children, seed }: { gloam: GloamBox | null; 
   return (
     <motion.div
       ref={ref}
+      data-near-gloam
       className={place ? "absolute z-20 flex w-[min(28rem,40vw)] flex-col" : "relative flex max-h-[38dvh] flex-col"}
       style={place ?? undefined}
       initial={calm ? false : { opacity: 0, scale: 0.96, y: 6 }}
@@ -97,7 +101,7 @@ function SpeechPanel({ gloam, wide, children, seed }: { gloam: GloamBox | null; 
 }
 
 function GloamName({ style, line }: { style: AgeStyle; line?: string }) {
-  // read-aloud, when the student wants it (Ways to play), and only with a voice that runs on this device
+  // read-aloud, when the student wants it (Ways to play), and only with a private voice (the laptop's or this device's)
   const wanted = useAccess(style).readAloud !== "off";
   const voiced = useCanReadAloud(style.language ?? "en");
   // leaving the screen stops reading
@@ -116,7 +120,24 @@ function GloamName({ style, line }: { style: AgeStyle; line?: string }) {
  * Teaching: Gloam's speech panel (its line, or what it's thinking), your last line tucked underneath,
  * and Gloam's notebook at the bottom, where you write. The full conversation lives in Gloam's journal.
  */
-export function DialogueBand({ s, style, gloam, wide, onOpenLog }: { s: TeachSession; style: AgeStyle; gloam: GloamBox | null; wide: boolean; onOpenLog: () => void }) {
+export function DialogueBand({
+  s,
+  style,
+  gloam,
+  wide,
+  onOpenLog,
+  wordsRef,
+  dockTop,
+}: {
+  s: TeachSession;
+  style: AgeStyle;
+  gloam: GloamBox | null;
+  wide: boolean;
+  onOpenLog: () => void;
+  wordsRef?: WordsRef;
+  /** where the teach box starts (px): the speech panel stays above it */
+  dockTop?: number | null;
+}) {
   const calm = useCalmMotion();
   const [draft, setDraft] = useState("");
   const input = useRef<HTMLTextAreaElement>(null);
@@ -141,8 +162,8 @@ export function DialogueBand({ s, style, gloam, wide, onOpenLog }: { s: TeachSes
   // "Every line": Gloam's new lines are read aloud by themselves
   const autoRead = access.readAloud === "auto" && lastGloam?.kind === "gloam" && lastGloam.fresh ? lastGloam : null;
   useEffect(() => {
-    if (autoRead) readAloud(autoRead.text, lang);
-  }, [autoRead, lang]);
+    if (autoRead) readAloud(autoRead.text, style);
+  }, [autoRead, style]);
 
   // Grow with the text, up to about 4 lines
   useEffect(() => {
@@ -217,9 +238,13 @@ export function DialogueBand({ s, style, gloam, wide, onOpenLog }: { s: TeachSes
 
   return (
     <>
-      {wide && gloam && <SpeechPanel gloam={gloam} wide seed="speech">{speech}</SpeechPanel>}
+      {wide && gloam && (
+        <SpeechPanel gloam={gloam} wide seed="speech" floorAt={dockTop}>
+          {speech}
+        </SpeechPanel>
+      )}
       <div className="absolute inset-x-0 bottom-0 z-20 bg-[linear-gradient(0deg,rgb(var(--t-scrim)/calc(0.92_+_var(--scrim-boost)))_0%,rgb(var(--t-scrim)/calc(0.7_+_var(--scrim-boost)))_55%,transparent_100%)] pt-10">
-        <div className="mx-auto flex max-w-[860px] flex-col gap-4 px-4 pb-4 sm:px-8 md:pb-6">
+        <div ref={wordsRef} className="mx-auto flex max-w-[860px] flex-col gap-4 px-4 pb-4 sm:px-8 md:pb-6">
           {!wide && <SpeechPanel gloam={gloam} wide={false} seed="speech-narrow">{speech}</SpeechPanel>}
 
           {style.input.modes.includes("choices") && (
@@ -310,7 +335,21 @@ export function DialogueBand({ s, style, gloam, wide, onOpenLog }: { s: TeachSes
 }
 
 /** The intro, in Gloam's speech panel: Gloam explains your job, one line at a time. */
-export function IntroBand({ s, style, steps, gloam, wide }: { s: TeachSession; style: AgeStyle; steps: { mood: string; text: string }[]; gloam: GloamBox | null; wide: boolean }) {
+export function IntroBand({
+  s,
+  style,
+  steps,
+  gloam,
+  wide,
+  wordsRef,
+}: {
+  s: TeachSession;
+  style: AgeStyle;
+  steps: { mood: string; text: string }[];
+  gloam: GloamBox | null;
+  wide: boolean;
+  wordsRef?: WordsRef;
+}) {
   const [i, setI] = useState(0);
   const next = useRef<HTMLButtonElement>(null);
   const last = i === steps.length - 1;
@@ -323,10 +362,9 @@ export function IntroBand({ s, style, steps, gloam, wide }: { s: TeachSession; s
 
   // "Every line" read-aloud covers the intro too
   const auto = useAccess(style).readAloud === "auto";
-  const lang = style.language ?? "en";
   useEffect(() => {
-    if (auto) readAloud(steps[i].text, lang);
-  }, [auto, i, steps, lang]);
+    if (auto) readAloud(steps[i].text, style);
+  }, [auto, i, steps, style]);
 
   const panel = (
     <SpeechPanel gloam={gloam} wide={wide} seed="intro">
@@ -355,6 +393,8 @@ export function IntroBand({ s, style, steps, gloam, wide }: { s: TeachSession; s
   return wide && gloam ? (
     panel
   ) : (
-    <div className="absolute inset-x-0 bottom-0 z-20 bg-[linear-gradient(0deg,rgb(var(--t-scrim)/calc(0.92_+_var(--scrim-boost)))_0%,rgb(var(--t-scrim)/calc(0.7_+_var(--scrim-boost)))_55%,transparent_100%)] px-4 pt-10 pb-5">{panel}</div>
+    <div className="absolute inset-x-0 bottom-0 z-20 bg-[linear-gradient(0deg,rgb(var(--t-scrim)/calc(0.92_+_var(--scrim-boost)))_0%,rgb(var(--t-scrim)/calc(0.7_+_var(--scrim-boost)))_55%,transparent_100%)] px-4 pt-10 pb-5">
+      <div ref={wordsRef}>{panel}</div>
+    </div>
   );
 }

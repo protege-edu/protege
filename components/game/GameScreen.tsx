@@ -13,6 +13,7 @@ import { useTestMode } from "@/lib/testMode";
 import { TestPanel } from "./TestPanel";
 import { TrailMap } from "./TrailMap";
 import { useCalmMotion } from "@/lib/useCalmMotion";
+import { useRem, useWordsTop } from "@/lib/useWordsTop";
 import type { ClientLesson } from "@/lib/lesson/types";
 import { DialogueBand, IntroBand } from "./DialogueBand";
 import { EndingPanel, HelpDialog, LogDrawer, PauseMenu, StoryCaption, TitleScreen, TopBar, type Account } from "./Overlays";
@@ -134,6 +135,11 @@ export function GameScreen({ lesson, account = "preview", access = null }: { les
         ? { focus: wide ? 0.29 : 0.5, groundAt: wide ? 0.74 : 0.5, scale: 1 }
         : { focus: 0.5, groundAt: wide ? 0.6 : 0.5, scale: 1 };
   const focus = shot.focus;
+  // where the words below Gloam start (the teach box, the intro, the recap; the title on narrow screens):
+  // Gloam stands above them, and under the top bar while teaching
+  const [wordsRef, wordsTop] = useWordsTop();
+  const rem = useRem();
+  const ceiling = s.phase === "teach" || s.phase === "intro" ? rem * 5 : 12;
 
   // Story beats float over the scene for a few seconds
   const lastEntry = s.entries[s.entries.length - 1];
@@ -185,6 +191,9 @@ export function GameScreen({ lesson, account = "preview", access = null }: { les
           gloamScale={shot.scale}
           showCandles={s.phase !== "title" && s.phase !== "loading"}
           onGloamBox={setGloamBox}
+          floor={opened ? wordsTop : null}
+          ceiling={ceiling}
+          stand={!wide}
           journey={{
             talking: s.talking,
             waiting: s.phase === "teach" && s.status === "ready" && !s.moment,
@@ -211,6 +220,8 @@ export function GameScreen({ lesson, account = "preview", access = null }: { les
                 onStart={s.start}
                 onHelp={() => setOverlay("help")}
                 onGo={(href) => router.push(href)}
+                gloam={gloamBox}
+                wordsRef={wide ? undefined : wordsRef}
               />}
           </AnimatePresence>
           {s.phase === "ending" && s.recap && (!world || finaleArrived) && (
@@ -222,13 +233,14 @@ export function GameScreen({ lesson, account = "preview", access = null }: { les
               onTeachAgain={s.startOver}
               onTitle={toTitle}
               titleLabel={account === "student" ? style.copy.toMyGloam : undefined}
+              wordsRef={wide ? undefined : wordsRef}
             />
           )}
         </Stage>
       </div>
 
-      {s.phase === "intro" && <IntroBand s={s} style={style} steps={steps} gloam={gloamBox} wide={wide} />}
-      {s.phase === "teach" && <DialogueBand s={s} style={style} gloam={gloamBox} wide={wide} onOpenLog={() => setOverlay("log")} />}
+      {s.phase === "intro" && <IntroBand s={s} style={style} steps={steps} gloam={gloamBox} wide={wide} wordsRef={wordsRef} />}
+      {s.phase === "teach" && <DialogueBand s={s} style={style} gloam={gloamBox} wide={wide} onOpenLog={() => setOverlay("log")} wordsRef={wordsRef} dockTop={wordsTop} />}
       {test && s.phase === "teach" && (
         <TestPanel onNext={() => void s.skipAhead(false)} onAll={() => void s.skipAhead(true)} onDoze={() => setDozeTick((t) => t + 1)} disabled={s.status !== "ready" || !!s.moment || s.finished} />
       )}

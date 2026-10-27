@@ -22,6 +22,7 @@ export function TravelQuip({ text, gloam, ceiling = 70 }: { text: string | null;
         <motion.p
           key={text}
           aria-live="polite"
+          data-near-gloam
           className="voice pointer-events-none absolute z-20 max-w-[30ch] -translate-x-1/2 text-center text-sm text-ink [text-shadow:0_1px_10px_rgb(var(--t-glow)/0.95)]"
           ref={measure}
           // just above Gloam's head, growing upward; if there isn't room under the header, it overlaps Gloam a little instead
@@ -50,6 +51,7 @@ export function ChapterCard({ style, chapter, total, beat }: { style: AgeStyle; 
         <motion.div
           key={chapter}
           role="status"
+          data-near-gloam
           className="pointer-events-none absolute inset-x-0 top-[6%] z-20 flex flex-col items-center px-6 text-center"
           initial={calm ? false : { opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -96,6 +98,7 @@ export function LevelUpCard({ style, level, line, onDone }: { style: AgeStyle; l
         <motion.div
           key={level}
           role="status"
+          data-near-gloam
           className="absolute top-20 left-1/2 z-30 w-[min(380px,calc(100%-32px))] -translate-x-1/2"
           initial={calm ? false : { opacity: 0, y: -16, scale: 0.94 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}

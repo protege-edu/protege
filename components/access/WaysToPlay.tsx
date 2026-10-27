@@ -52,7 +52,7 @@ export function WaysToPlay({ style, onClose }: { style: AgeStyle; onClose: () =>
                 const readAloudNow = (["off", "button", "auto"] as const)[i];
                 set({ readAloud: readAloudNow });
                 // a taste of it: the choice itself is read aloud
-                if (i > 0) readAloud(t.readAloudChoices[i], lang);
+                if (i > 0) readAloud(t.readAloudChoices[i], style);
               }}
             />
             <Choices label={t.text} choices={t.textChoices} value={a.text} onChange={(i) => set({ text: i as Access["text"] })} />

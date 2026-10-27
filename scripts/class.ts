@@ -9,8 +9,9 @@
  * (Teachers who downloaded Protégé use the launcher instead: scripts/launch.ts, same steps.)
  */
 import { spawn, spawnSync } from "node:child_process";
+import path from "node:path";
 import { loadEnvConfig } from "@next/env";
-import { announce, children, ensureAI, relay, say, startVoice, stopAll } from "./lib/run";
+import { announce, children, ensureAI, relay, say, startReadAloud, startVoice, stopAll } from "./lib/run";
 
 loadEnvConfig(process.cwd());
 const PORT = Number(process.env.PORT ?? 3000);
@@ -20,6 +21,7 @@ async function main() {
   say("\nProtégé: getting ready for class\n");
   await ensureAI();
   await startVoice();
+  await startReadAloud([...process.execArgv, path.join(path.dirname(path.resolve(process.argv[1])), "speak.ts")]);
 
   if (!has("--no-build")) {
     say("… building (about a minute)");

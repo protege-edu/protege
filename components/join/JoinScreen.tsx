@@ -1,5 +1,6 @@
 "use client";
 
+import { useRem, useWordsTop } from "@/lib/useWordsTop";
 import { ReadAloudButton } from "@/components/access/ReadAloud";
 import { WaysToPlayButton } from "@/components/access/WaysToPlay";
 import { AnimatePresence, motion } from "motion/react";
@@ -81,9 +82,12 @@ export function JoinScreen({ initialCode, googleFor, guess = "en" }: { initialCo
   const [gloamBox, setGloamBox] = useState<GloamBox | null>(null);
   const [wide, setWide] = useState(true);
   const [hurt, setHurt] = useState(false);
+  const [wordsRef, wordsTop] = useWordsTop();
+  const rem = useRem();
 
   useEffect(() => {
-    const mq = window.matchMedia("(min-width: 768px)");
+    // the same breakpoint as the game: side by side with Gloam only when there's room (not a tablet held upright)
+    const mq = window.matchMedia("(min-width: 56rem)");
     const update = () => setWide(mq.matches);
     update();
     mq.addEventListener("change", update);
@@ -232,6 +236,9 @@ export function JoinScreen({ initialCode, googleFor, guess = "en" }: { initialCo
           focus={wide ? 0.72 : 0.5}
           groundAt={wide ? 0.8 : 0.4}
           gloamScale={wide ? 0.85 : 0.55}
+          floor={wide ? null : wordsTop}
+          ceiling={rem * 6.5}
+          stand
           showCandles={false}
           onGloamBox={setGloamBox}
           journey={{ talking: true, waiting: false, level: 1, levels: [], stop: 0 }}
@@ -241,10 +248,16 @@ export function JoinScreen({ initialCode, googleFor, guess = "en" }: { initialCo
       </div>
 
       {/* darken where the words are, keep Gloam clear */}
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgb(var(--t-scrim)/calc(0.9_+_var(--scrim-boost)))_0%,rgb(var(--t-scrim)/calc(0.7_+_var(--scrim-boost)))_40%,transparent_68%)] max-md:bg-[linear-gradient(0deg,rgb(var(--t-scrim)/calc(0.95_+_var(--scrim-boost)))_0%,rgb(var(--t-scrim)/calc(0.8_+_var(--scrim-boost)))_55%,transparent_75%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgb(var(--t-scrim)/calc(0.9_+_var(--scrim-boost)))_0%,rgb(var(--t-scrim)/calc(0.7_+_var(--scrim-boost)))_40%,transparent_68%)] max-[56rem]:bg-[linear-gradient(180deg,transparent_0,transparent_calc(var(--words)-3rem),rgb(var(--t-scrim)/calc(0.8_+_var(--scrim-boost)))_calc(var(--words)-0.5rem),rgb(var(--t-scrim)/calc(0.95_+_var(--scrim-boost)))_100%)]"
+        // narrow screens: the shading starts where the words do, so Gloam above them stays clear
+        style={{ ["--words" as string]: `${wordsTop ?? 0.45 * 800}px` }}
+      />
 
-      {/* "safe" centring: when bigger text makes it taller than the screen, the top stays reachable */}
-      <main className="relative flex h-full flex-col justify-end-safe overflow-y-auto px-6 pb-8 md:w-[min(560px,48vw)] md:justify-center-safe md:px-[6vw] md:pb-0 max-md:pt-[44vh]">
+      {/* "safe" centring: when bigger text makes it taller than the screen, the top stays reachable. On narrow
+          screens the scrolling box starts under Gloam, so words never scroll up over it */}
+      <main className="relative flex h-full flex-col justify-end-safe overflow-y-auto px-6 pb-8 min-[56rem]:w-[min(560px,48vw)] min-[56rem]:justify-center-safe min-[56rem]:px-[6vw] min-[56rem]:pb-0 max-[56rem]:absolute max-[56rem]:inset-x-0 max-[56rem]:top-[max(38dvh,15rem)] max-[56rem]:bottom-0 max-[56rem]:h-auto max-[56rem]:pt-2">
+        {/* (measured: on narrow screens Gloam stands above these words) */}
+        <div ref={wide ? undefined : wordsRef}>
         <p className="text-2xl text-ink">
           <Wordmark tone={style.look.tone} mark={false} />
         </p>
@@ -289,7 +302,7 @@ export function JoinScreen({ initialCode, googleFor, guess = "en" }: { initialCo
                   {t.codeButton}
                 </InkButton>
                 {/* on a phone it sits here, under the button (in the corner it would collide with it) */}
-                <Link href="/" className="mt-3 block w-fit min-h-11 content-center rounded-md text-xs font-bold text-ink-dim underline-offset-4 hover:text-ink hover:underline md:hidden">
+                <Link href="/" className="mt-3 block w-fit min-h-11 content-center rounded-md text-xs font-bold text-ink-dim underline-offset-4 hover:text-ink hover:underline min-[56rem]:hidden">
                   {style.copy.titlePractice}
                 </Link>
               </form>
@@ -301,7 +314,7 @@ export function JoinScreen({ initialCode, googleFor, guess = "en" }: { initialCo
                   {t.whoTitle}
                 </Title>
                 <p className="mt-2 text-sm text-ink-dim">{t.whoHint(preview.name)}</p>
-                <ul className="mt-5 flex max-h-[26vh] flex-wrap gap-2 overflow-y-auto p-1 md:max-h-[38vh]">
+                <ul className="mt-5 flex max-h-[26vh] flex-wrap gap-2 overflow-y-auto p-1 min-[56rem]:max-h-[38vh]">
                   {preview.nicknames.map((n) => (
                     <li key={n.id}>
                       {n.google ? (
@@ -446,12 +459,13 @@ export function JoinScreen({ initialCode, googleFor, guess = "en" }: { initialCo
             )}
           </motion.section>
         </AnimatePresence>
+        </div>
       </main>
 
       <WaysToPlayButton style={style} className="!absolute top-3 right-4 z-10" />
 
       {step.k === "code" && (
-        <Link href="/" className="absolute right-4 bottom-4 min-h-11 content-center rounded-md px-3 text-xs font-bold text-ink-dim underline-offset-4 hover:text-ink hover:underline max-md:hidden">
+        <Link href="/" className="absolute right-4 bottom-4 min-h-11 content-center rounded-md px-3 text-xs font-bold text-ink-dim underline-offset-4 hover:text-ink hover:underline max-[56rem]:hidden">
           {style.copy.titlePractice}
         </Link>
       )}

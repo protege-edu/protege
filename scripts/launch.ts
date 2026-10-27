@@ -5,7 +5,8 @@
  *
  *   node launch.js                 start Protégé for class (opens the teacher page)
  *   node launch.js --tunnel        ...and open a free tunnel, so students can join from anywhere
- *   node launch.js --setup-voice   download voice typing (whisper.cpp, runs on this laptop only), once
+ *   node launch.js --setup-voice   download the voices, once: voice typing (whisper.cpp) and Gloam's
+ *                                  read-aloud voice (Kokoro); both run on this laptop only
  *   node launch.js --no-open       don't open the browser (for tests)
  *   node launch.js --restore [date]          put Protégé back to an earlier day (stop it first)
  *   node launch.js --access-log [--all]      who viewed or changed students' information
@@ -16,7 +17,8 @@
 import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import { announce, children, ensureAI, openInBrowser, relay, say, startVoice, stopAll } from "./lib/run";
+import { announce, children, ensureAI, openInBrowser, relay, say, startReadAloud, startVoice, stopAll } from "./lib/run";
+import { runSpeaker } from "./speak";
 import { setupVoice } from "./voice-setup";
 
 declare const PROTEGE_VERSION: string;
@@ -27,6 +29,8 @@ const PORT = Number(process.env.PORT ?? 3000);
 const has = (flag: string) => process.argv.includes(flag);
 
 async function main() {
+  // the read-aloud helper, started by the launcher itself (see startReadAloud)
+  if (has("--speaker")) return runSpeaker();
   say(`\nProtégé ${typeof PROTEGE_VERSION === "string" ? PROTEGE_VERSION : ""}: getting ready for class\n`);
   if (has("--setup-voice")) {
     await setupVoice();
@@ -53,6 +57,7 @@ async function main() {
   }
   await ensureAI({ help: true });
   await startVoice();
+  await startReadAloud([path.resolve(process.argv[1]), "--speaker"]);
 
   const app = path.join(here, "app");
   const server = spawn(process.execPath, [path.join(app, "server.js")], {

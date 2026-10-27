@@ -333,5 +333,5 @@ export const senior: AgeStyle = {
   },
   celebrate: { style: "understated", particles: 28 },
   safety: { level: "standard" },
-  input: { modes: ["type"], targetScale: 1, readAloud: false },
+  input: { modes: ["type"], targetScale: 1, readAloud: false, spoken: { en: { name: "af_heart", speed: 1 }, fr: { name: "ff_siwis", speed: 1 } } },
 };

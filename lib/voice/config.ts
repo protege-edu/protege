@@ -27,3 +27,31 @@ export const voiceDownloads = {
   windows: "https://github.com/ggml-org/whisper.cpp/releases/download/v1.9.2/whisper-bin-x64.zip",
   model: (file: string) => `https://huggingface.co/ggerganov/whisper.cpp/resolve/main/${file}`,
 };
+
+/**
+ * Read-aloud on the teacher's laptop: Gloam's lines in a natural voice (Kokoro, Apache 2.0), made by a
+ * small helper (scripts/speak.ts) that only this computer can reach. Without it, read-aloud uses the
+ * device's own voices. Lines are never written to disk or logged.
+ *
+ *   SPEAK_URL          the local read-aloud helper (default http://127.0.0.1:8179)
+ *   SPEAK_THREADS      CPU cores it may use for one line (default: about a quarter of them)
+ */
+export const speakConfig = {
+  url: process.env.SPEAK_URL ?? "http://127.0.0.1:8179",
+  /** the voice model and the engine that runs it, inside the voice folder */
+  dir: path.join(process.env.VOICE_DIR ?? path.join(dataDir(), "voice"), "speak"),
+  /** 0 = automatic (see scripts/speak.ts) */
+  threads: Number(process.env.SPEAK_THREADS ?? 0),
+  timeoutMs: Number(process.env.SPEAK_TIMEOUT_MS ?? 15_000),
+};
+
+/** What scripts/voice-setup.ts downloads for read-aloud (pinned versions, free and open source) */
+export const speakDownloads = {
+  /** sherpa-onnx runs the voice model in Node (Apache 2.0). 1.x still has espeak-ng built in for French and new words. */
+  engineVersion: "1.13.8",
+  npm: (name: string, version: string) => `https://registry.npmjs.org/${name}/-/${name}-${version}.tgz`,
+  /** Kokoro 82M v1.0 (Apache 2.0) packed for sherpa-onnx */
+  model: "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/kokoro-multi-lang-v1_0.tar.bz2",
+  /** what's kept from the model download (the rest is for Chinese) */
+  keep: ["model.onnx", "voices.bin", "tokens.txt", "lexicon-us-en.txt", "lexicon-gb-en.txt", "espeak-ng-data", "LICENSE"],
+};

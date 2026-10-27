@@ -20,6 +20,9 @@ import { blueprintWarnings, checkBlueprint } from "@/lib/teacher/checks";
 import { dropRunningLines, pdfLinesToText } from "@/lib/teacher/pdf-text";
 import { AccessPatch, cleanAccess, defaultAccess } from "@/lib/access/settings";
 import { checkWav, cleanTranscript } from "@/lib/voice/wav";
+import { isSpokenVoice, SPOKEN_MAX_CHARS, SPOKEN_VOICES, speakingPieces } from "@/lib/voice/voices";
+import { tidyForSpeech } from "./speak";
+import { fitGloam } from "@/components/game/Stage";
 
 let passed = 0;
 function test(name: string, fn: () => void) {
@@ -332,6 +335,53 @@ test("whisper's sound tags aren't words a student said", () => {
 });
 test("what was said goes through the same safety checks as typing", () => {
   assert.notEqual(checkSafety(cleanTranscript("you're a f*cking idiot"), hs), "ok");
+});
+
+console.log("read-aloud");
+test("every age style has a real voice for each language, in that language", () => {
+  for (const id of Object.keys(AGE_STYLES)) {
+    for (const lang of ["en", "fr"] as const) {
+      const v = getAgeStyle(id, lang).input.spoken[lang];
+      assert.ok(isSpokenVoice(v.name), `${id} ${lang}`);
+      assert.equal(SPOKEN_VOICES[v.name].lang, lang, `${id} ${lang}`);
+      assert.ok(v.speed >= 0.7 && v.speed <= 1.3);
+    }
+  }
+  assert.ok(!isSpokenVoice("toString") && !isSpokenVoice("__proto__"));
+});
+test("lines are read in pieces: whole words, nothing lost, short first piece", () => {
+  const line = "Okay. Fine. FINE. So plants eat sunlight? That sounds made up, but go on, I'm listening. " + "Really long bit, ".repeat(30) + "the end.";
+  const pieces = speakingPieces(line);
+  assert.equal(pieces.join(" ").replace(/\s+/g, " "), line.replace(/\s+/g, " ").trim());
+  assert.ok(pieces.every((p) => p.length <= SPOKEN_MAX_CHARS && p.length > 0));
+  assert.ok(pieces[0].length < 80, pieces[0]);
+  assert.deepEqual(speakingPieces("   "), []);
+  assert.deepEqual(speakingPieces("no full stop at all"), ["no full stop at all"]);
+});
+test("text is tidied for the voice: no markdown, emoji or joined words it trips on", () => {
+  assert.equal(tidyForSpeech("**wait** — the *tilt*?! 🌍"), "wait, the tilt?!");
+  assert.equal(tidyForSpeech("vas-y, explique"), "vas y, explique");
+  assert.equal(tidyForSpeech("hmm..."), "hmm…");
+});
+
+console.log("Gloam's place on screen");
+test("Gloam stands above the words, under the top bar, and never vanishes", () => {
+  const feet = 0.94;
+  const free = fitGloam({ vh: 800, groundAt: 0.6, gloamScale: 1, feet });
+  assert.equal(free.groundY, 480);
+  // words start at 400: the whole box (feet and shadow) ends above them
+  const fit = fitGloam({ vh: 800, groundAt: 0.6, gloamScale: 1, feet, floor: 400, ceiling: 80 });
+  assert.ok(fit.groundY + fit.gloamH * (1 - feet) <= 400 - 12 + 0.5, JSON.stringify(fit));
+  assert.ok(fit.groundY - fit.gloamH * feet >= 80 - 0.5, "head under the top bar");
+  // words far below the ground: nothing changes
+  assert.deepEqual(fitGloam({ vh: 800, groundAt: 0.6, gloamScale: 1, feet, floor: 700, ceiling: 80 }), free);
+  // almost no room: smallest Gloam, still on screen
+  const squeezed = fitGloam({ vh: 800, groundAt: 0.6, gloamScale: 1, feet, floor: 150, ceiling: 80 });
+  assert.equal(squeezed.gloamH, 110);
+  assert.ok(squeezed.groundY > 0);
+  // stacked layouts: it stands right on the words, even when they start lower than its usual ground
+  const stood = fitGloam({ vh: 1000, groundAt: 0.4, gloamScale: 0.55, feet, floor: 620, ceiling: 100, stand: true });
+  assert.ok(Math.abs(stood.groundY + stood.gloamH * (1 - feet) - (620 - 12)) < 1, JSON.stringify(stood));
 });
 
 console.log("français");

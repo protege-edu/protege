@@ -19,9 +19,11 @@ EVERY CLASS
 - Students on a different network, or at home? Use "Start Protégé online" instead
   (it needs Tailscale or cloudflared, both free: see the guide on the Protégé website).
 
-VOICE TYPING (optional)
-- Double-click "Set up voice typing" once (downloads a few hundred MB). Students can then talk to
-  Gloam instead of typing. Their voice is turned into words on this laptop and never saved.
+VOICES (optional)
+- Double-click "Set up voices" once (downloads about 850 MB). Then:
+  - students can talk to Gloam instead of typing. Their voice is turned into words on this laptop and
+    never saved.
+  - read-aloud uses Gloam's natural voice, made on this laptop, instead of each device's robotic one.
 
 YOUR DATA
 - Everything is saved in your user folder: %LOCALAPPDATA%\Protege on Windows, ~/.local/share/Protege on Mac.

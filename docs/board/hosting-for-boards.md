@@ -37,7 +37,8 @@ allow students' personal information on personal devices.
    (about 2.5 GB).
 4. It prints a **setup code** and opens the teacher page. The first teacher account needs the code. Later
    teachers get one-use invites from a signed-in teacher.
-5. Optional: **Set up voice typing** (downloads whisper.cpp and a speech model, a few hundred MB).
+5. Optional: **Set up voices** (about 850 MB, once): voice typing (whisper.cpp and a speech model) and Gloam's
+   natural read-aloud voice (Kokoro). Both run on this laptop only.
 6. Open **Ready for class?** on the teacher page to check everything works.
 
 ## Students reaching it

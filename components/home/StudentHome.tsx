@@ -1,5 +1,6 @@
 "use client";
 
+import { useRem, useWordsTop } from "@/lib/useWordsTop";
 import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -26,6 +27,8 @@ export function StudentHome({ home }: { home: Home }) {
   const router = useRouter();
   const [gloamBox, setGloamBox] = useState<GloamBox | null>(null);
   const [wide, setWide] = useState(true);
+  const [wordsRef, wordsTop] = useWordsTop();
+  const rem = useRem();
   const [journal, setJournal] = useState(false);
   const [line, setLine] = useState<string | null>(null);
   const level = home.gloam.level;
@@ -46,7 +49,8 @@ export function StudentHome({ home }: { home: Home }) {
   useEffect(() => adoptAccess(home.access), [home.access]);
 
   useEffect(() => {
-    const mq = window.matchMedia("(min-width: 768px)");
+    // the same breakpoint as the game: side by side with Gloam only when there's room (not a tablet held upright)
+    const mq = window.matchMedia("(min-width: 56rem)");
     const update = () => setWide(mq.matches);
     update();
     mq.addEventListener("change", update);
@@ -87,6 +91,9 @@ export function StudentHome({ home }: { home: Home }) {
           // on a phone, Gloam stands a little lower, so its hello has room under the header
           groundAt={wide ? 0.8 : 0.42}
           gloamScale={wide ? 0.9 : 0.5}
+          floor={wide ? null : wordsTop}
+          ceiling={headerH + rem * 3.5}
+          stand
           showCandles={false}
           onGloamBox={setGloamBox}
           journey={{ talking: !!line, waiting: !home.paused, level, levels: [], stop: 0 }}
@@ -94,9 +101,12 @@ export function StudentHome({ home }: { home: Home }) {
           <TravelQuip text={line} gloam={gloamBox} ceiling={headerH + 8} />
         </Stage>
       </div>
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgb(var(--t-scrim)/calc(0.92_+_var(--scrim-boost)))_0%,rgb(var(--t-scrim)/calc(0.75_+_var(--scrim-boost)))_42%,transparent_66%)] max-md:bg-[linear-gradient(0deg,rgb(var(--t-scrim)/calc(0.96_+_var(--scrim-boost)))_0%,rgb(var(--t-scrim)/calc(0.85_+_var(--scrim-boost)))_60%,transparent_80%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgb(var(--t-scrim)/calc(0.92_+_var(--scrim-boost)))_0%,rgb(var(--t-scrim)/calc(0.75_+_var(--scrim-boost)))_42%,transparent_66%)] max-[56rem]:bg-[linear-gradient(180deg,transparent_0,transparent_calc(var(--words)-3rem),rgb(var(--t-scrim)/calc(0.85_+_var(--scrim-boost)))_calc(var(--words)-0.5rem),rgb(var(--t-scrim)/calc(0.96_+_var(--scrim-boost)))_100%)]"
+        // narrow screens: the shading starts where the words do, so Gloam above them stays clear
+        style={{ ["--words" as string]: `${wordsTop ?? 0.45 * 800}px` }}
+      />
 
-      <header ref={header} className="absolute inset-x-0 top-0 z-10 flex flex-wrap items-center justify-between gap-x-3 px-5 py-3 md:px-[5vw]">
+      <header ref={header} className="absolute inset-x-0 top-0 z-10 flex flex-wrap items-center justify-between gap-x-3 px-5 py-3 min-[56rem]:px-[5vw]">
         <span className="text-lg text-ink">
           <Wordmark tone={style.look.tone} mark={false} />
         </span>
@@ -108,8 +118,11 @@ export function StudentHome({ home }: { home: Home }) {
         </span>
       </header>
 
-      <main className="relative flex h-full flex-col justify-end-safe overflow-y-auto px-5 pt-20 pb-6 max-md:pt-[47vh] md:w-[min(620px,52vw)] md:justify-center-safe md:px-[5vw] md:pb-0">
-        <motion.div initial={calm ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}>
+      <main className="relative flex h-full flex-col justify-end-safe overflow-y-auto px-5 pt-20 pb-6 max-[56rem]:absolute max-[56rem]:inset-x-0 max-[56rem]:top-[max(40dvh,calc(var(--head)+12rem))] max-[56rem]:bottom-0 max-[56rem]:h-auto max-[56rem]:pt-2 min-[56rem]:w-[min(620px,52vw)] min-[56rem]:justify-center-safe min-[56rem]:px-[5vw] min-[56rem]:pb-0"
+        // (narrow screens: the scrolling box starts under the header, Gloam's hello and Gloam)
+        style={{ ["--head" as string]: `${headerH}px` }}
+      >
+        <motion.div ref={wide ? undefined : wordsRef} initial={calm ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}>
           <p className="text-sm font-bold text-ink-dim">{home.className}</p>
           <h1 className="mt-1 text-xl font-bold text-ink md:text-2xl">{t.title(home.nickname)}</h1>
           <p className="voice mt-2 text-md text-ink" style={{ ["--casual" as string]: 1, ["--slant" as string]: -6 }}>
@@ -215,7 +228,7 @@ function Journal({ home, onClose }: { home: Home; onClose: () => void }) {
     <motion.div className="fixed inset-0 z-30" role="dialog" aria-modal="true" aria-labelledby="journal-title">
       <motion.div className="absolute inset-0 bg-black/40" onClick={onClose} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} />
       <motion.section
-        className="absolute inset-y-0 right-0 flex w-full flex-col p-3 md:w-[min(520px,44vw)]"
+        className="absolute inset-y-0 right-0 flex w-full flex-col p-3 min-[56rem]:w-[min(520px,44vw)]"
         initial={calm ? false : { x: 60, opacity: 0, rotate: 1.5 }}
         animate={{ x: 0, opacity: 1, rotate: 0 }}
         exit={calm ? undefined : { x: 40, opacity: 0, transition: { duration: 0.2 } }}

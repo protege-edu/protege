@@ -3,24 +3,16 @@
 import { useSyncExternalStore } from "react";
 import { useAccess } from "@/lib/access/store";
 import type { AgeStyle } from "@/lib/age-styles";
-import { canReadAloud, readAloud } from "@/lib/speech";
+import { canReadAloud, readAloud, watchReadAloud } from "@/lib/speech";
 
-/** Can this device read this language aloud, on the device? Voices load late in some browsers, so listen for them. */
+/** Can this student hear this language read aloud: Gloam's voice from the teacher's laptop, or a voice on this device? */
 export function useCanReadAloud(lang: string) {
-  return useSyncExternalStore(
-    (onChange) => {
-      if (!("speechSynthesis" in window)) return () => {};
-      window.speechSynthesis.addEventListener("voiceschanged", onChange);
-      return () => window.speechSynthesis.removeEventListener("voiceschanged", onChange);
-    },
-    () => canReadAloud(lang),
-    () => false,
-  );
+  return useSyncExternalStore(watchReadAloud, () => canReadAloud(lang), () => false);
 }
 
 /**
- * "Read it to me": reads `text` aloud with a voice that runs on this device. Only shows when the student
- * wants read-aloud (Ways to play) and the device has a voice for the language.
+ * "Read it to me": reads `text` aloud in Gloam's voice (made on the teacher's laptop) or a voice on this
+ * device. Only shows when the student wants read-aloud (Ways to play) and one of those can.
  */
 export function ReadAloudButton({ style, text, className = "" }: { style: AgeStyle; text: string; className?: string }) {
   const lang = style.language ?? "en";
@@ -30,7 +22,7 @@ export function ReadAloudButton({ style, text, className = "" }: { style: AgeSty
   return (
     <button
       type="button"
-      onClick={() => readAloud(text, lang)}
+      onClick={() => readAloud(text, style)}
       className={`inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-md px-2 text-xs font-bold text-ink-dim hover:text-ink ${className}`}
     >
       <svg viewBox="0 0 20 20" className="h-4 w-4" aria-hidden="true">

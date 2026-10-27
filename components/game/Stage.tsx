@@ -46,12 +46,57 @@ export interface GloamBox {
   stageH: number;
 }
 
+/** Never smaller than this (px): Gloam is the star, even on a phone with the biggest text */
+const SMALLEST = 110;
+
+/**
+ * Where Gloam's ground goes and how tall it is. Normally from the shot (groundAt, gloamScale). With a
+ * floor (the top of the words underneath), the ground rises so Gloam's whole box stays above it, and with
+ * a ceiling (the top bar), Gloam shrinks so its head stays under it.
+ */
+export function fitGloam({
+  vh,
+  groundAt,
+  gloamScale,
+  feet,
+  floor,
+  ceiling = 0,
+  stand = false,
+}: {
+  vh: number;
+  groundAt: number;
+  gloamScale: number;
+  feet: number;
+  floor?: number | null;
+  ceiling?: number;
+  /** stacked layouts: Gloam stands right on the words (not only moved up when they'd cover it) */
+  stand?: boolean;
+}) {
+  const sized = (ground: number) => Math.min(560, Math.max(180, vh * ground * 0.62)) * gloamScale;
+  let groundY = vh * groundAt;
+  let gloamH = sized(groundAt);
+  if (floor != null && vh > 0) {
+    // the box reaches a little below the feet (the shadow): keep all of it above the floor, with a gap
+    const highest = floor - 12 - gloamH * (1 - feet);
+    if (groundY > highest || stand) {
+      groundY = Math.max(ceiling + SMALLEST * feet, highest);
+      gloamH = Math.min(gloamH, sized(groundY / vh));
+    }
+    // head under the ceiling
+    gloamH = Math.max(SMALLEST, Math.min(gloamH, (groundY - ceiling) / feet));
+  }
+  return { groundY, gloamH };
+}
+
 /**
  * The world: the valley, Gloam, the candles. The age style picks how it's drawn.
  *   focus:    where Gloam stands across the screen (0..1)
  *   groundAt: where the ground line sits down the screen (0..1). The camera glides between shots:
  *             low on the title (big sky), higher while teaching (room for dialogue underneath).
  *   gloamScale: smaller Gloam for wide establishing shots
+ *   floor / ceiling: where the words start below Gloam and where the top bar ends above it (px). Gloam
+ *             stands on the floor and shrinks to fit between them, so words never cover it, whatever
+ *             the screen or the text size. (Pages that scroll start their scrolling box below Gloam.)
  */
 export function Stage({
   style,
@@ -68,6 +113,9 @@ export function Stage({
   showCandles,
   onGloamBox,
   journey,
+  floor,
+  ceiling = 0,
+  stand,
   children,
 }: {
   style: AgeStyle;
@@ -85,6 +133,9 @@ export function Stage({
   /** Where Gloam is on screen (px), so speech panels can point at it */
   onGloamBox?: (box: GloamBox) => void;
   journey?: JourneyState;
+  floor?: number | null;
+  ceiling?: number;
+  stand?: boolean;
   children?: ReactNode;
 }) {
   const calm = useCalmMotion();
@@ -105,8 +156,10 @@ export function Stage({
   const vh = size?.h ?? 0;
   // Phones get a slightly smaller Gloam and candle row so all five candles fit beside it
   const compact = (size?.w ?? 1000) < 640;
-  const gloamH = Math.min(560, Math.max(180, vh * groundAt * 0.62)) * gloamScale;
-  const groundY = vh * groundAt;
+  const fit = fitGloam({ vh, groundAt, gloamScale, feet: geo.feet, floor, ceiling, stand });
+  const gloamH = fit.gloamH;
+  const groundY = fit.groundY;
+  const groundShare = vh ? groundY / vh : groundAt;
   const move = calm ? { duration: 0 } : { type: "spring" as const, stiffness: 55, damping: 18 };
 
   const gloamW = gloamH * geo.aspect;
@@ -114,12 +167,23 @@ export function Stage({
   const cx = (size?.w ?? 0) * focus;
   // The adventure world draws Gloam itself (the animated rig) and reports where it is
   const world = useMemo(() => (style.look.world && style.look.rig ? { world: style.look.world, rig: style.look.rig } : null), [style]);
+  // where Gloam is right now, also marked in the page (an invisible box) so checks can make sure nothing covers it
+  const [mark, setMark] = useState<GloamBox | null>(null);
   useEffect(() => {
     if (!size || world) return;
-    onGloamBox?.({ cx, top: gloamTop, w: gloamW, h: gloamH, stageW: size.w, stageH: size.h });
+    const b = { cx, top: gloamTop, w: gloamW, h: gloamH, stageW: size.w, stageH: size.h };
+    onGloamBox?.(b);
+    void Promise.resolve().then(() => setMark(b));
   }, [size, cx, gloamTop, gloamW, gloamH, onGloamBox, world]);
   // in the adventure, the shrines along the path (and the trail strip) are the candles
-  const onJourneyBox = useCallback((b: GloamBox) => onGloamBox?.(b), [onGloamBox]);
+  const onJourneyBox = useCallback(
+    (b: GloamBox) => {
+      onGloamBox?.(b);
+      // (only moves worth redrawing for: this can be called every frame while Gloam walks)
+      setMark((m) => (m && Math.abs(m.cx - b.cx) < 6 && Math.abs(m.top - b.top) < 6 && Math.abs(m.h - b.h) < 6 ? m : b));
+    },
+    [onGloamBox],
+  );
 
   return (
     <section ref={box} aria-label={style.copy.valleyLabel} className="absolute inset-0 overflow-hidden bg-bg">
@@ -137,7 +201,7 @@ export function Stage({
           levels={journey.levels}
           stop={journey.stop}
           focus={focus}
-          groundAt={groundAt}
+          groundAt={groundShare}
           gloamHeight={gloamH * 0.95}
           onGloamBox={onJourneyBox}
           onWalking={journey.onWalking}
@@ -146,6 +210,7 @@ export function Stage({
       ) : (
         <Diorama brightness={brightness} />
       )}
+      {mark && <div data-gloam-box aria-hidden="true" className="pointer-events-none absolute" style={{ left: mark.cx - mark.w / 2, top: mark.top, width: mark.w, height: mark.h }} />}
 
       {size && !world && (
         <>

@@ -6,12 +6,12 @@ the public code; the file to look at is named.
 ## Architecture
 
 - **One computer runs everything:** the web app (Next.js on Node), the database (SQLite, one file), the AI
-  (Ollama) and voice typing (whisper.cpp). There is **no vendor server** and no telemetry, crash reporting or
+  (Ollama), voice typing (whisper.cpp) and read-aloud (Kokoro, through a small helper). There is **no vendor server** and no telemetry, crash reporting or
   update calls in the background.
 - **Students and teachers** connect with a browser over the school network, or over an encrypted tunnel
   (Tailscale Funnel) if the board allows remote access.
-- **Ollama and whisper.cpp** listen on `127.0.0.1` only (this computer). They are never reachable from the
-  network.
+- **Ollama, whisper.cpp and the read-aloud helper** listen on `127.0.0.1` only (this computer). They are never
+  reachable from the network.
 - **The only outgoing connections:**
   - "Check for updates" (only when a teacher presses it; it asks GitHub for the latest version number)
   - Google sign-in (only if switched on)
@@ -44,7 +44,7 @@ the public code; the file to look at is named.
   - `Strict-Transport-Security` over https
   - no `X-Powered-By`
 - **Cross-site request forgery:** every request that changes something must come from Protégé's own origin.
-- **Rate limits** on sign-in, joining, the AI, voice typing and settings changes. The counters are in memory
+- **Rate limits** on sign-in, joining, the AI, voice typing, read-aloud and settings changes. The counters are in memory
   and expire within an hour.
 - **Input validation:** every request body and every AI response is validated with Zod schemas.
 - **Uploads:** lesson files (PDF, Word, PowerPoint) are read on the server by maintained libraries and only

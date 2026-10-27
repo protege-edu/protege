@@ -117,6 +117,22 @@ const CHECKS = `(() => {
       if (top && (a.el.contains(top) || b.el.contains(top) || top.contains(a.el) || top.contains(b.el))) out.push({ kind: "overlap", severity: "fail", detail: label(a.el) + "  ×  " + label(b.el) });
     }
   }
+  // Gloam is the star: no control or words may sit on its body (its speech, its lines, its big moments and open dialogs excepted)
+  const g = document.querySelector("[data-gloam-box]");
+  if (g && scope === document.body) {
+    const gr = g.getBoundingClientRect();
+    const core = { left: gr.left + gr.width * 0.15, right: gr.right - gr.width * 0.15, top: gr.top + gr.height * 0.08, bottom: gr.bottom - gr.height * 0.05 };
+    const onGloam = (r) => {
+      const x = Math.min(r.right, core.right) - Math.max(r.left, core.left), y = Math.min(r.bottom, core.bottom) - Math.max(r.top, core.top);
+      return x > 0 && y > 0 && (x * y) / Math.max(1, r.width * r.height) > 0.25;
+    };
+    const near = (el) => el.closest("[data-near-gloam], [aria-modal=true], [data-test-panel]");
+    for (const t of texts) if (!near(t.el) && onGloam(t.r)) out.push({ kind: "overlap", severity: "fail", detail: "covers Gloam: " + label(t.el) });
+    for (const el of document.querySelectorAll("button, a[href], input, select, textarea")) {
+      if (!visible(el) || near(el)) continue;
+      if (onGloam(el.getBoundingClientRect())) out.push({ kind: "overlap", severity: "fail", detail: "covers Gloam: " + label(el) });
+    }
+  }
   // tap targets
   for (const el of document.querySelectorAll("button, a[href], input, select, textarea, [role=button], [role=radio], [role=switch], summary")) {
     if (!visible(el) || el.disabled) continue;
@@ -252,7 +268,9 @@ async function studentRun(browser: Browser, age: string, lang: "en" | "fr", size
     }
     await page.locator("#code").fill(cls.code);
     await btn(first.codeButton).click();
-    await page.waitForTimeout(2000);
+    // the class is found (slow on a busy computer): then either "which one are you?" or the nickname step
+    await page.getByText(j.whoNew, { exact: true }).or(page.getByText(j.nickSurprise, { exact: true })).first().waitFor({ timeout: 60_000 });
+    await page.waitForTimeout(800);
     if (await btn(j.whoNew).isVisible().catch(() => false)) {
       await shot("02-join-who");
       await btn(j.whoNew).click();

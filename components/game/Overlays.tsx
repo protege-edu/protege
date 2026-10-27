@@ -13,6 +13,7 @@ import type { AgeStyle } from "@/lib/age-styles";
 import type { GloamLevel } from "@/lib/companion/level";
 import type { ClientLesson, Level, RecapItem } from "@/lib/lesson/types";
 import { useCalmMotion } from "@/lib/useCalmMotion";
+import type { GloamBox } from "./Stage";
 import type { Entry } from "./useTeachSession";
 
 /* ---------------- Title screen ---------------- */
@@ -33,6 +34,8 @@ export function TitleScreen({
   onStart,
   onHelp,
   onGo,
+  gloam,
+  wordsRef,
 }: {
   style: AgeStyle;
   lesson: ClientLesson;
@@ -42,25 +45,32 @@ export function TitleScreen({
   onHelp: () => void;
   /** go to another page (join, or the student's home) */
   onGo: (href: string) => void;
+  /** where Gloam stands: on wide screens the words and buttons stop before it (they never cover the star) */
+  gloam?: GloamBox | null;
+  /** narrow screens: tells the game where the words start, so Gloam stands above them */
+  wordsRef?: (el: HTMLElement | null) => (() => void) | undefined;
 }) {
+  const wideScreen = useWideScreen();
+  // everything on the left stops this far before Gloam's body (bigger screens and bigger text included)
+  const room = wideScreen && gloam ? Math.max(260, gloam.cx - gloam.w * 0.5 - 40) : undefined;
   const calm = useCalmMotion();
   const cta = useRef<HTMLButtonElement>(null);
   useEffect(() => cta.current?.focus({ preventScroll: true }), []);
   const rise = (delay: number) => (calm ? {} : { initial: { opacity: 0, y: 14 }, animate: { opacity: 1, y: 0 }, transition: { delay, duration: 0.8, ease: [0.22, 1, 0.36, 1] as const } });
 
   return (
-    <motion.div className="absolute inset-0 z-20 flex items-end md:items-center" exit={calm ? undefined : { opacity: 0, transition: { duration: 0.5 } }}>
+    <motion.div className="absolute inset-0 z-20 flex items-end min-[56rem]:items-center" exit={calm ? undefined : { opacity: 0, transition: { duration: 0.5 } }}>
       {/* darken the left side so the title reads, keep the right side (Gloam) clear */}
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgb(var(--t-scrim)/calc(0.85_+_var(--scrim-boost)))_0%,rgb(var(--t-scrim)/calc(0.55_+_var(--scrim-boost)))_38%,transparent_65%)] max-md:bg-[linear-gradient(0deg,rgb(var(--t-scrim)/calc(0.92_+_var(--scrim-boost)))_0%,rgb(var(--t-scrim)/calc(0.6_+_var(--scrim-boost)))_45%,transparent_70%)]" />
-      <div className="relative w-full px-6 pb-10 md:w-auto md:px-[7vw] md:pb-0">
-        <motion.h1 {...rise(0.35)} className="mt-3 text-[4rem] text-ink md:text-[6.5rem]">
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgb(var(--t-scrim)/calc(0.85_+_var(--scrim-boost)))_0%,rgb(var(--t-scrim)/calc(0.55_+_var(--scrim-boost)))_38%,transparent_65%)] max-[56rem]:bg-[linear-gradient(0deg,rgb(var(--t-scrim)/calc(0.92_+_var(--scrim-boost)))_0%,rgb(var(--t-scrim)/calc(0.6_+_var(--scrim-boost)))_45%,transparent_70%)]" />
+      <div ref={wordsRef} className="relative w-full px-6 pb-10 min-[56rem]:w-auto min-[56rem]:px-[7vw] min-[56rem]:pb-0" style={room ? { maxWidth: room } : undefined}>
+        <motion.h1 {...rise(0.35)} className="mt-3 text-[4rem] text-ink min-[56rem]:text-[min(6.5rem,8vw)]">
           <Wordmark tone={style.look.tone} mark={false} />
         </motion.h1>
         <motion.p {...rise(0.5)} className="mt-5 max-w-[24ch] text-lg text-ink">
           {lesson.title}
         </motion.p>
         {/* wraps before it reaches Gloam, even with the biggest text */}
-        <motion.div {...rise(0.7)} className="mt-8 flex max-w-[min(40rem,54vw)] flex-wrap items-center gap-3 max-md:max-w-none">
+        <motion.div {...rise(0.7)} className="mt-8 flex flex-wrap items-center gap-3">
           {account === "guest" ? (
             <>
               <InkButton ref={cta} size="lg" onClick={() => onGo("/join")}>
@@ -291,6 +301,7 @@ export function EndingPanel({
   onTitle,
   onKeepTalking,
   titleLabel,
+  wordsRef,
 }: {
   style: AgeStyle;
   recap: RecapItem[];
@@ -299,6 +310,8 @@ export function EndingPanel({
   onTitle: () => void;
   onKeepTalking: () => void;
   titleLabel?: string;
+  /** narrow screens: tells the game where the journal starts, so Gloam stands above it, lantern lit */
+  wordsRef?: (el: HTMLElement | null) => (() => void) | undefined;
 }) {
   const calm = useCalmMotion();
   const first = useRef<HTMLButtonElement>(null);
@@ -307,13 +320,15 @@ export function EndingPanel({
   return (
     <motion.section
       aria-labelledby="ending-title"
-      className="absolute inset-y-0 right-0 z-20 flex w-full flex-col p-3 md:w-[min(520px,44vw)]"
+      ref={wordsRef}
+      // narrow screens: the journal is a sheet under Gloam (it scrolls), so the student sees the lantern they lit
+      className="absolute right-0 bottom-0 z-20 flex w-full flex-col p-3 top-[34dvh] min-[56rem]:top-0 min-[56rem]:w-[min(520px,44vw)]"
       initial={calm ? false : { x: 60, opacity: 0, rotate: 1.5 }}
       animate={{ x: 0, opacity: 1, rotate: 0 }}
       transition={{ type: "spring", stiffness: 110, damping: 20, delay: calm ? 0 : 0.3 }}
     >
       <Sheet seed="journal" tone="slate" radius={22} className="flex min-h-0 flex-1 flex-col">
-        <div className="flex h-[calc(100dvh-24px)] flex-col">
+        <div className="flex h-[calc(66dvh-24px)] flex-col min-[56rem]:h-[calc(100dvh-24px)]">
           {/* faint ruled lines, like a real journal page */}
           <div tabIndex={0} role="region" aria-labelledby="ending-title" className="flex-1 overflow-y-auto bg-[repeating-linear-gradient(180deg,transparent_0,transparent_31px,rgb(211_221_214/0.07)_31px,rgb(211_221_214/0.07)_32px)] px-6 pt-8 pb-4 md:px-8">
             <p className="voice text-sm text-[var(--color-lantern)]" style={{ ["--casual" as string]: 1, ["--slant" as string]: -8 }}>
@@ -374,7 +389,7 @@ export function EndingPanel({
 export function StoryCaption({ text }: { text: string | null }) {
   const calm = useCalmMotion();
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-[16%] z-10 flex justify-center px-6" aria-live="polite">
+    <div data-near-gloam className="pointer-events-none absolute inset-x-0 top-[16%] z-10 flex justify-center px-6" aria-live="polite">
       <AnimatePresence mode="wait">
         {text && (
           <motion.p
@@ -392,4 +407,17 @@ export function StoryCaption({ text }: { text: string | null }) {
       </AnimatePresence>
     </div>
   );
+}
+
+/** The same breakpoint as the game's wide layout (56rem): side by side with Gloam, rather than stacked */
+function useWideScreen() {
+  const [wide, setWide] = useState(true);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 56rem)");
+    const update = () => setWide(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+  return wide;
 }

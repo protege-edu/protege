@@ -22,7 +22,7 @@ candle lights up, and when it gets everything, the whole valley glows.
    Students go to the address on the screen and type the class code.
 
 Optional:
-- **"Set up voice typing"** lets students talk instead of typing.
+- **"Set up voices"** lets students talk instead of typing, and gives read-aloud Gloam's natural voice.
 - **"Start Protégé online"** lets students join from outside the school network (see
   [Putting Protégé online](#putting-protégé-online)).
 - **"Restore a backup"** goes back to an earlier day.
@@ -53,7 +53,7 @@ provinces and countries. The board sets how long data is kept with one setting.
 
 Every student screen has **Ways to play** ("How I play" for the youngest):
 - **Talk instead of typing:** private voice typing; the voice is turned into words on the school's computer and never saved.
-- **Read aloud:** Gloam's words, the join steps and the recap, with on-device voices.
+- **Read aloud:** Gloam's words, the join steps and the recap, in Gloam's natural voice (Kokoro, made on the school's computer), or the device's own voices when that isn't set up.
 - **Bigger text**, **stronger contrast**, **easier reading** (more space, or the OpenDyslexic font), and
   **less motion**.
 
@@ -65,7 +65,7 @@ readers. See [accessibility](docs/board/accessibility.md).
 
 - **Students:** a nickname, a scrambled picture key, what they write to Gloam, and Gloam's estimate of each
   idea (not a mark: teachers can correct it). No real names, emails, birthdays or photos.
-- **Where it lives:** everything stays on the computer running Protégé: the database, the AI, voice typing.
+- **Where it lives:** everything stays on the computer running Protégé: the database, the AI, voice typing, read-aloud.
   No analytics, trackers, ads or third-party scripts. A strict content-security policy enforces it.
 - **What students are told:** that Gloam is an AI, who reads what they write, and how to ask to see or delete
   it, in words for their age.
@@ -185,7 +185,7 @@ about 13 seconds typically.
 |---|---|
 | `npm run dev` | Runs the app at http://localhost:3000 |
 | `npm run class [-- --tunnel]` | Builds and runs Protégé for a real class, with the address and a QR code |
-| `npm run voice:setup` / `npm run voice` | Downloads / starts voice typing (whisper.cpp, local) |
+| `npm run voice:setup` / `npm run voice` | Downloads / starts voice typing (whisper.cpp) and Gloam's read-aloud voice (Kokoro), both local |
 | `npm run release` | Builds the download teachers use (`release/*.zip`) |
 | `npm run test:logic` | 64 tests of the rules: grading, progress, giveaways, safety, voice, ways to play |
 | `npm run test:accounts` | 45 tests of accounts, privacy and retention, on a throwaway database |
@@ -223,7 +223,8 @@ components/ui/        the hand-cut UI kit: buttons, paper panels, panels, the lo
 lib/access/           Ways to play settings
 lib/age-styles/       everything per age and language (personality, lines, words, look)
 lib/ai/               ALL the AI code (swap models in config.ts)
-lib/voice/            voice typing (whisper.cpp on this computer, or on-device in the browser)
+lib/voice/            voice typing (whisper.cpp on this computer, or on-device in the browser) and
+                      read-aloud in Gloam's voice (Kokoro, via scripts/speak.ts)
 lib/privacy/          retention, the daily clean-up, data downloads, the access log
 lib/companion/        progress rules, the director, grading, sessions
 lib/db/               the local SQLite database and backups

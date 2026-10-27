@@ -106,12 +106,12 @@ async function main() {
       ? [
           ["Start Protégé.cmd", `@echo off\r\ntitle Protégé\r\ncd /d "%~dp0"\r\n${node} launch.js %*\r\nif errorlevel 1 pause\r\n`],
           ["Start Protégé online.cmd", `@echo off\r\ntitle Protégé (online)\r\ncd /d "%~dp0"\r\n${node} launch.js --tunnel\r\nif errorlevel 1 pause\r\n`],
-          ["Set up voice typing.cmd", `@echo off\r\ntitle Protégé voice typing\r\ncd /d "%~dp0"\r\n${node} launch.js --setup-voice\r\npause\r\n`],
+          ["Set up voices.cmd", `@echo off\r\ntitle Protégé voices\r\ncd /d "%~dp0"\r\n${node} launch.js --setup-voice\r\npause\r\n`],
         ]
       : [
           ["Start Protégé.command", `#!/bin/sh\ncd "$(dirname "$0")"\n${node} launch.js "$@"\n`],
           ["Start Protégé online.command", `#!/bin/sh\ncd "$(dirname "$0")"\n${node} launch.js --tunnel\n`],
-          ["Set up voice typing.command", `#!/bin/sh\ncd "$(dirname "$0")"\n${node} launch.js --setup-voice\n`],
+          ["Set up voices.command", `#!/bin/sh\ncd "$(dirname "$0")"\n${node} launch.js --setup-voice\n`],
         ];
   starters.push(
     os === "windows"

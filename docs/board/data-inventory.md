@@ -44,6 +44,11 @@ or sent anywhere else**. The words go into the student's text box for them to ch
 browser can do speech recognition on the device itself (only when it promises to stay on the device),
 nothing is sent at all.
 
+**Read-aloud in Gloam's voice:** the words on the student's screen (Gloam's line, a join step, the recap) go
+to the computer running Protégé, which makes the sound there and sends it back. To avoid making the same line
+30 times, the sound of a line is **kept in memory for up to an hour** (never on disk, never logged), then
+forgotten. It's also forgotten whenever Protégé restarts. Nothing else is kept.
+
 ## Teachers
 
 | What | Why | Deleted |
@@ -113,4 +118,4 @@ Also:
   way to the computer running Protégé. Tailscale relays it but can't read it. Protégé refuses Cloudflare's
   quick tunnel unless the school explicitly allows it, because Cloudflare decrypts traffic on its own
   servers. On the school network alone, no tunnel is needed.
-- **Ollama, whisper.cpp and the models** run on the same computer. They don't send anything anywhere.
+- **Ollama, whisper.cpp, Kokoro and the models** run on the same computer. They don't send anything anywhere.

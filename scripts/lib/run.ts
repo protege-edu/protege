@@ -6,7 +6,8 @@ import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import QRCode from "qrcode";
-import { voiceConfig } from "@/lib/voice/config";
+import { speakConfig, voiceConfig } from "@/lib/voice/config";
+import { speakMissing, startSpeaker } from "../speak";
 import { voiceCommand } from "../voice";
 
 export const say = (s = "") => console.log(s);
@@ -100,6 +101,21 @@ export async function startVoice() {
   if ("missing" in cmd) return say("· Voice typing is off (optional: set it up once to turn it on, see the README)");
   children.push(spawn(cmd.exe, cmd.args, { cwd: voiceConfig.dir, stdio: "ignore" }));
   say("✓ Voice typing is starting");
+}
+
+/**
+ * Read-aloud in Gloam's voice: start the helper on this laptop (only this computer can reach it), if it's set up.
+ * `entry` is how this Node runs scripts/speak.ts (the download runs it from inside launch.js).
+ */
+export async function startReadAloud(entry: string[]) {
+  const up = await fetch(speakConfig.url, { signal: AbortSignal.timeout(1500) }).then(
+    () => true,
+    () => false,
+  );
+  if (up) return say("✓ Gloam's read-aloud voice is ready");
+  if (speakMissing()) return say("· Read-aloud uses each device's own voice (optional: set up Gloam's voice once, see the README)");
+  children.push(startSpeaker(entry));
+  say("✓ Gloam's read-aloud voice is starting");
 }
 
 export function lanAddress(): string | null {

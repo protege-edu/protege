@@ -4,6 +4,7 @@ import { aiConfig } from "@/lib/ai/config";
 import { listBackups } from "@/lib/db/backup";
 import { dataDir } from "@/lib/db/location";
 import { voiceReady } from "@/lib/voice/server";
+import { speakReady } from "@/lib/voice/speak";
 import pkg from "../../package.json";
 
 /**
@@ -11,7 +12,7 @@ import pkg from "../../package.json";
  * what to do about it, in plain words.
  */
 export interface StatusCheck {
-  id: "ai" | "voice" | "address" | "disk" | "backup";
+  id: "ai" | "voice" | "reading" | "address" | "disk" | "backup";
   ok: boolean | "optional";
   title: string;
   detail: string;
@@ -56,12 +57,15 @@ function backupCheck(): StatusCheck {
 }
 
 export async function laptopStatus(address: { url: string; local: boolean }): Promise<StatusCheck[]> {
-  const voice = await voiceReady();
+  const [voice, reading] = await Promise.all([voiceReady(), speakReady()]);
   return [
     await aiCheck(),
     voice
       ? { id: "voice", ok: true, title: "Voice typing is on", detail: "Students can talk instead of typing. Their voice is turned into words on this laptop and never saved." }
       : { id: "voice", ok: "optional", title: "Voice typing is off", detail: "Optional. To turn it on, run `npm run voice:setup` once, then start class with `npm run class`." },
+    reading
+      ? { id: "reading", ok: true, title: "Gloam's voice is on", detail: "Read-aloud uses Gloam's natural voice, made on this laptop. Nothing is saved." }
+      : { id: "reading", ok: "optional", title: "Read-aloud uses each device's voice", detail: "Optional: for Gloam's natural voice, run `npm run voice:setup` once, then start class with `npm run class`. Until then, students' own devices read aloud (it sounds more robotic)." },
     address.local
       ? { id: "address", ok: true, title: `Students go to ${address.url}`, detail: "Works when students are on the same Wi-Fi as this laptop. To let students join from anywhere, see \"Students outside the school network\" in the setup guide." }
       : /trycloudflare\.com/.test(address.url)
