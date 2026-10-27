@@ -1,9 +1,11 @@
 /**
  * The launcher inside the Protégé download: what "Start Protégé" runs. A teacher needs nothing else
- * installed: Node comes in the download, and the first time, this finds (or helps install) Ollama and
- * downloads Gloam's model. Built into one file by scripts/release.ts.
+ * installed: Node comes in the download, and the first time, the setup page (app/setup) shows Gloam waking
+ * up while this installs Ollama and downloads Gloam's model (scripts/lib/setup.ts). Built into one file by
+ * scripts/release.ts.
  *
- *   node launch.js                 start Protégé for class (opens the teacher page)
+ *   node launch.js                 start Protégé for class (opens the setup page, which goes on to the teacher page)
+ *   node launch.js --stop          stop the Protégé that's running
  *   node launch.js --tunnel        ...and open a free tunnel, so students can join from anywhere
  *   node launch.js --setup-voice   download the voices, once: voice typing (whisper.cpp) and Gloam's
  *                                  read-aloud voice (Kokoro); both run on this laptop only
@@ -17,7 +19,8 @@
 import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import { announce, children, ensureAI, openInBrowser, relay, say, startReadAloud, startVoice, stopAll } from "./lib/run";
+import { announce, children, openInBrowser, relay, say, startReadAloud, startVoice, stopAll } from "./lib/run";
+import { control, running, Setup } from "./lib/setup";
 import { runSpeaker } from "./speak";
 import { setupVoice } from "./voice-setup";
 
@@ -31,7 +34,16 @@ const has = (flag: string) => process.argv.includes(flag);
 async function main() {
   // the read-aloud helper, started by the launcher itself (see startReadAloud)
   if (has("--speaker")) return runSpeaker();
+  // "Stop Protégé" (the Start menu shortcut)
+  if (has("--stop")) {
+    const r = running();
+    const stopped = r && (await fetch(`${r.control}/stop`, { method: "POST", headers: { authorization: `Bearer ${r.token}` } }).then((res) => res.ok, () => false));
+    say(stopped ? "Protégé stopped." : "Protégé isn't running.");
+    return;
+  }
   say(`\nProtégé ${typeof PROTEGE_VERSION === "string" ? PROTEGE_VERSION : ""}: getting ready for class\n`);
+  // the window's name in the taskbar
+  process.title = "Protégé is running (close this window to stop it)";
   if (has("--setup-voice")) {
     await setupVoice();
     return;
@@ -46,23 +58,39 @@ async function main() {
     return;
   }
   // already running (a second double-click)? just open it
-  const running = await fetch(`http://localhost:${PORT}/api/health`, { signal: AbortSignal.timeout(1500) }).then(
+  const up = await fetch(`http://localhost:${PORT}/api/teacher/auth`, { signal: AbortSignal.timeout(1500) }).then(
     () => true,
     () => false,
   );
-  if (running) {
+  if (up) {
     say("Protégé is already running. Opening it.");
-    openInBrowser(`http://localhost:${PORT}/teacher`);
+    const r = running();
+    openInBrowser(`http://localhost:${PORT}${r ? `/setup#${r.key}` : "/teacher"}`);
     return;
   }
-  await ensureAI({ help: true });
-  await startVoice();
-  await startReadAloud([path.resolve(process.argv[1]), "--speaker"]);
+
+  // The first run is done in the browser (app/setup): Gloam wakes up while its brain installs and downloads.
+  // The setup page also greets the teacher on every later start, then goes straight to their page.
+  const setup = new Setup();
+  const info = await control(setup, PORT, stopAll);
+  const helpers = async () => {
+    await startVoice();
+    await startReadAloud([path.resolve(process.argv[1]), "--speaker"]);
+  };
+  setup.onDone = () => void helpers();
 
   const app = path.join(here, "app");
   const server = spawn(process.execPath, [path.join(app, "server.js")], {
     cwd: app,
-    env: { ...process.env, PORT: String(PORT), HOSTNAME: "0.0.0.0", NODE_ENV: "production" },
+    env: {
+      ...process.env,
+      PORT: String(PORT),
+      HOSTNAME: "0.0.0.0",
+      NODE_ENV: "production",
+      PROTEGE_CONTROL: info.control,
+      PROTEGE_CONTROL_TOKEN: info.token,
+      PROTEGE_SETUP_KEY: info.key,
+    },
     stdio: ["ignore", "pipe", "inherit"],
   });
   children.push(server);
@@ -71,7 +99,8 @@ async function main() {
     say(`Protégé stopped${code ? ` (code ${code})` : ""}. Double-click Start Protégé to run it again.`);
     stopAll();
   });
-  await announce(PORT, { useTunnel: has("--tunnel"), open: !has("--no-open") });
+  void setup.run();
+  await announce(PORT, { useTunnel: has("--tunnel"), open: has("--no-open") ? false : `/setup#${info.key}` });
 }
 
 process.on("SIGINT", stopAll);

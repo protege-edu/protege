@@ -18,22 +18,33 @@ the [setup guide on the website](https://protege-edu.pages.dev/guide).
 
 ## For teachers: get it running
 
-1. **Download** the zip for Windows or Mac from the [releases page](../../releases/latest) and unzip it.
-2. **Double-click "Start Protégé".** The first time, it helps you install [Ollama](https://ollama.com) (free;
-   it runs Gloam's AI) and downloads Gloam's model (about 2.5 GB, once).
-3. Your browser opens the teacher page. Type the **setup code** shown in the Protégé window to make your
-   account, and **save your recovery code**.
-4. **Make a class**, give it a lesson (upload your notes, or use the built-in one), and press **Show the code**.
+1. **Download** Protégé from [the website](https://protege-edu.pages.dev): `Protege-Setup.exe` for Windows,
+   `Protege.dmg` for Mac. It installs for you only, with no admin rights needed.
+   - Windows may say it "protected your PC": choose **More info**, then **Run anyway**.
+   - On a Mac, drag Protégé into Applications. The first time, open it from **System Settings → Privacy &
+     Security → Open Anyway**. (Protégé is free, so it isn't paid-signed by Microsoft or Apple.)
+2. **Gloam wakes up.** Protégé opens in your browser and sets itself up: it installs
+   [Ollama](https://ollama.com) (free; it runs Gloam's AI) and downloads Gloam's brain (a few GB, once). Make
+   your teacher account while it downloads, and **save your recovery code**.
+3. **Make a class**, give it a lesson (upload your notes, or use the built-in one), and press **Show the code**.
    Students go to the address on the screen and type the class code.
-5. **Other teachers at your school:** at the bottom of your teacher page, press **Make an invite code** and give
+4. **Other teachers at your school:** at the bottom of your teacher page, press **Make an invite code** and give
    it to them. They choose **Make an account** and type it in. Each code works once, for a week, and their
    classes stay separate from yours.
 
-Optional:
-- **"Set up voices"** lets students talk instead of typing, and gives read-aloud Gloam's natural voice.
-- **"Start Protégé online"** lets students join from outside the school network (see
+Every class after that: open **Protégé** from the desktop or Start menu. To stop it, close its window (or press
+**Stop Protégé** on the teacher page's **Ready for class?**).
+
+In the Start menu's Protégé folder:
+- **Set up Gloam's voices** lets students talk instead of typing, and gives read-aloud Gloam's natural voice
+  (the first run asks too).
+- **Protégé online** lets students join from outside the school network (see
   [Putting Protégé online](#putting-protégé-online)).
-- **"Restore a backup"** goes back to an earlier day.
+- **Restore a backup** goes back to an earlier day.
+
+**Updating:** download the new installer and run it. Your classes and students stay. **For school IT:**
+`Protege-Setup.exe /VERYSILENT` installs without questions, and the portable zips (`Protege-windows.zip`,
+`Protege-mac.zip`, on the [releases page](../../releases/latest)) need no installer at all.
 
 Everything stays in your user folder (`%LOCALAPPDATA%\Protege` on Windows). Updating Protégé never touches it.
 **Ready for class?** on the teacher page checks everything works.
@@ -195,7 +206,7 @@ about 13 seconds typically.
 | `npm run class [-- --tunnel]` | Builds and runs Protégé for a real class, with the address and a QR code |
 | `npm run voice:setup` / `npm run voice` | Downloads / starts voice typing (whisper.cpp) and Gloam's read-aloud voice (Kokoro), both local |
 | `npm run release` | Builds the download teachers use (`release/*.zip`) |
-| `npm run test:logic` | 68 tests of the rules: grading, progress, giveaways, safety, voice, ways to play |
+| `npm run test:logic` | 70 tests of the rules: grading, progress, giveaways, safety, voice, ways to play |
 | `npm run test:accounts` | 45 tests of accounts, privacy and retention, on a throwaway database |
 | `npm run licenses` | Checks every library's licence and writes `THIRD-PARTY-NOTICES.md` |
 | `npm run restore` / `access-log` / `reset-teacher` | Jobs for whoever runs Protégé |

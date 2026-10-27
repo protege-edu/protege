@@ -25,20 +25,23 @@ allow students' personal information on personal devices.
 
 ## Install
 
-1. Download the zip for Windows or Mac from the Protégé releases page, and unzip it (for example to
-   `C:\Protégé`).
-2. Optional: copy `protege.env.example` to `protege.env` and set the board's choices:
+1. Download the installer from the Protégé website: `Protege-Setup.exe` (Windows) or `Protege.dmg` (Mac). It
+   installs for the signed-in user only and needs no admin rights (`%LOCALAPPDATA%\Programs\Protege` on
+   Windows). For managed deployment: `Protege-Setup.exe /VERYSILENT` installs without questions, and the
+   portable zips (`Protege-windows.zip`, `Protege-mac.zip`) need no installer at all.
+2. Optional: copy `protege.env.example` to `protege.env` (next to `launch.js`) and set the board's choices:
    - `PROTEGE_RETENTION`: how long classes are kept (`after-a-year`, the default; `end-of-school-year`; or
      `never`). See `data-inventory.md`.
    - `SCHOOL_YEAR_END`: for example `06-30`.
    - `PORT`: the port students' address ends with.
    - `AI_CONCURRENCY`: raise it on a computer with a strong graphics card.
-3. Double-click **Start Protégé**. The first time, it helps install Ollama (free) and downloads Gloam's AI model
-   (about 2.5 GB).
-4. It prints a **setup code** and opens the teacher page. The first teacher account needs the code. Later
-   teachers get one-use invites from a signed-in teacher.
-5. Optional: **Set up voices** (about 850 MB, once): voice typing (whisper.cpp and a speech model) and Gloam's
-   natural read-aloud voice (Kokoro). Both run on this laptop only.
+3. Open **Protégé**. The first time, its setup page installs Ollama (free, from ollama.com, for this user only)
+   and downloads Gloam's AI model (about 2.5 GB). Boards that install Ollama themselves can do it first:
+   Protégé uses it if it's there.
+4. The first teacher account is made right in the setup page (only the person at this computer can see it: it
+   opens with a one-time secret). Later teachers get one-use invites from a signed-in teacher.
+5. Optional: voices (about 850 MB, once; the setup page asks): voice typing (whisper.cpp and a speech model)
+   and Gloam's natural read-aloud voice (Kokoro). Both run on this laptop only.
 6. Open **Ready for class?** on the teacher page to check everything works.
 
 ## Students reaching it
@@ -64,8 +67,9 @@ allow students' personal information on personal devices.
 ## Updates
 
 On the teacher page, **Ready for class? → Check for updates** asks the public releases page for the newest
-version (only when pressed). To update: download the new zip, unzip it next to the old one, and start the
-new one. Classes and students stay where they are: they live in the data folder, not the program folder.
+version (only when pressed). To update: download the new installer and run it (it stops Protégé first). With
+the portable zip: unzip the new one next to the old one and start it. Classes and students stay where they
+are: they live in the data folder, not the program folder. Uninstalling asks before deleting them.
 
 ## End of the school year
 

@@ -23,6 +23,8 @@ import { checkWav, cleanTranscript } from "@/lib/voice/wav";
 import { isSpokenVoice, SPOKEN_MAX_CHARS, SPOKEN_VOICES, speakingPieces } from "@/lib/voice/voices";
 import { tidyForSpeech } from "./speak";
 import { fitGloam } from "@/components/game/Stage";
+import { SETUP_LINES } from "@/lib/setup/lines";
+import { size, timeLeft } from "@/lib/setup/types";
 
 let passed = 0;
 function test(name: string, fn: () => void) {
@@ -382,6 +384,24 @@ test("Gloam stands above the words, under the top bar, and never vanishes", () =
   // stacked layouts: it stands right on the words, even when they start lower than its usual ground
   const stood = fitGloam({ vh: 1000, groundAt: 0.4, gloamScale: 0.55, feet, floor: 620, ceiling: 100, stand: true });
   assert.ok(Math.abs(stood.groundY + stood.gloamH * (1 - feet) - (620 - 12)) < 1, JSON.stringify(stood));
+});
+
+console.log("first-run setup");
+test("download progress reads like a person: sizes and time left", () => {
+  assert.equal(size(2.5e9), "2.5 GB");
+  assert.equal(size(520e6), "520 MB");
+  assert.equal(timeLeft(0, 2.5e9, 0), null, "no speed yet: no guess");
+  assert.equal(timeLeft(2.4e9, 2.5e9, 50e6), "less than a minute left");
+  assert.equal(timeLeft(1e9, 2.5e9, 5e6), "about 5 minutes left");
+  assert.equal(timeLeft(0, 2.5e9, 0.5e6), "about 1 hour 25 minutes left");
+  assert.equal(timeLeft(2.5e9, 2.5e9, 5e6), null, "done");
+});
+test("every setup line Gloam says is in its voice: lowercase, short, no answers", () => {
+  const all = Object.values(SETUP_LINES).flat();
+  for (const l of all) {
+    assert.equal(l, l.toLowerCase().replace("gloam", "Gloam"), l);
+    assert.ok(l.length <= 110, l);
+  }
 });
 
 console.log("français");

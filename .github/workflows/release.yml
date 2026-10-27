@@ -1,5 +1,6 @@
-# Tag a version (git tag v0.2.0 && git push --tags): builds the Windows and Mac downloads and
-# attaches them to a GitHub release. Teachers press "Check for updates" to find it.
+# Tag a version (git tag v0.2.0 && git push --tags): builds the Windows installer (Protege-Setup.exe), the
+# Mac app (Protege.dmg) and the portable zips, and attaches them to a GitHub release. The website's download
+# buttons link straight to these files, so teachers never see GitHub.
 name: Release
 on:
   push:
@@ -25,11 +26,17 @@ jobs:
       - run: npm ci
       - run: npm run test:logic
       - run: npm run licenses
+      # the Windows installer is made by Inno Setup (free)
+      - if: runner.os == 'Windows'
+        run: choco install innosetup --no-progress -y
       - run: npm run release
       - uses: actions/upload-artifact@v4
         with:
           name: protege-${{ matrix.os }}
-          path: release/*.zip
+          path: |
+            release/*.zip
+            release/*.exe
+            release/*.dmg
 
   publish:
     needs: build
@@ -44,4 +51,4 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "${GITHUB_REF_NAME}" downloads/*.zip --repo "${GITHUB_REPOSITORY}" --title "Protégé ${GITHUB_REF_NAME#v}" --notes "Download the zip for your computer, unzip it, and double-click Start Protégé. Your classes and students stay where they are."
+          gh release create "${GITHUB_REF_NAME}" downloads/* --repo "${GITHUB_REPOSITORY}" --title "Protégé ${GITHUB_REF_NAME#v}" --notes "Get it from https://protege-edu.pages.dev: Protege-Setup.exe for Windows, Protege.dmg for Mac. Installing over an older version keeps every class and student. The zips are the same thing without an installer, for school IT."

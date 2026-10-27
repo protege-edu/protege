@@ -17,7 +17,7 @@ const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 export const aiBase = () => (process.env.AI_BASE_URL ?? "http://localhost:11434/v1").replace(/\/v1\/?$/, "");
 export const aiModel = () => process.env.AI_MODEL ?? "qwen3:4b-instruct";
 
-async function models(): Promise<string[] | null> {
+export async function models(): Promise<string[] | null> {
   try {
     const tags = (await (await fetch(`${aiBase()}/api/tags`, { signal: AbortSignal.timeout(4000) })).json()) as { models?: { name: string }[] };
     return tags.models?.map((m) => m.name) ?? [];
@@ -159,7 +159,7 @@ export function tunnel(port: number): Promise<string | null> {
 }
 
 /** Wait for Protégé to answer, warm Gloam up, and print where teachers and students go */
-export async function announce(port: number, { useTunnel = false, open = false } = {}) {
+export async function announce(port: number, { useTunnel = false, open = false as boolean | string } = {}) {
   for (let i = 0; i < 90; i++) {
     try {
       await fetch(`http://localhost:${port}/api/health`, { signal: AbortSignal.timeout(2000) });
@@ -185,8 +185,9 @@ export async function announce(port: number, { useTunnel = false, open = false }
     say(`Students: ${students}  (or the QR code below; then they type the class code)\n`);
     say(await QRCode.toString(`${students}/join`, { type: "terminal", small: true }));
   }
-  say("Keep this window open and the laptop awake during class. Press Ctrl+C to stop.\n");
-  if (open) openInBrowser(`http://localhost:${port}/teacher`);
+  say("Keep this window open and the laptop awake during class. To stop Protégé, close this window.\n");
+  // `open` can be the page to open (the download opens its setup page)
+  if (open) openInBrowser(`http://localhost:${port}${typeof open === "string" ? open : "/teacher"}`);
 }
 
 /** Pass on what the server prints that matters (the first-time setup code, errors) */

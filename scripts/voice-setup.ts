@@ -8,45 +8,33 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import JSZip from "jszip";
 import { speakConfig, speakDownloads, voiceConfig, voiceDownloads } from "@/lib/voice/config";
+import { download, terminal, type Reporter } from "./lib/download";
 
-async function download(url: string, to: string) {
-  const res = await fetch(url, { redirect: "follow" });
-  if (!res.ok || !res.body) throw new Error(`Couldn't download ${url} (${res.status})`);
-  const total = Number(res.headers.get("content-length") ?? 0);
-  const out = fs.createWriteStream(to + ".part");
-  let got = 0;
-  let shown = -1;
-  for await (const chunk of res.body as unknown as AsyncIterable<Uint8Array>) {
-    out.write(chunk);
-    got += chunk.length;
-    const pct = total ? Math.floor((got / total) * 100) : -1;
-    if (pct !== shown && pct % 10 === 0) {
-      shown = pct;
-      process.stdout.write(`  ${pct}%`);
-    }
-  }
-  await new Promise<void>((resolve, reject) => out.end((e?: Error | null) => (e ? reject(e) : resolve())));
-  fs.renameSync(to + ".part", to);
-  console.log("");
+/** Is everything this computer can have for voices already here? (Voice typing downloads on Windows only.) */
+export function voicesReady(): boolean {
+  const typing = process.platform !== "win32" || (fs.existsSync(whisperExe()) && fs.existsSync(path.join(voiceConfig.dir, voiceConfig.model)));
+  return typing && fs.existsSync(path.join(speakConfig.dir, "kokoro", "model.onnx")) && fs.existsSync(path.join(speakConfig.dir, "node_modules", "sherpa-onnx-node", "package.json"));
 }
 
+const whisperExe = () => path.join(voiceConfig.dir, process.platform === "win32" ? "whisper-server.exe" : "whisper-server");
+
 /** Download whisper.cpp and the speech model into the voice folder (skips what's already there) */
-export async function setupVoice() {
+export async function setupVoice(report: Reporter = terminal) {
   const dir = voiceConfig.dir;
   fs.mkdirSync(dir, { recursive: true });
-  console.log(`Voice typing lives in ${dir}`);
+  if (report === terminal) console.log(`Voice typing lives in ${dir}`);
 
-  const exe = path.join(dir, process.platform === "win32" ? "whisper-server.exe" : "whisper-server");
-  if (fs.existsSync(exe)) console.log("whisper.cpp is already here.");
+  const exe = whisperExe();
+  if (fs.existsSync(exe)) report.say("whisper.cpp is already here.");
   else if (process.platform !== "win32") {
-    console.log("On Mac or Linux, build whisper.cpp's server (see README, \"Voice typing\") and put whisper-server in this folder.");
+    report.say("On Mac or Linux, build whisper.cpp's server (see README, \"Voice typing\") and put whisper-server in this folder.");
   } else {
-    console.log("Downloading whisper.cpp (MIT licence)…");
+    report.say("Downloading whisper.cpp (MIT licence)…");
     const zipFile = path.join(dir, "whisper.zip");
-    await download(voiceDownloads.windows, zipFile);
+    await download(voiceDownloads.windows, zipFile, report);
     const zip = await JSZip.loadAsync(fs.readFileSync(zipFile));
     // keep just the server and the libraries it needs, flat in the voice folder
     for (const [name, entry] of Object.entries(zip.files)) {
@@ -60,28 +48,29 @@ export async function setupVoice() {
   }
 
   const model = path.join(dir, voiceConfig.model);
-  if (fs.existsSync(model)) console.log(`The speech model (${voiceConfig.model}) is already here.`);
+  if (fs.existsSync(model)) report.say(`The speech model (${voiceConfig.model}) is already here.`);
   else {
-    console.log(`Downloading the speech model ${voiceConfig.model} (English + French, a few hundred MB)…`);
-    await download(voiceDownloads.model(voiceConfig.model), model);
+    report.say(`Downloading the speech model ${voiceConfig.model} (English + French, a few hundred MB)…`);
+    await download(voiceDownloads.model(voiceConfig.model), model, report);
   }
-  console.log("Voice typing is ready.");
-  await setupSpeech();
-  console.log("Voices are ready. Start them with `npm run voice` (or `npm run class`).");
+  report.say("Voice typing is ready.");
+  await setupSpeech(report);
+  report.say("Voices are ready. Start them with `npm run voice` (or `npm run class`).");
 }
 
-/** Unpack a .tgz or .tar.bz2 with the tar every Windows 10+, Mac and Linux computer has */
-function untar(file: string, into: string, strip = 0) {
+/** Unpack a .tgz or .tar.bz2 with the tar every Windows 10+, Mac and Linux computer has.
+ *  (In the background: the launcher keeps answering the setup page while a big voice unpacks.) */
+async function untar(file: string, into: string, strip = 0) {
   fs.mkdirSync(into, { recursive: true });
   // Windows' own tar (Git's tar would read "C:" as another computer)
   const tar = process.platform === "win32" ? path.join(process.env.SystemRoot ?? "C:\\Windows", "System32", "tar.exe") : "tar";
   const args = ["-xf", file, "-C", into, ...(strip ? [`--strip-components=${strip}`] : [])];
-  const run = spawnSync(tar, args, { stdio: "inherit" });
-  if (run.status !== 0) throw new Error(`Couldn't unpack ${path.basename(file)}.`);
+  const code = await new Promise<number | null>((resolve) => spawn(tar, args, { stdio: "ignore" }).on("exit", resolve).on("error", () => resolve(-1)));
+  if (code !== 0) throw new Error(`Couldn't unpack ${path.basename(file)}.`);
 }
 
 /** Read-aloud in Gloam's voice: the engine (for this computer) and the voice model */
-export async function setupSpeech() {
+export async function setupSpeech(report: Reporter = terminal) {
   const dir = speakConfig.dir;
   fs.mkdirSync(dir, { recursive: true });
   const platform = `${process.platform === "win32" ? "win" : process.platform}-${process.arch}`;
@@ -90,23 +79,23 @@ export async function setupSpeech() {
     const into = path.join(dir, "node_modules", name);
     const have = fs.existsSync(path.join(into, "package.json")) && JSON.parse(fs.readFileSync(path.join(into, "package.json"), "utf8")).version === v;
     if (have) continue;
-    console.log(`Downloading ${name} ${v} (Apache 2.0)…`);
+    report.say(`Downloading ${name} ${v} (Apache 2.0)…`);
     const file = path.join(dir, `${name}.tgz`);
-    await download(speakDownloads.npm(name, v), file);
+    await download(speakDownloads.npm(name, v), file, report);
     fs.rmSync(into, { recursive: true, force: true });
-    untar(file, into, 1);
+    await untar(file, into, 1);
     fs.rmSync(file);
   }
 
   const model = path.join(dir, "kokoro");
-  if (fs.existsSync(path.join(model, "model.onnx"))) console.log("Gloam's read-aloud voice is already here.");
+  if (fs.existsSync(path.join(model, "model.onnx"))) report.say("Gloam's read-aloud voice is already here.");
   else {
-    console.log("Downloading Gloam's read-aloud voice (Kokoro, Apache 2.0, about 350 MB)…");
+    report.say("Downloading Gloam's read-aloud voice (Kokoro, Apache 2.0, about 350 MB)…");
     const file = path.join(dir, "kokoro.tar.bz2");
-    await download(speakDownloads.model, file);
+    await download(speakDownloads.model, file, report);
     const unpacked = path.join(dir, "kokoro-unpacked");
     fs.rmSync(unpacked, { recursive: true, force: true });
-    untar(file, unpacked, 1);
+    await untar(file, unpacked, 1);
     fs.mkdirSync(model, { recursive: true });
     // keep only what English and French need
     for (const keep of speakDownloads.keep) {
@@ -117,7 +106,7 @@ export async function setupSpeech() {
     fs.rmSync(file);
     if (!fs.existsSync(path.join(model, "model.onnx"))) throw new Error("The voice download didn't contain the model. Check README, \"Read-aloud\".");
   }
-  console.log("Read-aloud is ready.");
+  report.say("Read-aloud is ready.");
 }
 
 // run directly (npm run voice:setup), not when the launcher imports it

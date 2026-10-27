@@ -90,7 +90,13 @@ export async function checkForUpdate(): Promise<{ state: "none" | "available" | 
     if (!res.ok) return { state: "unknown", message: "Couldn't check right now. Try again later." };
     const r = (await res.json()) as { tag_name: string; html_url: string };
     return newer(r.tag_name, VERSION)
-      ? { state: "available", latest: r.tag_name, url: r.html_url, message: `Version ${r.tag_name.replace(/^v/, "")} is out (you have ${VERSION}).` }
+      ? {
+          state: "available",
+          latest: r.tag_name,
+          // the website's install page (download and run the new installer: classes are kept), or the release itself
+          url: (pkg as { homepage?: string }).homepage ? `${(pkg as { homepage: string }).homepage}/guide#update` : r.html_url,
+          message: `Version ${r.tag_name.replace(/^v/, "")} is out (you have ${VERSION}).`,
+        }
       : { state: "none", message: `You have the latest version (${VERSION}).` };
   } catch {
     return { state: "unknown", message: "Couldn't reach the internet to check. That's fine: Protégé works without it." };

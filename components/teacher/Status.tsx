@@ -9,14 +9,15 @@ import { Button, Shell, api } from "./kit";
  * each with what to do if it isn't. Plus a "Check for updates" that only runs when pressed.
  */
 export function Status() {
-  const [data, setData] = useState<{ version: string; checks: StatusCheck[] } | null>(null);
+  const [data, setData] = useState<{ version: string; checks: StatusCheck[]; canStop?: boolean } | null>(null);
+  const [stopped, setStopped] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [update, setUpdate] = useState<{ message: string; url?: string; state: string } | null>(null);
   const [checking, setChecking] = useState(false);
 
   useEffect(() => {
     const load = () =>
-      void api<{ version: string; checks: StatusCheck[] }>("/api/teacher/status").then((r) => {
+      void api<{ version: string; checks: StatusCheck[]; canStop?: boolean }>("/api/teacher/status").then((r) => {
         if (r.ok) setData(r.data);
         else setError(r.error);
       });
@@ -83,6 +84,32 @@ export function Status() {
           )}
         </div>
       </section>
+
+      {data?.canStop && (
+        <section className="mt-10 max-w-[70ch]" aria-labelledby="stop">
+          <h2 id="stop" className="text-lg font-bold text-ink">
+            Done for the day?
+          </h2>
+          <p className="mt-1 text-sm text-ink-dim">Stopping Protégé ends every student&apos;s session. Everything they taught Gloam is saved. Open Protégé again to start it.</p>
+          {stopped ? (
+            <p role="status" className="mt-3 text-sm font-bold text-ink">
+              Protégé stopped. You can close this tab.
+            </p>
+          ) : (
+            <Button
+              variant="quiet"
+              className="mt-3"
+              onClick={async () => {
+                const r = await api("/api/teacher/status", { method: "DELETE" });
+                if (r.ok) setStopped(true);
+                else setError(r.error);
+              }}
+            >
+              Stop Protégé
+            </Button>
+          )}
+        </section>
+      )}
     </Shell>
   );
 }

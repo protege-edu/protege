@@ -15,7 +15,11 @@ the public code; the file to look at is named.
 - **The only outgoing connections:**
   - "Check for updates" (only when a teacher presses it; it asks GitHub for the latest version number)
   - Google sign-in (only if switched on)
-  - First-time downloads of the AI model and voice-typing model
+  - First-time downloads, over https: Ollama's installer from ollama.com (only if Ollama isn't installed), the
+    AI model through Ollama, and the voice models
+- **The first-run setup page** only works with a one-time secret the launcher puts in the address it opens on
+  this computer. The launcher's control channel listens on `127.0.0.1` with its own secret, which never
+  leaves the server.
 
 ## Accounts and sign-in (`lib/auth/`, `lib/teacher/auth.ts`, `lib/student/auth.ts`)
 
@@ -63,7 +67,7 @@ the public code; the file to look at is named.
 - **Open source:** AGPL-3.0. Every library's licence is checked by `npm run licenses`
   (`THIRD-PARTY-NOTICES.md`).
 - `npm audit` for the libraries shipped with Protégé: **0 known vulnerabilities** (October 2026).
-- **Automated checks** on every change (GitHub Actions): type checking, linting, 64 rule tests and 45
+- **Automated checks** on every change (GitHub Actions): type checking, linting, 70 rule tests and 45
   account and privacy tests.
 - **Releases** are built by GitHub Actions from tagged versions and published on the project's GitHub
   releases page. Teachers update by downloading the new version (nothing updates itself).
@@ -71,7 +75,8 @@ the public code; the file to look at is named.
 ## Not done yet (honest)
 
 - **No independent penetration test.** Boards that need one should arrange it before wide use.
-- **No code signing** for the Windows and Mac downloads yet. Windows SmartScreen and macOS Gatekeeper may
-  warn the first time.
+- **No paid code signing** for the Windows and Mac downloads (it costs money every year; the Mac app is
+  signed "ad hoc" only). Windows SmartScreen and macOS Gatekeeper warn the first time, and the website shows
+  teachers what to click. A free option for open-source projects (SignPath Foundation) is possible later.
 - **No single sign-on** beyond Google.
 - Encryption of backups beyond full-disk encryption.

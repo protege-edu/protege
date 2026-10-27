@@ -287,6 +287,30 @@ body {
   animation: drift 38s ease-in-out infinite alternate;
 }
 
+/* The setup page's fireflies: a lazy loop and a soft flicker. Transform and opacity only. */
+@keyframes firefly {
+  0%,
+  100% {
+    transform: translate(0, 0);
+    filter: brightness(0.7);
+  }
+  25% {
+    transform: translate(14px, -10px);
+    filter: brightness(1.2);
+  }
+  50% {
+    transform: translate(4px, -22px);
+    filter: brightness(0.8);
+  }
+  75% {
+    transform: translate(-12px, -8px);
+    filter: brightness(1.1);
+  }
+}
+.setup-firefly {
+  animation: firefly 9s ease-in-out infinite;
+}
+
 @keyframes twinkle {
   0%,
   100% {

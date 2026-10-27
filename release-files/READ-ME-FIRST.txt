@@ -4,13 +4,14 @@ PROTÉGÉ: students teach, Gloam learns
 Protégé runs on this laptop, with its own AI. Students join from their Chromebooks with a class code.
 Nothing about your students leaves this laptop.
 
+(Most teachers use the installer from https://protege-edu.pages.dev instead of this folder. This folder is
+the same Protégé without an installer, for school IT.)
+
 THE FIRST TIME (about 15 minutes, mostly downloading)
 1. Double-click "Start Protégé".
-   - If Ollama (the free program that runs Gloam's AI) isn't installed, its download page opens.
-     Install it; the Protégé window waits and carries on by itself.
-   - Then it downloads Gloam's AI model (about 2.5 GB, once).
-2. Your browser opens the teacher page. The Protégé window shows a SETUP CODE:
-   type it to make the first teacher account.
+2. Your browser opens, and Gloam wakes up: Protégé installs Ollama (the free program that runs Gloam's AI)
+   and downloads Gloam's brain (a few GB, once). Make your teacher account while it downloads, and save
+   your recovery code.
 3. Make a class, add a lesson (or use the built-in one), and press "Show the code".
 
 EVERY CLASS
@@ -18,9 +19,10 @@ EVERY CLASS
 - Students go to the address it shows (or scan the QR code) and type the class code.
 - Students on a different network, or at home? Use "Start Protégé online" instead
   (it needs Tailscale or cloudflared, both free: see the guide on the Protégé website).
+- To stop Protégé, close its window.
 
 VOICES (optional)
-- Double-click "Set up voices" once (downloads about 850 MB). Then:
+- The first run asks. Or double-click "Set up voices" (downloads about 850 MB). Then:
   - students can talk to Gloam instead of typing. Their voice is turned into words on this laptop and
     never saved.
   - read-aloud uses Gloam's natural voice, made on this laptop, instead of each device's robotic one.
