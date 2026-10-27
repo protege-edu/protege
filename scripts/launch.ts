@@ -7,6 +7,9 @@
  *   node launch.js --tunnel        ...and open a free tunnel, so students can join from anywhere
  *   node launch.js --setup-voice   download voice typing (whisper.cpp, runs on this laptop only), once
  *   node launch.js --no-open       don't open the browser (for tests)
+ *   node launch.js --restore [date]          put Protégé back to an earlier day (stop it first)
+ *   node launch.js --access-log [--all]      who viewed or changed students' information
+ *   node launch.js --reset-teacher <email>   a new recovery code for a teacher
  *
  * A school can change settings in protege.env, next to this file (see protege.env.example).
  */
@@ -27,6 +30,15 @@ async function main() {
   say(`\nProtégé ${typeof PROTEGE_VERSION === "string" ? PROTEGE_VERSION : ""}: getting ready for class\n`);
   if (has("--setup-voice")) {
     await setupVoice();
+    return;
+  }
+  // jobs for whoever runs Protégé (restore a backup, the access log, reset a teacher): run inside the app,
+  // which has the database library
+  const job = ["--restore", "--access-log", "--reset-teacher"].find((j) => has(j));
+  if (job) {
+    const rest = process.argv.slice(process.argv.indexOf(job) + 1);
+    const run = spawn(process.execPath, [path.join(here, "app", "admin.js"), job.slice(2), ...rest], { cwd: path.join(here, "app"), stdio: "inherit" });
+    await new Promise((r) => run.on("exit", r));
     return;
   }
   // already running (a second double-click)? just open it

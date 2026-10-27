@@ -67,6 +67,8 @@ export function JourneyWorld(props: JourneyProps) {
 
     (async () => {
       const PIXI = await import("pixi.js");
+      // Protégé's security policy forbids eval (no code from strings); this makes Pixi build its shaders without it
+      await import("pixi.js/unsafe-eval");
       const { AdvancedBloomFilter } = await import("pixi-filters");
       const { loadActor } = await import("@/components/gloam/rig/load");
       if (destroyed) return;

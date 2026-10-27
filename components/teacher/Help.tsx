@@ -86,6 +86,15 @@ export function Help() {
             <li>If you let a class use Google, Protégé only learns that it&apos;s the same account as last time. Never a name, email or photo.</li>
             <li>Everything stays on the laptop running Protégé, including the AI. Nothing is sent to an outside company. No ads, no tracking.</li>
             <li>Voice typing happens on this laptop too. Recordings are never saved.</li>
+            <li>
+              Classes are cleared out by your school board&apos;s rule (by default, a year after a class was last used). You can set a date for any class, or delete a class or a student
+              yourself.
+            </li>
+            <li>
+              A student or family asks what&apos;s kept? Open the student and press <span className="font-bold">Download their data</span>. You can also change their nickname, correct any
+              candle, or remove them.
+            </li>
+            <li>Students are told that Gloam is an AI, that its candles are an estimate and not a mark, and that you can read what they write.</li>
             <li>Other teachers on this Protégé can&apos;t see your classes or lessons.</li>
           </ul>
         </Part>

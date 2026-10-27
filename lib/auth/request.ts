@@ -33,6 +33,15 @@ export function isHttps(request?: Request): boolean {
 // ---- rate limits: a few buckets kept in memory (one Protégé server per classroom laptop) ----
 const store = globalThis as unknown as { protegeLimits?: Map<string, { count: number; reset: number }> };
 const buckets = (store.protegeLimits ??= new Map());
+// expired counters are forgotten every few minutes (they hold network addresses: never kept longer than needed)
+const sweeper = globalThis as unknown as { protegeLimitSweep?: boolean };
+if (!sweeper.protegeLimitSweep && typeof setInterval === "function") {
+  sweeper.protegeLimitSweep = true;
+  setInterval(() => {
+    const now = Date.now();
+    for (const [k, v] of buckets) if (v.reset < now) buckets.delete(k);
+  }, 5 * 60 * 1000).unref?.();
+}
 
 /** true = allowed. `max` tries per `windowMs` for this key (e.g. "signin:<ip>"). */
 export function limit(key: string, max: number, windowMs: number): boolean {

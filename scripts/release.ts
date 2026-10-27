@@ -46,6 +46,15 @@ async function main() {
   const serverDir = fs.existsSync(path.join(standalone, "server.js")) ? standalone : findServer(standalone);
   copy(serverDir, path.join(out, "app"));
   copy(path.join(dist, "static"), path.join(out, "app", ".next-release", "static"));
+  // the hashed names Next.js gives native libraries (better-sqlite3-<hash>) are links in the build folder that the
+  // standalone copy leaves out: put a real copy of each library under its hashed name (links don't survive a zip)
+  const hashed = path.join(dist, "node_modules");
+  if (fs.existsSync(hashed)) {
+    for (const e of fs.readdirSync(hashed)) {
+      const real = path.basename(fs.realpathSync(path.join(hashed, e)));
+      copy(path.join(out, "app", "node_modules", real), path.join(out, "app", ".next-release", "node_modules", e));
+    }
+  }
   // all of the compiled server code (the standalone trace misses its shared chunks with a custom build folder)
   copy(path.join(dist, "server"), path.join(out, "app", ".next-release", "server"), /\.map$|\.nft\.json$/);
   copy(path.join(root, "public"), path.join(out, "app", "public"));
@@ -70,6 +79,19 @@ async function main() {
     logLevel: "warning",
   });
 
+  // the jobs for whoever runs Protégé, beside the server (so they use its database library)
+  await build({
+    entryPoints: [path.join(root, "scripts", "admin.ts")],
+    outfile: path.join(out, "app", "admin.js"),
+    bundle: true,
+    platform: "node",
+    format: "cjs",
+    target: "node22",
+    alias: { "@": root, "server-only": path.join(root, "scripts", "lib", "empty.ts") },
+    external: ["better-sqlite3"],
+    logLevel: "warning",
+  });
+
   step(`adding Node ${process.version} (MIT licence)`);
   const nodeDir = path.join(out, "node");
   fs.mkdirSync(nodeDir);
@@ -91,6 +113,11 @@ async function main() {
           ["Start Protégé online.command", `#!/bin/sh\ncd "$(dirname "$0")"\n${node} launch.js --tunnel\n`],
           ["Set up voice typing.command", `#!/bin/sh\ncd "$(dirname "$0")"\n${node} launch.js --setup-voice\n`],
         ];
+  starters.push(
+    os === "windows"
+      ? ["Restore a backup.cmd", `@echo off\r\ntitle Protégé backups\r\ncd /d "%~dp0"\r\n${node} launch.js --restore\r\npause\r\n`]
+      : ["Restore a backup.command", `#!/bin/sh\ncd "$(dirname "$0")"\n${node} launch.js --restore\n`],
+  );
   for (const [file, text] of starters) fs.writeFileSync(path.join(out, file), text, { mode: 0o755 });
   for (const f of ["LICENSE", "THIRD-PARTY-NOTICES.md"]) fs.copyFileSync(path.join(root, f), path.join(out, f));
   fs.copyFileSync(path.join(root, "release-files", "READ-ME-FIRST.txt"), path.join(out, "READ ME FIRST.txt"));

@@ -14,15 +14,15 @@
     "screenshots": "tsx scripts/screenshot.ts",
     "test:logic": "tsx scripts/check-logic.ts",
     "test:accounts": "tsx --conditions=react-server scripts/check-accounts.ts",
-    "reset-teacher": "tsx --conditions=react-server scripts/reset-teacher.ts",
+    "reset-teacher": "tsx --conditions=react-server scripts/admin.ts reset-teacher",
     "load-test": "tsx scripts/load-test.ts",
     "class": "tsx scripts/class.ts",
     "voice:setup": "tsx scripts/voice-setup.ts",
     "voice": "tsx scripts/voice.ts",
-    "restore": "tsx --conditions=react-server scripts/restore.ts",
+    "restore": "tsx --conditions=react-server scripts/admin.ts restore",
     "licenses": "tsx scripts/licenses.ts",
     "release": "tsx scripts/release.ts",
-    "access-log": "tsx --conditions=react-server scripts/access-log.ts"
+    "access-log": "tsx --conditions=react-server scripts/admin.ts access-log"
   },
   "dependencies": {
     "@fontsource/opendyslexic": "^5.3.0",
