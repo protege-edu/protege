@@ -48,7 +48,8 @@ function voiceFor(lang: "en" | "fr"): Promise<Tts> {
   if (!v) {
     const sherpa = createRequire(path.join(speakConfig.dir, "x.js"))("sherpa-onnx-node") as { OfflineTts: { createAsync(c: unknown): Promise<Tts> } };
     const m = modelDir();
-    const threads = speakConfig.threads || Math.max(2, Math.min(6, Math.round(os.availableParallelism() / 4)));
+    // about 4 is fastest (measured: more threads get in each other's way)
+    const threads = speakConfig.threads || Math.max(2, Math.min(4, Math.round(os.availableParallelism() / 3)));
     v = sherpa.OfflineTts.createAsync({
       model: {
         kokoro: {
