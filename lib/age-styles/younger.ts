@@ -64,7 +64,7 @@ const storybookCopy = (big: boolean): AgeStyle["copy"] => ({
   gloamThinks: "Gloam thinks:",
   levelWords: ["Not lit yet", "A little spark", "Flickering", "Lit"],
   eurekaWord: "OHHHH!",
-  finaleWord: "THE WHOLE VALLEY!",
+  finaleWord: "The whole valley!",
   credit: (concept) => `You taught Gloam: ${concept.toLowerCase()}!`,
   finaleCredit: "You taught Gloam everything!",
   skip: "Skip",

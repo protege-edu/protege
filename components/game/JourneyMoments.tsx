@@ -1,14 +1,20 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
+import { useCallback, useState } from "react";
 import { Sheet } from "@/components/ui/Sheet";
 import type { AgeStyle } from "@/lib/age-styles";
 import { useCalmMotion } from "@/lib/useCalmMotion";
 import type { GloamBox } from "./Stage";
 
 /** What Gloam mutters while it walks to the next checkpoint (hand-written, from the world) */
-export function TravelQuip({ text, gloam }: { text: string | null; gloam: GloamBox | null }) {
+export function TravelQuip({ text, gloam, ceiling = 70 }: { text: string | null; gloam: GloamBox | null; ceiling?: number }) {
   const calm = useCalmMotion();
+  // its own height, so a long line (or bigger text) never climbs above `ceiling` (a header, the top bar)
+  const [h, setH] = useState(0);
+  const measure = useCallback((el: HTMLParagraphElement | null) => {
+    if (el) setH(el.offsetHeight);
+  }, []);
   return (
     // the old line fades out quickly while the new one waits a beat, so they never pile up
     <AnimatePresence>
@@ -17,7 +23,9 @@ export function TravelQuip({ text, gloam }: { text: string | null; gloam: GloamB
           key={text}
           aria-live="polite"
           className="voice pointer-events-none absolute z-20 max-w-[30ch] -translate-x-1/2 text-center text-sm text-ink [text-shadow:0_1px_10px_rgb(var(--t-glow)/0.95)]"
-          style={{ left: gloam.cx, top: Math.max(70, gloam.top - 56), ["--casual" as string]: 0.9, ["--slant" as string]: -6 }}
+          ref={measure}
+          // just above Gloam's head, growing upward; if there isn't room under the header, it overlaps Gloam a little instead
+          style={{ left: gloam.cx, top: Math.max(ceiling, gloam.top - 14 - h), ["--casual" as string]: 0.9, ["--slant" as string]: -6 }}
           initial={calm ? false : { opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           exit={calm ? undefined : { opacity: 0, y: -6, transition: { duration: 0.18 } }}

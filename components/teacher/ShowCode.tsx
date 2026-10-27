@@ -81,7 +81,7 @@ export function ShowCode({ code, address, local, roster, onClose }: { code: stri
             </p>
             {local && (
               <p className="mt-[2vh] max-w-[52ch] text-sm text-[#9fb2a8]">
-                This address only works on the school network. For anywhere else, start a tunnel (see the README) and set PUBLIC_URL.
+                This address only works on the school network. To let students join from anywhere, see &ldquo;Students outside the school network&rdquo; in the setup guide.
               </p>
             )}
           </div>

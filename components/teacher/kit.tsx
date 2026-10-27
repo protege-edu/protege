@@ -41,7 +41,7 @@ export function Shell({ children, title, back }: { children: ReactNode; title?: 
   return (
     <div className="mx-auto max-w-[1100px] px-5 pb-20 sm:px-8">
       <header className="flex items-center justify-between gap-4 border-b border-line py-4">
-        <Link href="/teacher" className="text-lg text-ink" aria-label="Protégé, teacher home">
+        <Link href="/teacher" className="inline-flex min-h-11 items-center text-lg text-ink" aria-label="Protégé, teacher home">
           <Wordmark tone="light" />
         </Link>
         <nav className="flex items-center gap-1 text-sm" aria-label="Teacher">
@@ -57,7 +57,7 @@ export function Shell({ children, title, back }: { children: ReactNode; title?: 
         </nav>
       </header>
       {back && (
-        <Link href={back.href} className="mt-5 inline-block text-sm font-bold text-ink-dim underline-offset-4 hover:text-ink hover:underline">
+        <Link href={back.href} className="mt-3 inline-flex min-h-11 items-center text-sm font-bold text-ink-dim underline-offset-4 hover:text-ink hover:underline">
           {back.label}
         </Link>
       )}

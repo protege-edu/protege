@@ -243,7 +243,8 @@ export function JoinScreen({ initialCode, googleFor, guess = "en" }: { initialCo
       {/* darken where the words are, keep Gloam clear */}
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgb(var(--t-scrim)/calc(0.9_+_var(--scrim-boost)))_0%,rgb(var(--t-scrim)/calc(0.7_+_var(--scrim-boost)))_40%,transparent_68%)] max-md:bg-[linear-gradient(0deg,rgb(var(--t-scrim)/calc(0.95_+_var(--scrim-boost)))_0%,rgb(var(--t-scrim)/calc(0.8_+_var(--scrim-boost)))_55%,transparent_75%)]" />
 
-      <main className="relative flex h-full flex-col justify-end overflow-y-auto px-6 pb-8 md:w-[min(560px,48vw)] md:justify-center md:px-[6vw] md:pb-0">
+      {/* "safe" centring: when bigger text makes it taller than the screen, the top stays reachable */}
+      <main className="relative flex h-full flex-col justify-end-safe overflow-y-auto px-6 pb-8 md:w-[min(560px,48vw)] md:justify-center-safe md:px-[6vw] md:pb-0 max-md:pt-[44vh]">
         <p className="text-2xl text-ink">
           <Wordmark tone={style.look.tone} mark={false} />
         </p>
@@ -287,6 +288,10 @@ export function JoinScreen({ initialCode, googleFor, guess = "en" }: { initialCo
                 <InkButton type="submit" size="lg" className="mt-6" disabled={busy || code.length < 4}>
                   {t.codeButton}
                 </InkButton>
+                {/* on a phone it sits here, under the button (in the corner it would collide with it) */}
+                <Link href="/" className="mt-3 block w-fit min-h-11 content-center rounded-md text-xs font-bold text-ink-dim underline-offset-4 hover:text-ink hover:underline md:hidden">
+                  {style.copy.titlePractice}
+                </Link>
               </form>
             )}
 
@@ -296,7 +301,7 @@ export function JoinScreen({ initialCode, googleFor, guess = "en" }: { initialCo
                   {t.whoTitle}
                 </Title>
                 <p className="mt-2 text-sm text-ink-dim">{t.whoHint(preview.name)}</p>
-                <ul className="mt-5 flex max-h-[38vh] flex-wrap gap-2 overflow-y-auto p-1">
+                <ul className="mt-5 flex max-h-[26vh] flex-wrap gap-2 overflow-y-auto p-1 md:max-h-[38vh]">
                   {preview.nicknames.map((n) => (
                     <li key={n.id}>
                       {n.google ? (
@@ -446,7 +451,7 @@ export function JoinScreen({ initialCode, googleFor, guess = "en" }: { initialCo
       <WaysToPlayButton style={style} className="!absolute top-3 right-4 z-10" />
 
       {step.k === "code" && (
-        <Link href="/" className="absolute right-4 bottom-4 min-h-11 content-center rounded-md px-3 text-xs font-bold text-ink-dim underline-offset-4 hover:text-ink hover:underline">
+        <Link href="/" className="absolute right-4 bottom-4 min-h-11 content-center rounded-md px-3 text-xs font-bold text-ink-dim underline-offset-4 hover:text-ink hover:underline max-md:hidden">
           {style.copy.titlePractice}
         </Link>
       )}

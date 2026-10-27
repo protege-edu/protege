@@ -326,12 +326,34 @@ html[data-motion="calm"] *::after {
   scroll-behavior: auto !important;
 }
 
-/* Bigger text: everything sized in rem grows with it, like zooming in, so layouts keep their shape */
+/*
+  Bigger text: everything sized in rem grows with it, like zooming in, so layouts keep their shape.
+  Big screens and projectors get a step up too (Protégé is designed at Chromebook size, 1366x768).
+*/
+html {
+  font-size: calc(100% * var(--text-zoom, 1) * var(--screen-zoom, 1));
+}
 html[data-text="1"] {
-  font-size: 115%;
+  --text-zoom: 1.15;
 }
 html[data-text="2"] {
-  font-size: 132%;
+  --text-zoom: 1.32;
+}
+/* a phone can't fit the biggest text and still show Gloam: one step less there (the browser's zoom still works) */
+@media (max-width: 30rem) {
+  html[data-text="2"] {
+    --text-zoom: 1.2;
+  }
+}
+@media (min-width: 1600px) and (min-height: 880px) {
+  html {
+    --screen-zoom: 1.18;
+  }
+}
+@media (min-width: 2300px) and (min-height: 1250px) {
+  html {
+    --screen-zoom: 1.45;
+  }
 }
 
 /* Stronger contrast: near-solid shading behind words on the painted world, full-strength ink, firm lines */

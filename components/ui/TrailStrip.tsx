@@ -50,7 +50,8 @@ export function TrailStrip({ style, concepts, levels, current }: { style: AgeSty
       {/* the candles are buttons (keyboard and touch), laid over the drawing */}
       <ul className="absolute inset-0" aria-label={style.copy.candleLabel}>
         {concepts.map((c, i) => (
-          <li key={c.id} className="absolute top-0 h-full -translate-x-1/2" style={{ left: `${(xs[i] / W) * 100}%`, width: 30 }}>
+          // a 44 px tap area (little fingers), never wider than the gap to the next candle
+          <li key={c.id} className="absolute top-0 h-full -translate-x-1/2" style={{ left: `${(xs[i] / W) * 100}%`, width: `min(44px, ${(((xs[1] ?? W) - (xs[0] ?? 0)) / W) * 100}%)` }}>
             <CandleButton concept={c} level={levels[i] ?? 0} style={style} open={open === i} onToggle={() => setOpen((o) => (o === i ? null : i))} onClose={() => setOpen((o) => (o === i ? null : o))} />
           </li>
         ))}

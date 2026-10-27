@@ -290,7 +290,7 @@ export function LessonReview({ id }: { id: string }) {
                     readOnly={readOnly}
                     onKeyDown={noNewLines}
                     onChange={(e) => edit((b) => void (b.concepts[ci].name = e.target.value))}
-                    className="max-w-full resize-none rounded-md bg-transparent align-top [field-sizing:content] supports-[field-sizing:content]:overflow-hidden focus:bg-panel focus:outline-none"
+                    className="min-h-11 max-w-full resize-none rounded-md bg-transparent py-1.5 align-top [field-sizing:content] supports-[field-sizing:content]:overflow-hidden focus:bg-panel focus:outline-none"
                   />
                 </h2>
                 {!readOnly && bp.concepts.length > 2 && (
@@ -426,7 +426,7 @@ function Field({
         readOnly={readOnly}
         rows={rows}
         onChange={(e) => onChange(e.target.value)}
-        className={`w-full resize-y rounded-md border border-line bg-panel px-3 py-2 text-sm text-ink focus:border-[var(--t-focus)] focus:outline-none read-only:border-transparent read-only:bg-transparent ${voice ? "voice" : ""}`}
+        className={`min-h-11 w-full resize-y rounded-md border border-line bg-panel px-3 py-2 text-sm text-ink focus:border-[var(--t-focus)] focus:outline-none read-only:border-transparent read-only:bg-transparent ${voice ? "voice" : ""}`}
       />
       {problems.map((p, i) => (
         <span key={i} className="mt-1 block text-sm text-[#7a2330]">

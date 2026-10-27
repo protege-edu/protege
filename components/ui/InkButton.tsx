@@ -52,7 +52,7 @@ export const InkButton = forwardRef<HTMLButtonElement, Props>(function InkButton
       type={type}
       disabled={disabled}
       onPointerDown={press}
-      className={`group relative inline-flex shrink-0 cursor-pointer items-center justify-center font-bold outline-none select-none disabled:cursor-not-allowed disabled:opacity-45 ${pad} ${ink} ${className}`}
+      className={`group relative inline-flex max-w-full shrink-0 cursor-pointer items-center justify-center text-center font-bold outline-none select-none disabled:cursor-not-allowed disabled:opacity-45 ${pad} ${ink} ${className}`}
       style={{ marginBottom: depth }}
       {...rest}
     >

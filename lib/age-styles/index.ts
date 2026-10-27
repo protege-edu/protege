@@ -14,6 +14,16 @@ export function styleForGrade(grade: number): AgeStyle {
 }
 
 const FRENCH: Record<AgeStyleId, FrenchStyle> = { senior: frSenior, little: frStorybook(true), junior: frStorybook(true), middle: frStorybook(false) };
+/** Each world's name in French, and its own trail lines where the shared French ones don't fit (the forest isn't a meadow) */
+const FRENCH_WORLDS: Record<AgeStyleId, { name: string; travel?: string[] }> = {
+  senior: { name: "la vallée du crépuscule" },
+  little: { name: "la prairie ensoleillée" },
+  junior: {
+    name: "la forêt aux champignons",
+    travel: ["En avant! Je pense.", "Ces champignons me jugent.", "Je suis pas perdu. C'est le chemin qui est perdu.", "Prochaine bougie! Tu expliques, je hoche la tête.", "Est-ce que cette fougère a bougé?", "Ma lanterne dit à gauche. Mes pieds disent à droite."],
+  },
+  middle: { name: "les falaises venteuses" },
+};
 // one object per style and language, so screens that depend on it don't redraw for nothing
 const translated = new Map<string, AgeStyle>();
 
@@ -25,7 +35,8 @@ export function getAgeStyle(id: string | undefined, language: Language | string 
   const hit = translated.get(key);
   if (hit) return hit;
   const fr = FRENCH[base.id];
-  const world = base.look.world && fr.travel ? { ...base.look.world, travel: fr.travel } : base.look.world;
+  const frWorld = FRENCH_WORLDS[base.id];
+  const world = base.look.world ? { ...base.look.world, name: frWorld.name, travel: frWorld.travel ?? fr.travel ?? base.look.world.travel } : base.look.world;
   const style: AgeStyle = {
     ...base,
     language: "fr",

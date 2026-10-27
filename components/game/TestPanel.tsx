@@ -9,7 +9,7 @@ import { Sheet } from "@/components/ui/Sheet";
  */
 export function TestPanel({ onNext, onAll, onDoze, disabled }: { onNext: () => void; onAll: () => void; onDoze: () => void; disabled: boolean }) {
   return (
-    <div className="absolute bottom-4 left-4 z-30 w-[220px] max-md:bottom-auto max-md:top-20">
+    <div data-test-panel className="absolute bottom-4 left-4 z-30 w-[220px] max-md:bottom-auto max-md:top-20">
       <Sheet seed="test-panel" className="px-3 py-3">
         <p className="text-xs font-bold text-[var(--t-moon)]">Test mode</p>
         <p className="mt-0.5 text-xs text-ink-dim">Pasting works here. Only on your computer.</p>

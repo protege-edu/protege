@@ -226,7 +226,7 @@ export function HelpDialog({ style, lesson, onClose }: { style: AgeStyle; lesson
 
 /** The whole conversation, scrollable. Gloam in its voice font, the student in the reading font. */
 export function LogDrawer({ style, entries, onClose }: { style: AgeStyle; entries: Entry[]; onClose: () => void }) {
-  const end = useRef<HTMLDivElement>(null);
+  const end = useRef<HTMLLIElement>(null);
   useEffect(() => end.current?.scrollIntoView({ block: "end" }), []);
   return (
     <Modal onClose={onClose} label={style.copy.log} side>
@@ -238,7 +238,8 @@ export function LogDrawer({ style, entries, onClose }: { style: AgeStyle; entrie
           {style.copy.close}
         </InkButton>
       </div>
-      <ol className="flex-1 space-y-4 overflow-y-auto px-5 py-5">
+      {/* focusable, so the conversation can be scrolled with the keyboard too */}
+      <ol tabIndex={0} aria-label={style.copy.log} className="flex-1 space-y-4 overflow-y-auto px-5 py-5">
         {entries.map((e) => (
           <li key={e.id}>
             {e.kind === "gloam" && (
@@ -258,7 +259,7 @@ export function LogDrawer({ style, entries, onClose }: { style: AgeStyle; entrie
             {e.kind === "story" && <p className="text-center text-xs text-ink-dim">{e.text}</p>}
           </li>
         ))}
-        <div ref={end} />
+        <li ref={end} aria-hidden="true" />
       </ol>
     </Modal>
   );
@@ -314,7 +315,7 @@ export function EndingPanel({
       <Sheet seed="journal" tone="slate" radius={22} className="flex min-h-0 flex-1 flex-col">
         <div className="flex h-[calc(100dvh-24px)] flex-col">
           {/* faint ruled lines, like a real journal page */}
-          <div className="flex-1 overflow-y-auto bg-[repeating-linear-gradient(180deg,transparent_0,transparent_31px,rgb(211_221_214/0.07)_31px,rgb(211_221_214/0.07)_32px)] px-6 pt-8 pb-4 md:px-8">
+          <div tabIndex={0} role="region" aria-labelledby="ending-title" className="flex-1 overflow-y-auto bg-[repeating-linear-gradient(180deg,transparent_0,transparent_31px,rgb(211_221_214/0.07)_31px,rgb(211_221_214/0.07)_32px)] px-6 pt-8 pb-4 md:px-8">
             <p className="voice text-sm text-[var(--color-lantern)]" style={{ ["--casual" as string]: 1, ["--slant" as string]: -8 }}>
               {style.copy.finaleWord}
             </p>

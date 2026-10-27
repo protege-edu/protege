@@ -80,7 +80,7 @@ export function TrailMap({
       >
         <Sheet seed="trail-map" radius={20} className="p-5 sm:p-6">
           <div className="flex items-start justify-between gap-4">
-            <div>
+            <div className="min-w-0">
               <h2 id="map-title" className="voice text-lg text-ink" style={{ ["--casual" as string]: 1, ["--voice-weight" as string]: 800 }}>
                 {world.name}
               </h2>
@@ -93,8 +93,9 @@ export function TrailMap({
             </InkButton>
           </div>
 
-          <div className="-mx-1 mt-4 overflow-x-auto px-1 pb-2">
-            <div className="relative min-w-[720px]">
+          {/* wide enough for every idea's name at any text size; scrolls sideways (by keyboard too) on small screens */}
+          <div tabIndex={0} role="region" aria-label={style.copy.trailMap} className="-mx-1 mt-4 overflow-x-auto px-1 pb-2">
+            <div className="relative min-w-[45rem]">
               {/* the painted valley, dark; the lit painting shows through the light pools */}
               <div className="relative overflow-hidden rounded-lg" style={{ aspectRatio: `${world.width} / ${world.height}` }}>
                 {map && (

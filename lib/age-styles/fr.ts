@@ -369,7 +369,7 @@ export function frStorybook(big: boolean): FrenchStyle {
       gloamThinks: "Gloam pense :",
       levelWords: ["Pas encore allumée", "Une petite étincelle", "Vacillante", "Allumée"],
       eurekaWord: "OHHHH!",
-      finaleWord: "TOUTE LA VALLÉE!",
+      finaleWord: "Toute la vallée !",
       credit: (concept) => `Tu as appris à Gloam : ${concept.toLowerCase()}!`,
       finaleCredit: "Tu as tout appris à Gloam!",
       skip: "Passer",

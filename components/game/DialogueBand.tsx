@@ -42,11 +42,18 @@ function SpeechPanel({ gloam, wide, children, seed }: { gloam: GloamBox | null; 
           maxHeight: Math.max(160, floor - 84),
         }
       : null;
+  const body = useRef<HTMLDivElement>(null);
+  const [scrolls, setScrolls] = useState(false);
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const ro = new ResizeObserver(() => setHeight(el.offsetHeight));
+    const ro = new ResizeObserver(() => {
+      setHeight(el.offsetHeight);
+      const b = body.current;
+      setScrolls(!!b && b.scrollHeight > b.clientHeight + 2);
+    });
     ro.observe(el);
+    if (body.current) ro.observe(body.current);
     return () => ro.disconnect();
   }, []);
 
@@ -75,14 +82,14 @@ function SpeechPanel({ gloam, wide, children, seed }: { gloam: GloamBox | null; 
   return (
     <motion.div
       ref={ref}
-      className={place ? "absolute z-20 flex w-[min(28rem,40vw)] flex-col" : "relative"}
+      className={place ? "absolute z-20 flex w-[min(28rem,40vw)] flex-col" : "relative flex max-h-[38dvh] flex-col"}
       style={place ?? undefined}
       initial={calm ? false : { opacity: 0, scale: 0.96, y: 6 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       transition={{ type: "spring", stiffness: 260, damping: 24 }}
     >
-      {/* only scrolls in an extreme case (the biggest text on a short screen): never hidden */}
-      <Sheet seed={seed} className="flex min-h-0 flex-col px-5 py-4 sm:px-6" bodyClassName="min-h-0 overflow-y-auto" tailTo={tailTo}>
+      {/* only scrolls in an extreme case (the biggest text on a short screen): never hidden, and then the keyboard can scroll it too */}
+      <Sheet seed={seed} className="flex min-h-0 flex-col px-5 py-4 sm:px-6" bodyClassName="min-h-0 overflow-y-auto" bodyRef={body} bodyTabIndex={scrolls ? 0 : undefined} tailTo={tailTo}>
         {children}
       </Sheet>
     </motion.div>
@@ -253,7 +260,8 @@ export function DialogueBand({ s, style, gloam, wide, onOpenLog }: { s: TeachSes
               {style.copy.inputLabel}
             </label>
             <Sheet seed="notebook" tone="slate" radius={16} className="px-4 py-2.5 focus-within:[--t-line:var(--t-focus)]">
-              <div className="flex items-end gap-3">
+              {/* on a narrow screen with big text, the buttons wrap under the box instead of squeezing it */}
+              <div className="flex flex-wrap items-end justify-end gap-3">
                 {showMic && bigMic && <MicButton style={style} onText={heard} disabled={!canSend} big />}
                 <textarea
                   id="teach"
@@ -276,7 +284,7 @@ export function DialogueBand({ s, style, gloam, wide, onOpenLog }: { s: TeachSes
                     }
                   }}
                   placeholder={style.copy.inputPlaceholder}
-                  className="min-h-11 flex-1 resize-none bg-transparent py-2.5 text-sm text-ink caret-[var(--t-moon,var(--t-focus))] placeholder:text-ink-dim focus:outline-none"
+                  className="min-h-11 min-w-[min(100%,11rem)] flex-1 resize-none bg-transparent py-2.5 text-sm text-ink caret-[var(--t-moon,var(--t-focus))] placeholder:text-ink-dim focus:outline-none"
                   style={{ outline: "none" }}
                 />
                 {showMic && !bigMic && <MicButton style={style} onText={heard} disabled={!canSend} />}
@@ -289,7 +297,7 @@ export function DialogueBand({ s, style, gloam, wide, onOpenLog }: { s: TeachSes
               <span>{neverTaught ? style.copy.firstHint : style.copy.inputHint}</span>
               <span className="flex shrink-0 items-center gap-3">
                 {draft.length > MAX - 80 && <span>{style.copy.charsLeft(MAX - draft.length)}</span>}
-                <InkButton type="button" variant="ghost" onClick={onOpenLog} className="!min-h-9 !px-2 !text-xs">
+                <InkButton type="button" variant="ghost" onClick={onOpenLog} className="!px-2 !text-xs">
                   {style.copy.log}
                 </InkButton>
               </span>

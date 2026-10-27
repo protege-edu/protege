@@ -1,6 +1,6 @@
 "use client";
 
-import type { CSSProperties, ReactNode } from "react";
+import type { CSSProperties, ReactNode, RefObject } from "react";
 import { tail } from "@/lib/ui/wobble";
 import { Cut, useSize } from "./Cut";
 
@@ -15,6 +15,8 @@ export function Sheet({
   radius = 18,
   className = "",
   bodyClassName = "",
+  bodyRef,
+  bodyTabIndex,
   style,
   tailTo,
 }: {
@@ -25,6 +27,9 @@ export function Sheet({
   className?: string;
   /** classes for the box the children sit in (e.g. "min-h-0 overflow-y-auto" to let a tall panel scroll) */
   bodyClassName?: string;
+  /** the box the children sit in (to measure it), and whether the keyboard can reach it (a scrolling one must be) */
+  bodyRef?: RefObject<HTMLDivElement | null>;
+  bodyTabIndex?: number;
   style?: CSSProperties;
   /** A speech tail from the panel's edge to this point (px, relative to the panel's top-left) */
   tailTo?: { x: number; y: number };
@@ -50,7 +55,9 @@ export function Sheet({
   return (
     <div ref={box} className={`grain relative ${className}`} style={style}>
       <Cut w={w} h={h} seed={seed} radius={radius} wobble={1.6} fill={fill} stroke="var(--t-line)" strokeWidth={1.5} depth={6} depthFill="rgb(0 0 0 / 0.35)" extra={extra} />
-      <div className={`relative z-[2] ${bodyClassName}`}>{children}</div>
+      <div ref={bodyRef} tabIndex={bodyTabIndex} className={`relative z-[2] ${bodyClassName}`}>
+        {children}
+      </div>
     </div>
   );
 }

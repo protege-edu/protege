@@ -32,7 +32,9 @@ export async function POST(request: Request) {
 
   if (b.action === "code") {
     // guessing codes is slowed down hard: 20 wrong codes from one place, then wait 10 minutes
-    if (struckOut(`join-wrong:${ip}`, 20)) return tooMany();
+    // a whole class shares one school address, and little kids mistype codes: 60 wrong codes per 10 minutes before
+    // anyone is asked to wait (guessing codes gets nowhere at that pace, and a code only shows a class's nicknames)
+    if (struckOut(`join-wrong:${ip}`, 60)) return tooMany();
     const c = classByCode(b.code);
     if (!c) strike(`join-wrong:${ip}`, 10 * 60 * 1000);
     if (!c) return bad("That code isn't a class. Check it with your teacher (it looks like GLOW-42).", 404, "code_wrong");

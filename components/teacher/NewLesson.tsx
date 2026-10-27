@@ -133,7 +133,7 @@ export function NewLesson() {
             className={`mt-3 flex min-h-40 flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed px-6 py-8 text-center ${dragging ? "border-accent bg-chip" : "border-line bg-panel"}`}
           >
             <p className="text-md text-ink">{reading ? "Reading your file…" : sourceName && sections ? `Using: ${sourceName}` : "Drop a PDF, PowerPoint or Word file here"}</p>
-            <input ref={fileInput} type="file" accept=".pdf,.pptx,.docx,.txt,.md" className="sr-only" id="file" onChange={(e) => e.target.files?.[0] && readFile(e.target.files[0])} />
+            <input ref={fileInput} type="file" accept=".pdf,.pptx,.docx,.txt,.md" className="sr-only" id="file" aria-label="Choose a lesson file (PDF, PowerPoint, Word or text)" onChange={(e) => e.target.files?.[0] && readFile(e.target.files[0])} />
             <Button variant="quiet" onClick={() => fileInput.current?.click()} disabled={reading}>
               {sections ? "Choose a different file" : "Choose a file"}
             </Button>

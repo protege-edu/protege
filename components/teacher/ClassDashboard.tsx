@@ -149,7 +149,7 @@ export function ClassDashboard() {
 
           <ClassTrail concepts={data.lesson.concepts} students={data.students} />
 
-          <div className="mt-8 overflow-x-auto">
+          <div tabIndex={0} role="region" aria-label="Every student's candles" className="mt-8 overflow-x-auto">
             <table className="w-full min-w-[640px] border-collapse text-left">
               <caption className="sr-only">Each student&apos;s progress, one candle per idea</caption>
               <thead>
@@ -374,7 +374,7 @@ function Transcript({
           />
         )}
         {access && <AccessSettings nickname={student.nickname} access={access} onChange={(p) => void changeAccess(p)} />}
-        <ol className="flex-1 space-y-3 overflow-y-auto px-5 py-5">
+        <ol tabIndex={0} aria-label={`${student.nickname}'s conversation with Gloam`} className="flex-1 space-y-3 overflow-y-auto px-5 py-5">
           {msgs === null && <li className="text-sm text-ink-dim">Loading…</li>}
           {msgs?.length === 0 && <li className="text-sm text-ink-dim">No conversation yet.</li>}
           {msgs?.map((m, i) => (
@@ -563,7 +563,7 @@ function GiveLesson({ classId, onDone }: { classId: string; onDone: () => void }
  * change these themselves. Only this teacher sees them here: never in summaries, the spreadsheet or exports.
  */
 function AccessSettings({ nickname, access, onChange }: { nickname: string; access: Access; onChange: (patch: Partial<Access>) => void }) {
-  const box = "h-5 w-5 accent-[var(--t-accent)]";
+  const box = "h-6 w-6 accent-[var(--t-accent)]";
   const select = "min-h-11 rounded-md border border-line bg-bg px-2 font-normal";
   return (
     <details className="border-b border-line px-5 py-3 text-sm">

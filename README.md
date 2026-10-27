@@ -1,207 +1,266 @@
 # Protégé
 
-**The student is the teacher.** Gloam, a small, dramatic creature with a lantern on its head, is confused about the lesson. Students explain things in their own words. When Gloam understands an idea, a candle lights up, and when it gets everything, the whole valley glows.
+**The student is the teacher.** Gloam is a small, dramatic creature with a lantern on its head, and it's
+confused about the lesson. Students explain things in their own words. When Gloam understands an idea, a
+candle lights up, and when it gets everything, the whole valley glows.
 
-Everything runs on your own computer: no paid services, no tracking, and no student data leaves the machine. Teachers have accounts; students join a class with a code, a nickname and a secret picture key.
-
----
-
-## Setup (about 10 minutes)
-
-### 1. Install Node.js
-Download the LTS version from [nodejs.org](https://nodejs.org) (free). Check it worked:
-```
-node -v
-```
-
-### 2. Install Ollama (runs the AI on your computer, free)
-Download it from [ollama.com/download](https://ollama.com/download) and open it. Ollama runs in the background.
-
-### 3. Download Gloam's brain (the AI model)
-```
-ollama pull qwen3:4b-instruct
-```
-It's about 2.5 GB. You only do this once. (We tested smaller models: they gave credit for wrong answers.)
-
-### 4. Install and run Protégé
-In this folder:
-```
-npm install
-npm run dev
-```
-Open **http://localhost:3000** and start teaching.
-
-### 5. Make your teacher account
-Open **http://localhost:3000/teacher**. The first account needs the **setup code**, which Protégé prints in the window where `npm run dev` is running:
-```
-  ┌──────────────────────────────────────────────┐
-  │  Protégé setup code:  ABCD-EFGH              │
-```
-(It's also saved in `SETUP-CODE.txt` next to the database, see Privacy.) The first account takes over everything made before, like the practice class. Save the **recovery code** it shows you: it's the only way back in if you forget your password, because Protégé doesn't send emails.
-
-**More teachers:** on teacher home, press "Make an invite code" and give it to them. Each code works once and lasts a week. Every teacher only sees their own classes and lessons.
+- **Free and open source** (AGPL-3.0). No paid services, ever.
+- **Runs on one school computer**, including its AI. Students join from their Chromebooks.
+- **Private by design:** nicknames, not names. Nothing leaves the school's computer.
+- **For every grade, K–12**, in English and French, with ways to play for every student.
 
 ---
 
-## Changing the AI model
-All AI settings live in one place. Copy `.env.example` to `.env.local` and change:
-```
-AI_MODEL=qwen3:4b-instruct
-```
-Any model from `ollama list` works. Bigger models are smarter but slower. Any OpenAI-compatible server works too: change `AI_BASE_URL`.
+## For teachers: get it running
 
-**A whole class at once:** at most `AI_CONCURRENCY` AI calls run together (default 2); everyone else waits in a fair line, and Gloam tells them in character ("3 gloams are thinking before me"). Students always go before lesson drafting. Once a student's message starts being answered, its next calls go to the front, so every message finishes promptly.
+1. **Download** the zip for Windows or Mac from the [releases page](../../releases/latest) and unzip it.
+2. **Double-click "Start Protégé".** The first time, it helps you install [Ollama](https://ollama.com) (free;
+   it runs Gloam's AI) and downloads Gloam's model (about 2.5 GB, once).
+3. Your browser opens the teacher page. Type the **setup code** shown in the Protégé window to make your
+   account, and **save your recovery code**.
+4. **Make a class**, give it a lesson (upload your notes, or use the built-in one), and press **Show the code**.
+   Students go to the address on the screen and type the class code.
 
-**What to expect** (measured with `npm run load-test`, 30 students at a real pace, on the development laptop with an Intel Arc GPU): every message answered, no errors, a typical reply in about 13 seconds, 1 in 10 over 20 seconds, the slowest about 45. While Gloam waits, it says where it is in line. When many students are waiting, Gloam answers with its hand-written lines for that moment instead of writing new ones (the judging of what they taught always uses the AI), so nobody waits much longer. A laptop with a faster GPU (for example NVIDIA) answers several times faster. Try `AI_CONCURRENCY=3` or `4` there and keep whichever `npm run load-test` says is fastest.
+Optional:
+- **"Set up voice typing"** lets students talk instead of typing.
+- **"Start Protégé online"** lets students join from outside the school network (see
+  [Putting Protégé online](#putting-protégé-online)).
+- **"Restore a backup"** goes back to an earlier day.
 
-## Useful commands
+Everything stays in your user folder (`%LOCALAPPDATA%\Protege` on Windows). Updating Protégé never touches it.
+**Ready for class?** on the teacher page checks everything works.
+
+**Is your school board asking questions?** Send them the [school board pack](docs/board/README.md).
+
+---
+
+## For school boards
+
+The [school board pack](docs/board/README.md) has:
+- a data inventory
+- a pre-filled privacy impact assessment
+- a notice to families (EN/FR) for Ontario's O. Reg. 52/26
+- an AI transparency and impact assessment
+- a security summary
+- a guide to running Protégé on board-managed computers
+- a breach plan
+- an accessibility conformance report
+
+It's written for Ontario (MFIPPA, the Education Act, EDSTA, AODA) and organized to carry over to other
+provinces and countries. The board sets how long data is kept with one setting.
+
+## Every student can play
+
+Every student screen has **Ways to play** ("How I play" for the youngest):
+- **Talk instead of typing:** private voice typing; the voice is turned into words on the school's computer and never saved.
+- **Read aloud:** Gloam's words, the join steps and the recap, with on-device voices.
+- **Bigger text**, **stronger contrast**, **easier reading** (more space, or the OpenDyslexic font), and
+  **less motion**.
+
+The settings follow the student to any Chromebook. Teachers can switch them on as an accommodation, and
+never see what a student picked for themselves. Every screen works with a keyboard alone and with screen
+readers. See [accessibility](docs/board/accessibility.md).
+
+## Privacy, in plain words
+
+- **Students:** a nickname, a scrambled picture key, what they write to Gloam, and Gloam's estimate of each
+  idea (not a mark: teachers can correct it). No real names, emails, birthdays or photos.
+- **Where it lives:** everything stays on the computer running Protégé: the database, the AI, voice typing.
+  No analytics, trackers, ads or third-party scripts. A strict content-security policy enforces it.
+- **What students are told:** that Gloam is an AI, who reads what they write, and how to ask to see or delete
+  it, in words for their age.
+- **Retention:** the board's rule (by default, a class goes a year after it was last used). Practice mode
+  goes after 30 days. Backups keep 7 days.
+- **Teachers can:**
+  - download everything about one student (for a request to see it)
+  - correct it
+  - delete it
+- **An access log** records who viewed or changed a student's information.
+
+Details: [data inventory](docs/board/data-inventory.md).
+
+---
+
+## Putting Protégé online
+
+On the school network, students just use the address Protégé shows. To let them join from anywhere, use
+**Tailscale Funnel** (free). It gives the computer a fixed https address and keeps traffic encrypted all the
+way to it:
+1. Install [Tailscale](https://tailscale.com/download), sign in, and run `tailscale funnel 3000` once to
+   switch Funnel on.
+2. Put the address it gives you (like `https://your-laptop.your-tailnet.ts.net`) in `protege.env` as
+   `PUBLIC_URL`.
+3. Start with **Start Protégé online**.
+
+Protégé refuses Cloudflare's quick tunnel unless `PROTEGE_ALLOW_CLOUDFLARE=1` is set. Cloudflare decrypts
+traffic on its own servers, so only use it if your school approved that.
+
+## Google sign-in (optional)
+
+"Continue with Google" appears once `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set (in `protege.env`,
+or `.env.local` from the code). Making them takes about 10 minutes and is free:
+
+1. Get a fixed https address with Tailscale Funnel (above), and set `PUBLIC_URL`.
+2. At [console.cloud.google.com](https://console.cloud.google.com), make a project called "Protégé".
+3. **APIs & Services → OAuth consent screen:** pick **External**, app name "Protégé", and scopes `openid` and
+   `email` only (no Google review needed).
+4. **Credentials → Create credentials → OAuth client ID:** type **Web application**. Add the redirect URI
+   `https://<your address>/api/auth/google/callback`.
+5. Copy the client ID and secret into the settings, and restart Protégé.
+
+Teachers can then sign in with Google (a new teacher still needs an invite). Students only see the Google
+button if their teacher switches it on for the class. Protégé asks Google for nothing but a scrambled account
+number: no name, email or photo.
+
+---
+
+## How it works (the short version)
+
+Every time a student sends a message:
+
+1. **Safety check** (`lib/ai/safety.ts`).
+   - Not-for-school messages get an in-character redirect, and the AI never sees them.
+   - Insults get a good-natured comeback.
+   - If a student says something worrying, Gloam drops the jokes and points them to a trusted adult.
+   - Younger ages get a stricter filter. It knows English and French.
+2. **The judge** (`lib/companion/grade.ts`).
+   - Code finds which ideas the message could be about.
+   - Then the AI answers one small question per idea: does this agree with the true version or the wrong one?
+3. **The director** (`lib/companion/director.ts`). Plain code decides what happens in the story. If the student
+   didn't explain anything ("idk", "js tell me"), Gloam answers instantly with a hand-written line.
+4. **Gloam performs** (`lib/ai/prompts/gloam.ts`). The AI writes Gloam's reply to the student's exact words.
+   - Gloam never sees the real answers, so it can't give them away.
+   - Every reply is checked before a student sees it.
+
+Every AI answer is checked with Zod (`lib/ai/schemas.ts`). If the AI sends back nonsense, Protégé retries,
+then falls back to a friendly line. Students never see an error from the AI.
+
+The adventure:
+- Each idea is a shrine with a candle on a painted journey. Gloam walks to the next shrine when an idea
+  clicks.
+- At the end, the recap is written from the teacher-approved lesson, never by the AI.
+- Gloam grows across lessons. Its lantern grows with everything a student has taught it.
+
+## Age styles
+
+| Style | Grades | Gloam is… | Its world | Its screens |
+|---|---|---|---|---|
+| `little` | K–2 | a round, bright fluffball; silly, gentle, tiny words | a sunny storybook meadow | cream paper, big text and buttons, read-aloud and the mic on by default, sentence starters, 2 secret pictures |
+| `junior` | 3–5 | a playful buddy with a cheeky grin | a storybook forest with mushroom houses | lavender paper, bigger text, read-aloud, sentence starters |
+| `middle` | 6–8 | goofy and dramatic, in a scarf | windy sea cliffs at twilight | twilight navy, game-like |
+| `senior` | 9–12 | dry, deadpan, smugly wrong | a moody night valley | night paper, lantern-lit |
+
+The class's grade picks the style. Everything for one age lives in `lib/age-styles/`:
+- Gloam's personality and AI rules
+- its hand-written lines
+- every word on screen, in English and French
+- the visuals, celebrations, safety level and input options
+
+## Languages
+
+English and French. A lesson's language (guessed from the teacher's notes, changeable) is what students
+explain in and Gloam speaks. A class's language is for the screens around lessons. French has its own
+hand-written lines for every age, and the safety filter and "just tell me" detector understand French (Québec
+swears too). Another language is one more file like `lib/age-styles/fr.ts`.
+
+---
+
+## For developers
+
+### Run it from the code
+
+1. Install [Node.js](https://nodejs.org) (LTS) and [Ollama](https://ollama.com/download).
+2. `ollama pull qwen3:4b-instruct` (about 2.5 GB; smaller models gave credit for wrong answers).
+3. In this folder: `npm install`, then `npm run dev`. Open http://localhost:3000. The teacher setup code is
+   printed in the terminal.
+
+All AI settings are in `.env.local` (see `.env.example`): `AI_MODEL`, `AI_BASE_URL` (any OpenAI-compatible
+server), `AI_CONCURRENCY` (how many AI calls at once; the rest wait in a fair line, and Gloam says so in
+character). With 30 students on a laptop with an Intel Arc GPU, every message was answered with no errors, in
+about 13 seconds typically.
+
+### Commands
 
 | Command | What it does |
 |---|---|
 | `npm run dev` | Runs the app at http://localhost:3000 |
-| `npm run eval` | Talks to Gloam with pretend students (good, wrong, off-topic, rude) and prints the transcripts and a report |
-| `npm run screenshots` | Takes screenshots at Chromebook, desktop and phone sizes (app must be running) |
-| `npm run test:logic` | Tests the non-AI rules (grading, progress, giveaways, safety). Takes a second |
-| `npm run class` | Runs Protégé for a real class (see "Putting Protégé online") |
-| `npm run load-test -- --code GLOW-42` | A pretend class of 30 teaching Gloam at once, with the real AI. Reports reply times and any errors. Use a class made just for this |
-| `npm run test:accounts` | Tests accounts and safety (passwords, picture keys, lock-outs, invites, nicknames, each teacher seeing only their own things) on a throwaway database |
-| `npm run typecheck` | Checks the TypeScript |
-| `npx tsx scripts/perf.ts --rate 4` | Measures how smooth the game is with the CPU slowed 4x, like a cheap Chromebook (app must be running) |
-| `npm run lint` | Checks code style |
+| `npm run class [-- --tunnel]` | Builds and runs Protégé for a real class, with the address and a QR code |
+| `npm run voice:setup` / `npm run voice` | Downloads / starts voice typing (whisper.cpp, local) |
+| `npm run release` | Builds the download teachers use (`release/*.zip`) |
+| `npm run test:logic` | 64 tests of the rules: grading, progress, giveaways, safety, voice, ways to play |
+| `npm run test:accounts` | 45 tests of accounts, privacy and retention, on a throwaway database |
+| `npm run licenses` | Checks every library's licence and writes `THIRD-PARTY-NOTICES.md` |
+| `npm run restore` / `access-log` / `reset-teacher` | Jobs for whoever runs Protégé |
+| `npm run load-test -- --code GLOW-42` | 30 pretend students teaching at once, with the real AI |
+| `npm run eval` | Pretend students (good, wrong, rude, off-topic) talk to Gloam; prints transcripts |
+| `npx tsx --conditions=react-server scripts/audit.ts` | The every-page check: every screen, age, language and size, with axe accessibility rules (see the file for setup) |
+| `npx tsx scripts/keyboard.ts`, `scripts/perf.ts` | Keyboard-only walk-through; smoothness with a 4× slower CPU |
+| `npm run typecheck`, `npm run lint` | TypeScript and style |
 
-**Play-testing:** see [PLAYTEST.md](PLAYTEST.md) for how to run a session with friends.
+**Test mode** (development only): `/?test` lets pasted answers teach Gloam, and a panel jumps to any moment.
+Development pages: `/dev/style`, `/dev/rig`, `/dev/journey`.
 
-**Test mode** (only while developing): open http://localhost:3000/?test. Pasted answers (like a Google AI Overview) can teach Gloam, and a small panel lets you teach the next idea or everything instantly, or make Gloam doze off, so you can see every moment without typing real explanations. It saves like a real turn. A real build doesn't have it.
+**Testing sign-up, joining or load:** use a copy of the database (`PROTEGE_DATA_DIR=<folder>`). The first
+sign-up claims everything. Never run `next build` beside `next dev` (they share `.next`). `npm run release`
+builds into `.next-release`, so it's safe.
 
-Development-only pages (they don't exist in a production build): `/dev/style` (every button, panel and font), `/dev/rig` (Gloam's rig: every mood and moment, e.g. `/dev/rig?mood=excited&talk=1`), `/dev/journey` (the adventure at any checkpoint, e.g. `/dev/journey?levels=3,3,1,0,0`).
+### Releases
 
-## Putting Protégé online for a class (free)
+Tag a version (`git tag v0.2.0 && git push --tags`). GitHub Actions runs the tests, builds the Windows and Mac
+downloads, and attaches them to a GitHub release. Teachers find it with **Check for updates**. Set the
+repository in `package.json` (`"repository": "github:owner/name"`) so the update check knows where to look.
 
-Protégé and the AI run on the teacher's laptop. To let students reach it from their Chromebooks, use a free **tunnel**: it gives the laptop a secure https address. No credit card for either option.
-
-1. Run, in this folder:
-   ```
-   npm run class
-   ```
-   It checks that Ollama and Gloam's model are ready, builds Protégé in **real mode** (faster, and test mode and the `/dev` pages don't exist there), starts it, and prints the address for students with a QR code. Students on the same Wi-Fi can use that address straight away.
-2. For students anywhere else, add a tunnel: `npm run class -- --tunnel` starts one for you if Tailscale or cloudflared is installed. To set one up:
-   - **Tailscale Funnel** (a fixed address, needed for Google sign-in): install [Tailscale](https://tailscale.com/download) (free personal plan), sign in, then run `tailscale funnel 3000`. The first time, it gives you a link to switch Funnel on. Your address looks like `https://your-laptop.your-tailnet.ts.net`.
-   - **Cloudflare quick tunnel** (no account at all, but the address changes every time): install [cloudflared](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/), then run `cloudflared tunnel --url http://localhost:3000`.
-3. On your class page, press **Show the code** and put it on the projector. Students open the address (or scan the QR code), type the class code, pick a nickname and 3 secret pictures (2 for K–2). Their nicknames pop up on the screen as they arrive. Next time, they tap their nickname and their pictures, on any Chromebook.
-
-Everyone on the same Wi-Fi as the laptop can skip the tunnel: the code screen shows the laptop's school-network address.
-
-The laptop has to stay on and awake during class, because it runs the AI.
-
-Everything is internet-safe: sign-ins are rate-limited and lock after too many wrong tries, cookies are `Secure` over https, and every change has to come from Protégé's own pages.
-
-## Google sign-in (optional)
-
-"Continue with Google" appears once three settings are in `.env.local` (see `.env.example`). Making them takes about 10 minutes and is free.
-
-1. Get a fixed https address with Tailscale Funnel (above), and set `PUBLIC_URL` to it.
-2. Go to [console.cloud.google.com](https://console.cloud.google.com), sign in, and make a new project called "Protégé".
-3. **APIs & Services → OAuth consent screen**: pick **External**, app name "Protégé", add your email. Scopes: just `openid` and `email`, which don't need Google's review.
-4. **APIs & Services → Credentials → Create credentials → OAuth client ID**: type **Web application**. Under **Authorized redirect URIs** add `https://<your address>/api/auth/google/callback`.
-5. Copy the client ID and secret into `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`, then restart Protégé.
-
-While the consent screen is in "Testing", only the Google accounts you list as test users can sign in. Press "Publish app" when you're ready for everyone.
-
-- **Teachers** sign in with Google instead of a password. A new teacher still needs an invite code (they type it first).
-- **Students** only get the Google button if their teacher switches it on for the class, and only if the school allows it. Protégé asks Google for nothing but a scrambled account id. No name, email or photo. The student still picks a nickname.
-
-## The adventure (Phase 3)
-
-A lesson is a journey across a painted valley. Each idea has a **shrine** along the path, with a candle that burns at that idea's level (unlit, a spark, flickering, lit). Gloam waits at the first idea it doesn't get yet; when it finally gets it, the "I get it" moment plays and Gloam **hop-walks to the next shrine** while the camera follows, then a chapter card appears. Lit shrines keep their own pools of light, so the path you've taught stays glowing. The **Muddle** (fog on the path ahead) thins as Gloam understands more. At the end Gloam walks to the overlook and the recap opens as **Gloam's journal**.
-
-Gloam **grows across lessons**: each student's Gloam has a level that comes only from how many ideas they've taught it (`lib/companion/level.ts`). Its lantern gets bigger and brighter. No points, no shop. Leave in the middle of a lesson and Gloam is waiting at your last checkpoint when you come back.
-
-Gloam itself is an **animated rig** (`lib/gloam-rig/`, `components/gloam/rig/`): a painted body that squashes, stretches and leans, painted arms and legs that move, a code-drawn face (eyes, felt eyelids, brows, a talking mouth), a springy stalk and a lantern that swings with real physics. An "animation brain" decides what every part does each frame: moods, blinking, glancing around, leaning in while you type, talking, hop-walking, a big eureka jump, and getting bored if nobody types (it looks around, fiddles with its lantern, sits down, then falls asleep). Each age style can point at its own rig file.
-
----
-
-## Age styles
-
-Protégé is for every grade, K–12. The core idea never changes, but **how it feels** adapts to the class. Each age group has one profile in `lib/age-styles/`:
-
-| Style | Grades | Gloam is… | Its world | Its screens |
-|---|---|---|---|---|
-| `little` | K–2 | a round, bright fluffball with huge eyes; silly, gentle, tiny words | a sunny storybook meadow | cream paper, bigger text and buttons, read-aloud, sentence starters, 2 secret pictures |
-| `junior` | 3–5 | a playful buddy with a tuft and a cheeky grin | a storybook forest with mushroom houses | lavender paper, bigger text, read-aloud, sentence starters |
-| `middle` | 6–8 | goofy and dramatic, in a scarf, with big eyebrows | windy sea cliffs at twilight | twilight navy, game-like |
-| `senior` | 9–12 | dry, deadpan, smugly wrong | a moody night valley | night paper, lantern-lit |
-
-The younger worlds are painted in daylight: unlit, they're faded to grey, and every idea a student teaches brings the colour back. Each world and Gloam is made by scripts (`art/world.py`, `art/gloam2_rig.py` with `art/worlds/*.json` and `art/rigs/*.json`) and can be replaced 1:1 by an artist.
-
-A profile controls Gloam's personality and AI rules, its **hand-written lines** (most of the jokes live here, so they're consistent and never repeat), every word on screen, the visuals (Gloam's skin, the valley, colors, Gloam's voice font), how big the celebrations are, how strict safety is (stricter for younger kids), and input options (bigger buttons, read-aloud and voice later). Nothing outside `lib/age-styles/` should be written for one age group.
-
-Lessons say which style they're written for (`ageStyle` in the blueprint). In Phase 2 the teacher's grade level picks it.
-
-## Languages
-
-Gloam speaks **English** and **French** (more later: every word lives in `lib/age-styles/`, so a language is one more file like `fr.ts`).
-
-- **A lesson's language** is the language students explain in, and Gloam speaks it. Protégé guesses it from the teacher's notes (a lesson *about* French that's written in English stays English) and the teacher can change it on the review page.
-- **A class's language** is for the screens around the lessons: joining, and "your Gloam". The teacher picks it when making the class.
-- French has its own hand-written lines for every age style, and the safety filter, the "I'm stuck / just tell me" detector and the nickname check all understand French (Québec swears too).
-
-## The art (how the painted world was made)
-
-The high school style's valley and Gloam are **hand-painted images made on this laptop** with a free local image model (FLUX.1-schnell, Apache 2.0) through ComfyUI. No paid tools, nothing uploaded. Every step is a script in `art/`, so any image can be re-made or **replaced 1:1 by a human artist**:
-
-| Step | Script | What it does |
-|---|---|---|
-| Paint | `art/paint.py` + `art/prompts.py` | Paints candidates from a prompt and a seed (same seed = same image) |
-| Clean up | `art/erase.py` | Paints out things that don't belong (like an extra lantern) |
-| Relight | `art/grade.py` | Turns one painting into a matched **dark** and **lantern-lit** version |
-| Depth | `art/layers.py` | Splits the painting into 4 depth layers for parallax (Depth Anything V2) |
-| Gloam | `art/gloam2_rig.py` | Cuts the chosen painted Gloam into a body, arms, legs and lantern (lit and unlit); the face and stalk are drawn in code so they can act |
-| Journey | `art/panorama.py` | Grows the valley painting sideways, one landmark at a time (outpainting) |
-| Seams | `art/panorama_join.py`, `seams.py`, `mist_veil.py` | Stitches the stretches with matched colour, repaints the joins, hides the last one in a bank of mist |
-| Props | `art/cutout.py` | Cuts a painted prop (the shrine) out of its background |
-
-The game draws all of this with **PixiJS** on the GPU (`components/cinema/JourneyWorld.tsx`): lantern light reveals the lit painting as Gloam understands more, plus fog, fireflies, bloom, film grain and a camera that follows Gloam with parallax. Cheap Chromebooks automatically get a lighter version.
-
-The painting tools are only needed to make new art, not to run Protégé. They live outside the project (`C:\Users\sonaw\ProtegeArt`), about 12 GB.
-
-## How it works (the short version)
-
-Every time a student sends a message, four things happen:
-
-1. **Safety check** (`lib/ai/safety.ts`). Not-for-school messages get an in-character redirect and the AI never sees them. Insults get a good-natured comeback. If a student says something worrying, Gloam drops the jokes and points them to a trusted adult. Younger age styles use a stricter filter.
-2. **The judge** (`lib/companion/grade.ts` + `lib/ai/prompts/judge.ts`). Code finds which ideas a message could be about (using each idea's evidence words), then the AI answers one small question per idea: does the student agree with the true version or the wrong one? A small AI can't give credit for "yes" or file an answer under the wrong idea.
-3. **The director** (`lib/companion/director.ts`). Plain code, no AI. It decides what happens in the story: did something click? Is the student stuck? Off topic? Asking for the answer? If the student didn't explain anything ("yea", "idk", "js tell me"), Gloam answers **instantly** with a hand-written line from the age style. No AI needed.
-4. **Gloam performs** (`lib/ai/prompts/gloam.ts`). Only when the student explained something does the AI write Gloam's reply, so it can react to their exact words. Gloam **never sees the real answers**, so it can't give them away, and every reply is checked for answer words, banned phrases, reused comparisons and repeats before a student sees it.
-
-Every AI answer is checked with Zod (`lib/ai/schemas.ts`). If the AI sends back nonsense, we retry, then fall back to a friendly line. Students never see an error message from the AI.
-
-## Project map
+### Project map
 
 ```
 app/                  pages and API routes (Next.js)
+components/access/    Ways to play, the mic, read-aloud
 components/cinema/    the painted worlds (JourneyWorld = the adventure)
-components/gloam/     Gloam: the animated rig (rig/), its poses (emotions), older skins
+components/gloam/     Gloam: the animated rig and its poses
 components/game/      the game screens: title, intro, teaching, journal, menus
-components/ui/        the hand-cut UI kit: buttons, paper panels, the logo, the trail strip
-components/teacher/   the teacher side: lessons, review, the class dashboard
-lib/gloam-rig/        Gloam's animation brain and physics (plain code, tested)
-lib/ai/               ALL the AI code. Swap models here (config.ts)
+components/teacher/   the teacher side: lessons, review, classes, status
+components/ui/        the hand-cut UI kit: buttons, paper panels, panels, the logo
+lib/access/           Ways to play settings
+lib/age-styles/       everything per age and language (personality, lines, words, look)
+lib/ai/               ALL the AI code (swap models in config.ts)
+lib/voice/            voice typing (whisper.cpp on this computer, or on-device in the browser)
+lib/privacy/          retention, the daily clean-up, data downloads, the access log
 lib/companion/        progress rules, the director, grading, sessions
-lib/lesson/           lesson blueprints (Phase 1: seasons)
-lib/db/               the local SQLite database (see Privacy for where it lives)
-scripts/              eval and screenshot tools
+lib/db/               the local SQLite database and backups
+scripts/              launcher, release, admin jobs, tests, the audit
+docs/board/           the school board pack
+art/                  the scripts that painted the worlds and Gloams (FLUX.1-schnell, local)
 ```
 
-## Privacy
-- Students are nicknames only. No real names, emails or birthdays are collected. Their picture key is stored scrambled (hashed), like a password.
-- Students who use Google: only a scrambled (keyed hash) Google account id is stored, never their name, email or photo.
-- Teachers: their email, name, and a scrambled password and recovery code. No passwords are ever stored as they were typed.
-- The database is a file on this computer, in the app-data folder: `%LOCALAPPDATA%\Protege\protege.db` on Windows (`~/.local/share/Protege` on Mac/Linux). Set `PROTEGE_DATA_DIR` to keep it somewhere else. Delete it to wipe everything. (It lives outside the project folder because the dev server reloads the page whenever a file inside the project changes.)
-- No analytics, no trackers, no third-party scripts. Fonts are downloaded once at build time and served from this computer.
+### The art
+
+The worlds and Gloams were painted on a laptop with a free local image model (FLUX.1-schnell, Apache 2.0)
+through ComfyUI, then finished by scripts in `art/`. For example:
+- `paint.py` paints candidates
+- `grade.py` makes the dark and lit versions
+- `panorama.py` grows the journey
+- `gloam2_rig.py` cuts a painted Gloam into an animatable rig
+
+Any image can be replaced 1:1 by an artist. PixiJS draws it on the GPU. Cheap Chromebooks get a lighter
+version.
 
 ## Troubleshooting
-- **The page keeps reloading by itself (while developing):** stop `npm run dev`, delete the `.next` folder, and start it again.
-- **Students on the school Wi-Fi can't open the address:** the first time, Windows asks whether Node.js may use the network. Allow it on private networks. Some school networks block devices from reaching each other; then use a tunnel.
-- **Forgot the setup code:** it's in `SETUP-CODE.txt` in the database folder, and printed again every time Protégé starts until the first account exists.
-- **A teacher forgot their password and lost the recovery code:** on the laptop running Protégé, run `npm run reset-teacher -- their@email`. It prints a new recovery code; they use it with "Forgot your password?". Only someone at the laptop can do this.
-- **A student forgot their pictures:** the teacher opens the class and presses "Reset pictures" next to that student. The student picks new ones next time.
+
+- **Students on the school Wi-Fi can't open the address:** the first time, Windows asks whether Node.js may
+  use the network. Allow it on private networks. Some school networks block devices from reaching each
+  other; ask IT, or use Tailscale Funnel.
+- **"Gloam's brain isn't running":** open the Ollama app. Students press Try again; nothing is lost.
+- **Forgot the setup code:** it's in `SETUP-CODE.txt` in the data folder, and printed every time Protégé
+  starts until the first account exists.
+- **A teacher lost their password and recovery code:** on the computer running Protégé, run
+  `node\node.exe launch.js --reset-teacher their@email` in the Protégé folder (`npm run reset-teacher --
+  their@email` from the code).
+- **A student forgot their pictures:** the teacher opens the student and presses **Reset their pictures**.
+- **The page keeps reloading (while developing):** stop `npm run dev`, delete `.next`, start again.
+
+## Licence
+
+Protégé is free software under the [GNU Affero General Public License v3.0](LICENSE). Anyone can use, study,
+change and share it. If you run a changed version for others, you share your changes too.
+[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) credits the libraries, fonts and models it's built on.
+Security problems: see [SECURITY.md](SECURITY.md).

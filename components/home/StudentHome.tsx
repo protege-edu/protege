@@ -31,6 +31,17 @@ export function StudentHome({ home }: { home: Home }) {
   const level = home.gloam.level;
   const taught = home.journal.reduce((n, j) => n + j.ideas.length, 0);
 
+  // the header's height (it wraps with longer words or bigger text): Gloam's hello stays below it
+  const header = useRef<HTMLElement>(null);
+  const [headerH, setHeaderH] = useState(64);
+  useEffect(() => {
+    const el = header.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setHeaderH(el.offsetHeight));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   // their Ways to play follow them from their account, whatever this Chromebook had before
   useEffect(() => adoptAccess(home.access), [home.access]);
 
@@ -73,22 +84,23 @@ export function StudentHome({ home }: { home: Home }) {
           typingTick={0}
           eurekaTick={0}
           focus={wide ? 0.74 : 0.5}
-          groundAt={wide ? 0.8 : 0.36}
+          // on a phone, Gloam stands a little lower, so its hello has room under the header
+          groundAt={wide ? 0.8 : 0.42}
           gloamScale={wide ? 0.9 : 0.5}
           showCandles={false}
           onGloamBox={setGloamBox}
           journey={{ talking: !!line, waiting: !home.paused, level, levels: [], stop: 0 }}
         >
-          <TravelQuip text={line} gloam={gloamBox} />
+          <TravelQuip text={line} gloam={gloamBox} ceiling={headerH + 8} />
         </Stage>
       </div>
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgb(var(--t-scrim)/calc(0.92_+_var(--scrim-boost)))_0%,rgb(var(--t-scrim)/calc(0.75_+_var(--scrim-boost)))_42%,transparent_66%)] max-md:bg-[linear-gradient(0deg,rgb(var(--t-scrim)/calc(0.96_+_var(--scrim-boost)))_0%,rgb(var(--t-scrim)/calc(0.85_+_var(--scrim-boost)))_60%,transparent_80%)]" />
 
-      <header className="absolute inset-x-0 top-0 z-10 flex items-center justify-between px-5 py-3 md:px-[5vw]">
+      <header ref={header} className="absolute inset-x-0 top-0 z-10 flex flex-wrap items-center justify-between gap-x-3 px-5 py-3 md:px-[5vw]">
         <span className="text-lg text-ink">
           <Wordmark tone={style.look.tone} mark={false} />
         </span>
-        <span className="flex items-center gap-1">
+        <span className="flex flex-wrap items-center justify-end gap-1">
           <WaysToPlayButton style={style} />
           <InkButton variant="ghost" onClick={() => void signOut()}>
             {t.signOut}
@@ -96,7 +108,7 @@ export function StudentHome({ home }: { home: Home }) {
         </span>
       </header>
 
-      <main className="relative flex h-full flex-col justify-end overflow-y-auto px-5 pt-20 pb-6 md:w-[min(620px,52vw)] md:justify-center md:px-[5vw] md:pb-0">
+      <main className="relative flex h-full flex-col justify-end-safe overflow-y-auto px-5 pt-20 pb-6 max-md:pt-[47vh] md:w-[min(620px,52vw)] md:justify-center-safe md:px-[5vw] md:pb-0">
         <motion.div initial={calm ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}>
           <p className="text-sm font-bold text-ink-dim">{home.className}</p>
           <h1 className="mt-1 text-xl font-bold text-ink md:text-2xl">{t.title(home.nickname)}</h1>

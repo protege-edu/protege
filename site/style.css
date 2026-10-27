@@ -1,0 +1,514 @@
+/*
+  Protégé's public site. The same world as the app: the night valley, lantern gold that only ever means
+  understanding, hand-cut paper, Recursive for Gloam's voice and Atkinson Hyperlegible for reading.
+*/
+@font-face {
+  font-family: "Atkinson";
+  src: url("fonts/atkinson-400.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Atkinson";
+  src: url("fonts/atkinson-700.woff2") format("woff2");
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Recursive";
+  src: url("fonts/recursive.woff2") format("woff2");
+  font-weight: 300 1000;
+  font-display: swap;
+}
+
+:root {
+  --night: #0d1613;
+  --night-2: #121e1a;
+  --teal: #2c4844;
+  --mist: #d3ddd6;
+  --mist-dim: #9fb2a8;
+  --gloam: #e07a62;
+  --gloam-ink: #1c0b06;
+  --moon: #8ec5dc;
+  --lantern: #f4b740;
+  --paper: #e7ece5;
+  --paper-2: #f3f6f1;
+  --ink: #16302a;
+  --ink-dim: #4a6058;
+  --line: #bfccc4;
+  --voice: "Recursive", system-ui, sans-serif;
+  --read: "Atkinson", system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+html {
+  scroll-behavior: smooth;
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 1.125rem/1.6 var(--read);
+  -webkit-font-smoothing: antialiased;
+}
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+a {
+  color: inherit;
+}
+:focus-visible {
+  outline: 3px solid var(--moon);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+.skip {
+  position: absolute;
+  left: -999px;
+  top: 8px;
+  background: var(--paper-2);
+  color: var(--ink);
+  padding: 10px 16px;
+  border-radius: 8px;
+  z-index: 10;
+}
+.skip:focus {
+  left: 12px;
+}
+.wrap {
+  width: min(1120px, 100% - 32px);
+  margin-inline: auto;
+}
+.voice {
+  font-family: var(--voice);
+  font-variation-settings: "CASL" 1, "slnt" -4;
+  font-weight: 750;
+}
+
+/* ---------- top bar ---------- */
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-block: 18px;
+}
+.bar .mark {
+  font-size: 1.6rem;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.bar nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+.bar nav a {
+  text-decoration: none;
+  padding-block: 10px;
+  opacity: 0.85;
+}
+.bar nav a:hover,
+.bar nav a[aria-current] {
+  opacity: 1;
+  text-decoration: underline;
+  text-underline-offset: 5px;
+}
+.night .bar {
+  color: var(--mist);
+}
+
+/* ---------- the night valley ---------- */
+.night {
+  background: var(--night);
+  color: var(--mist);
+  position: relative;
+  isolation: isolate;
+}
+.hero {
+  position: relative;
+  min-height: min(860px, 100svh);
+  display: flex;
+  flex-direction: column;
+  background: var(--night) url("img/valley.webp") center 70% / cover no-repeat;
+}
+.hero::before {
+  /* words over the painting: night paper behind them, the valley stays open on the right */
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(90deg, rgb(13 22 19 / 0.94) 0%, rgb(13 22 19 / 0.78) 42%, rgb(13 22 19 / 0.2) 75%);
+}
+.hero .lead {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 33rem) minmax(0, 1fr);
+  align-items: center;
+  gap: 40px;
+  padding-block: 40px 80px;
+}
+.hero h1 {
+  font: 800 clamp(2.6rem, 6vw, 4.6rem) / 1.02 var(--voice);
+  font-variation-settings: "CASL" 1, "slnt" -6;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+.hero p.say {
+  font-size: 1.25rem;
+  color: var(--mist);
+  margin: 22px 0 0;
+  max-width: 34ch;
+}
+.hero .small {
+  margin-top: 22px;
+  color: var(--mist-dim);
+  font-size: 0.95rem;
+  max-width: 44ch;
+}
+.screen {
+  margin: 0;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 30px 80px rgb(0 0 0 / 0.55), 0 0 0 1px rgb(211 221 214 / 0.12);
+  transform: rotate(-1.2deg);
+}
+.screen img {
+  width: 100%;
+}
+
+/* ---------- buttons: cut paper, like the app ---------- */
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 30px;
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 0 22px;
+  border-radius: 12px 10px 13px 9px / 10px 13px 9px 12px;
+  font-weight: 700;
+  text-decoration: none;
+  border: 1.5px solid transparent;
+  box-shadow: 0 4px 0 rgb(0 0 0 / 0.35);
+}
+.btn.primary {
+  background: var(--gloam);
+  color: var(--gloam-ink);
+}
+.btn.primary:hover {
+  background: #ee9078;
+}
+.btn.quiet {
+  border-color: rgb(211 221 214 / 0.35);
+  color: var(--mist);
+  box-shadow: none;
+}
+.btn.quiet:hover {
+  background: rgb(211 221 214 / 0.08);
+}
+.paper .btn.quiet {
+  border-color: var(--line);
+  color: var(--ink);
+}
+.paper .btn.quiet:hover {
+  background: var(--paper-2);
+}
+
+/* ---------- the story of a lesson ---------- */
+section {
+  padding-block: 88px;
+}
+h2 {
+  font: 800 clamp(2rem, 4vw, 2.9rem) / 1.08 var(--voice);
+  font-variation-settings: "CASL" 1, "slnt" -4;
+  margin: 0 0 18px;
+}
+h3 {
+  font-size: 1.3rem;
+  margin: 0 0 8px;
+}
+.intro {
+  max-width: 46ch;
+  color: var(--ink-dim);
+  font-size: 1.2rem;
+  margin: 0;
+}
+.night .intro {
+  color: var(--mist-dim);
+}
+.steps {
+  display: grid;
+  gap: 72px;
+  margin-top: 56px;
+}
+.step {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: 48px;
+  align-items: center;
+}
+.step:nth-child(even) {
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+}
+.step:nth-child(even) .words {
+  order: 2;
+}
+.step .words p {
+  margin: 0;
+  color: var(--ink-dim);
+}
+.step .when {
+  font: 700 1.05rem var(--voice);
+  font-variation-settings: "CASL" 1, "slnt" -8;
+  color: var(--gloam);
+  margin-bottom: 6px;
+}
+.shot {
+  margin: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 18px 50px rgb(22 48 42 / 0.22), 0 0 0 1px var(--line);
+}
+.shot figcaption {
+  font-size: 0.9rem;
+  padding: 10px 14px;
+  background: var(--paper-2);
+  color: var(--ink-dim);
+}
+
+/* ---------- every grade: four worlds, hung like paintings ---------- */
+.worlds {
+  display: flex;
+  gap: 22px;
+  margin-top: 48px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding-bottom: 12px;
+}
+.world {
+  flex: 0 0 min(80%, 340px);
+  scroll-snap-align: start;
+  margin: 0;
+}
+.world:nth-child(1) {
+  transform: rotate(-1deg);
+}
+.world:nth-child(2) {
+  transform: rotate(0.8deg) translateY(14px);
+}
+.world:nth-child(3) {
+  transform: rotate(-0.6deg);
+}
+.world:nth-child(4) {
+  transform: rotate(1deg) translateY(10px);
+}
+.world img {
+  border-radius: 10px;
+  box-shadow: 0 16px 40px rgb(0 0 0 / 0.45);
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+}
+.world figcaption {
+  margin-top: 14px;
+}
+.world figcaption b {
+  display: block;
+  font-size: 1.1rem;
+}
+.world figcaption span {
+  color: var(--mist-dim);
+  font-size: 0.98rem;
+}
+
+/* ---------- lists that read like sentences ---------- */
+.two {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 56px;
+  align-items: start;
+}
+.plain {
+  list-style: none;
+  padding: 0;
+  margin: 24px 0 0;
+  display: grid;
+  gap: 16px;
+}
+.plain li {
+  padding-left: 28px;
+  position: relative;
+}
+.plain li::before {
+  /* a small hand-drawn tick in Gloam's colour (gold is only for understanding) */
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 0.55em;
+  width: 13px;
+  height: 7px;
+  border-left: 2.5px solid var(--gloam);
+  border-bottom: 2.5px solid var(--gloam);
+  transform: rotate(-48deg);
+}
+.plain b {
+  color: var(--ink);
+}
+.night .plain b {
+  color: var(--mist);
+}
+.board {
+  background: var(--paper-2);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.docs {
+  list-style: none;
+  padding: 0;
+  margin: 28px 0 0;
+  columns: 2 280px;
+  column-gap: 40px;
+}
+.docs li {
+  break-inside: avoid;
+  padding-block: 10px;
+  border-bottom: 1px dashed var(--line);
+}
+.docs a {
+  font-weight: 700;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 4px;
+}
+.docs span {
+  display: block;
+  color: var(--ink-dim);
+  font-size: 0.95rem;
+}
+
+/* ---------- footer ---------- */
+footer {
+  background: var(--night);
+  color: var(--mist-dim);
+  padding-block: 44px;
+  font-size: 0.95rem;
+}
+footer .wrap {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 18px;
+}
+footer a {
+  color: var(--mist);
+}
+
+/* ---------- documents (guide, privacy, the board pack) ---------- */
+.doc {
+  padding-block: 40px 96px;
+}
+.doc article {
+  max-width: 72ch;
+}
+.doc h1 {
+  font: 800 clamp(2rem, 4.5vw, 3rem) / 1.08 var(--voice);
+  font-variation-settings: "CASL" 1, "slnt" -4;
+  margin: 24px 0 18px;
+}
+.doc h2 {
+  font-size: 1.7rem;
+  margin-top: 48px;
+}
+.doc h3 {
+  margin-top: 32px;
+}
+.doc table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.98rem;
+  margin-block: 20px;
+  display: block;
+  overflow-x: auto;
+}
+.doc th,
+.doc td {
+  text-align: left;
+  vertical-align: top;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+}
+.doc th {
+  background: var(--paper-2);
+}
+.doc code {
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 1px 5px;
+  font-size: 0.92em;
+}
+.doc pre {
+  background: var(--night);
+  color: var(--mist);
+  padding: 16px;
+  border-radius: 10px;
+  overflow-x: auto;
+}
+.doc pre code {
+  background: none;
+  border: 0;
+  color: inherit;
+}
+.doc blockquote {
+  margin-left: 0;
+  padding-left: 18px;
+  border-left: 3px solid var(--line);
+  color: var(--ink-dim);
+}
+.back {
+  display: inline-block;
+  margin-top: 8px;
+  font-weight: 700;
+  padding-block: 10px;
+}
+
+@media (max-width: 860px) {
+  .hero .lead,
+  .step,
+  .step:nth-child(even),
+  .two {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .step:nth-child(even) .words {
+    order: 0;
+  }
+  .hero::before {
+    background: linear-gradient(0deg, rgb(13 22 19 / 0.96) 0%, rgb(13 22 19 / 0.8) 55%, rgb(13 22 19 / 0.45) 100%);
+  }
+  section {
+    padding-block: 64px;
+  }
+  .screen {
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .btn {
+    transition: background-color 150ms;
+  }
+}
