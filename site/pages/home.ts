@@ -30,7 +30,6 @@ export function homeBody(l: Links, bar: string): string {
   return `
 <div class="stage" id="stage" aria-hidden="true">
   ${layers(0)}${layers(1)}${layers(2)}${layers(3)}
-  <div class="moon"></div>
   <img class="gloam-still" src="img/gloam-confused.webp" alt="">
   <div class="gloam-canvas"></div>
   <div class="shade"></div>
