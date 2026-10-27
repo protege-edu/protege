@@ -24,7 +24,7 @@ const file = (name: string) => (repo ? `${repoUrl}/releases/latest/download/${na
 const links: Links = { windows: file("Protege-Setup.exe"), mac: file("Protege.dmg"), windowsZip: file("Protege-windows.zip"), macZip: file("Protege-mac.zip"), repo: repoUrl };
 
 /** The security policy, in the page and in Cloudflare's headers: only this site, nothing else, ever */
-const CSP = "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'";
+const CSP = "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; media-src 'self'; base-uri 'none'; form-action 'none'";
 
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
@@ -57,7 +57,7 @@ function page({ title, description, body, depth = 0, current, dark = false, kind
 <body data-page="${kind}" data-root="${up}" data-windows="${links.windows}" data-mac="${links.mac}">
 <a class="skip" href="#main">Skip to the content</a>
 ${dark ? body.replace("<!--BAR-->", bar) : `${bar}\n${body}`}
-<footer><div class="wrap"><span>Protégé ${pkg.version}. Free software under the <a href="${repoUrl}/blob/main/LICENSE">GNU AGPL v3</a>. No trackers on this site, or in Protégé.</span><span><a href="${up}board/security.html">Security</a></span><span><a href="${repoUrl}">Source code</a></span></div></footer>
+<footer><div class="wrap"><span>Protégé ${pkg.version}. Free software under the <a href="${repoUrl}/blob/main/LICENSE">GNU AGPL v3</a>. No trackers on this site, or in Protégé.</span><span class="foot-links"><a href="${up}guide.html">Set it up</a><a href="${up}privacy.html">Privacy</a><a href="${up}board/accessibility.html">Accessibility</a><a href="${up}board/README.html">For school boards</a><a href="${up}board/security.html">Security</a><a href="${repoUrl}">Source code</a></span></div></footer>
 </body>
 </html>
 `;
@@ -99,7 +99,9 @@ function doc(file: string, to: string, depth: number, current?: string) {
 }
 
 function home() {
-  const bar = `<header class="wrap bar"><a class="mark voice" href="index.html" aria-label="Protégé, home"><img src="img/mark.svg" alt="" width="34" height="34">protégé</a><nav aria-label="Protégé"><a href="guide.html">Set it up</a><a href="privacy.html">Privacy</a><a href="board/accessibility.html">Accessibility</a><a href="board/README.html">For school boards</a><a href="${repoUrl}">Code</a></nav></header>`;
+  // the homepage's bar has Gloam's voice switch (off until the visitor turns it on)
+  const sound = `<button class="sound" id="sound" type="button" aria-pressed="false"><svg viewBox="0 0 18 14" aria-hidden="true"><rect x="1" y="4" width="3" height="10" rx="1.5"/><rect x="7.5" y="0" width="3" height="14" rx="1.5"/><rect x="14" y="6" width="3" height="8" rx="1.5"/></svg><span>Gloam's voice: off</span></button>`;
+  const bar = `<header class="wrap bar"><a class="mark voice" href="index.html" aria-label="Protégé, home"><img src="img/mark.svg" alt="" width="34" height="34">protégé</a><nav aria-label="Protégé"><a href="guide.html">Set it up</a><a href="privacy.html">Privacy</a><a href="board/accessibility.html">Accessibility</a><a href="board/README.html">For school boards</a><a href="${repoUrl}">Code</a>${sound}</nav></header>`;
   fs.writeFileSync(
     path.join(out, "index.html"),
     page({
@@ -126,12 +128,18 @@ async function main() {
   // (file by file: Node's own folder copy crashes on Windows with Node 25)
   fs.mkdirSync(path.join(out, "img"));
   for (const f of fs.readdirSync(path.join(root, "site", "img"))) fs.copyFileSync(path.join(root, "site", "img", f), path.join(out, "img", f));
-  // Gloam and the valley, from the app (the same paintings students see)
-  const art = path.join(out, "art", "senior");
-  fs.mkdirSync(art, { recursive: true });
-  for (const f of fs.readdirSync(path.join(root, "public", "art", "senior")).filter((x) => /^(valley-|gloam2-)/.test(x))) {
-    fs.copyFileSync(path.join(root, "public", "art", "senior", f), path.join(art, f));
+  // Gloam and the valley, and every grade's world in full colour, from the app (the same paintings students see)
+  for (const age of ["little", "junior", "middle", "senior"]) {
+    const art = path.join(out, "art", age);
+    fs.mkdirSync(art, { recursive: true });
+    const keep = age === "senior" ? /^(valley-|gloam2-|journey-\d-lit)/ : /^journey-\d-lit/;
+    for (const f of fs.readdirSync(path.join(root, "public", "art", age)).filter((x) => keep.test(x))) {
+      fs.copyFileSync(path.join(root, "public", "art", age, f), path.join(art, f));
+    }
   }
+  // Gloam's voice (recorded by scripts/site-voice.ts)
+  fs.mkdirSync(path.join(out, "audio"));
+  for (const f of fs.readdirSync(path.join(root, "site", "audio"))) fs.copyFileSync(path.join(root, "site", "audio", f), path.join(out, "audio", f));
   // the site's scripts: the homepage's chapters and the living Gloam (loaded only when needed)
   await build({
     entryPoints: [path.join(root, "site", "js", "main.ts")],
