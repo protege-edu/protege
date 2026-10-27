@@ -22,3 +22,5 @@ jobs:
       - run: npm run test:logic
       - run: npm run test:accounts
       - run: npm run licenses
+      # the website (Cloudflare Pages builds the same thing)
+      - run: npm run site

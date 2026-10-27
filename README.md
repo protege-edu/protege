@@ -9,8 +9,8 @@ candle lights up, and when it gets everything, the whole valley glows.
 - **Private by design:** nicknames, not names. Nothing leaves the school's computer.
 - **For every grade, K–12**, in English and French, with ways to play for every student.
 
-**[Download Protégé](https://github.com/vedh-sonawane/protege/releases/latest)** for Windows or Mac, or read
-the [setup guide on the website](https://vedh-sonawane.github.io/protege/).
+**[Download Protégé](https://github.com/protege-edu/protege/releases/latest)** for Windows or Mac, or read
+the [setup guide on the website](https://protege-edu.pages.dev/guide).
 
 ![Gloam, holding its unlit lantern, explains its wrong theory of the seasons. A text box below says "Explain it to Gloam…"](site/img/teach.webp)
 
@@ -218,6 +218,22 @@ Raise `version` in `package.json`, then tag it (`git tag v0.2.0 && git push --ta
 tests, builds the Windows and Mac downloads, and attaches them to a GitHub release. Teachers find it with
 **Check for updates**, which looks at the repository named in `package.json`. A fork sets its own there (or
 `PROTEGE_REPO=owner/name`).
+
+### The website
+
+https://protege-edu.pages.dev is built by `npm run site` from `site/` and `docs/board/`, and hosted for free on
+Cloudflare Pages, which rebuilds it on every push to `main`. The Cloudflare project's settings:
+
+| Setting | Value |
+|---|---|
+| Production branch | `main` |
+| Build command | `npm run site` |
+| Build output directory | `site-dist` |
+| Node version | from `.node-version` |
+| Web Analytics | **off** (the site has no trackers, and its privacy page says so) |
+
+The site sets strict headers (`site-dist/_headers`): nothing from other websites can load, and no cookies are
+used. Any static host works too: upload `site-dist/`.
 
 ### Contributing
 

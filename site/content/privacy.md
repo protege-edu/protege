@@ -25,6 +25,11 @@ When a student presses the mic, a short recording goes to the school's computer,
 and is thrown away. It's never saved or sent to a speech company. The words appear in the student's box so they
 can fix them before sending.
 
+## Read-aloud
+
+Gloam's voice is made on the school's computer and played on the student's device. What it reads is never
+sent to a speech company or saved.
+
 ## Accessibility settings
 
 Students can choose settings like bigger text, read-aloud or a dyslexia-friendly font. These can say something
@@ -35,6 +40,13 @@ accommodations they switched on.
 
 Only if a teacher turns it on for a class, students can sign in with their school Google account. Protégé
 then keeps only a scrambled account number: no name, email or photo.
+
+## This website
+
+This website is only information and downloads: Protégé itself never runs here, and no student ever uses it.
+It has no cookies, sign-ins, forms, analytics, ads or trackers, and loads nothing from other websites. It's
+hosted for free by Cloudflare Pages. Like any website host, Cloudflare sees the internet address of whoever
+visits, so it can deliver the pages and block attacks.
 
 ## Questions
 

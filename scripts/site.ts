@@ -1,7 +1,8 @@
 /**
- * Builds Protégé's public website (GitHub Pages) into site-dist/: the home page, the setup guide, privacy,
- * and the whole school board pack, from the same documents as the code (so they never drift apart).
- * No trackers, no third-party scripts or fonts: everything is served from the site itself.
+ * Builds Protégé's public website (Cloudflare Pages, see the README) into site-dist/: the home page, the setup
+ * guide, privacy, and the whole school board pack, from the same documents as the code (so they never drift
+ * apart). No trackers, no cookies, no third-party scripts or fonts: everything is served from the site itself,
+ * and its headers (_headers) tell browsers to refuse anything else.
  *
  *   npm run site                     → site-dist/ (open site-dist/index.html)
  *   PROTEGE_REPO=owner/name npm run site    links the downloads to that repository's releases
@@ -189,8 +190,20 @@ function main() {
   for (const f of fs.readdirSync(path.join(root, "docs", "board")).filter((x) => x.endsWith(".md"))) {
     doc(path.join(root, "docs", "board", f), `board/${f.replace(/\.md$/, ".html")}`, 1, f === "README.md" ? "board/README.html" : f === "accessibility.md" ? "board/accessibility.html" : undefined);
   }
-  // GitHub Pages: serve files as they are
-  fs.writeFileSync(path.join(out, ".nojekyll"), "");
+  // Cloudflare Pages reads this: nothing from anywhere else may load, no referrer leaves the site, and
+  // the site can't be framed or use the camera, mic or location
+  fs.writeFileSync(
+    path.join(out, "_headers"),
+    [
+      "/*",
+      "  Content-Security-Policy: default-src 'none'; style-src 'self'; img-src 'self'; font-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+      "  Referrer-Policy: no-referrer",
+      "  X-Content-Type-Options: nosniff",
+      "  Permissions-Policy: camera=(), microphone=(), geolocation=(), interest-cohort=(), browsing-topics=()",
+      "  Cross-Origin-Opener-Policy: same-origin",
+      "",
+    ].join("\n"),
+  );
   console.log(`Site built in site-dist/ (${repo ? `downloads: ${download}` : "set PROTEGE_REPO to link the downloads"}).`);
 }
 
