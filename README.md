@@ -246,6 +246,15 @@ Cloudflare Pages, which rebuilds it on every push to `main`. The Cloudflare proj
 The site sets strict headers (`site-dist/_headers`): nothing from other websites can load, and no cookies are
 used. Any static host works too: upload `site-dist/`.
 
+How it's made:
+- `site/pages/home.ts` is the homepage's HTML (complete without JavaScript).
+- `site/js/` makes it move: `stage.ts` puts the real animated Gloam (the app's rig) in the valley behind the
+  page, and `home.ts` plays the chapters with GSAP's ScrollTrigger. With reduced motion, nothing is pinned
+  or scrubbed.
+- `site/content/` and `docs/board/` are the reading pages.
+- `npx tsx scripts/site-art.ts http://localhost:3000` remakes the cut-out Gloams from the rig (`--setup` adds
+  the setup page's screenshot). `scripts/installer-art.ts` does the same for the installers.
+
 ### Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md). Security problems go to [SECURITY.md](SECURITY.md), never a public issue.

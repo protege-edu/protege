@@ -1,6 +1,7 @@
 /*
-  Protégé's public site. The same world as the app: the night valley, lantern gold that only ever means
-  understanding, hand-cut paper, Recursive for Gloam's voice and Atkinson Hyperlegible for reading.
+  Protégé's public site. The same world as the app: the night valley, Gloam itself (the real animated rig),
+  lantern gold that only ever means understanding, moonlight for everything else, Recursive for Gloam's
+  voice and Atkinson Hyperlegible for reading. The homepage is one valley you travel through, in chapters.
 */
 @font-face {
   font-family: "Atkinson";
@@ -26,8 +27,9 @@
   --night-2: #121e1a;
   --teal: #2c4844;
   --mist: #d3ddd6;
-  --mist-dim: #9fb2a8;
+  --mist-dim: #a9bab1;
   --gloam: #e07a62;
+  --gloam-hot: #ee9078;
   --gloam-ink: #1c0b06;
   --moon: #8ec5dc;
   --lantern: #f4b740;
@@ -58,6 +60,10 @@ body {
   font: 1.125rem/1.6 var(--read);
   -webkit-font-smoothing: antialiased;
 }
+body[data-page="home"] {
+  background: var(--night);
+  color: var(--mist);
+}
 img {
   max-width: 100%;
   height: auto;
@@ -84,14 +90,25 @@ a {
 .skip:focus {
   left: 12px;
 }
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
 .wrap {
-  width: min(1120px, 100% - 32px);
+  width: min(1180px, 100% - 32px);
   margin-inline: auto;
 }
 .voice {
   font-family: var(--voice);
   font-variation-settings: "CASL" 1, "slnt" -4;
   font-weight: 750;
+}
+[hidden] {
+  display: none !important;
 }
 
 /* ---------- top bar ---------- */
@@ -102,9 +119,15 @@ a {
   justify-content: space-between;
   gap: 4px 16px;
   padding-block: 18px;
+  position: relative;
+  z-index: 4;
+}
+body[data-page="home"] .bar {
+  position: absolute;
+  inset: 0 0 auto;
+  color: var(--mist);
 }
 @media (max-width: 640px) {
-  /* small screens: the links get their own row under the logo */
   .bar nav {
     width: 100%;
   }
@@ -134,68 +157,6 @@ a {
   text-decoration: underline;
   text-underline-offset: 5px;
 }
-.night .bar {
-  color: var(--mist);
-}
-
-/* ---------- the night valley ---------- */
-.night {
-  background: var(--night);
-  color: var(--mist);
-  position: relative;
-  isolation: isolate;
-}
-.hero {
-  position: relative;
-  min-height: min(860px, 100svh);
-  display: flex;
-  flex-direction: column;
-  background: var(--night) url("img/valley.webp") center 70% / cover no-repeat;
-}
-.hero::before {
-  /* words over the painting: night paper behind them, the valley stays open on the right */
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background: linear-gradient(90deg, rgb(13 22 19 / 0.94) 0%, rgb(13 22 19 / 0.78) 42%, rgb(13 22 19 / 0.2) 75%);
-}
-.hero .lead {
-  flex: 1;
-  display: grid;
-  grid-template-columns: minmax(0, 33rem) minmax(0, 1fr);
-  align-items: center;
-  gap: 40px;
-  padding-block: 40px 80px;
-}
-.hero h1 {
-  font: 800 clamp(2.6rem, 6vw, 4.6rem) / 1.02 var(--voice);
-  font-variation-settings: "CASL" 1, "slnt" -6;
-  margin: 0;
-  letter-spacing: -0.01em;
-}
-.hero p.say {
-  font-size: 1.25rem;
-  color: var(--mist);
-  margin: 22px 0 0;
-  max-width: 34ch;
-}
-.hero .small {
-  margin-top: 22px;
-  color: var(--mist-dim);
-  font-size: 0.95rem;
-  max-width: 44ch;
-}
-.screen {
-  margin: 0;
-  border-radius: 14px;
-  overflow: hidden;
-  box-shadow: 0 30px 80px rgb(0 0 0 / 0.55), 0 0 0 1px rgb(211 221 214 / 0.12);
-  transform: rotate(-1.2deg);
-}
-.screen img {
-  width: 100%;
-}
 
 /* ---------- buttons: cut paper, like the app ---------- */
 .buttons {
@@ -207,6 +168,7 @@ a {
 .btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   min-height: 48px;
   padding: 0 22px;
   border-radius: 12px 10px 13px 9px / 10px 13px 9px 12px;
@@ -220,7 +182,16 @@ a {
   color: var(--gloam-ink);
 }
 .btn.primary:hover {
-  background: #ee9078;
+  background: var(--gloam-hot);
+}
+.btn.primary:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 rgb(0 0 0 / 0.35);
+}
+.btn.big {
+  min-height: 60px;
+  padding: 0 34px;
+  font-size: 1.2rem;
 }
 .btn.quiet {
   border-color: rgb(211 221 214 / 0.35);
@@ -230,7 +201,8 @@ a {
 .btn.quiet:hover {
   background: rgb(211 221 214 / 0.08);
 }
-.paper .btn.quiet {
+.paper .btn.quiet,
+.doc .btn.quiet {
   border-color: var(--line);
   color: var(--ink);
 }
@@ -238,162 +210,898 @@ a {
   background: var(--paper-2);
 }
 
-/* ---------- the story of a lesson ---------- */
-section {
-  padding-block: 88px;
-}
+/* ---------- headings and words ---------- */
 h2 {
-  font: 800 clamp(2rem, 4vw, 2.9rem) / 1.08 var(--voice);
+  font: 800 clamp(2.1rem, 4.6vw, 3.4rem) / 1.04 var(--voice);
   font-variation-settings: "CASL" 1, "slnt" -4;
   margin: 0 0 18px;
+  letter-spacing: -0.01em;
 }
 h3 {
-  font-size: 1.3rem;
+  font-size: 1.35rem;
   margin: 0 0 8px;
 }
-.intro {
-  max-width: 46ch;
-  color: var(--ink-dim);
-  font-size: 1.2rem;
+.lede {
+  max-width: 44ch;
+  font-size: clamp(1.15rem, 1.6vw, 1.3rem);
+  color: var(--mist-dim);
   margin: 0;
 }
-.night .intro {
+.paper .lede {
+  color: var(--ink-dim);
+}
+.small {
+  font-size: 0.98rem;
   color: var(--mist-dim);
+  max-width: 52ch;
 }
-.steps {
-  display: grid;
-  gap: 72px;
-  margin-top: 56px;
+.paper .small {
+  color: var(--ink-dim);
 }
-.step {
-  display: grid;
-  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
-  gap: 48px;
+
+/* =====================================================================
+   THE HOMEPAGE: a fixed valley stage, and chapters that scroll over it
+   ===================================================================== */
+.stage {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  background: var(--night);
+}
+.stage .layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  max-width: none;
+}
+.stage .lit {
+  opacity: 0;
+  transition: opacity 1.6s ease;
+}
+.stage .moon {
+  position: absolute;
+  inset: 12% 0 auto;
+  height: 50%;
+  background: radial-gradient(50% 55% at 60% 72%, rgb(142 197 220 / 0.18), transparent 70%);
+  pointer-events: none;
+}
+/* the canvas is only as big as Gloam, and moves with it (site/js/stage.ts) */
+.stage .gloam-canvas {
+  position: absolute;
+  left: 0;
+  top: 0;
+  will-change: transform;
+}
+.stage .gloam-still {
+  position: absolute;
+  left: 70%;
+  top: 40%;
+  height: 46vh;
+  width: auto;
+  max-width: none;
+  transform: translateX(-50%);
+  transition: opacity 0.4s;
+}
+.stage .gloam-still.is-gone {
+  opacity: 0;
+}
+/* the words sit on the left: the night is deeper there, so they always read */
+.stage .shade {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgb(8 14 12 / 0.86) 0%, rgb(8 14 12 / 0.5) 36%, transparent 60%),
+    linear-gradient(0deg, rgb(8 14 12 / 0.55), transparent 30%);
+  pointer-events: none;
+}
+@media (max-width: 899px) {
+  .stage .shade {
+    background: linear-gradient(180deg, rgb(8 14 12 / 0.88) 0%, rgb(8 14 12 / 0.55) 42%, rgb(8 14 12 / 0.15) 62%, rgb(8 14 12 / 0.6) 100%);
+  }
+  .stage .gloam-still {
+    left: 50%;
+    top: 62%;
+    height: 30vh;
+  }
+}
+
+/* Gloam's speech bubble: it follows Gloam (site/js/home.ts places it) */
+.bubble {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 2;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+.bubble p {
+  position: absolute;
+  left: 0;
+  bottom: 14px;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: min(330px, 80vw);
+  margin: 0;
+  padding: 12px 16px;
+  background: #0c1613;
+  border: 1.5px solid #2c4844;
+  border-radius: 16px 14px 17px 13px;
+  color: var(--mist);
+  font-size: 1.08rem;
+  line-height: 1.38;
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.4);
+}
+.bubble p::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -9px;
+  width: 16px;
+  height: 16px;
+  background: inherit;
+  border-right: 1.5px solid #2c4844;
+  border-bottom: 1.5px solid #2c4844;
+  transform: translateX(-50%) rotate(45deg);
+}
+.bubble.is-empty,
+.bubble.is-off {
+  opacity: 0;
+}
+.poke {
+  position: fixed;
+  z-index: 2;
+  background: transparent;
+  border: 0;
+  border-radius: 45%;
+  cursor: pointer;
+  padding: 0;
+}
+.stage-off .bubble,
+.stage-off .poke {
+  opacity: 0;
+  visibility: hidden;
+}
+
+/* chapters */
+main {
+  position: relative;
+}
+.ch {
+  position: relative;
+  z-index: 1;
+}
+.ch.paper {
+  z-index: 3;
+  background: var(--paper);
+  color: var(--ink);
+  padding-block: clamp(72px, 10vw, 128px);
+}
+
+/* the hero */
+.hero {
+  min-height: 100vh;
+  min-height: 100svh;
+  display: flex;
+  align-items: center;
+  padding-block: 120px 80px;
+}
+.hero h1 {
+  /* as big as the screen allows, and never so big the buttons fall off a Chromebook's screen */
+  font: 850 clamp(2.8rem, min(7vw, 11.5vh), 6.6rem) / 0.95 var(--voice);
+  font-variation-settings: "CASL" 1, "slnt" -8;
+  letter-spacing: -0.02em;
+  margin: 0 0 24px;
+  max-width: 9.5ch;
+  color: #e6ede8;
+  text-shadow: 0 4px 30px rgb(0 0 0 / 0.45);
+}
+.hero .lede {
+  color: #c4d3ca;
+}
+.hero .small {
+  margin-top: 20px;
+}
+/* without JavaScript: Gloam's line, fixed beside the still Gloam */
+.say-static {
+  position: absolute;
+  right: 6%;
+  top: 22%;
+  max-width: 300px;
+  padding: 12px 16px;
+  background: rgb(10 18 15 / 0.86);
+  border: 1.5px solid #2c4844;
+  border-radius: 16px;
+  margin: 0;
+}
+.js .say-static {
+  display: none;
+}
+@media (max-width: 899px) {
+  .hero {
+    align-items: flex-start;
+    padding-top: 150px;
+  }
+  .say-static {
+    display: none;
+  }
+}
+
+/* chapter: students explain (pinned while it plays) */
+.teach .pin {
+  min-height: 100vh;
+  min-height: 100svh;
+  position: relative;
+  padding-top: 96px;
+}
+/* the caption and the student's teach box stack at the bottom (so they never cover each other) */
+.teach-bottom {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+.teachbox {
+  width: min(720px, 100% - 32px);
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  padding: 16px 16px 16px 20px;
+  background: rgb(12 21 18 / 0.92);
+  border: 1.5px solid #3d5f5a;
+  border-radius: 18px 16px 19px 15px;
+  box-shadow: 0 16px 40px rgb(0 0 0 / 0.45);
+  transition: border-color 0.4s, box-shadow 0.4s;
+}
+.teachbox .typed {
+  flex: 1;
+  margin: 0;
+  min-height: 3.2em;
+  color: var(--mist);
+  font-size: 1.08rem;
+}
+.teachbox .typed [data-shown]::after {
+  content: "";
+  display: inline-block;
+  width: 2px;
+  height: 1.1em;
+  margin-left: 2px;
+  vertical-align: -0.18em;
+  background: var(--moon);
+}
+.teachbox.is-sent {
+  border-color: var(--moon);
+  box-shadow: 0 0 0 4px rgb(142 197 220 / 0.15), 0 16px 40px rgb(0 0 0 / 0.45);
+}
+.teachbox.is-sent .typed [data-shown]::after {
+  display: none;
+}
+.teachbox .send {
+  flex: none;
+  padding: 10px 18px;
+  border-radius: 11px;
+  background: var(--gloam);
+  color: var(--gloam-ink);
+  font-weight: 700;
+  box-shadow: 0 4px 0 #9e4430;
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+.teachbox.is-sent .send {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #9e4430;
+}
+.clicked {
+  width: min(1180px, 100% - 32px);
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.6s, transform 0.6s;
+}
+.clicked .small {
+  margin-bottom: 0;
+}
+.clicked.is-on {
+  opacity: 1;
+  transform: none;
+}
+.got {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0;
+  font: 750 clamp(1.4rem, 2.6vw, 1.9rem) / 1.2 var(--voice);
+  font-variation-settings: "CASL" 1, "slnt" -6;
+}
+.got b {
+  color: var(--lantern);
+}
+@media (max-width: 599px) {
+  /* a phone: room for Gloam and its bubble between the title and the teach box */
+  .teach .lede {
+    display: none;
+  }
+}
+
+/* candles, as in the app: smaller flames for less understood, gold only when steady */
+.candle {
+  display: inline-block;
+  width: 20px;
+  height: 34px;
+  flex: none;
+}
+.candle svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.candle .wax {
+  fill: #d8ccb4;
+}
+.candle .flame {
+  transform-origin: 10px 18px;
+  transition: transform 0.6s, fill 0.6s, opacity 0.6s;
+}
+.candle.is-unlit .flame {
+  opacity: 0;
+  transform: scale(0.2);
+}
+.candle.is-smolder .flame {
+  fill: #c8682a;
+  transform: scale(0.45);
+}
+.candle.is-flicker .flame {
+  fill: #e9a45a;
+  transform: scale(0.75);
+}
+.candle.is-steady .flame {
+  fill: var(--lantern);
+  filter: drop-shadow(0 0 6px rgb(244 183 64 / 0.7));
+}
+.got .candle {
+  width: 26px;
+  height: 44px;
+}
+
+/* chapter: your turn */
+.turn {
+  min-height: 100vh;
+  padding-block: 120px 96px;
+  display: flex;
   align-items: center;
 }
-.step:nth-child(even) {
-  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+.theory {
+  font-size: clamp(1.3rem, 2.4vw, 1.7rem);
+  color: var(--mist);
+  margin: 28px 0 22px;
 }
-.step:nth-child(even) .words {
-  order: 2;
+.choices {
+  display: grid;
+  gap: 12px;
+  max-width: 38rem;
 }
-.step .words p {
-  margin: 0;
-  color: var(--ink-dim);
+.choices button {
+  font: inherit;
+  text-align: left;
+  color: var(--mist);
+  background: rgb(12 21 18 / 0.78);
+  border: 1.5px solid #34524d;
+  padding: 14px 18px;
+  min-height: 52px;
+  cursor: pointer;
+  transition: border-color 0.2s, background-color 0.2s, transform 0.15s;
 }
-.step .when {
-  font: 700 1.05rem var(--voice);
-  font-variation-settings: "CASL" 1, "slnt" -8;
-  color: var(--gloam);
-  margin-bottom: 6px;
+.choices button:nth-child(1) {
+  border-radius: 14px 12px 15px 11px;
+  max-width: 24rem;
 }
-.shot {
-  margin: 0;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 18px 50px rgb(22 48 42 / 0.22), 0 0 0 1px var(--line);
+.choices button:nth-child(2) {
+  border-radius: 12px 15px 11px 14px;
+  max-width: 28rem;
 }
-.shot figcaption {
-  font-size: 0.9rem;
-  padding: 10px 14px;
-  background: var(--paper-2);
-  color: var(--ink-dim);
+.choices button:nth-child(3) {
+  border-radius: 15px 11px 14px 12px;
+}
+.choices button:hover {
+  border-color: var(--moon);
+  background: rgb(18 30 26 / 0.92);
+}
+.choices button:active {
+  transform: translateY(2px);
+}
+.choices button[aria-pressed="true"] {
+  border-color: var(--moon);
+  box-shadow: 0 0 0 3px rgb(142 197 220 / 0.2);
+}
+.turn[data-answer] .choices button[aria-pressed="false"] {
+  opacity: 0.6;
+}
+/* on phones Gloam answers here, under the choices (no room for a bubble beside the words) */
+.result .reply {
+  display: none;
+  margin: 22px 0 0;
+  font-size: 1.25rem;
+  color: var(--mist);
+}
+@media (max-width: 899px) {
+  .result .reply {
+    display: block;
+  }
+}
+.result .note {
+  max-width: 40rem;
+  min-height: 3.2em;
+  margin: 22px 0 0;
+  font-size: 1.1rem;
+  color: var(--mist);
 }
 
-/* ---------- every grade: four worlds, hung like paintings ---------- */
-.worlds {
+/* chapter: the teacher's side (paper, covering the valley) */
+.teachers h2 {
+  max-width: 20ch;
+}
+.tsteps {
+  margin-top: 40px;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 22px;
-  margin-top: 48px;
+  gap: 24px;
+}
+.tstep {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  grid-template-rows: auto 1fr;
+  column-gap: 56px;
+  min-height: 52vh;
+  align-items: start;
+}
+.tstep h3,
+.tstep > p {
+  grid-column: 1;
+  max-width: 34rem;
+}
+.tstep > p {
+  color: var(--ink-dim);
+  margin: 0;
+}
+.tstep .visual {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  position: sticky;
+  top: 14vh;
+  margin: 0;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 22px 60px rgb(22 48 42 / 0.22), 0 0 0 1px var(--line);
+  background: var(--paper-2);
+  transition: transform 0.6s, box-shadow 0.6s;
+}
+.js .tstep:not(.is-active) .visual {
+  transform: scale(0.97);
+}
+@media (max-width: 899px) {
+  .tstep {
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 0;
+    row-gap: 18px;
+  }
+  .tstep .visual {
+    grid-column: 1;
+    grid-row: auto;
+    position: static;
+  }
+}
+.v-notes {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 0;
+}
+.notes {
+  padding: 26px;
+  background: #fffdf6;
+  border-right: 1px dashed var(--line);
+}
+.notes .nhead {
+  font: 750 1.05rem var(--voice);
+  margin: 0 0 10px;
+}
+.notes .typed {
+  margin: 0;
+  color: var(--ink-dim);
+  font-size: 1rem;
+}
+.drafted {
+  list-style: none;
+  margin: 0;
+  padding: 26px;
+  display: grid;
+  gap: 12px;
+  align-content: start;
+  font-weight: 700;
+}
+.drafted li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: opacity 0.5s, transform 0.5s;
+}
+/* they appear one by one as Gloam drafts them (with no JavaScript, they're simply there) */
+.js .drafted li:not(.is-on) {
+  opacity: 0;
+  transform: translateX(-8px);
+}
+.drafted li.is-on {
+  opacity: 1;
+  transform: none;
+}
+.v-class {
+  padding: 22px;
+  overflow-x: auto;
+}
+.class {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+.class th,
+.class td {
+  padding: 8px 6px;
+  border-bottom: 1px solid #dfe6e0;
+  text-align: center;
+}
+.class th[scope="row"],
+.class thead th:first-child {
+  text-align: left;
+  white-space: nowrap;
+}
+.class thead th {
+  font-size: 0.82rem;
+  color: var(--ink-dim);
+  font-weight: 700;
+}
+.class .candle {
+  width: 16px;
+  height: 27px;
+}
+.class .candle .wax {
+  fill: #cdbfa4;
+}
+/* the candles light up, student by student, when you get there */
+.js .v-class:not(.is-on) .candle .flame {
+  opacity: 0;
+  transform: scale(0.2);
+}
+.thinks {
+  margin: 16px 0 0;
+  font-size: 0.98rem;
+  color: var(--ink);
+}
+.thinks b {
+  color: #a83a50;
+}
+
+/* chapter: every grade (a sideways journey) */
+.worlds {
+  z-index: 3;
+  background: var(--night);
+}
+.worlds .pin {
+  min-height: 100vh;
+  min-height: 100svh;
+  padding-block: 96px 64px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+}
+.track {
+  display: flex;
+  gap: 4vw;
+  padding-inline: max(16px, (100vw - 1180px) / 2);
+  margin-top: 40px;
+  will-change: transform;
+}
+.track figure {
+  /* wide, but short enough that the caption fits under it on a Chromebook */
+  flex: 0 0 min(64vw, 820px, (100vh - 330px) * 1.7778);
+  margin: 0;
+}
+.track img {
+  border-radius: 12px;
+  box-shadow: 0 22px 60px rgb(0 0 0 / 0.55);
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  width: 100%;
+}
+.track figcaption {
+  margin-top: 16px;
+  color: var(--mist-dim);
+  max-width: 46ch;
+}
+.track figcaption b {
+  display: block;
+  color: var(--mist);
+  font: 750 1.3rem var(--voice);
+  font-variation-settings: "CASL" 1, "slnt" -4;
+}
+/* reduced motion or no JavaScript: a row you scroll sideways yourself */
+html:not(.js) .track,
+.calm .track {
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
   padding-bottom: 12px;
 }
-.world {
-  margin: 0;
+html:not(.js) .track figure,
+.calm .track figure {
+  scroll-snap-align: start;
 }
-@media (max-width: 1000px) {
-  /* narrower: the four worlds in a row you scroll sideways */
-  .worlds {
-    display: flex;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
+@media (max-width: 899px) {
+  .track figure {
+    flex-basis: 82vw;
   }
-  .world {
-    flex: 0 0 min(80%, 340px);
-    scroll-snap-align: start;
-  }
-}
-.world:nth-child(1) {
-  transform: rotate(-1deg);
-}
-.world:nth-child(2) {
-  transform: rotate(0.8deg) translateY(14px);
-}
-.world:nth-child(3) {
-  transform: rotate(-0.6deg);
-}
-.world:nth-child(4) {
-  transform: rotate(1deg) translateY(10px);
-}
-.world img {
-  border-radius: 10px;
-  box-shadow: 0 16px 40px rgb(0 0 0 / 0.45);
-  aspect-ratio: 16 / 10;
-  object-fit: cover;
-}
-.world figcaption {
-  margin-top: 14px;
-}
-.world figcaption b {
-  display: block;
-  font-size: 1.1rem;
-}
-.world figcaption span {
-  color: var(--mist-dim);
-  font-size: 0.98rem;
 }
 
-/* ---------- lists that read like sentences ---------- */
-.two {
+/* chapter: privacy */
+.private {
+  min-height: 100vh;
+  padding-block: 120px 96px;
+  display: flex;
+  align-items: center;
+}
+.private .wrap {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 56px;
-  align-items: start;
+  gap: 48px;
+  align-items: center;
 }
 .plain {
   list-style: none;
   padding: 0;
-  margin: 24px 0 0;
+  margin: 20px 0 28px;
   display: grid;
-  gap: 16px;
+  gap: 14px;
 }
 .plain li {
   padding-left: 28px;
   position: relative;
+  color: var(--mist-dim);
 }
 .plain li::before {
-  /* a small hand-drawn tick in Gloam's colour (gold is only for understanding) */
+  /* a hand-drawn tick in moonlight (gold is only for understanding) */
   content: "";
   position: absolute;
   left: 2px;
   top: 0.55em;
   width: 13px;
   height: 7px;
-  border-left: 2.5px solid var(--gloam);
-  border-bottom: 2.5px solid var(--gloam);
+  border-left: 2.5px solid var(--moon);
+  border-bottom: 2.5px solid var(--moon);
   transform: rotate(-48deg);
 }
 .plain b {
-  color: var(--ink);
-}
-.night .plain b {
   color: var(--mist);
 }
-.board {
-  background: var(--paper-2);
-  border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
+.net {
+  width: 100%;
+  max-width: 560px;
+  justify-self: center;
+  overflow: visible;
 }
+.net .book rect,
+.net .laptop rect,
+.net .laptop path {
+  fill: #1a2b26;
+  stroke: #4c706a;
+  stroke-width: 1.5;
+}
+.net .screen {
+  fill: #2b4a44 !important;
+}
+.net .laptop .screen {
+  fill: #3d6a62 !important;
+}
+.net .thread {
+  fill: none;
+  stroke: var(--moon);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-dasharray: 260;
+  stroke-dashoffset: 0;
+  filter: drop-shadow(0 0 4px rgb(142 197 220 / 0.6));
+}
+.net .cloud path {
+  fill: none;
+  stroke: #5f7b75;
+  stroke-width: 1.5;
+  stroke-dasharray: 4 5;
+}
+.net text {
+  fill: var(--mist-dim);
+  font: 600 14px var(--read);
+  text-anchor: middle;
+}
+.net .lbl {
+  fill: var(--mist);
+  font-weight: 700;
+}
+.net .leak {
+  fill: none;
+  stroke: #5f7b75;
+  stroke-width: 1.5;
+  stroke-dasharray: 3 6;
+}
+.net .stop circle {
+  fill: var(--night);
+  stroke: var(--gloam);
+  stroke-width: 2;
+}
+.net .stop path {
+  stroke: var(--gloam);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+/* the threads draw in when the diagram arrives (only with motion and JavaScript) */
+@media (prefers-reduced-motion: no-preference) {
+  .js .net .thread {
+    stroke-dashoffset: 260;
+    transition: stroke-dashoffset 1.4s ease-out;
+  }
+  .js .net.is-on .thread {
+    stroke-dashoffset: 0;
+  }
+  .js .net .thread:nth-of-type(2) {
+    transition-delay: 0.15s;
+  }
+  .js .net .thread:nth-of-type(3) {
+    transition-delay: 0.3s;
+  }
+  .js .net .thread:nth-of-type(4) {
+    transition-delay: 0.45s;
+  }
+  .js .net .thread:nth-of-type(5) {
+    transition-delay: 0.6s;
+  }
+  .js .net .stop {
+    opacity: 0;
+    transition: opacity 0.4s 1.4s;
+  }
+  .js .net.is-on .stop {
+    opacity: 1;
+  }
+}
+@media (max-width: 899px) {
+  .private .wrap {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* chapter: ways to play (paper) */
+.ways .wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 56px;
+  align-items: center;
+}
+.toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 26px 0 18px;
+}
+.toggles button {
+  font: 700 1rem var(--read);
+  color: var(--ink);
+  background: var(--paper-2);
+  border: 1.5px solid var(--line);
+  border-radius: 999px;
+  min-height: 46px;
+  padding: 0 18px;
+  cursor: pointer;
+}
+.toggles button[aria-pressed="true"] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper-2);
+}
+.mini {
+  margin: 0;
+  padding: 32px 28px 26px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #16302a, #0d1613 70%);
+  color: var(--mist);
+  box-shadow: 0 22px 60px rgb(22 48 42 / 0.3);
+  transition: font-size 0.3s;
+}
+.mini-say {
+  margin: 0 0 90px;
+  padding: 12px 16px;
+  background: rgb(10 18 15 / 0.86);
+  border: 1.5px solid #2c4844;
+  border-radius: 16px;
+  width: fit-content;
+  max-width: 100%;
+  font-size: 1.1em;
+}
+.mini-box {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 12px 12px 16px;
+  border: 1.5px solid #3d5f5a;
+  border-radius: 14px;
+  color: var(--mist-dim);
+}
+.mini-box b {
+  background: var(--gloam);
+  color: var(--gloam-ink);
+  padding: 8px 14px;
+  border-radius: 10px;
+}
+.mini.is-big {
+  font-size: 1.35rem;
+}
+.mini.is-contrast {
+  background: #000;
+  color: #fff;
+}
+.mini.is-contrast .mini-say,
+.mini.is-contrast .mini-box {
+  background: #000;
+  border: 3px solid #fff;
+  color: #fff;
+}
+.mini.is-space {
+  letter-spacing: 0.06em;
+  word-spacing: 0.16em;
+  line-height: 1.8;
+}
+@media (max-width: 899px) {
+  .ways .wrap {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* the finale: dawn, and the download */
+.get {
+  min-height: 100vh;
+  padding-block: 120px 96px;
+}
+.get h2 {
+  max-width: 13ch;
+}
+.how {
+  max-width: 36rem;
+  margin: 40px 0 0;
+  padding-left: 1.4em;
+  display: grid;
+  gap: 14px;
+  color: var(--mist-dim);
+}
+.how b {
+  color: var(--mist);
+}
+.how li::marker {
+  font: 750 1rem var(--voice);
+  color: var(--moon);
+}
+.setupshot {
+  margin: 40px 0 0;
+  max-width: 640px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 22px 60px rgb(0 0 0 / 0.5), 0 0 0 1px #2c4844;
+}
+.others {
+  margin-top: 28px;
+  max-width: 52ch;
+  font-size: 0.98rem;
+  color: var(--mist-dim);
+}
+
+/* for school boards (paper) */
 .docs {
   list-style: none;
   padding: 0;
@@ -419,6 +1127,8 @@ h3 {
 
 /* ---------- footer ---------- */
 footer {
+  position: relative;
+  z-index: 3;
   background: var(--night);
   color: var(--mist-dim);
   padding-block: 44px;
@@ -434,9 +1144,63 @@ footer a {
   color: var(--mist);
 }
 
-/* ---------- documents (guide, privacy, the board pack) ---------- */
+/* =====================================================================
+   READING PAGES (the setup guide, privacy, the school board pack)
+   ===================================================================== */
 .doc {
   padding-block: 40px 96px;
+}
+.doc-grid {
+  display: grid;
+  grid-template-columns: 230px minmax(0, 72ch);
+  gap: 64px;
+  align-items: start;
+}
+.rail {
+  position: sticky;
+  top: 24px;
+  font-size: 0.95rem;
+}
+.rail-title {
+  font: 750 0.95rem var(--voice);
+  margin: 0 0 8px;
+  color: var(--ink-dim);
+}
+.rail ol {
+  list-style: none;
+  margin: 0 0 32px;
+  padding: 0;
+  border-left: 2px solid var(--line);
+}
+.rail li a {
+  display: block;
+  padding: 6px 0 6px 14px;
+  margin-left: -2px;
+  border-left: 2px solid transparent;
+  text-decoration: none;
+  color: var(--ink-dim);
+  line-height: 1.35;
+}
+.rail li a:hover {
+  color: var(--ink);
+}
+.rail li a[aria-current] {
+  color: var(--ink);
+  font-weight: 700;
+  border-left-color: var(--ink);
+}
+.peek {
+  margin: 0;
+}
+.peek img {
+  width: 150px;
+}
+.peek figcaption {
+  margin-top: 8px;
+  font-size: 1rem;
+  line-height: 1.35;
+  color: var(--ink);
+  max-width: 220px;
 }
 .doc article {
   max-width: 72ch;
@@ -447,8 +1211,10 @@ footer a {
   margin: 24px 0 18px;
 }
 .doc h2 {
-  font-size: 1.7rem;
-  margin-top: 48px;
+  font: 800 1.7rem / 1.15 var(--voice);
+  font-variation-settings: "CASL" 1, "slnt" -4;
+  margin-top: 52px;
+  scroll-margin-top: 20px;
 }
 .doc h3 {
   margin-top: 32px;
@@ -502,29 +1268,127 @@ footer a {
   font-weight: 700;
   padding-block: 10px;
 }
+/* the setup guide: the download, and pictures of the one-time warnings with what to press */
+.guide-get {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  margin: 18px 0 8px;
+}
+.guide-get span {
+  color: var(--ink-dim);
+  font-size: 0.98rem;
+}
+.howto {
+  margin: 22px 0 28px;
+}
+.howto figcaption {
+  margin-top: 10px;
+  color: var(--ink-dim);
+  font-size: 0.98rem;
+}
+.mock {
+  max-width: 440px;
+  padding: 22px 24px;
+  font-size: 0.95rem;
+  line-height: 1.45;
+  box-shadow: 0 12px 34px rgb(22 48 42 / 0.2);
+}
+.mock p {
+  margin: 0 0 10px;
+}
+.mock .mock-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+.mock.win {
+  background: #1f5fa8;
+  color: #fff;
+  border-radius: 4px;
+}
+.mock.mac {
+  background: #f6f6f6;
+  color: #222;
+  border-radius: 12px;
+  border: 1px solid #ddd;
+}
+.mock-link {
+  text-decoration: underline;
+}
+.mock-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 14px;
+}
+.mock-btn {
+  padding: 6px 16px;
+  border: 1.5px solid currentColor;
+  border-radius: 4px;
+}
+.mock.mac .mock-btn {
+  border-radius: 7px;
+  background: #fff;
+}
+/* what to press: a moonlight ring (gold is only for understanding) */
+.is-hint {
+  outline: 3px solid var(--moon);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+.shot-in-guide {
+  margin: 22px 0;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 18px 50px rgb(22 48 42 / 0.22), 0 0 0 1px var(--line);
+}
 
-@media (max-width: 860px) {
-  .hero .lead,
-  .step,
-  .step:nth-child(even),
-  .two {
+@media (max-width: 960px) {
+  .doc-grid {
     grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
   }
-  .step:nth-child(even) .words {
-    order: 0;
+  .rail {
+    position: static;
   }
-  .hero::before {
-    background: linear-gradient(0deg, rgb(13 22 19 / 0.96) 0%, rgb(13 22 19 / 0.8) 55%, rgb(13 22 19 / 0.45) 100%);
+  .rail nav {
+    display: none;
   }
-  section {
-    padding-block: 64px;
+  .peek {
+    display: flex;
+    align-items: center;
+    gap: 14px;
   }
-  .screen {
-    transform: none;
+  .peek img {
+    width: 76px;
   }
 }
+
+/* boards print these */
+@media print {
+  .bar,
+  .rail,
+  footer,
+  .skip {
+    display: none !important;
+  }
+  body {
+    background: #fff;
+    color: #000;
+    font-size: 11pt;
+  }
+  .doc-grid {
+    display: block;
+  }
+  .doc a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 0.85em;
+  }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .btn {
-    transition: background-color 150ms;
+    transition: background-color 150ms, transform 120ms, box-shadow 120ms;
   }
 }
