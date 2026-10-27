@@ -61,6 +61,7 @@ const storybookCopy = (big: boolean): AgeStyle["copy"] => ({
   startOver: "Start over",
   startOverConfirm: "Yes, start over",
   candleLabel: "What Gloam understands",
+  candleShow: "Show what Gloam thinks.",
   gloamThinks: "Gloam thinks:",
   levelWords: ["Not lit yet", "A little spark", "Flickering", "Lit"],
   eurekaWord: "OHHHH!",

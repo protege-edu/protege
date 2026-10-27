@@ -132,7 +132,9 @@ const CHECKS = `(() => {
 async function check(page: Page, screen: string, file: string) {
   await page.waitForTimeout(350);
   fs.mkdirSync(path.dirname(file), { recursive: true });
-  await page.screenshot({ path: file });
+  // the test-mode panel is a developer tool students never see: out of the picture
+  // (Playwright's own screenshot style: React and Next.js may replace the panel or the page's head at any moment)
+  await page.screenshot({ path: file, style: "[data-test-panel]{display:none!important}" });
   shots++;
   const found = (await page.evaluate(CHECKS)) as Omit<Finding, "screen">[];
   const seen = new Set<string>();
@@ -190,10 +192,11 @@ async function prepare() {
       const lessonId = `audit-seasons-${age}-${lang}`;
       const now = new Date();
       db.insert(schema.lessons)
-        .values({ id: lessonId, teacherId: teacher.id, title: lang === "fr" ? "Pourquoi avons-nous des saisons?" : "Why do we have seasons?", grade: grades[age], status: "approved", blueprint: { ...BUILT_IN.seasons, id: lessonId, ageStyle: age as "senior", grade: grades[age], language: lang }, sourceName: "Audit", createdAt: now, updatedAt: now, approvedAt: now })
+        .values({ id: lessonId, teacherId: teacher.id, title: lang === "fr" ? "Pourquoi avons-nous des saisons?" : "Why do we have seasons?", grade: grades[age], status: "approved", blueprint: { ...BUILT_IN.seasons, id: lessonId, ageStyle: age as "senior", grade: grades[age], language: lang, ...(lang === "fr" ? { title: "Pourquoi avons-nous des saisons?", topic: "les saisons" } : {}) }, sourceName: "Audit", createdAt: now, updatedAt: now, approvedAt: now })
         .onConflictDoNothing()
         .run();
-      const name = `Audit ${age} ${lang}`;
+      // names like a real teacher's classes (they show up in screenshots and on the website)
+      const name = `${lang === "fr" ? "Sciences" : "Science"} ${grades[age]}${lang === "fr" ? " (fr)" : ""}, ${lang === "fr" ? "groupe" : "period"} ${["little", "junior", "middle", "senior"].indexOf(age) + 1}`;
       let c = db.select().from(schema.classes).where(eq(schema.classes.name, name)).get();
       if (!c) {
         const id = C.createClass(name, grades[age], teacher.id, lang);
@@ -224,7 +227,11 @@ async function studentRun(browser: Browser, age: string, lang: "en" | "fr", size
     await check(page, screen, path.join(dir, `${name}.png`));
   };
   const btn = (name: string | RegExp) => page.getByRole("button", { name: typeof name === "string" ? new RegExp(`^${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`) : name }).first();
-  const inDialog = (name: string) => page.getByRole("dialog").getByRole("button", { name, exact: true });
+  // pause-menu items are opened with the keyboard (Playwright's pointer check is fooled by the buttons' drawn layer)
+  const inDialog = (name: string) => {
+    const el = page.getByRole("dialog").getByRole("button", { name, exact: true });
+    return { click: async () => (await el.focus(), await page.keyboard.press("Enter")), focus: () => el.focus() };
+  };
   const esc = async () => {
     await page.keyboard.press("Escape");
     await page.waitForTimeout(400);

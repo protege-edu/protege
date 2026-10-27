@@ -47,7 +47,24 @@ sees what a student chose for themselves.
 
 ## Results of the last full check
 
-RESULTS
+Full run, October 27, 2026 (version 0.1). The run covered:
+- **872 screens:** every student screen for all four ages, in English and French, at four sizes, with and
+  without the biggest text, stronger contrast and more spacing; plus every teacher screen at four sizes.
+
+The run found:
+- **0 problems:** no axe WCAG A/AA violations, no overlapping or cut-off text, no sideways scrolling, no tap
+  target under 24 px, no browser errors.
+- **801 warnings, all the same:** the candle buttons in the lesson's top bar on phones and tablets were
+  44 × 32 px. That passes WCAG 2.2 AA (24 px), but it's under 44 px, which we treat as the floor for young
+  children. They were raised to 44 px after the run. Every age, in both languages, was then checked again at phone and
+  tablet sizes, with and without the biggest text: **400 screens, 0 problems, 0 warnings**.
+
+The first full run found 77 problems. All were fixed before this one. For example:
+- On phones with the biggest text, Gloam's words covered the headings.
+- Some scrolling areas couldn't be reached by keyboard.
+- The lesson file picker had no label.
+- Long French button labels ran off the screen.
+- French screens named the worlds in English.
 
 ## Known gaps and what hasn't been tested
 

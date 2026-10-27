@@ -175,6 +175,7 @@ export const senior: AgeStyle = {
     startOver: "Start over",
     startOverConfirm: "Yes, reset Gloam",
     candleLabel: "What Gloam understands",
+    candleShow: "Show what Gloam thinks.",
     gloamThinks: "Gloam thinks",
     levelWords: ["Not lit", "A spark", "Flickering", "Lit"],
     eurekaWord: "oh.",

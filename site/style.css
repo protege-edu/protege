@@ -97,10 +97,17 @@ a {
 /* ---------- top bar ---------- */
 .bar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 4px 16px;
   padding-block: 18px;
+}
+@media (max-width: 640px) {
+  /* small screens: the links get their own row under the logo */
+  .bar nav {
+    width: 100%;
+  }
 }
 .bar .mark {
   font-size: 1.6rem;
@@ -295,17 +302,26 @@ h3 {
 
 /* ---------- every grade: four worlds, hung like paintings ---------- */
 .worlds {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 22px;
   margin-top: 48px;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
   padding-bottom: 12px;
 }
 .world {
-  flex: 0 0 min(80%, 340px);
-  scroll-snap-align: start;
   margin: 0;
+}
+@media (max-width: 1000px) {
+  /* narrower: the four worlds in a row you scroll sideways */
+  .worlds {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+  }
+  .world {
+    flex: 0 0 min(80%, 340px);
+    scroll-snap-align: start;
+  }
 }
 .world:nth-child(1) {
   transform: rotate(-1deg);

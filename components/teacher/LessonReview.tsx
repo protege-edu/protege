@@ -174,7 +174,7 @@ export function LessonReview({ id }: { id: string }) {
                 readOnly={readOnly}
                 onKeyDown={noNewLines}
                 onChange={(e) => edit((b) => void (b.title = e.target.value))}
-                className="block w-full resize-none rounded-md bg-transparent text-xl font-bold text-ink [field-sizing:content] supports-[field-sizing:content]:overflow-hidden focus:bg-panel focus:outline-none"
+                className="block min-h-11 w-full resize-none rounded-md bg-transparent text-xl font-bold text-ink [field-sizing:content] supports-[field-sizing:content]:overflow-hidden focus:bg-panel focus:outline-none"
               />
               <p className="mt-1 text-sm text-ink-dim">
                 Gloam talks like it&apos;s in {bp.ageStyle === "senior" ? "high school" : bp.ageStyle === "middle" ? "middle school" : "elementary school"}.

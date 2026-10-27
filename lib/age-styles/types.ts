@@ -281,6 +281,8 @@ export interface AgeStyle {
     startOver: string;
     startOverConfirm: string;
     candleLabel: string;
+    /** what a candle button does, for screen readers ("Show what Gloam thinks.") */
+    candleShow: string;
     gloamThinks: string;
     levelWords: [string, string, string, string];
     eurekaWord: string;

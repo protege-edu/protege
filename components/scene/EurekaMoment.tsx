@@ -139,7 +139,7 @@ export function EurekaMoment({ moment, style, x = 0.5, onPeak, onDone }: { momen
       <button
         type="button"
         onClick={() => timeline.current?.progress(1)}
-        className="absolute right-3 bottom-3 min-h-11 cursor-pointer rounded-md bg-[#030705]/70 px-4 text-xs font-bold text-[#ebe7dc] hover:bg-[#030705]"
+        className="absolute right-3 bottom-3 min-h-11 cursor-pointer rounded-md max-md:top-[4.5rem] max-md:bottom-auto bg-[#030705]/70 px-4 text-xs font-bold text-[#ebe7dc] hover:bg-[#030705]"
       >
         {style.copy.skip}
       </button>

@@ -51,7 +51,7 @@ export function TrailStrip({ style, concepts, levels, current }: { style: AgeSty
       <ul className="absolute inset-0" aria-label={style.copy.candleLabel}>
         {concepts.map((c, i) => (
           // a 44 px tap area (little fingers), never wider than the gap to the next candle
-          <li key={c.id} className="absolute top-0 h-full -translate-x-1/2" style={{ left: `${(xs[i] / W) * 100}%`, width: `min(44px, ${(((xs[1] ?? W) - (xs[0] ?? 0)) / W) * 100}%)` }}>
+          <li key={c.id} className="absolute top-1/2 h-11 -translate-x-1/2 -translate-y-1/2" style={{ left: `${(xs[i] / W) * 100}%`, width: `min(44px, ${(((xs[1] ?? W) - (xs[0] ?? 0)) / W) * 100}%)` }}>
             <CandleButton concept={c} level={levels[i] ?? 0} style={style} open={open === i} onToggle={() => setOpen((o) => (o === i ? null : i))} onClose={() => setOpen((o) => (o === i ? null : o))} />
           </li>
         ))}
@@ -106,7 +106,7 @@ function CandleButton({ concept, level, style, open, onToggle, onClose }: { conc
         onBlur={onClose}
         aria-expanded={open}
         aria-describedby={open ? tip : undefined}
-        aria-label={`${concept.name}: ${style.copy.levelWords[level]}. Show what Gloam thinks.`}
+        aria-label={`${concept.name}: ${style.copy.levelWords[level]}. ${style.copy.candleShow}`}
         className="pointer-events-auto block h-full w-full cursor-pointer rounded-sm"
       />
       <AnimatePresence>

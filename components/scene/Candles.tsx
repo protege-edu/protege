@@ -109,7 +109,7 @@ function Candle({
         onBlur={onClose}
         aria-expanded={open}
         aria-describedby={open ? tipId : undefined}
-        aria-label={`${concept.name}: ${copy.levelWords[level]}. Show what Gloam thinks.`}
+        aria-label={`${concept.name}: ${copy.levelWords[level]}. ${copy.candleShow}`}
         className="group flex cursor-pointer flex-col items-center rounded-md px-1 pt-1 pb-1.5 outline-offset-2"
       >
         <CandleArt level={level} flashing={flashing} reduced={reduced} painterly={painterly} />
