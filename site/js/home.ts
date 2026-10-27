@@ -335,21 +335,26 @@ function worlds() {
   const pan = (p: number) => {
     const n = panels.length;
     const pos = p * n;
+    // each world is on screen for its share of the scroll, crossfading at the edges; only the more visible one
+    // shows its words (two captions on top of each other would be a mess)
+    const seen = panels.map((_, i) => Math.max(0, Math.min(1, Math.min(pos - i + 0.15, 1.15 - (pos - i)) / 0.15)));
+    const lead = seen.indexOf(Math.max(...seen));
     panels.forEach((w, i) => {
-      // each world is on screen for its share of the scroll, crossfading at the edges
       const q = pos - i;
-      const vis = Math.max(0, Math.min(1, Math.min(q + 0.15, 1.15 - q) / 0.15));
+      const vis = seen[i];
       w.style.opacity = vis.toFixed(3);
-      w.classList.toggle("is-on", vis > 0.5);
+      w.classList.toggle("is-on", i === lead);
       if (vis <= 0) return;
       const local = Math.max(0, Math.min(1, q));
+      const from = Number(w.dataset.from ?? 0.15);
+      const to = Number(w.dataset.to ?? 0.3);
       for (const l of $$<HTMLImageElement>(".w-layer", w)) {
         const d = Number(l.dataset.depth);
-        const room = Math.max(0, l.offsetWidth - innerWidth);
-        // the far hills barely move, the front grass moves most: you're walking through it
-        const start = room * 0.18;
-        const travel = room * 0.42 * (0.35 + 0.65 * (d / 3));
-        l.style.transform = `translate3d(${(-start - local * travel).toFixed(1)}px, 0, 0)`;
+        // the camera walks along the painting's best stretch; the front grass slides a little more than the far
+        // hills (depth), so you're walking through it
+        const at = (from + (to - from) * local) * l.offsetWidth;
+        const parallax = (d - 1.5) * local * innerWidth * 0.035;
+        l.style.transform = `translate3d(${(-at - parallax).toFixed(1)}px, 0, 0)`;
       }
     });
   };

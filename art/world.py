@@ -68,6 +68,12 @@ def main():
         for x in seams:
             c = x + 56
             run(os.path.join(HERE, "smooth_band.py"), smooth, smooth, str(c - 230), str(c + 230), str(world.get("horizon", 360)))
+        # below the sky too: a narrow band at each join, top to bottom, so no stretch is lighter or warmer than
+        # the next one (narrow, so a red roof near a join keeps its colour). "seam_soften": {"half": 110, "at": [extra joins]}
+        soften = world.get("seam_soften")
+        if soften:
+            for c in [x + 56 for x in seams] + soften.get("at", []):
+                run(os.path.join(HERE, "smooth_band.py"), smooth, smooth, str(c - soften["half"]), str(c + soften["half"]), str(Image.open(smooth).height))
         dark, lit = os.path.join(work, "dark.png"), os.path.join(work, "lit.png")
         run(os.path.join(HERE, "grade.py"), smooth, dark, lit, world.get("grade", "storybook"))
         run(os.path.join(HERE, "layers.py"), dark, lit, pub, "journey")

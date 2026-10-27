@@ -39,10 +39,11 @@ const valley = (k: number) => `<img class="layer" data-depth="${k}" src="art/sen
 const valleyLit = (k: number) => `<img class="layer" data-depth="${k}" src="art/senior/valley-${k}-lit.webp" alt="">`;
 
 const WORLDS = [
-  { age: "little", grade: "Kindergarten to grade 2", line: "A sunny storybook meadow, tiny words, big buttons, and read-aloud on from the start.", gloam: "Bright, bouncy and very excited about everything." },
-  { age: "junior", grade: "Grades 3 to 5", line: "A mushroom forest, and a cheeky Gloam who gets things wrong on purpose. Mostly.", gloam: "Playful, curious, a little cheeky." },
-  { age: "middle", grade: "Grades 6 to 8", line: "Windy sea cliffs at twilight, and a goofy, very dramatic Gloam in a scarf.", gloam: "Dramatic. Extremely dramatic." },
-  { age: "senior", grade: "Grades 9 to 12", line: "A night valley, and a dry, deadpan Gloam who really hates being wrong.", gloam: "Deadpan. Smugly wrong." },
+  // from/to: where the camera starts and stops along each painted journey (its best stretch), as a share of its width
+  { age: "little", from: 0.12, to: 0.3, grade: "Kindergarten to grade 2", line: "A sunny storybook meadow, tiny words, big buttons, and read-aloud on from the start.", gloam: "Bright, bouncy and very excited about everything." },
+  { age: "junior", from: 0.31, to: 0.37, grade: "Grades 3 to 5", line: "A mushroom forest, and a cheeky Gloam who gets things wrong on purpose. Mostly.", gloam: "Playful, curious, a little cheeky." },
+  { age: "middle", from: 0.14, to: 0.24, grade: "Grades 6 to 8", line: "Windy sea cliffs at twilight, and a goofy, very dramatic Gloam in a scarf.", gloam: "Dramatic. Extremely dramatic." },
+  { age: "senior", from: 0.06, to: 0.2, grade: "Grades 9 to 12", line: "A night valley, and a dry, deadpan Gloam who really hates being wrong.", gloam: "Deadpan. Smugly wrong." },
 ];
 const worldLayers = (age: string) => [0, 1, 2, 3].map((k) => `<img class="w-layer" data-depth="${k}" src="art/${age}/journey-${k}-lit.webp" alt="" loading="lazy">`).join("");
 
@@ -145,7 +146,7 @@ ${bar}
 <section class="worlds" id="worlds" aria-labelledby="worlds-title">
   <div class="worlds-pin">
     ${WORLDS.map(
-      (w, i) => `<figure class="world${i === 0 ? " is-on" : ""}" data-world="${i}">
+      (w, i) => `<figure class="world${i === 0 ? " is-on" : ""}" data-world="${i}" data-from="${w.from}" data-to="${w.to}">
       <div class="w-layers">${worldLayers(w.age)}</div>
       <img class="w-gloam" src="img/gloam-${w.age}.webp" alt="" loading="lazy">
       <figcaption><b class="voice">${w.grade}</b> <span>${w.line}</span></figcaption>

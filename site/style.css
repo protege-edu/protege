@@ -1140,7 +1140,7 @@ html:not(.js) .world,
 }
 html:not(.js) .w-layer,
 .calm .w-layer {
-  transform: translateX(-20%);
+  transform: translateX(-15%);
 }
 
 /* ---------- Act IV: nothing leaves the laptop ---------- */

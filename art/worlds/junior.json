@@ -1,16 +1,22 @@
 {
- "_what": "Grades 3-5: a cozy storybook forest at dusk with mushroom houses. Unlit: grey and faded. Lit: full colour.",
- "style": "storybook illustration, gouache and coloured pencil texture, whimsical cozy shapes, rich warm colours, highly detailed, no text, no watermark, no people, no animals",
- "base": "a cozy whimsical storybook forest at dusk, tall friendly trees with round leafy crowns, a glowing lavender and peach sky between the trees, a winding mossy footpath across the foreground, ferns and little flowers",
- "start": "a soft mossy clearing with a few round stones beside the path",
- "stretches": [
-  "a cluster of giant red spotted mushroom houses with tiny round doors and glowing windows",
-  "a babbling brook crossing the path with round stepping stones and tall ferns",
-  "an old hollow log tunnel over the path covered in moss and little flowers",
-  "a gentle hill at the end of the path with a crooked little treehouse in a big tree, the forest spreading out below"
- ],
- "shrine": "a small whimsical stone shrine shaped like a tiny mushroom with a little arched niche in its front, moss and tiny flowers at its base, front view, centered, full object visible, storybook illustration, gouache and coloured pencil, isolated on a plain flat soft lavender background, no text, no watermark, no candle, no fire",
- "grade": "storybook",
- "fog": "#c9c3da",
- "firefly": "#ffe6a8"
+  "_what": "Grades 3-5: a cozy storybook forest at dusk with mushroom houses. Unlit: grey and faded. Lit: full colour.",
+  "style": "storybook illustration, gouache and coloured pencil texture, whimsical cozy shapes, rich warm colours, highly detailed, no text, no watermark, no people, no animals",
+  "base": "a cozy whimsical storybook forest at dusk, tall friendly trees with round leafy crowns, a glowing lavender and peach sky between the trees, a winding mossy footpath across the foreground, ferns and little flowers",
+  "start": "a soft mossy clearing with a few round stones beside the path",
+  "stretches": [
+    "a cluster of giant red spotted mushroom houses with tiny round doors and glowing windows",
+    "a babbling brook crossing the path with round stepping stones and tall ferns",
+    "an old hollow log tunnel over the path covered in moss and little flowers",
+    "a gentle hill at the end of the path with a crooked little treehouse in a big tree, the forest spreading out below"
+  ],
+  "shrine": "a small whimsical stone shrine shaped like a tiny mushroom with a little arched niche in its front, moss and tiny flowers at its base, front view, centered, full object visible, storybook illustration, gouache and coloured pencil, isolated on a plain flat soft lavender background, no text, no watermark, no candle, no fire",
+  "grade": "storybook",
+  "fog": "#c9c3da",
+  "firefly": "#ffe6a8",
+  "seam_soften": {
+    "half": 110,
+    "at": [
+      1008
+    ]
+  }
 }
