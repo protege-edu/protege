@@ -1,6 +1,6 @@
 {
   "name": "protege",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "license": "AGPL-3.0-or-later",
   "description": "Students teach Gloam, a confused, funny companion, and learn by explaining. Runs on one school laptop, with local AI.",

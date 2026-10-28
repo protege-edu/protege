@@ -14,10 +14,30 @@ function open() {
   const DB_FILE = dbFile();
   const sqlite = new Database(DB_FILE);
   // WAL lets many students read while one writes. Matters for Phase 4 classroom mode.
-  sqlite.pragma("journal_mode = WAL");
+  // (Switching to it needs the file to itself: if another process is opening a brand-new database at the
+  // same moment, as building the app does with several workers, wait a moment and try again.)
+  for (let tries = 0; ; tries++) {
+    try {
+      sqlite.pragma("journal_mode = WAL");
+      break;
+    } catch (err) {
+      if ((err as { code?: string }).code !== "SQLITE_BUSY" || tries >= 50) throw err;
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 100);
+    }
+  }
   sqlite.pragma("foreign_keys = ON");
   const db = drizzle(sqlite, { schema });
-  migrate(db, { migrationsFolder: path.join(process.cwd(), "drizzle") });
+  // (two processes setting up a brand-new database at once: the second's tables already exist by the time it
+  // writes them, so it waits for the first to finish and checks again, and then there's nothing left to do)
+  for (let tries = 0; ; tries++) {
+    try {
+      migrate(db, { migrationsFolder: path.join(process.cwd(), "drizzle") });
+      break;
+    } catch (err) {
+      if (!/already exists|SQLITE_BUSY|locked/i.test(String((err as Error)?.message) + String((err as { cause?: unknown })?.cause)) || tries >= 50) throw err;
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 100);
+    }
+  }
   // Built-in lessons get a row too, so classes and sessions can point at them like any other lesson
   const now = new Date();
   for (const b of Object.values(BUILT_IN)) {
