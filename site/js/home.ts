@@ -254,6 +254,10 @@ function story(stage: Stage, speak: Speak, setScene: (s: Scene) => void): Scroll
   };
   measure();
   addEventListener("resize", measure);
+  // (and whenever either changes size: the real fonts arriving, or a longer line in French)
+  const sized = new ResizeObserver(measure);
+  sized.observe(tb);
+  if (bar) sized.observe(bar);
   const show = (b: string) => {
     if (b === beat) return;
     beat = b;

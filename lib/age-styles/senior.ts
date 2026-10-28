@@ -1,5 +1,6 @@
 import { seniorGloam } from "./rigs/senior-gloam";
 import { aboutCopy } from "./about-copy";
+import { lostCopy } from "./lost-copy";
 import { accessCopy } from "./access-copy";
 import type { AgeStyle } from "./types";
 
@@ -259,6 +260,7 @@ export const senior: AgeStyle = {
     },
     access: accessCopy("en", "senior"),
     about: aboutCopy("en", "senior"),
+    lost: lostCopy("en", "senior"),
     home: {
       title: (nick) => `${nick}'s Gloam`,
       level: (level) => `Level ${level}`,

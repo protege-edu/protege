@@ -1,0 +1,416 @@
+/*
+  The lost page (components/lost): the night valley in the dark, a pool of moonlight that follows you, and
+  Gloam searching. Plain CSS so the app and the website share it (the website's security policy allows no
+  inline styles, so everything that moves is set from script as CSS variables).
+  Moonlight (#8ec5dc) is for searching; lantern gold stays for understanding, so it never shows up here.
+*/
+.lost {
+  --lost-night: #070d0b;
+  --lost-panel: #0c1613;
+  --lost-edge: #2f4d48;
+  --lost-mist: #d3ddd6;
+  --lost-mist-dim: #a9bab1;
+  --lost-moon: #8ec5dc;
+  --lost-gloam: #e07a62;
+  --lost-gloam-hot: #ee9078;
+  --lost-gloam-ink: #1c0b06;
+  --lost-voice-font: var(--font-voice, var(--voice, system-ui)), system-ui, sans-serif;
+  --lost-read-font: var(--font-body, var(--read, system-ui)), system-ui, sans-serif;
+  position: relative;
+  min-height: 100dvh;
+  overflow: hidden;
+  isolation: isolate;
+  background: var(--lost-night);
+  color: var(--lost-mist);
+  font-family: var(--lost-read-font);
+}
+
+/* ---- the valley, in its depth layers ---- */
+.lost-scene {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+.lost-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 28% 50%;
+  /* the dark painting, a touch brighter, so the moonlight has something to show */
+  filter: brightness(1.35) saturate(1.05);
+}
+/* the younger grades' worlds are bright even "dark" (a misty morning, not night): their full-colour painting,
+   with dusk fallen on it, so it stays theirs */
+.lost[data-tone="light"] .lost-layer {
+  filter: brightness(0.4) saturate(0.95) contrast(1.08) hue-rotate(-8deg);
+}
+
+/* ---- the dark, with a hole of moonlight in it (the script moves --mx/--my and sizes --r) ---- */
+.lost-dark {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: radial-gradient(
+    circle max(1px, var(--r, 70vmax)) at var(--mx, 62%) var(--my, 62%),
+    rgb(5 10 9 / 0) 0%,
+    rgb(5 10 9 / 0.2) 50%,
+    rgb(5 10 9 / 0.92) 100%
+  );
+  transition: opacity 2s ease;
+}
+.lost-dark::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle calc(max(1px, var(--r, 70vmax)) * 0.85) at var(--mx, 62%) var(--my, 62%), rgb(142 197 220 / 0.12), transparent 70%);
+}
+/* everywhere's been checked: the moon comes out over the whole valley */
+.lost.is-found .lost-dark {
+  opacity: 0.55;
+}
+
+/* ---- where Gloam stands, and the hiding spots on its ground ---- */
+/* (above Gloam: the hiding spots are the foreground, so Gloam never stands in the way of one) */
+.lost-stage {
+  position: absolute;
+  z-index: 5;
+  left: 46%;
+  right: 3%;
+  top: 0;
+  bottom: 0;
+  container-type: size;
+  pointer-events: none;
+}
+.lost-spot {
+  position: absolute;
+  bottom: 9%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  pointer-events: auto;
+  border-radius: 14px;
+  color: var(--lost-moon);
+  -webkit-tap-highlight-color: transparent;
+}
+.lost-spot[data-spot="rock"] {
+  left: 6%;
+  width: 19cqmin;
+}
+.lost-spot[data-spot="sign"] {
+  left: 50%;
+  width: 11cqmin;
+}
+.lost-spot[data-spot="bush"] {
+  left: 84%;
+  width: 22cqmin;
+}
+.lost-spot[data-spot="shrine"] {
+  left: 64%;
+  width: 30cqmin;
+}
+.lost-prop {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.lost-prop .shadow {
+  fill: rgb(0 0 0 / 0.5);
+}
+.lost-prop .facet,
+.lost-prop .leaf {
+  fill: none;
+  stroke: rgb(142 197 220 / 0.14);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+}
+.lost-prop .rim {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  opacity: 0;
+  transition: opacity 0.5s;
+}
+img.lost-prop {
+  filter: brightness(0.5) saturate(0.7);
+  transition: filter 0.5s;
+}
+.lost-spot.is-lit .rim,
+.lost-spot:focus-visible .rim {
+  opacity: 0.75;
+}
+.lost-spot.is-lit img.lost-prop,
+.lost-spot:focus-visible img.lost-prop {
+  filter: brightness(0.95) drop-shadow(0 0 12px rgb(142 197 220 / 0.45));
+}
+/* a glint, so there's a reason to look there */
+.lost-glint {
+  position: absolute;
+  left: 50%;
+  top: -8px;
+  width: 12px;
+  height: 12px;
+  margin-left: -6px;
+  background: currentColor;
+  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+  opacity: 0.55;
+  animation: lost-twinkle 2.8s ease-in-out infinite;
+}
+.lost-spot[data-spot="sign"] .lost-glint {
+  animation-delay: -0.9s;
+}
+.lost-spot[data-spot="bush"] .lost-glint {
+  animation-delay: -1.8s;
+}
+@keyframes lost-twinkle {
+  0%,
+  100% {
+    transform: scale(0.6) rotate(0deg);
+    opacity: 0.3;
+  }
+  50% {
+    transform: scale(1.1) rotate(45deg);
+    opacity: 0.85;
+  }
+}
+.lost-spot.is-lit .lost-glint {
+  opacity: 1;
+}
+/* checked: the glint becomes a small ring of moonlight left behind */
+.lost-spot.is-checked .lost-glint {
+  animation: none;
+  clip-path: none;
+  background: none;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+  opacity: 0.5;
+}
+.lost-spot:focus-visible {
+  outline: 3px solid var(--lost-moon);
+  outline-offset: 6px;
+}
+
+/* ---- Gloam (drawn on a canvas over the whole page, so its light is never boxed in) ---- */
+.lost-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+.lost-canvas canvas {
+  display: block;
+}
+.lost-still {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 3;
+  width: auto;
+  pointer-events: none;
+  transition: opacity 0.4s;
+}
+.lost-still.is-gone {
+  opacity: 0;
+}
+.lost-poke {
+  position: absolute;
+  z-index: 4;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  border-radius: 40%;
+}
+.lost-poke:focus-visible {
+  outline: 3px solid var(--lost-moon);
+  outline-offset: 4px;
+}
+.lost-bubble {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 6;
+  max-width: min(320px, 80vw);
+  pointer-events: none;
+  transition: opacity 0.25s;
+}
+.lost-bubble.is-empty {
+  opacity: 0;
+}
+.lost-say {
+  margin: 0;
+  padding: 12px 16px;
+  background: var(--lost-panel);
+  border: 1.5px solid var(--lost-edge);
+  border-radius: 16px 14px 17px 13px;
+  color: var(--lost-mist);
+  font: 600 1.02rem / 1.35 var(--lost-voice-font);
+  font-variation-settings: "CASL" 1, "slnt" -6;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.4);
+}
+.lost-say [data-rest] {
+  visibility: hidden;
+}
+.lost-bubble::after {
+  content: "";
+  position: absolute;
+  left: var(--tail, 50%);
+  bottom: -8px;
+  width: 14px;
+  height: 14px;
+  margin-left: -7px;
+  background: var(--lost-panel);
+  border-right: 1.5px solid var(--lost-edge);
+  border-bottom: 1.5px solid var(--lost-edge);
+  transform: rotate(45deg);
+}
+.lost-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ---- the words, and the way out (there from the first second) ---- */
+.lost-words {
+  position: relative;
+  z-index: 7;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 100dvh;
+  width: min(44%, 520px);
+  margin-left: max(24px, calc((100% - 1180px) / 2));
+  padding: 32px 0;
+  text-shadow: 0 1px 14px rgb(0 0 0 / 0.8), 0 0 2px rgb(0 0 0 / 0.6);
+}
+.lost-brand {
+  margin: 0 0 clamp(20px, 6vh, 48px);
+  font-size: 1.4rem;
+}
+.lost-title {
+  margin: 0;
+  font: 800 clamp(2rem, min(4.6vw, 8.4vh), 3.5rem) / 1.04 var(--lost-voice-font);
+  font-variation-settings: "CASL" 1, "slnt" -6;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+.lost-body {
+  margin: clamp(10px, 2.4vh, 18px) 0 0;
+  max-width: 44ch;
+  color: var(--lost-mist);
+  font-size: clamp(1rem, min(1.4vw, 2.9vh), 1.18rem);
+  line-height: 1.5;
+}
+.lost-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: clamp(18px, 4.4vh, 34px);
+  text-shadow: none;
+}
+.lost-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 22px;
+  border: 1.5px solid transparent;
+  border-radius: 12px 10px 13px 9px / 10px 13px 9px 12px;
+  font: 700 1rem / 1.2 var(--lost-read-font);
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: 0 4px 0 rgb(0 0 0 / 0.35);
+}
+.lost-btn.primary {
+  background: var(--lost-gloam);
+  color: var(--lost-gloam-ink);
+}
+.lost-btn.primary:hover {
+  background: var(--lost-gloam-hot);
+}
+.lost-btn.quiet {
+  border-color: rgb(211 221 214 / 0.4);
+  background: rgb(7 13 11 / 0.5);
+  color: var(--lost-mist);
+  box-shadow: none;
+}
+.lost-btn.quiet:hover {
+  background: rgb(211 221 214 / 0.1);
+}
+.lost-btn:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 rgb(0 0 0 / 0.35);
+}
+.lost-btn:focus-visible {
+  outline: 3px solid var(--lost-moon);
+  outline-offset: 3px;
+}
+.lost-hint {
+  margin: clamp(14px, 3vh, 24px) 0 0;
+  color: var(--lost-mist-dim);
+  font-size: 0.95rem;
+}
+
+/* ---- phones and tall screens: the valley on top, the words underneath ---- */
+@media (max-width: 819px), (max-aspect-ratio: 6/5) {
+  .lost-stage {
+    left: 0;
+    right: 0;
+    bottom: auto;
+    height: 56dvh;
+  }
+  .lost-spot[data-spot="rock"] {
+    left: 4%;
+  }
+  .lost-spot[data-spot="bush"] {
+    left: auto;
+    right: 2%;
+  }
+  /* (a phone has room for two hiding spots and Gloam walking between them) */
+  .lost-spot[data-spot="sign"] {
+    display: none;
+  }
+  .lost-words {
+    width: auto;
+    min-height: 0;
+    margin: 0;
+    padding: calc(56dvh + 8px) 20px 32px;
+    justify-content: flex-start;
+    background: linear-gradient(180deg, transparent calc(56dvh - 40px), rgb(7 13 11 / 0.92) calc(56dvh + 24px));
+    /* (the words start under the valley: taps on the valley above them reach Gloam and the hiding spots) */
+    pointer-events: none;
+  }
+  .lost-words > * {
+    pointer-events: auto;
+  }
+  .lost-brand {
+    position: absolute;
+    top: 16px;
+    left: 20px;
+    margin: 0;
+  }
+}
+
+/* ---- less motion: nothing drifts, twinkles or slides ---- */
+@media (prefers-reduced-motion: reduce) {
+  .lost-glint {
+    animation: none;
+  }
+  .lost-dark,
+  .lost-bubble,
+  .lost-still,
+  .lost-spot * {
+    transition: none;
+  }
+}
+.lost-spot > span:not(.lost-glint) {
+  display: block;
+}

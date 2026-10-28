@@ -108,6 +108,27 @@ export interface AccessCopy {
 }
 
 /** Telling students Gloam is an AI, and what it remembers (title screen, join screen, "How this works") */
+/** The lost page (lib/age-styles/lost-copy.ts): nothing here, a lesson taken down, or something broke */
+export interface LostCopy {
+  missing: { title: string; body: string; lines: string[] };
+  gone: { title: string; body: string; lines: string[] };
+  broke: { title: string; body: string; lines: string[] };
+  join: string;
+  teacher: string;
+  retry: string;
+  start: string;
+  /** the three hiding spots Gloam checks (button names, and what it finds) */
+  spots: Record<"rock" | "bush" | "sign", { label: string; line: string }>;
+  /** a taken-down lesson: the empty shrine its candle stood in */
+  shrine: { label: string; line: string };
+  /** after every spot is checked */
+  giveUp: string;
+  /** poking Gloam */
+  poke: string[];
+  hint: string;
+  gloamLabel: string;
+}
+
 export interface AboutCopy {
   /** one line, under the title screen's buttons and on the join screen */
   aiNote: string;
@@ -328,6 +349,7 @@ export interface AgeStyle {
     home: HomeCopy;
     access: AccessCopy;
     about: AboutCopy;
+    lost: LostCopy;
   };
 
   look: {

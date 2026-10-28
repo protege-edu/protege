@@ -12,6 +12,11 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Built output and scratch files (all git-ignored): the release build, the zipped app, the website
+    ".next-release/**",
+    "release/**",
+    "site-dist/**",
+    "scripts/_*",
   ]),
 ]);
 

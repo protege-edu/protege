@@ -1,4 +1,5 @@
 import { aboutCopy } from "./about-copy";
+import { lostCopy } from "./lost-copy";
 import { accessCopy } from "./access-copy";
 import type { AgeStyle } from "./types";
 
@@ -254,6 +255,7 @@ export const frSenior: FrenchStyle = {
     },
     access: accessCopy("fr", "senior"),
     about: aboutCopy("fr", "senior"),
+    lost: lostCopy("fr", "senior"),
     home: {
       title: (nick) => `Le Gloam de ${nick}`,
       level: (level) => `Niveau ${level}`,
@@ -481,6 +483,7 @@ export function frStorybook(big: boolean): FrenchStyle {
       },
       access: accessCopy("fr", big ? "big" : "small"),
       about: aboutCopy("fr", big ? "big" : "small"),
+      lost: lostCopy("fr", big ? "big" : "small"),
       home: {
         title: (nick) => `Le Gloam de ${nick}`,
         level: (level) => `Niveau ${level}`,

@@ -14,6 +14,8 @@ import { marked } from "marked";
 import pkg from "../package.json";
 import { COPY, type Lang, type SiteCopy } from "../site/i18n";
 import { homeBody, type Links } from "../site/pages/home";
+import { PROPS } from "../components/lost/props";
+import { lostCopy } from "../lib/age-styles/lost-copy";
 
 const root = process.cwd();
 const out = path.join(root, "site-dist");
@@ -32,13 +34,14 @@ const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replac
 /** A page's twin in the other language (the board pack is in English: its French twin is the French home) */
 function twin(at: string, lang: Lang): string {
   if (lang === "fr") return at.replace(/^fr\//, "");
-  return ["index.html", "guide.html", "privacy.html"].includes(at) ? `fr/${at}` : "fr/index.html";
+  return ["index.html", "guide.html", "privacy.html", "404.html"].includes(at) ? `fr/${at}` : "fr/index.html";
 }
 
 /** One page: the bar, the content, the footer. `at` = where the page lives (e.g. "fr/guide.html") */
-function page({ at, lang, title, description, body, kind = "doc", extraNav = "" }: { at: string; lang: Lang; title: string; description: string; body: string; kind?: string; extraNav?: string }) {
+function page({ at, lang, title, description, body, kind = "doc", extraNav = "", absolute = false }: { at: string; lang: Lang; title: string; description: string; body: string; kind?: string; extraNav?: string; absolute?: boolean }) {
   const t = COPY[lang];
-  const up = "../".repeat(at.split("/").length - 1);
+  // (a 404 page is shown at whatever address was wrong, however deep: its links start from the site's root)
+  const up = absolute ? "/" : "../".repeat(at.split("/").length - 1);
   // the pages that exist in both languages live in fr/ for French; everything else (the board pack) at the root
   const local = (p: string) => (lang === "fr" && ["index.html", "guide.html", "privacy.html"].includes(p) ? `${up}fr/${p}` : up + p);
   const current = (p: string) => p === at || `fr/${p}` === at;
@@ -131,6 +134,39 @@ function home(lang: Lang) {
   fs.writeFileSync(path.join(out, at), page({ at, lang, title: t.meta.title, description: t.meta.description, body: homeBody(links, "<!--BAR-->", t, up), kind: "home", extraNav: sound }));
 }
 
+/**
+ * The lost page (Cloudflare shows 404.html for any address that doesn't exist; fr/404.html under fr/):
+ * the same dark valley and searching Gloam as the app's (components/lost), with the way back.
+ */
+function lost(lang: Lang) {
+  const t = COPY[lang];
+  const c = lostCopy(lang, "senior");
+  const at = lang === "fr" ? "fr/404.html" : "404.html";
+  const home = lang === "fr" ? "/fr/index.html" : "/index.html";
+  const guide = lang === "fr" ? "/fr/guide.html" : "/guide.html";
+  const spots = (["rock", "sign", "bush"] as const)
+    .map((id) => `<button type="button" class="lost-spot" data-spot="${id}" aria-label="${esc(c.spots[id].label)}"><span>${PROPS[id]}</span><span class="lost-glint" aria-hidden="true"></span></button>`)
+    .join("");
+  const body = `<main id="main" class="lost" data-kind="missing" data-tone="dark">
+  <div class="lost-scene" aria-hidden="true">${[0, 1, 2, 3].map((k) => `<img class="lost-layer" src="/art/senior/valley-${k}-dark.webp" alt="" decoding="async">`).join("")}</div>
+  <div class="lost-dark" aria-hidden="true"></div>
+  <div class="lost-words">
+    <h1 class="lost-title">${esc(t.lost.title)}</h1>
+    <p class="lost-body">${esc(t.lost.body)}</p>
+    <div class="lost-actions"><a class="lost-btn primary" href="${home}">${esc(t.lost.home)}</a><a class="lost-btn quiet" href="${guide}">${esc(t.lost.guide)}</a></div>
+    <p class="lost-hint">${esc(c.hint)}</p>
+  </div>
+  <div class="lost-stage">${spots}</div>
+  <div class="lost-canvas" aria-hidden="true"></div>
+  <img class="lost-still" src="/img/gloam-confused.webp" alt="" width="220" height="276">
+  <button type="button" class="lost-poke" aria-label="${esc(c.gloamLabel)}"></button>
+  <div class="lost-bubble is-empty" aria-hidden="true"><p class="lost-say"><span data-shown></span><span data-rest></span></p></div>
+  <p class="lost-sr sr-only" aria-live="polite"></p>
+</main>`;
+  fs.mkdirSync(path.dirname(path.join(out, at)), { recursive: true });
+  fs.writeFileSync(path.join(out, at), page({ at, lang, title: t.lost.meta, description: t.lost.title, body: `<!--BAR-->\n${body}`, kind: "lost", absolute: true }));
+}
+
 /** Copy a folder, file by file (Node's own folder copy crashes on Windows with Node 25) */
 function copyDir(from: string, to: string) {
   fs.mkdirSync(to, { recursive: true });
@@ -143,7 +179,9 @@ function copyDir(from: string, to: string) {
 async function main() {
   fs.rmSync(out, { recursive: true, force: true });
   fs.mkdirSync(out, { recursive: true });
-  fs.copyFileSync(path.join(root, "site", "style.css"), path.join(out, "style.css"));
+  // (with the lost page's styles, shared with the app)
+  const css = ["site/style.css", "components/lost/lost.css"].map((f) => fs.readFileSync(path.join(root, f), "utf8"));
+  fs.writeFileSync(path.join(out, "style.css"), css.join("\n"));
   // fonts (SIL Open Font License), served from the site itself
   const fonts = path.join(out, "fonts");
   fs.mkdirSync(fonts);
@@ -182,6 +220,7 @@ async function main() {
   // English at the root, French in fr/ (the school board pack is in English, for both)
   for (const lang of ["en", "fr"] as Lang[]) {
     home(lang);
+    lost(lang);
     const dir = lang === "fr" ? path.join(root, "site", "content", "fr") : path.join(root, "site", "content");
     const prefix = lang === "fr" ? "fr/" : "";
     doc(path.join(dir, "guide.md"), `${prefix}guide.html`, lang);

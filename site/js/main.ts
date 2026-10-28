@@ -96,3 +96,4 @@ downloads(os);
 contents();
 footer();
 if (document.body.dataset.page === "home") void import("./home").then((m) => m.home());
+if (document.body.dataset.page === "lost") void import("./lost").then((m) => m.lost());

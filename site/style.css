@@ -122,7 +122,8 @@ a {
   position: relative;
   z-index: 4;
 }
-body[data-page="home"] .bar {
+body[data-page="home"] .bar,
+body[data-page="lost"] .bar {
   position: absolute;
   inset: 0 0 auto;
   color: var(--mist);
@@ -137,6 +138,14 @@ body[data-page="home"] .bar {
     align-items: center;
   }
   body[data-page="home"] .bar nav a:not([href="guide.html"]):not(.lang) {
+    display: none;
+  }
+  /* the lost page on a phone: just the other language (its own buttons lead home and to the guide) */
+  body[data-page="lost"] .bar nav {
+    width: auto;
+    align-items: center;
+  }
+  body[data-page="lost"] .bar nav a:not(.lang) {
     display: none;
   }
 }

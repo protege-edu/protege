@@ -38,7 +38,9 @@ const sizes = only ? SIZES.filter(([w, h]) => `${w}x${h}` === only) : quick ? SI
 if (!sizes.length) throw new Error(`No screen size matches ${only}.`);
 const langs = quick ? ["en"] : ["en", "fr"];
 const motions = quick ? [false] : [false, true];
-const pages = ["index.html", "guide.html", "privacy.html", "board/README.html", "board/data-inventory.html"];
+// (the last is an address that doesn't exist: the lost page, 404.html)
+const LOST = "no/such/page";
+const pages = ["index.html", "guide.html", "privacy.html", "board/README.html", "board/data-inventory.html", LOST];
 
 // ---- a tiny server that sends the same headers as the real site (so the security policy is tested too) ----
 const headers = Object.fromEntries(
@@ -56,7 +58,13 @@ const server = http.createServer((req, res) => {
   let p = decodeURIComponent((req.url ?? "/").split("?")[0].split("#")[0]);
   if (p.endsWith("/")) p += "index.html";
   const f = path.join(root, p);
-  if (!f.startsWith(root) || !fs.existsSync(f)) return void res.writeHead(404).end();
+  if (!f.startsWith(root)) return void res.writeHead(404).end();
+  // like Cloudflare Pages: an address that doesn't exist gets the nearest 404.html (fr/404.html under fr/)
+  if (!fs.existsSync(f) || fs.statSync(f).isDirectory()) {
+    const lost = path.join(root, p.startsWith("/fr/") ? "fr/404.html" : "404.html");
+    if (!fs.existsSync(lost)) return void res.writeHead(404).end();
+    return void res.writeHead(404, { ...headers, "content-type": "text/html" }).end(fs.readFileSync(lost));
+  }
   res.writeHead(200, { ...headers, "content-type": TYPES[path.extname(f)] ?? "application/octet-stream" }).end(fs.readFileSync(f));
 });
 
@@ -282,15 +290,17 @@ async function main() {
         await ctx.addInitScript("window.__name = (f) => f");
         const page = await ctx.newPage();
         const errors: string[] = [];
-        page.on("console", (m) => (m.type() === "error" || /Content Security Policy|Refused/i.test(m.text())) && errors.push(m.text()));
+        // (a missing file is caught below with its address; the browser's own "failed to load" line would repeat it)
+        page.on("console", (m) => (m.type() === "error" || /Content Security Policy|Refused/i.test(m.text())) && !/^Failed to load resource/.test(m.text()) && errors.push(m.text()));
         page.on("pageerror", (e) => errors.push(e.message));
-        page.on("response", (r) => r.status() >= 400 && errors.push(`${r.status()} ${r.url()}`));
+        // (the lost page itself is meant to answer 404)
+        page.on("response", (r) => r.status() >= 400 && !r.url().endsWith(LOST) && errors.push(`${r.status()} ${r.url()}`));
         for (const p of pages) {
-          const url = lang === "fr" && ["index.html", "guide.html", "privacy.html"].includes(p) ? `fr/${p}` : p;
+          const url = lang === "fr" && ["index.html", "guide.html", "privacy.html", LOST].includes(p) ? `fr/${p}` : p;
           if (lang === "fr" && url === p && p !== "index.html") continue; // the board pack is English only: checked once
           const where = `${w}x${h} ${lang}${calm ? " calm" : ""} ${url}`;
           await page.goto(`http://localhost:8790/${url}`, { waitUntil: "networkidle" });
-          await page.waitForTimeout(p === "index.html" ? 2500 : 400);
+          await page.waitForTimeout(p === "index.html" ? 2500 : p === LOST ? 1800 : 400);
           const total = await page.evaluate(() => document.documentElement.scrollHeight - innerHeight);
           const seenHere = new Set<string>();
           for (let y = 0, i = 0; y <= total + 99; y += 100, i++) {
