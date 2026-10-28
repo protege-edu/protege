@@ -44,7 +44,8 @@ In the Start menu's Protégé folder:
 
 **Updating:** download the new installer and run it. Your classes and students stay. **For school IT:**
 `Protege-Setup.exe /VERYSILENT` installs without questions, and the portable zips (`Protege-windows.zip`,
-`Protege-mac.zip`, on the [releases page](../../releases/latest)) need no installer at all.
+`Protege-mac.zip`, on the [releases page](../../releases/latest)) need no installer at all. `PROTEGE_SETUP=off` in `protege.env` stops Protégé
+from installing or downloading anything when it starts (for IT that manages Ollama itself).
 
 Everything stays in your user folder (`%LOCALAPPDATA%\Protege` on Windows). Updating Protégé never touches it.
 **Ready for class?** on the teacher page checks everything works.
@@ -228,7 +229,9 @@ builds into `.next-release`, so it's safe.
 Raise `version` in `package.json`, then tag it (`git tag v0.2.0 && git push --tags`). GitHub Actions runs the
 tests, builds the Windows and Mac downloads, and attaches them to a GitHub release. Teachers find it with
 **Check for updates**, which looks at the repository named in `package.json`. A fork sets its own there (or
-`PROTEGE_REPO=owner/name`).
+`PROTEGE_REPO=owner/name`). Before anything is published, GitHub tries each download for real: the Windows installer is
+installed silently, started, asked a question, stopped and uninstalled; the Mac app is opened from its `.dmg`,
+checked, started and stopped. If either doesn't answer, nothing is published.
 
 ### The website
 
@@ -251,7 +254,9 @@ How it's made:
 - `site/js/` makes it move: `stage.ts` puts the real animated Gloam (the app's rig) in the valley behind the
   page, and `home.ts` plays the chapters with GSAP's ScrollTrigger. With reduced motion, nothing is pinned
   or scrubbed.
-- `site/content/` and `docs/board/` are the reading pages.
+- Every word is in `site/i18n.ts`, in English and French (French pages are in `fr/`; Gloam's lines in
+  `site/js/lines.ts`, recorded in both of its voices by `scripts/site-voice.ts`).
+- `site/content/` (and `site/content/fr/`) and `docs/board/` are the reading pages.
 - `npx tsx scripts/site-art.ts http://localhost:3000` remakes the cut-out Gloams from the rig (`--setup` adds
   the setup page's screenshot). `scripts/installer-art.ts` does the same for the installers.
 

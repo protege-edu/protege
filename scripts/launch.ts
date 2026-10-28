@@ -99,7 +99,12 @@ async function main() {
     say(`Protégé stopped${code ? ` (code ${code})` : ""}. Double-click Start Protégé to run it again.`);
     stopAll();
   });
-  void setup.run();
+  // PROTEGE_SETUP=off (in protege.env): school IT manages Ollama and the model itself, so Protégé never installs or
+  // downloads anything when it starts (the "Ready for class?" page still says if something's missing)
+  if (process.env.PROTEGE_SETUP === "off") {
+    Object.assign(setup.state, { phase: "ready", overall: 1, voices: setup.state.voices === "ask" ? "later" : setup.state.voices });
+    void helpers();
+  } else void setup.run();
   await announce(PORT, { useTunnel: has("--tunnel"), open: has("--no-open") ? false : `/setup#${info.key}` });
 }
 

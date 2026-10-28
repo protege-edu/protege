@@ -44,8 +44,9 @@ then keeps only a scrambled account number: no name, email or photo.
 ## This website
 
 This website is only information and downloads: Protégé itself never runs here, and no student ever uses it.
-It has no cookies, sign-ins, forms, analytics, ads or trackers, and loads nothing from other websites. It's
-hosted for free by Cloudflare Pages. Like any website host, Cloudflare sees the internet address of whoever
+It has no cookies, sign-ins, forms, analytics, ads or trackers, and loads nothing from other websites. It
+remembers one thing, on your own device only: whether you switched Gloam's voice on. It's hosted for free by
+Cloudflare Pages. Like any website host, Cloudflare sees the internet address of whoever
 visits, so it can deliver the pages and block attacks.
 
 ## Questions

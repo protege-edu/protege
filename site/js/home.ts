@@ -7,7 +7,8 @@
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import type { GloamMood } from "@/components/gloam/poses";
-import { LINES, POKES, type LineId } from "./lines";
+import { COPY } from "../i18n";
+import { linesFor, POKES, type LineId } from "./lines";
 import { calm, createStage, type Stage } from "./stage";
 import { typeInto, typeTo } from "./type";
 import { createVoice, type Voice } from "./voice";
@@ -17,6 +18,10 @@ gsap.registerPlugin(ScrollTrigger);
 const $ = <T extends Element = HTMLElement>(s: string, el: ParentNode = document) => el.querySelector<T>(s)!;
 const $$ = <T extends Element = HTMLElement>(s: string, el: ParentNode = document) => [...el.querySelectorAll<T>(s)];
 const wide = () => innerWidth >= 900;
+// the page's language: Gloam's lines, its voice, and every word the script writes
+const lang = document.documentElement.lang.startsWith("fr") ? "fr" : "en";
+const t = COPY[lang];
+const LINES = linesFor(lang);
 
 type Speak = (id: LineId | null, mood?: GloamMood) => void;
 
@@ -31,7 +36,7 @@ export function home() {
 
   // ---- Gloam's voice and lines ----
   let typing = false;
-  const voice = createVoice((talking) => stage.set({ talking: talking || typing }));
+  const voice = createVoice(lang, document.body.dataset.root ?? "", (talking) => stage.set({ talking: talking || typing }));
   let line: LineId | null = null;
   let bubbleOK = true;
   const speak: Speak = (id, mood) => {
@@ -94,7 +99,7 @@ export function home() {
   if (sound) {
     const show = () => {
       sound.setAttribute("aria-pressed", String(voice.on));
-      sound.querySelector("span")!.textContent = voice.on ? "Gloam's voice: on" : "Gloam's voice: off";
+      sound.querySelector("span")!.textContent = voice.on ? t.sound.on : t.sound.off;
     };
     show();
     sound.addEventListener("click", () => {
@@ -229,9 +234,9 @@ function story(stage: Stage, speak: Speak, onScene: (s: string) => void) {
 
   // "Your turn": what Gloam does with each answer
   const answers: Record<string, { id: LineId; mood: GloamMood; light: number; note: string }> = {
-    wrong: { id: "wrong", mood: "proud", light: 0, note: "Gloam believed a mistake, and its lantern stayed dark. In class, you'd see this idea needs another look, without anyone being marked wrong." },
-    half: { id: "half", mood: "curious", light: 0.35, note: "Half there. Gloam's lantern smolders, and it asks for more, like a curious student would." },
-    right: { id: "right", mood: "eureka", light: 1, note: "That's the one. Gloam's lantern lights up, and you'd see this idea was explained well." },
+    wrong: { id: "wrong", mood: "proud", light: 0, note: t.story.notes.wrong },
+    half: { id: "half", mood: "curious", light: 0.35, note: t.story.notes.half },
+    right: { id: "right", mood: "eureka", light: 1, note: t.story.notes.right },
   };
   for (const b of $$<HTMLButtonElement>(".choices button", turnEl)) {
     b.addEventListener("click", () => {

@@ -30,6 +30,45 @@ jobs:
       - if: runner.os == 'Windows'
         run: choco install innosetup --no-progress -y
       - run: npm run release
+      # Every download is tried before it's published: installed (Windows) or opened (Mac), started for real,
+      # asked a question, and stopped. If it doesn't answer, nothing is published.
+      - name: Try the Windows installer
+        if: runner.os == 'Windows'
+        shell: bash
+        env:
+          PORT: "3998"
+          PROTEGE_SETUP: "off"
+        run: |
+          export PROTEGE_DATA_DIR="$RUNNER_TEMP/protege-data"
+          ./release/Protege-Setup.exe //VERYSILENT //SUPPRESSMSGBOXES //NORESTART
+          app="$LOCALAPPDATA/Programs/Protege"
+          test -f "$app/launch.js"
+          # the installer opens Protégé when it's done: it must answer
+          for i in $(seq 1 90); do curl -sf "http://localhost:$PORT/api/teacher/auth" > /dev/null && break; sleep 2; done
+          curl -sf "http://localhost:$PORT/api/teacher/auth"
+          curl -sf -o /dev/null "http://localhost:$PORT/setup"
+          "$app/node/node.exe" "$app/launch.js" --stop
+          "$app/unins000.exe" //VERYSILENT //SUPPRESSMSGBOXES //NORESTART
+          # (the uninstaller finishes in the background)
+          for i in $(seq 1 30); do test -f "$app/launch.js" || break; sleep 1; done
+          test ! -f "$app/launch.js"
+      - name: Try the Mac app
+        if: runner.os == 'macOS'
+        env:
+          PORT: "3998"
+          PROTEGE_SETUP: "off"
+        run: |
+          export PROTEGE_DATA_DIR="$RUNNER_TEMP/protege-data"
+          hdiutil attach release/Protege.dmg -mountpoint "$RUNNER_TEMP/dmg" -nobrowse
+          cp -R "$RUNNER_TEMP/dmg/Protégé.app" "$RUNNER_TEMP/"
+          hdiutil detach "$RUNNER_TEMP/dmg"
+          app="$RUNNER_TEMP/Protégé.app"
+          codesign --verify --deep "$app"
+          "$app/Contents/MacOS/Protege" --no-open &
+          for i in $(seq 1 90); do curl -sf "http://localhost:$PORT/api/teacher/auth" > /dev/null && break; sleep 2; done
+          curl -sf "http://localhost:$PORT/api/teacher/auth"
+          curl -sf -o /dev/null "http://localhost:$PORT/setup"
+          "$app/Contents/MacOS/Protege" --stop
       - uses: actions/upload-artifact@v4
         with:
           name: protege-${{ matrix.os }}

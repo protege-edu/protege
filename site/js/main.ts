@@ -4,7 +4,11 @@
  * this file and its pieces are all that runs.
  */
 
+import { COPY } from "../i18n";
+
 type OS = "windows" | "mac" | "chromeos" | "mobile" | "other";
+// the page's language (the French pages say lang="fr-CA")
+const t = COPY[document.documentElement.lang.startsWith("fr") ? "fr" : "en"];
 
 function detectOS(): OS {
   const ua = navigator.userAgent;
@@ -23,19 +27,19 @@ function downloads(os: OS) {
   for (const a of document.querySelectorAll<HTMLAnchorElement>("[data-download]")) {
     if (os === "windows") {
       a.href = links.windows!;
-      a.textContent = "Download for Windows";
+      a.textContent = t.download.windows;
     } else if (os === "mac") {
       a.href = links.mac!;
-      a.textContent = "Download for Mac";
+      a.textContent = t.download.mac;
     } else {
       // a Chromebook or phone can't run Protégé (the teacher's laptop does): say so, kindly
       a.href = `${links.root ?? ""}guide.html#get-it`;
-      a.textContent = "Get Protégé for your laptop";
+      a.textContent = t.download.other;
     }
   }
   for (const p of document.querySelectorAll<HTMLElement>("[data-download-note]")) {
     if (os === "chromeos" || os === "mobile") {
-      p.textContent = "Protégé installs on the teacher's laptop (Windows or Mac). Students don't install anything: they join from their Chromebook's browser with a class code.";
+      p.textContent = t.download.otherNote;
     }
   }
   for (const el of document.querySelectorAll<HTMLElement>("[data-os-only]")) {
@@ -63,10 +67,10 @@ function contents() {
     return a;
   });
   const nav = document.createElement("nav");
-  nav.setAttribute("aria-label", "On this page");
+  nav.setAttribute("aria-label", t.docs.onThisPage);
   const title = document.createElement("p");
   title.className = "rail-title";
-  title.textContent = "On this page";
+  title.textContent = t.docs.onThisPage;
   nav.append(title, list);
   rail.prepend(nav);
   // the heading you're reading is the one nearest the top

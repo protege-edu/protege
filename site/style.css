@@ -136,7 +136,7 @@ body[data-page="home"] .bar {
     width: auto;
     align-items: center;
   }
-  body[data-page="home"] .bar nav a:not([href="guide.html"]) {
+  body[data-page="home"] .bar nav a:not([href="guide.html"]):not(.lang) {
     display: none;
   }
 }

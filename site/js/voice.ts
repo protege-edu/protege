@@ -7,7 +7,8 @@ import type { LineId } from "./lines";
 
 const KEY = "protege-site-voice";
 
-export function createVoice(onTalking: (talking: boolean) => void) {
+/** `lang`: English or French recordings; `root`: the way back to the site's root from this page */
+export function createVoice(lang: string, root: string, onTalking: (talking: boolean) => void) {
   let on = false;
   try {
     on = localStorage.getItem(KEY) === "on";
@@ -36,7 +37,7 @@ export function createVoice(onTalking: (talking: boolean) => void) {
     play(id: LineId, always = false): Promise<void> {
       stop();
       if (!on && !always) return Promise.resolve();
-      const a = new Audio(`audio/${id}.mp3`);
+      const a = new Audio(`${root}audio/${lang === "fr" ? "fr/" : ""}${id}.mp3`);
       current = a;
       onTalking(true);
       return new Promise((resolve) => {

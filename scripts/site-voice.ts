@@ -12,23 +12,58 @@ import os from "node:os";
 import path from "node:path";
 import { senior } from "@/lib/age-styles/senior";
 import { speakConfig } from "@/lib/voice/config";
-import { LINES } from "../site/js/lines";
+import { LINES, LINES_FR } from "../site/js/lines";
 
-const out = path.join(process.cwd(), "site", "audio");
-const voice = senior.input.spoken.en;
+// English in site/audio, French in site/audio/fr (Gloam's French voice)
+const sets = [
+  {
+    lines: LINES,
+    voice: senior.input.spoken.en,
+    out: path.join(process.cwd(), "site", "audio"),
+  },
+  {
+    lines: LINES_FR,
+    voice: senior.input.spoken.fr,
+    out: path.join(process.cwd(), "site", "audio", "fr"),
+  },
+];
 
 async function main() {
-  fs.mkdirSync(out, { recursive: true });
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "gloam-voice-"));
-  for (const [id, text] of Object.entries(LINES)) {
-    const res = await fetch(`${speakConfig.url}/speak`, { method: "POST", body: JSON.stringify({ text, voice: voice.name, speed: voice.speed }) });
-    if (!res.ok) throw new Error(`The voice helper said ${res.status}. Is it running (npm run voice)?`);
-    const wav = path.join(tmp, `${id}.wav`);
-    fs.writeFileSync(wav, Buffer.from(await res.arrayBuffer()));
-    // mono mp3 at 48 kbps: clear speech, a few KB a second (every browser plays mp3)
-    const r = spawnSync("ffmpeg", ["-y", "-loglevel", "error", "-i", wav, "-ac", "1", "-b:a", "48k", path.join(out, `${id}.mp3`)], { stdio: "inherit" });
-    if (r.status !== 0) throw new Error("ffmpeg couldn't make the mp3 (is ffmpeg installed?).");
-    console.log(`✓ ${id}`);
+  for (const { lines, voice, out } of sets) {
+    fs.mkdirSync(out, { recursive: true });
+    for (const [id, text] of Object.entries(lines)) {
+      const res = await fetch(`${speakConfig.url}/speak`, {
+        method: "POST",
+        body: JSON.stringify({ text, voice: voice.name, speed: voice.speed }),
+      });
+      if (!res.ok)
+        throw new Error(
+          `The voice helper said ${res.status}. Is it running (npm run voice)?`,
+        );
+      const wav = path.join(tmp, `${id}.wav`);
+      fs.writeFileSync(wav, Buffer.from(await res.arrayBuffer()));
+      // mono mp3 at 48 kbps: clear speech, a few KB a second (every browser plays mp3)
+      const r = spawnSync(
+        "ffmpeg",
+        [
+          "-y",
+          "-loglevel",
+          "error",
+          "-i",
+          wav,
+          "-ac",
+          "1",
+          "-b:a",
+          "48k",
+          path.join(out, `${id}.mp3`),
+        ],
+        { stdio: "inherit" },
+      );
+      if (r.status !== 0)
+        throw new Error("ffmpeg couldn't make the mp3 (is ffmpeg installed?).");
+      console.log(`✓ ${path.basename(out)}/${id}`);
+    }
   }
   fs.rmSync(tmp, { recursive: true, force: true });
 }
