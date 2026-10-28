@@ -248,9 +248,63 @@ h3 {
 }
 
 /* =====================================================================
-   THE HOMEPAGE, as a film (site/js/home.ts plays it). One rule keeps it clean: in every scene the words
-   stay on the left and Gloam on the right, so nothing ever crosses Gloam.
+   THE HOMEPAGE, as a film (site/js/home.ts plays it). The rules that keep it clean:
+   - in every scene the words stay on the left and Gloam on the right
+   - every scene fits between the top and the bottom of the screen, on any shape of screen: sizes follow the
+     screen's height as well as its width (laptops at 125-150% scaling are short and wide)
+   - nothing is ever wider than the page (no 100vw: it includes the scrollbar)
    ===================================================================== */
+html,
+body {
+  overflow-x: clip;
+}
+:root {
+  /* the page's side gutter (wider on big screens, where the chapter trail lives at the edge) */
+  --gut: max(16px, calc((100% - 1180px) / 2));
+  --bar-h: 84px;
+}
+@media (min-width: 1100px) {
+  :root {
+    --gut: max(64px, calc((100% - 1180px) / 2));
+  }
+  .wrap {
+    width: min(1180px, 100% - 128px);
+  }
+}
+
+/* ---------- Gloam's scrollbar: rust orange on the night (paper-coloured on the reading pages) ---------- */
+@supports not selector(::-webkit-scrollbar) {
+  html {
+    scrollbar-color: #e2661d #0b1411;
+  }
+  html.page-doc {
+    scrollbar-color: #e2661d #dfe6df;
+  }
+}
+::-webkit-scrollbar {
+  width: 14px;
+  height: 0;
+}
+::-webkit-scrollbar-track {
+  background: #0b1411;
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #ffa25a, #e2661d 45%, #b14d18);
+  border: 3px solid #0b1411;
+  border-radius: 10px;
+  box-shadow: inset 0 1px 0 rgb(255 226 190 / 0.55), inset 0 -2px 0 rgb(80 24 4 / 0.35);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #ffb878, #f07a34 45%, #c35a1f);
+}
+.page-doc::-webkit-scrollbar-track {
+  background: #dfe6df;
+}
+.page-doc::-webkit-scrollbar-thumb {
+  border-color: #dfe6df;
+}
+
+/* ---------- the stage (fixed behind the story, privacy and the finale) ---------- */
 .stage {
   position: fixed;
   inset: 0;
@@ -260,6 +314,37 @@ h3 {
 }
 .stage.is-hidden {
   visibility: hidden;
+}
+.stage.is-shake {
+  animation: shake 0.5s ease-out;
+}
+@keyframes shake {
+  0%,
+  100% {
+    transform: none;
+  }
+  20% {
+    transform: translate(4px, -3px);
+  }
+  40% {
+    transform: translate(-4px, 2px);
+  }
+  60% {
+    transform: translate(3px, 2px);
+  }
+  80% {
+    transform: translate(-2px, -1px);
+  }
+}
+/* the camera: pushes in on Gloam's lantern when it gets something */
+.stage .camera {
+  position: absolute;
+  inset: 0;
+  transform-origin: var(--lx, 70%) var(--ly, 40%);
+  transition: transform 1.3s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.stage .camera.is-push {
+  transform: scale(1.06);
 }
 .stage .layers {
   position: absolute;
@@ -272,7 +357,7 @@ h3 {
   height: 100%;
   object-fit: cover;
   max-width: none;
-  transform: scale(1.08);
+  transform: scale(1.1);
   will-change: transform;
 }
 /* the lit valley shows through a circle of light that spreads from Gloam's lantern (site/js/stage.ts) */
@@ -287,13 +372,41 @@ h3 {
   opacity: 0;
   pointer-events: none;
   mix-blend-mode: screen;
-  background: radial-gradient(
-    circle at var(--lx, 70%) var(--ly, 40%),
-    transparent calc(var(--r, 0vmax) * 0.72),
-    rgb(255 196 96 / 0.42) calc(var(--r, 0vmax) * 0.9),
-    rgb(255 226 160 / 0.6) calc(var(--r, 0vmax) * 0.97),
-    transparent var(--r, 0vmax)
-  );
+  background: radial-gradient(circle at var(--lx, 70%) var(--ly, 40%), transparent calc(var(--r, 0vmax) * 0.72), rgb(255 196 96 / 0.42) calc(var(--r, 0vmax) * 0.9), rgb(255 226 160 / 0.6) calc(var(--r, 0vmax) * 0.97), transparent var(--r, 0vmax));
+}
+/* mist drifting low over the meadow */
+.stage .mist {
+  position: absolute;
+  left: -15%;
+  right: -15%;
+  bottom: 4%;
+  height: 26%;
+  pointer-events: none;
+  background:
+    radial-gradient(45% 50% at 25% 60%, rgb(160 196 186 / 0.13), transparent 70%),
+    radial-gradient(40% 45% at 72% 55%, rgb(160 196 186 / 0.1), transparent 70%);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .stage .mist {
+    animation: mist 26s ease-in-out infinite alternate;
+  }
+}
+@keyframes mist {
+  from {
+    transform: translateX(-5%);
+  }
+  to {
+    transform: translateX(5%);
+  }
+}
+/* dawn: the sky warms behind the valley in the finale */
+.stage .dawn {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  mix-blend-mode: soft-light;
+  background: linear-gradient(0deg, rgb(255 170 110 / 0) 30%, rgb(255 160 110 / 0.75) 62%, rgb(255 200 150 / 0.35) 80%, transparent);
 }
 .stage .gloam-canvas {
   position: absolute;
@@ -312,17 +425,91 @@ h3 {
 .stage .gloam-still.is-gone {
   opacity: 0;
 }
-/* the words' side is a little deeper night, so they always read */
+/* the words' side is deeper night, so they always read */
 .stage .shade {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(90deg, rgb(8 14 12 / 0.82) 0%, rgb(8 14 12 / 0.55) 34%, rgb(8 14 12 / 0) 56%),
-    linear-gradient(0deg, rgb(8 14 12 / 0.5), transparent 26%);
+    linear-gradient(90deg, rgb(7 13 11 / 0.92) 0%, rgb(7 13 11 / 0.8) 38%, rgb(7 13 11 / 0.3) 54%, rgb(7 13 11 / 0) 64%),
+    linear-gradient(0deg, rgb(7 13 11 / 0.5), transparent 26%);
   pointer-events: none;
 }
+/* fireflies bursting from the lantern when Gloam gets it (gold: it's understanding) */
+.stage .sparks span {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #ffd98a;
+  box-shadow: 0 0 10px 3px rgb(255 200 100 / 0.7);
+  animation: spark 1.7s cubic-bezier(0.15, 0.7, 0.3, 1) forwards;
+}
+@keyframes spark {
+  from {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.4);
+    opacity: 0;
+  }
+}
 
-/* Gloam's speech bubble: above its head, on its side of the screen (site/js/home.ts places it) */
+/* the opening: the valley rises out of the dark, the headline inks in word by word */
+.is-opening .stage .camera {
+  animation: rise 1.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: scale(1.07);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.beat h1 .w {
+  display: inline-block;
+}
+.is-opening .beat[data-beat="hero"] h1 .w {
+  animation: ink 0.85s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.is-opening .beat[data-beat="hero"] h1 .w:nth-child(1) {
+  animation-delay: 0.35s;
+}
+.is-opening .beat[data-beat="hero"] h1 .w:nth-child(2) {
+  animation-delay: 0.47s;
+}
+.is-opening .beat[data-beat="hero"] h1 .w:nth-child(3) {
+  animation-delay: 0.59s;
+}
+.is-opening .beat[data-beat="hero"] h1 .w:nth-child(4) {
+  animation-delay: 0.71s;
+}
+.is-opening .beat[data-beat="hero"] h1 .w:nth-child(5) {
+  animation-delay: 0.83s;
+}
+.is-opening .beat[data-beat="hero"] h1 .w:nth-child(n + 6) {
+  animation-delay: 0.95s;
+}
+.is-opening .beat[data-beat="hero"] > :not(h1) {
+  animation: ink 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) 1s both;
+}
+@keyframes ink {
+  from {
+    opacity: 0;
+    filter: blur(8px);
+    transform: translateY(0.2em);
+  }
+  to {
+    opacity: 1;
+    filter: none;
+    transform: none;
+  }
+}
+
+/* Gloam's speech bubble: above its head, right of the words (site/js/home.ts places it) */
 .bubble {
   position: fixed;
   left: 0;
@@ -337,14 +524,14 @@ h3 {
   bottom: 14px;
   transform: translateX(-50%);
   width: max-content;
-  max-width: min(320px, 80vw);
+  max-width: min(320px, 78vw);
   margin: 0;
   padding: 12px 16px;
   background: #0c1613;
   border: 1.5px solid #2f4d48;
   border-radius: 16px 14px 17px 13px;
   color: var(--mist);
-  font-size: 1.06rem;
+  font-size: clamp(0.92rem, 2.6vh, 1.06rem);
   line-height: 1.38;
   box-shadow: 0 12px 30px rgb(0 0 0 / 0.45);
 }
@@ -360,7 +547,8 @@ h3 {
   border-bottom: 1.5px solid #2f4d48;
   transform: translateX(-50%) rotate(45deg);
 }
-.bubble.is-empty {
+.bubble.is-empty,
+.bubble.is-covered {
   opacity: 0;
 }
 .poke {
@@ -426,6 +614,85 @@ h3 {
     transform: scaleY(1);
   }
 }
+.bar .lang {
+  border: 1.5px solid rgb(211 221 214 / 0.3);
+  border-radius: 999px;
+  padding: 8px 12px !important;
+}
+
+/* the chapter trail: a lantern per chapter, on the right edge (moonlight: gold is only for understanding) */
+.trail {
+  position: fixed;
+  right: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 8;
+  display: grid;
+  gap: 8px;
+}
+.trail a {
+  position: relative;
+  display: block;
+  width: 24px;
+  height: 36px;
+  color: var(--moon);
+  opacity: 0.45;
+  transition: opacity 0.3s, transform 0.3s;
+}
+.trail svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.trail .glass {
+  fill: rgb(142 197 220 / 0.12);
+  stroke: currentColor;
+  stroke-width: 1.4;
+  transition: fill 0.3s;
+}
+.trail .cap {
+  fill: currentColor;
+}
+.trail .hook {
+  stroke: currentColor;
+  stroke-width: 1.4;
+}
+.trail a:hover,
+.trail a:focus-visible,
+.trail a[aria-current] {
+  opacity: 1;
+}
+.trail a[aria-current] .glass {
+  fill: rgb(142 197 220 / 0.6);
+  filter: drop-shadow(0 0 6px rgb(142 197 220 / 0.9));
+}
+.trail a[aria-current] {
+  transform: scale(1.12);
+}
+.trail .tip {
+  position: absolute;
+  right: 34px;
+  top: 50%;
+  transform: translate(6px, -50%);
+  white-space: nowrap;
+  background: #0c1613;
+  color: var(--mist);
+  border: 1px solid #2f4d48;
+  font: 700 0.85rem var(--read);
+  padding: 6px 10px;
+  border-radius: 8px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s;
+}
+.trail a:hover .tip,
+.trail a:focus-visible .tip {
+  opacity: 1;
+  transform: translate(0, -50%);
+}
+.trail.on-paper a {
+  color: #2f6f8c;
+}
 
 main {
   position: relative;
@@ -440,15 +707,19 @@ main {
   position: relative;
   height: 100vh;
   height: 100svh;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  align-items: center;
-  padding-inline: max(16px, (100vw - 1180px) / 2);
 }
-/* the beats are all in one place; one shows at a time */
+/* the words' column: from the top of the screen to the bottom, the beat centred in it (never above it) */
 .beats {
+  position: absolute;
+  left: var(--gut);
+  top: 0;
+  bottom: 0;
+  width: min(560px, 46%);
   display: grid;
-  max-width: min(520px, 44vw);
+  align-items: center;
+}
+.story-pin[data-beat="turn"] .beats {
+  width: min(700px, 58%);
 }
 .beat {
   grid-area: 1 / 1;
@@ -468,27 +739,47 @@ main {
   visibility: visible;
   transition: opacity 0.6s ease 0.12s, transform 0.7s ease 0.12s, filter 0.6s ease 0.12s, visibility 0s;
 }
+/* the hero sits under the top bar */
+.beat[data-beat="hero"] {
+  padding-top: var(--bar-h);
+}
 .beat h1 {
-  font: 850 clamp(2.8rem, min(6.6vw, 11.5vh), 6.2rem) / 0.95 var(--voice);
+  font: 850 clamp(2rem, min(5.2vw, 9.2vh), 5.6rem) / 0.96 var(--voice);
   font-variation-settings: "CASL" 1, "slnt" -8;
   letter-spacing: -0.02em;
-  margin: 0 0 24px;
-  max-width: 9.5ch;
-  color: #e6ede8;
+  margin: 0 0 min(22px, 2.6vh);
+  max-width: 13ch;
+  color: #eef3ef;
+  text-wrap: balance;
   text-shadow: 0 4px 30px rgb(0 0 0 / 0.45);
 }
-.beat h2 {
-  font: 850 clamp(2.4rem, min(5vw, 9vh), 4.4rem) / 1 var(--voice);
+.beat h2,
+.get h2,
+.private h2,
+.worlds-head h2 {
+  font: 850 clamp(1.8rem, min(4.2vw, 7.6vh), 4rem) / 1.02 var(--voice);
   font-variation-settings: "CASL" 1, "slnt" -8;
-  color: #e6ede8;
+  color: #eef3ef;
   text-shadow: 0 4px 30px rgb(0 0 0 / 0.45);
-  margin-bottom: 20px;
+  margin: 0 0 min(18px, 2.4vh);
+  text-wrap: balance;
 }
-.beat .lede {
-  color: #c4d3ca;
+.beat .lede,
+.get .lede,
+.worlds-head .lede {
+  font-size: clamp(0.98rem, min(1.5vw, 2.85vh), 1.28rem);
+  line-height: 1.5;
+  color: #cfdbd3;
 }
-.beat .small {
-  margin-top: 20px;
+.beat .buttons,
+.get .buttons {
+  margin-top: min(28px, 3.4vh);
+}
+.beat .small,
+.get .small {
+  font-size: clamp(0.85rem, 2.4vh, 0.98rem);
+  margin-top: min(18px, 2.4vh);
+  color: #b5c5bc;
 }
 .say-static {
   display: none;
@@ -497,9 +788,10 @@ main {
   display: flex;
   align-items: center;
   gap: 14px;
-  margin: 0 0 18px;
-  font: 750 clamp(1.3rem, 2.4vw, 1.75rem) / 1.2 var(--voice);
+  margin: 0 0 min(16px, 2vh);
+  font: 750 clamp(1.15rem, min(2.2vw, 4vh), 1.7rem) / 1.2 var(--voice);
   font-variation-settings: "CASL" 1, "slnt" -6;
+  color: #eef3ef;
 }
 .got b {
   color: var(--lantern);
@@ -508,35 +800,79 @@ main {
   width: 26px;
   height: 44px;
 }
+/* the big moment: the headline pops, the candle in the words ignites */
+.beat[data-beat="eureka"] h2 {
+  transform-origin: left center;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .beat[data-beat="eureka"].is-on h2 {
+    animation: pop 0.75s cubic-bezier(0.3, 1.6, 0.5, 1) 0.1s both;
+  }
+  .beat[data-beat="eureka"].is-on .got .flame {
+    animation: ignite 1s ease-out 0.35s both;
+  }
+}
+@keyframes pop {
+  from {
+    transform: scale(0.6, 1.3);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.06, 0.95);
+    opacity: 1;
+  }
+  to {
+    transform: none;
+  }
+}
+@keyframes ignite {
+  0% {
+    transform: scale(0.1);
+    opacity: 0;
+  }
+  40% {
+    transform: scale(1.4, 1.7);
+    opacity: 1;
+  }
+  70% {
+    transform: scale(0.9, 1.05);
+  }
+  100% {
+    transform: none;
+  }
+}
 /* the student's teach box: under Gloam, on Gloam's side (only while they teach) */
 .teachbox {
   position: absolute;
-  right: max(16px, (100vw - 1180px) / 2);
-  bottom: 24px;
-  width: min(560px, 44vw);
+  right: var(--gut);
+  bottom: min(24px, 3vh);
+  width: min(520px, 42%);
   display: flex;
   align-items: flex-end;
   gap: 14px;
   padding: 14px 14px 14px 18px;
-  background: rgb(12 21 18 / 0.94);
+  background: rgb(12 21 18 / 0.95);
   border: 1.5px solid #3d5f5a;
   border-radius: 18px 16px 19px 15px;
   box-shadow: 0 16px 40px rgb(0 0 0 / 0.45);
   opacity: 0;
+  visibility: hidden;
   transform: translateY(16px);
-  transition: opacity 0.5s, transform 0.5s, border-color 0.4s, box-shadow 0.4s;
+  transition: opacity 0.5s, transform 0.5s, border-color 0.4s, box-shadow 0.4s, visibility 0s 0.5s;
 }
 .story-pin[data-beat="teach"] .teachbox,
 .story-pin[data-beat="eureka"] .teachbox {
   opacity: 1;
+  visibility: visible;
   transform: none;
+  transition: opacity 0.5s, transform 0.5s, border-color 0.4s, box-shadow 0.4s, visibility 0s;
 }
 .teachbox .typed {
   flex: 1;
   margin: 0;
   min-height: 3em;
   color: var(--mist);
-  font-size: 1rem;
+  font-size: clamp(0.9rem, 2.6vh, 1rem);
 }
 .teachbox .typed [data-shown]::after {
   content: "";
@@ -568,128 +904,97 @@ main {
   transform: translateY(3px);
   box-shadow: 0 1px 0 #9e4430;
 }
-.scroll-hint {
-  position: absolute;
-  left: 50%;
-  bottom: 18px;
-  margin: 0;
-  transform: translateX(-50%);
-  font: 700 0.9rem var(--read);
-  color: var(--mist-dim);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  transition: opacity 0.4s;
-}
-.scroll-hint::after {
-  content: "";
-  width: 2px;
-  height: 26px;
-  background: linear-gradient(var(--moon), transparent);
-}
-@media (prefers-reduced-motion: no-preference) {
-  .scroll-hint::after {
-    animation: hint 1.8s ease-in-out infinite;
-  }
-}
-@keyframes hint {
-  0%,
-  100% {
-    transform: translateY(0);
-    opacity: 1;
-  }
-  60% {
-    transform: translateY(8px);
-    opacity: 0.3;
-  }
-}
-.story-pin:not([data-beat="hero"]) .scroll-hint {
-  opacity: 0;
-}
-/* your turn */
+/* your turn: three cards of paper, side by side */
 .theory {
-  color: var(--mist);
-  font-size: 1.12em;
+  color: #eef3ef;
+  font-size: 1.08em;
 }
 .choices {
   display: grid;
-  gap: 10px;
-  margin-top: 22px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: min(20px, 2.6vh);
 }
 .choices button {
-  font: inherit;
-  font-size: 1.02rem;
+  font: 600 clamp(0.88rem, 2.55vh, 1rem) / 1.38 var(--read);
   text-align: left;
   color: var(--mist);
-  background: rgb(12 21 18 / 0.82);
+  background: rgb(12 21 18 / 0.9);
   border: 1.5px solid #34524d;
-  padding: 12px 16px;
+  padding: 14px 16px;
   min-height: 48px;
   cursor: pointer;
-  transition: border-color 0.2s, background-color 0.2s, transform 0.15s, opacity 0.3s;
-}
-.choices button:nth-child(1) {
   border-radius: 14px 12px 15px 11px;
-  justify-self: start;
+  transition: border-color 0.2s, background-color 0.2s, opacity 0.3s, transform 0.15s;
+  will-change: transform;
 }
 .choices button:nth-child(2) {
   border-radius: 12px 15px 11px 14px;
-  justify-self: start;
 }
 .choices button:nth-child(3) {
   border-radius: 15px 11px 14px 12px;
 }
 .choices button:hover {
   border-color: var(--moon);
-  background: rgb(18 30 26 / 0.94);
-}
-.choices button:active {
-  transform: translateY(2px);
+  background: rgb(18 30 26 / 0.96);
 }
 .choices button[aria-pressed="true"] {
   border-color: var(--moon);
-  box-shadow: 0 0 0 3px rgb(142 197 220 / 0.2);
+  box-shadow: 0 0 0 3px rgb(142 197 220 / 0.22);
 }
 [data-answer] .choices button[aria-pressed="false"] {
-  opacity: 0.55;
+  opacity: 0.5;
 }
 .result .reply {
   display: none;
-  margin: 16px 0 0;
-  font-size: 1.15rem;
+  margin: 14px 0 0;
+  font-size: 1.12rem;
   color: var(--mist);
 }
 .result .note {
-  margin: 14px 0 0;
-  min-height: 2.6em;
-  font-size: 1rem;
-  color: var(--mist);
+  margin: min(14px, 2vh) 0 0;
+  font-size: clamp(0.86rem, 2.5vh, 0.98rem);
+  color: #c7d5cc;
+  max-width: 46em;
 }
-.beat[data-beat="turn"] .small {
-  margin-top: 8px;
+/* a card's words flying to Gloam as a little note */
+.note-fly {
+  position: fixed;
+  z-index: 9;
+  margin: 0;
+  padding: 12px 14px;
+  background: #f6efe0;
+  color: #2a2016;
+  font: 600 0.95rem / 1.3 var(--read);
+  border-radius: 6px;
+  box-shadow: 0 10px 24px rgb(0 0 0 / 0.4);
+  pointer-events: none;
 }
 
-/* phones: Gloam above, the words below (never on top of each other) */
+/* phones: Gloam above (or peeking up from the corner), the words below */
 @media (max-width: 899px) {
-  .story-pin {
+  :root {
+    --bar-h: 118px;
+  }
+  .beats,
+  .story-pin[data-beat="turn"] .beats {
+    left: 16px;
+    right: 16px;
+    width: auto;
     align-items: end;
     padding-bottom: 28px;
   }
-  .beats {
-    max-width: none;
-  }
   .story-pin[data-beat="hero"] .beats,
-  .story-pin[data-beat="wrong"] .beats {
-    margin-bottom: 30px;
+  .story-pin[data-beat="turn"] .beats {
+    align-items: start;
+    padding-top: 12px;
   }
   .story-pin[data-beat="teach"] .beats,
   .story-pin[data-beat="eureka"] .beats {
-    margin-bottom: 150px;
+    padding-bottom: calc(var(--tb-h, 150px) + 44px);
   }
-  .story-pin[data-beat="turn"] {
-    align-items: start;
-    padding-top: 90px;
+  .choices {
+    grid-template-columns: minmax(0, 1fr);
   }
   .teachbox {
     left: 16px;
@@ -699,16 +1004,18 @@ main {
   .result .reply {
     display: block;
   }
+  /* narrow screens: the words can be anywhere, so the whole valley is a little deeper night */
   .stage .shade {
-    background: linear-gradient(180deg, rgb(8 14 12 / 0.6) 0%, rgb(8 14 12 / 0) 30%, rgb(8 14 12 / 0.3) 46%, rgb(8 14 12 / 0.92) 62%);
+    background: linear-gradient(180deg, rgb(7 13 11 / 0.82) 0%, rgb(7 13 11 / 0.62) 45%, rgb(7 13 11 / 0.82) 100%);
+  }
+  /* each beat sits where its scene puts it (top or bottom), not in the middle */
+  .beat {
+    align-self: auto;
   }
   .stage .gloam-still {
     left: 50%;
     top: 16%;
     height: 28vh;
-  }
-  .scroll-hint {
-    display: none;
   }
 }
 
@@ -716,12 +1023,22 @@ main {
 html:not(.js) .story-pin,
 .calm .story-pin {
   height: auto;
-  display: block;
-  padding-block: 110px 80px;
+  padding: calc(var(--bar-h) + 30px) var(--gut) 80px;
 }
 html:not(.js) .beats,
 .calm .beats {
+  position: static;
   display: block;
+  width: min(560px, 46%);
+}
+.calm .choices {
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (max-width: 899px) {
+  html:not(.js) .beats,
+  .calm .beats {
+    width: 100%;
+  }
 }
 html:not(.js) .beat,
 .calm .beat {
@@ -731,17 +1048,16 @@ html:not(.js) .beat,
   visibility: visible;
   pointer-events: auto;
   margin-bottom: 72px;
+  padding-top: 0;
 }
 html:not(.js) .teachbox,
 .calm .teachbox {
   position: static;
   opacity: 1;
+  visibility: visible;
   transform: none;
+  width: min(560px, 46%);
   margin: -40px 0 72px;
-}
-html:not(.js) .scroll-hint,
-.calm .scroll-hint {
-  display: none;
 }
 html:not(.js) .say-static {
   display: block;
@@ -792,30 +1108,32 @@ html:not(.js) .say-static {
 .desk {
   position: relative;
   z-index: 3;
-  background: var(--paper);
   color: var(--ink);
+  background: radial-gradient(70% 70% at 70% 45%, #f7f9f4, #e2e8e1 75%);
 }
 .desk-pin {
-  min-height: 100vh;
-  min-height: 100svh;
+  height: 100vh;
+  height: 100svh;
   display: flex;
   align-items: center;
-  padding-block: 72px;
 }
 .desk-grid {
   display: grid;
-  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
-  grid-template-rows: auto 1fr;
-  column-gap: 64px;
+  grid-template-columns: minmax(0, 4fr) minmax(0, 7fr);
+  gap: clamp(28px, 4vw, 64px);
   align-items: center;
 }
 .desk-title {
-  grid-column: 1 / -1;
-  max-width: 22ch;
-  margin-bottom: 36px;
+  font: 850 clamp(1.7rem, min(3.4vw, 6.6vh), 3.2rem) / 1.05 var(--voice);
+  font-variation-settings: "CASL" 1, "slnt" -8;
+  margin: 0 0 min(26px, 3.6vh);
+  text-wrap: balance;
+}
+.d-steps {
+  display: grid;
 }
 .d-beat {
-  grid-area: 2 / 1;
+  grid-area: 1 / 1;
   opacity: 0;
   transform: translateY(12px);
   visibility: hidden;
@@ -828,45 +1146,107 @@ html:not(.js) .say-static {
   transition: opacity 0.5s 0.1s, transform 0.6s 0.1s, visibility 0s;
 }
 .d-beat h3 {
-  font: 800 clamp(1.6rem, 2.6vw, 2.1rem) / 1.1 var(--voice);
+  font: 800 clamp(1.25rem, min(2.2vw, 4.4vh), 1.9rem) / 1.12 var(--voice);
   font-variation-settings: "CASL" 1, "slnt" -6;
-  margin-bottom: 12px;
+  margin: 0 0 10px;
 }
 .d-beat p {
   color: var(--ink-dim);
   margin: 0;
-  max-width: 34rem;
+  font-size: clamp(0.95rem, min(1.4vw, 2.8vh), 1.12rem);
 }
-/* the laptop: a dark lid with the screen inside; its screen follows the steps */
-.lid {
-  grid-area: 2 / 2;
-  align-self: stretch;
-  background: #1b2622;
-  border-radius: 18px 18px 8px 8px;
-  box-shadow: 0 30px 70px rgb(22 48 42 / 0.32), inset 0 0 0 1px #2f3f3a;
+/* the laptop: lid, screen, deck, and Gloam peeking over the top */
+.laptop {
   position: relative;
-  z-index: 0;
+  width: min(100%, calc((100svh - 150px) * 1.45));
+  justify-self: center;
+  padding-top: 15%;
 }
-.lid::after {
+/* Gloam peeks over the lid at what you're doing */
+.peeker {
+  position: absolute;
+  z-index: 0;
+  right: 6%;
+  top: 0;
+  width: 30%;
+  height: auto;
+  transform: translateY(55%);
+  transition: transform 0.8s cubic-bezier(0.3, 1.4, 0.5, 1);
+}
+.laptop.is-here .peeker,
+.desk.is-flat .peeker {
+  transform: translateY(0);
+}
+.laptop[data-step="1"] .peeker {
+  transform: translate(-8%, -4%) rotate(-8deg);
+}
+.laptop[data-step="2"] .peeker {
+  transform: translate(4%, -8%) rotate(6deg);
+}
+.lid {
+  position: relative;
+  z-index: 1;
+  aspect-ratio: 16 / 10.2;
+  padding: 2.4% 2.4% 3%;
+  background: linear-gradient(180deg, #24302c, #1a2421);
+  border-radius: 18px 18px 6px 6px;
+  box-shadow: 0 30px 70px rgb(22 48 42 / 0.32), inset 0 0 0 1px #33443f;
+}
+.lid::before {
   content: "";
   position: absolute;
-  left: -4%;
-  right: -4%;
-  bottom: -16px;
-  height: 16px;
-  background: linear-gradient(#c9d2cc, #a9b5ae);
-  border-radius: 2px 2px 14px 14px;
+  left: 50%;
+  top: 1%;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #3b4b46;
+  transform: translateX(-50%);
+}
+.lap-screen {
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border-radius: 5px;
+  overflow: hidden;
+  background: #f3f6f1;
+  container-type: size;
+  box-shadow: 0 0 40px rgb(207 232 242 / 0.25);
+}
+.chrome {
+  flex: none;
+  height: clamp(18px, 6cqh, 28px);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  background: #e3e9e3;
+  border-bottom: 1px solid #ccd6cf;
+  font: 600 clamp(9px, 1.5cqw, 12px) var(--read);
+  color: #5b6f67;
+}
+.chrome i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #c4cfc8;
+}
+.chrome span {
+  margin-left: 8px;
+  padding: 2px 10px;
+  border-radius: 6px;
+  background: #f4f7f3;
+}
+.views {
+  position: relative;
+  flex: 1;
 }
 .d-screen {
-  grid-area: 2 / 2;
-  z-index: 1;
-  margin: 16px;
-  aspect-ratio: 16 / 9.4;
-  border-radius: 6px;
-  overflow: hidden;
-  background: var(--paper-2);
+  position: absolute;
+  inset: 0;
   opacity: 0;
-  transition: opacity 0.5s;
+  transition: opacity 0.55s;
 }
 .d-screen.is-on {
   opacity: 1;
@@ -882,60 +1262,121 @@ html:not(.js) .say-static {
   grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
 }
 .notes {
-  padding: 22px;
+  padding: 4cqw;
   background: #fffdf6;
   border-right: 1px dashed var(--line);
 }
 .notes .nhead,
 .drafted .dhead {
-  font: 750 1rem var(--voice);
-  margin: 0 0 10px;
+  font: 750 clamp(11px, 2.1cqw, 17px) var(--voice);
+  margin: 0 0 1.6cqw;
 }
 .notes .typed {
   margin: 0;
   color: var(--ink-dim);
-  font-size: 0.95rem;
+  font-size: clamp(10px, 1.8cqw, 15px);
+  line-height: 1.5;
 }
 .drafted {
-  padding: 22px;
+  padding: 4cqw;
 }
 .drafted ol {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 8px;
-  font-weight: 700;
+  gap: 1.2cqw;
+  font: 700 clamp(10px, 1.9cqw, 15px) var(--read);
 }
 .drafted li {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   transition: opacity 0.5s, transform 0.5s;
+}
+.drafted .candle {
+  width: clamp(10px, 1.7cqw, 16px);
+  height: clamp(17px, 2.9cqw, 27px);
 }
 .js .drafted li:not(.is-on) {
   opacity: 0;
   transform: translateX(-8px);
 }
 .drafted .mistake {
-  margin: 16px 0 0;
-  font-size: 0.92rem;
+  margin: 2.4cqw 0 0;
+  font-size: clamp(10px, 1.7cqw, 14px);
   color: var(--ink-dim);
 }
 .drafted .mistake b {
   color: #a83a50;
 }
+/* step 1: a cursor glides to "Approve" and clicks it */
+.d-screen .cursor {
+  position: absolute;
+  width: 3.4cqw;
+  height: 3.4cqw;
+  left: 50%;
+  top: 70%;
+  background: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M3 2l13 7-6 1.5L7 17z' fill='%2316302a' stroke='%23fff' stroke-width='1.2' stroke-linejoin='round'/%3E%3C/svg%3E");
+  opacity: 0;
+}
+.d-screen .cursor::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 6cqw;
+  height: 6cqw;
+  border-radius: 50%;
+  border: 2px solid #2f6f8c;
+  transform: translate(-40%, -40%) scale(0);
+  opacity: 0;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .d-screen[data-step="1"].is-on .cursor {
+    animation: glide 1.6s cubic-bezier(0.4, 0.1, 0.2, 1) 0.4s forwards;
+  }
+  .d-screen[data-step="1"].is-on .cursor::after {
+    animation: tap 0.7s ease-out 2s forwards;
+  }
+}
+@keyframes glide {
+  0% {
+    opacity: 0;
+    left: 46%;
+    top: 74%;
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    left: 85%;
+    top: 11%;
+  }
+}
+@keyframes tap {
+  0% {
+    transform: translate(-40%, -40%) scale(0.2);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-40%, -40%) scale(1.6);
+    opacity: 0;
+  }
+}
+/* step 2: the class, candles lighting row by row */
 .d-screen[data-step="2"] {
-  padding: 18px 20px;
+  padding: 3.4cqw 4cqw;
 }
 .class {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.92rem;
+  font-size: clamp(10px, 1.8cqw, 14px);
 }
 .class th,
 .class td {
-  padding: 6px;
+  padding: 0.7cqw 0.6cqw;
   border-bottom: 1px solid #dfe6e0;
   text-align: center;
 }
@@ -945,18 +1386,17 @@ html:not(.js) .say-static {
   white-space: nowrap;
 }
 .class thead th {
-  font-size: 0.8rem;
+  font-size: clamp(9px, 1.5cqw, 12px);
   color: var(--ink-dim);
   font-weight: 700;
 }
 .class .candle {
-  width: 15px;
-  height: 25px;
+  width: clamp(9px, 1.4cqw, 14px);
+  height: clamp(15px, 2.4cqw, 24px);
 }
 .class .candle .wax {
   fill: #cdbfa4;
 }
-/* the candles light up, row by row, when you get there */
 .js .class:not(.is-lit) .candle .flame {
   opacity: 0;
   transform: scale(0.2);
@@ -977,46 +1417,70 @@ html:not(.js) .say-static {
   transition-delay: 0.6s;
 }
 .thinks {
-  margin: 12px 0 0;
-  font-size: 0.92rem;
+  margin: 1.6cqw 0 0;
+  font-size: clamp(10px, 1.8cqw, 14px);
 }
 .thinks b {
   color: #a83a50;
 }
-/* phones, or reduced motion: each step, then its screen, one after another */
+.thinks .count {
+  display: inline-block;
+  min-width: 1.2ch;
+  font-weight: 800;
+  color: #a83a50;
+}
+.deck {
+  position: relative;
+  z-index: 1;
+  height: clamp(10px, 2.2vh, 18px);
+  margin: 0 -7%;
+  background: linear-gradient(180deg, #d6ded8, #a9b5ae);
+  border-radius: 2px 2px 18px 18px;
+  box-shadow: 0 18px 30px rgb(22 48 42 / 0.25);
+}
+.deck::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 14%;
+  height: 40%;
+  background: #b7c2bb;
+  border-radius: 0 0 8px 8px;
+  transform: translateX(-50%);
+}
+/* phones, or reduced motion: the steps in order, and the laptop showing the class */
+.desk.is-flat .desk-pin,
+html:not(.js) .desk-pin {
+  height: auto;
+  padding-block: 80px;
+}
+.desk.is-flat .desk-grid,
+html:not(.js) .desk-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+.desk.is-flat .d-steps,
+html:not(.js) .d-steps {
+  display: grid;
+  gap: 22px;
+}
+.desk.is-flat .d-beat,
+html:not(.js) .d-beat {
+  grid-area: auto;
+  opacity: 1;
+  transform: none;
+  visibility: visible;
+}
+.desk.is-flat .laptop {
+  width: min(100%, 640px);
+}
+html:not(.js) .d-screen[data-step="2"] {
+  opacity: 1;
+}
 @media (max-width: 899px) {
   .desk-grid {
-    display: block;
+    grid-template-columns: minmax(0, 1fr);
   }
-  .lid {
-    display: none;
-  }
-}
-@media (max-width: 899px), (prefers-reduced-motion: reduce) {
-  .d-beat,
-  .d-screen {
-    opacity: 1;
-    transform: none;
-    visibility: visible;
-  }
-  .d-screen {
-    margin: 18px 0 44px;
-    box-shadow: 0 18px 50px rgb(22 48 42 / 0.2), 0 0 0 1px var(--line);
-    aspect-ratio: auto;
-  }
-}
-html:not(.js) .desk-grid {
-  display: block;
-}
-html:not(.js) .lid {
-  display: none;
-}
-html:not(.js) .d-beat,
-html:not(.js) .d-screen {
-  opacity: 1;
-  visibility: visible;
-  transform: none;
-  margin: 18px 0 44px;
 }
 
 /* ---------- Act III: every grade (walk through the painted worlds) ---------- */
@@ -1035,15 +1499,7 @@ html:not(.js) .d-screen {
   position: absolute;
   inset: 0;
   margin: 0;
-  opacity: 0;
   overflow: hidden;
-}
-.world.is-on {
-  opacity: 1;
-}
-/* while two worlds crossfade, only the arriving one's words show */
-.world:not(.is-on) figcaption {
-  opacity: 0;
 }
 .w-layers {
   position: absolute;
@@ -1060,9 +1516,9 @@ html:not(.js) .d-screen {
 }
 .w-gloam {
   position: absolute;
-  left: 62%;
-  bottom: 10%;
-  height: 52vh;
+  left: 64%;
+  bottom: 9%;
+  height: min(52vh, 48vw);
   width: auto;
   max-width: none;
   transform: translateX(-50%);
@@ -1071,6 +1527,9 @@ html:not(.js) .d-screen {
 @media (prefers-reduced-motion: no-preference) {
   .world.is-on .w-gloam {
     animation: bob 3.6s ease-in-out infinite;
+  }
+  .world.is-on .w-gloam.land {
+    animation: land 0.8s cubic-bezier(0.3, 1.5, 0.5, 1) both, bob 3.6s ease-in-out 0.8s infinite;
   }
 }
 @keyframes bob {
@@ -1082,36 +1541,78 @@ html:not(.js) .d-screen {
     transform: translateX(-50%) translateY(-6px) scaleY(1.015);
   }
 }
+@keyframes land {
+  0% {
+    transform: translateX(-50%) translateY(-60px) scale(0.9, 1.1);
+    opacity: 0;
+  }
+  55% {
+    transform: translateX(-50%) translateY(0) scale(1.12, 0.86);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+/* the words sit on deep night at the top and bottom of every painting, so they always read */
 .world::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgb(8 14 12 / 0.7) 0%, rgb(8 14 12 / 0) 34%), linear-gradient(0deg, rgb(8 14 12 / 0.78) 0%, rgb(8 14 12 / 0) 34%);
   pointer-events: none;
+  background: linear-gradient(0deg, rgb(6 12 10 / 0.9) 0%, rgb(6 12 10 / 0.6) 20%, rgb(6 12 10 / 0) 40%);
 }
 .world figcaption {
-  transition: opacity 0.35s;
   position: absolute;
   z-index: 1;
-  left: max(16px, (100vw - 1180px) / 2);
-  bottom: 40px;
-  max-width: 36rem;
-  color: #dfe8e2;
+  left: var(--gut);
+  bottom: min(40px, 5vh);
+  max-width: min(36rem, 60%);
+  color: #eef3ef;
+  text-shadow: 0 2px 12px rgb(0 0 0 / 0.75);
+  transition: opacity 0.35s;
+}
+.world:not(.is-on) figcaption {
+  opacity: 0;
+  transition: none;
 }
 .world figcaption b {
   display: block;
-  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  font-size: clamp(1.4rem, min(3vw, 5.6vh), 2.4rem);
   line-height: 1.1;
   font-variation-settings: "CASL" 1, "slnt" -6;
   margin-bottom: 6px;
 }
+.world figcaption span {
+  font-size: clamp(0.92rem, 2.6vh, 1.1rem);
+}
+.seam {
+  position: absolute;
+  z-index: 5;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  transform: translateX(-50%);
+  opacity: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent, #dff1f8 20%, #dff1f8 80%, transparent);
+  box-shadow: 0 0 22px 8px rgb(142 197 220 / 0.6);
+}
 .worlds-head {
-  position: relative;
-  z-index: 2;
-  padding-top: 96px;
+  position: absolute;
+  z-index: 6;
+  inset: 0 0 auto;
+  padding: clamp(40px, 9vh, 96px) 0 clamp(70px, 13vh, 130px);
+  background: linear-gradient(180deg, rgb(6 12 10 / 0.92) 0%, rgb(6 12 10 / 0.7) 55%, rgb(6 12 10 / 0) 100%);
+  pointer-events: none;
+}
+.worlds-head h2,
+.worlds-head .lede {
+  text-shadow: 0 2px 14px rgb(0 0 0 / 0.8);
 }
 .worlds-head .lede {
-  color: #dfe8e2;
+  max-width: 44ch;
+  margin: 0;
 }
 @media (max-width: 899px) {
   .w-gloam {
@@ -1129,27 +1630,30 @@ html:not(.js) .worlds-pin,
 }
 html:not(.js) .worlds-head,
 .calm .worlds-head {
+  position: relative;
   order: -1;
-  padding-block: 80px 24px;
 }
 html:not(.js) .world,
 .calm .world {
   position: relative;
   height: 80vh;
-  opacity: 1;
 }
 html:not(.js) .w-layer,
 .calm .w-layer {
   transform: translateX(-15%);
 }
+html:not(.js) .world figcaption,
+.calm .world figcaption {
+  opacity: 1;
+}
 
-/* ---------- Act IV: nothing leaves the laptop ---------- */
+/* ---------- Act IV: nothing leaves the laptop (Gloam stands guard in the valley) ---------- */
 .private {
   position: relative;
-  z-index: 3;
-  background: radial-gradient(80% 70% at 75% 50%, #10221d, #0a1210 70%);
+  z-index: 1;
   min-height: 100vh;
-  padding-block: 110px 96px;
+  min-height: 100svh;
+  padding-block: clamp(70px, 12vh, 120px);
   display: flex;
   align-items: center;
 }
@@ -1159,20 +1663,38 @@ html:not(.js) .w-layer,
   gap: 48px;
   align-items: center;
 }
+.private .words {
+  max-width: 560px;
+}
+/* Gloam's line, said from its guard post (and out loud, with its voice on) */
+.nosy {
+  margin: 0 0 min(20px, 2.6vh);
+  font-size: clamp(1rem, min(1.6vw, 3vh), 1.25rem);
+  color: #eef3ef;
+}
+.nosy span {
+  font: 600 0.8em var(--read);
+  color: #9fb2a8;
+  margin-left: 6px;
+}
+.private.is-flat .nosy,
+html:not(.js) .nosy {
+  display: none;
+}
 .plain {
   list-style: none;
   padding: 0;
-  margin: 20px 0 28px;
+  margin: 0 0 min(28px, 3.4vh);
   display: grid;
-  gap: 14px;
+  gap: min(14px, 1.8vh);
 }
 .plain li {
   padding-left: 28px;
   position: relative;
-  color: var(--mist-dim);
+  color: #c3d1c8;
+  font-size: clamp(0.92rem, min(1.35vw, 2.7vh), 1.1rem);
 }
 .plain li::before {
-  /* a hand-drawn tick in moonlight (gold is only for understanding) */
   content: "";
   position: absolute;
   left: 2px;
@@ -1184,25 +1706,26 @@ html:not(.js) .w-layer,
   transform: rotate(-48deg);
 }
 .plain b {
-  color: var(--mist);
+  color: #eef3ef;
 }
 .net {
   width: 100%;
-  max-width: 560px;
+  max-width: 540px;
+  max-height: 72vh;
   justify-self: center;
   overflow: visible;
 }
 .net .book rect,
-.net .laptop rect,
-.net .laptop path {
+.net .laptop-icon rect,
+.net .laptop-icon path {
   fill: #1a2b26;
-  stroke: #4c706a;
+  stroke: #5b827b;
   stroke-width: 1.5;
 }
 .net .screen {
   fill: #2b4a44 !important;
 }
-.net .laptop .screen {
+.net .laptop-icon .screen {
   fill: #3d6a62 !important;
 }
 .net .thread {
@@ -1219,38 +1742,59 @@ html:not(.js) .w-layer,
 }
 .net .escape {
   fill: var(--gloam);
-  filter: drop-shadow(0 0 5px rgb(224 122 98 / 0.8));
+  filter: drop-shadow(0 0 6px rgb(224 122 98 / 0.9));
+}
+.net .bonk {
+  fill: none;
+  stroke: #ffd98a;
+  stroke-width: 2.5;
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.net .bonk.is-on {
+  animation: bonk 0.5s ease-out;
+}
+@keyframes bonk {
+  from {
+    opacity: 1;
+    transform: scale(0.3);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.6);
+  }
 }
 .net .cloud path {
   fill: none;
-  stroke: #5f7b75;
+  stroke: #6d8b85;
   stroke-width: 1.5;
   stroke-dasharray: 4 5;
 }
 .net text {
-  fill: var(--mist-dim);
+  fill: #c9d7cf;
   font: 600 14px var(--read);
   text-anchor: middle;
+  /* a dark outline, so the labels read over the lit valley too */
+  paint-order: stroke;
+  stroke: #070d0b;
+  stroke-width: 5px;
+  stroke-linejoin: round;
 }
 .net .lbl {
-  fill: var(--mist);
+  fill: #eef3ef;
   font-weight: 700;
+}
+.net .tag {
+  fill: #0a1411;
+  stroke: #2f4d48;
+  stroke-width: 1.2;
 }
 .net .leak {
   fill: none;
-  stroke: #5f7b75;
+  stroke: #6d8b85;
   stroke-width: 1.5;
   stroke-dasharray: 3 6;
-}
-.net .stop circle {
-  fill: #0a1210;
-  stroke: var(--gloam);
-  stroke-width: 2;
-}
-.net .stop path {
-  stroke: var(--gloam);
-  stroke-width: 2.5;
-  stroke-linecap: round;
 }
 @media (prefers-reduced-motion: no-preference) {
   .js .net .thread {
@@ -1260,40 +1804,38 @@ html:not(.js) .w-layer,
   .js .net.is-on .thread {
     stroke-dashoffset: 0;
   }
-  .js .net .thread:nth-of-type(2) {
-    transition-delay: 0.15s;
-  }
-  .js .net .thread:nth-of-type(3) {
-    transition-delay: 0.3s;
-  }
-  .js .net .thread:nth-of-type(4) {
-    transition-delay: 0.45s;
-  }
-  .js .net .thread:nth-of-type(5) {
-    transition-delay: 0.6s;
-  }
-  /* the stop sign flinches each time the stray message hits it */
-  .js .net.is-on .stop {
-    animation: block 2.4s ease-out 2.2s infinite;
-    transform-box: fill-box;
-    transform-origin: center;
-  }
 }
-@keyframes block {
-  0%,
-  86% {
-    transform: translate(352px, 132px) scale(1);
-  }
-  92% {
-    transform: translate(352px, 132px) scale(1.25);
-  }
-  100% {
-    transform: translate(352px, 132px) scale(1);
-  }
+/* phones, reduced motion, no JavaScript: a still Gloam guards the diagram, its line beside it */
+.guard-still {
+  display: none;
+  margin: 0;
+  align-items: center;
+  gap: 14px;
+}
+.private.is-flat .guard-still,
+html:not(.js) .guard-still {
+  display: flex;
+  grid-column: 2;
+}
+.guard-still img {
+  width: 110px;
+  height: auto;
+  flex: none;
+}
+.guard-still figcaption {
+  padding: 12px 16px;
+  background: #0c1613;
+  border: 1.5px solid #2f4d48;
+  border-radius: 16px;
+  color: var(--mist);
+  max-width: 300px;
 }
 @media (max-width: 899px) {
   .private .wrap {
     grid-template-columns: minmax(0, 1fr);
+  }
+  .private.is-flat .guard-still {
+    grid-column: auto;
   }
 }
 
@@ -1303,7 +1845,7 @@ html:not(.js) .w-layer,
   z-index: 3;
   background: var(--paper);
   color: var(--ink);
-  padding-block: clamp(72px, 10vw, 128px);
+  padding-block: clamp(64px, 10vw, 120px);
 }
 .ways .wrap {
   display: grid;
@@ -1311,11 +1853,17 @@ html:not(.js) .w-layer,
   gap: 56px;
   align-items: center;
 }
+.ways h2,
+.boards h2 {
+  font: 850 clamp(1.8rem, min(4vw, 7.4vh), 3.6rem) / 1.04 var(--voice);
+  font-variation-settings: "CASL" 1, "slnt" -8;
+  margin: 0 0 16px;
+}
 .toggles {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  margin: 26px 0 18px;
+  margin: 24px 0 18px;
 }
 .toggles button {
   font: 700 1rem var(--read);
@@ -1326,6 +1874,7 @@ html:not(.js) .w-layer,
   min-height: 46px;
   padding: 0 18px;
   cursor: pointer;
+  transition: background-color 0.2s, color 0.2s, border-color 0.2s;
 }
 .toggles button[aria-pressed="true"] {
   background: var(--ink);
@@ -1335,28 +1884,38 @@ html:not(.js) .w-layer,
 .mini {
   position: relative;
   margin: 0;
-  min-height: 380px;
-  padding: 28px 26px 24px;
-  border-radius: 16px;
+  min-height: 400px;
+  padding: 24px 24px 22px;
+  border-radius: 18px;
   background: url("art/senior/valley-0-dark.webp") center / cover, #0d1613;
   color: var(--mist);
-  box-shadow: 0 22px 60px rgb(22 48 42 / 0.3);
+  box-shadow: 0 26px 60px rgb(22 48 42 / 0.3), inset 0 0 0 1px rgb(255 255 255 / 0.06);
   display: grid;
   grid-template-rows: auto 1fr auto;
   overflow: hidden;
-  transition: font-size 0.3s;
+  transition: font-size 0.3s, letter-spacing 0.3s, word-spacing 0.3s, line-height 0.3s;
+}
+.mini-stage {
+  position: absolute;
+  right: 0;
+  bottom: 70px;
+  width: 52%;
+  height: 72%;
+}
+.mini-stage canvas {
+  position: absolute;
+  inset: 0;
 }
 .mini-gloam {
   position: absolute;
   right: 6%;
-  bottom: 72px;
-  width: 38%;
+  bottom: 0;
+  width: 70%;
   height: auto;
+  transition: opacity 0.3s;
 }
-@media (prefers-reduced-motion: no-preference) {
-  .mini.is-reading .mini-gloam {
-    animation: bob 0.5s ease-in-out infinite;
-  }
+.mini-stage.is-live .mini-gloam {
+  opacity: 0;
 }
 .mini-say {
   position: relative;
@@ -1366,7 +1925,7 @@ html:not(.js) .w-layer,
   border: 1.5px solid #2c4844;
   border-radius: 16px;
   width: fit-content;
-  max-width: 62%;
+  max-width: 60%;
   font-size: 1.1em;
 }
 .mini-box {
@@ -1379,8 +1938,8 @@ html:not(.js) .w-layer,
   padding: 12px 12px 12px 16px;
   border: 1.5px solid #3d5f5a;
   border-radius: 14px;
-  background: rgb(12 21 18 / 0.9);
-  color: var(--mist-dim);
+  background: rgb(12 21 18 / 0.92);
+  color: #b9c9c0;
 }
 .mini-box b {
   background: var(--gloam);
@@ -1420,42 +1979,98 @@ html:not(.js) .w-layer,
   min-height: 100svh;
   display: flex;
   align-items: center;
-  padding-block: 110px 80px;
+  padding-block: clamp(70px, 11vh, 120px);
 }
-.get .wrap > * {
-  max-width: min(560px, 46vw);
+.get-wrap > * {
+  max-width: min(560px, 44%);
 }
 .get h2 {
-  font: 850 clamp(2.4rem, min(5vw, 9vh), 4.4rem) / 1 var(--voice);
-  font-variation-settings: "CASL" 1, "slnt" -8;
-  color: #e6ede8;
-  text-shadow: 0 4px 30px rgb(0 0 0 / 0.45);
   max-width: 12ch;
 }
-.get .lede {
-  color: #c4d3ca;
-}
-.how {
-  margin: 34px 0 0;
-  padding-left: 1.4em;
-  display: grid;
-  gap: 12px;
-  color: var(--mist-dim);
-}
-.how b {
-  color: var(--mist);
-}
-.how li::marker {
-  font: 750 1rem var(--voice);
-  color: var(--moon);
-}
-.others {
-  margin-top: 24px;
-  font-size: 0.95rem;
-  color: var(--mist-dim);
+/* narrow screens: a still Gloam in the words (the live one would have words scrolling over it) */
+.get-gloam {
+  display: none;
+  width: 150px;
+  height: auto;
+  margin: 0 0 8px;
 }
 @media (max-width: 899px) {
-  .get .wrap > * {
+  .get-gloam {
+    display: block;
+  }
+}
+.get .btn.big {
+  min-height: 60px;
+  padding: 0 34px;
+  font-size: 1.15rem;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .get .btn.primary.big {
+    animation: breathe 3.4s ease-in-out infinite;
+  }
+}
+@keyframes breathe {
+  0%,
+  100% {
+    box-shadow: 0 4px 0 rgb(0 0 0 / 0.35), 0 0 0 0 rgb(226 102 29 / 0);
+  }
+  50% {
+    box-shadow: 0 4px 0 rgb(0 0 0 / 0.35), 0 0 0 10px rgb(226 102 29 / 0.16), 0 0 36px 6px rgb(255 140 70 / 0.35);
+  }
+}
+.how {
+  list-style: none;
+  margin: min(30px, 3.6vh) 0 0;
+  padding: 0;
+  display: grid;
+  gap: min(14px, 1.8vh);
+  counter-reset: how;
+  color: #d3ded7;
+  font-size: clamp(0.9rem, min(1.3vw, 2.6vh), 1.05rem);
+  position: relative;
+}
+.how::before {
+  content: "";
+  position: absolute;
+  left: 13px;
+  top: 14px;
+  bottom: 14px;
+  width: 2px;
+  background: linear-gradient(180deg, var(--moon), rgb(142 197 220 / 0.2));
+}
+.how li {
+  counter-increment: how;
+  position: relative;
+  padding-left: 42px;
+}
+.how li::before {
+  content: counter(how);
+  position: absolute;
+  left: 0;
+  top: -2px;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #0c1613;
+  border: 2px solid var(--moon);
+  color: var(--mist);
+  font: 750 0.9rem var(--voice);
+}
+.how b {
+  color: #eef3ef;
+}
+.others {
+  margin-top: min(22px, 2.8vh);
+  font-size: clamp(0.85rem, 2.4vh, 0.95rem);
+  color: #cfdbd3;
+}
+.others a {
+  color: #eef3ef;
+}
+@media (max-width: 899px) {
+  .get-wrap > * {
     max-width: none;
   }
 }
@@ -1484,28 +2099,264 @@ html:not(.js) .w-layer,
   font-size: 0.95rem;
 }
 
-/* ---------- footer ---------- */
-footer {
+/* =====================================================================
+   THE END OF THE NIGHT (every page's footer): the valley's horizon, stars, fireflies, and Gloam asleep
+   ===================================================================== */
+.night-foot {
   position: relative;
   z-index: 3;
-  background: var(--night);
-  color: var(--mist-dim);
-  padding-block: 44px;
+  background: #070d0b;
+  color: #b5c5bc;
+  overflow: hidden;
+  padding-bottom: 30px;
   font-size: 0.95rem;
 }
-footer .wrap {
+.foot-sky {
+  position: relative;
+  height: clamp(230px, 42vh, 400px);
+  background: linear-gradient(180deg, #0a1512 0%, #0e1d18 55%, #070d0b 100%);
+  overflow: hidden;
+}
+.foot-sky .stars {
+  position: absolute;
+  z-index: 1;
+  inset: 0 0 45%;
+  background-image:
+    radial-gradient(1.4px 1.4px at 8% 20%, #eaf4f8 50%, transparent 51%),
+    radial-gradient(1.2px 1.2px at 19% 48%, #eaf4f8 50%, transparent 51%),
+    radial-gradient(1.6px 1.6px at 31% 14%, #eaf4f8 50%, transparent 51%),
+    radial-gradient(1px 1px at 44% 36%, #eaf4f8 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 57% 18%, #eaf4f8 50%, transparent 51%),
+    radial-gradient(1.1px 1.1px at 66% 52%, #eaf4f8 50%, transparent 51%),
+    radial-gradient(1.6px 1.6px at 78% 12%, #eaf4f8 50%, transparent 51%),
+    radial-gradient(1.2px 1.2px at 89% 40%, #eaf4f8 50%, transparent 51%),
+    radial-gradient(1px 1px at 95% 22%, #eaf4f8 50%, transparent 51%);
+  opacity: 0.85;
+}
+.foot-sky .stars.far {
+  background-image:
+    radial-gradient(1px 1px at 4% 38%, #cfe3ea 50%, transparent 51%),
+    radial-gradient(1px 1px at 14% 10%, #cfe3ea 50%, transparent 51%),
+    radial-gradient(1.2px 1.2px at 26% 30%, #cfe3ea 50%, transparent 51%),
+    radial-gradient(1px 1px at 38% 8%, #cfe3ea 50%, transparent 51%),
+    radial-gradient(1px 1px at 50% 46%, #cfe3ea 50%, transparent 51%),
+    radial-gradient(1.2px 1.2px at 61% 30%, #cfe3ea 50%, transparent 51%),
+    radial-gradient(1px 1px at 72% 40%, #cfe3ea 50%, transparent 51%),
+    radial-gradient(1px 1px at 84% 26%, #cfe3ea 50%, transparent 51%);
+  opacity: 0.5;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .foot-sky .stars {
+    animation: twinkle 3.8s ease-in-out infinite alternate;
+  }
+  .foot-sky .stars.far {
+    animation-duration: 5.2s;
+    animation-delay: -2s;
+  }
+}
+@keyframes twinkle {
+  from {
+    opacity: 0.35;
+  }
+  to {
+    opacity: 0.9;
+  }
+}
+.foot-far,
+.foot-near {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  max-width: none;
+  object-fit: cover;
+}
+/* the mountains and the misty valley under the stars */
+.foot-far {
+  bottom: 0;
+  height: 100%;
+  object-position: 50% 46%;
+  filter: brightness(1.35) saturate(1.05);
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 30%);
+  mask-image: linear-gradient(180deg, transparent 0%, #000 30%);
+}
+/* the meadow Gloam sleeps on, close up */
+.foot-near {
+  bottom: 0;
+  height: 58%;
+  object-position: 50% 96%;
+  filter: brightness(1.25);
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 55%);
+  mask-image: linear-gradient(180deg, transparent 0%, #000 55%);
+}
+.foot-sky .fly {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #cfe8f2;
+  box-shadow: 0 0 10px 3px rgb(142 197 220 / 0.6);
+}
+.foot-sky .fly:nth-of-type(1) {
+  left: 14%;
+  bottom: 30%;
+}
+.foot-sky .fly:nth-of-type(2) {
+  left: 33%;
+  bottom: 18%;
+}
+.foot-sky .fly:nth-of-type(3) {
+  left: 52%;
+  bottom: 36%;
+}
+.foot-sky .fly:nth-of-type(4) {
+  left: 70%;
+  bottom: 22%;
+}
+.foot-sky .fly:nth-of-type(5) {
+  left: 88%;
+  bottom: 40%;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .foot-sky .fly {
+    animation: fly 7s ease-in-out infinite;
+  }
+  .foot-sky .fly:nth-of-type(2) {
+    animation-duration: 9s;
+    animation-delay: -3s;
+  }
+  .foot-sky .fly:nth-of-type(3) {
+    animation-duration: 8s;
+    animation-delay: -5s;
+  }
+  .foot-sky .fly:nth-of-type(4) {
+    animation-duration: 10s;
+    animation-delay: -1s;
+  }
+  .foot-sky .fly:nth-of-type(5) {
+    animation-duration: 7.5s;
+    animation-delay: -6s;
+  }
+}
+@keyframes fly {
+  0%,
+  100% {
+    transform: translate(0, 0);
+    opacity: 0.4;
+  }
+  30% {
+    transform: translate(18px, -14px);
+    opacity: 1;
+  }
+  60% {
+    transform: translate(-6px, -28px);
+    opacity: 0.6;
+  }
+  80% {
+    transform: translate(-16px, -10px);
+    opacity: 0.95;
+  }
+}
+.night-foot.is-off * {
+  animation-play-state: paused !important;
+}
+.foot-gloam {
+  position: absolute;
+  z-index: 2;
+  right: max(24px, 9%);
+  top: calc(clamp(230px, 42vh, 400px) - clamp(188px, 35vh, 314px) + 20px);
+  display: flex;
+  align-items: flex-start;
+  flex-direction: row-reverse;
+  gap: 8px;
+}
+.sleeper {
+  position: relative;
+  display: block;
+  width: clamp(150px, 28vh, 250px);
+  height: clamp(188px, 35vh, 314px);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 40%;
+}
+.sleeper img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: opacity 0.25s;
+}
+.sleeper .awake {
+  opacity: 0;
+}
+.is-awake .sleeper .awake {
+  opacity: 1;
+}
+.is-awake .sleeper .asleep {
+  opacity: 0;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .sleeper .asleep {
+    animation: snooze 3.6s ease-in-out infinite;
+    transform-origin: 50% 90%;
+  }
+}
+@keyframes snooze {
+  0%,
+  100% {
+    transform: scale(1, 1);
+  }
+  50% {
+    transform: scale(1.02, 0.975);
+  }
+}
+.mumble {
+  margin: 14px 0 0;
+  max-width: 240px;
+  padding: 10px 14px;
+  background: #0c1613;
+  border: 1.5px solid #2f4d48;
+  border-radius: 14px;
+  color: var(--mist);
+  font-size: 0.98rem;
+  line-height: 1.35;
+  opacity: 0;
+  transform: translateX(8px);
+  transition: opacity 0.25s, transform 0.25s;
+}
+.mumble:empty {
+  padding: 0;
+  border: 0;
+}
+.is-awake .mumble {
+  opacity: 1;
+  transform: none;
+}
+.foot-row {
+  position: relative;
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
-  gap: 18px;
+  gap: 14px 24px;
+  padding-top: 22px;
 }
-footer a {
+.night-foot a {
   color: var(--mist);
 }
 .foot-links {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 18px;
+  gap: 6px 18px;
+}
+@media (max-width: 640px) {
+  .foot-gloam {
+    right: 12px;
+  }
+  .mumble {
+    max-width: 170px;
+  }
 }
 
 /* =====================================================================
@@ -1755,4 +2606,16 @@ footer a {
   .btn {
     transition: background-color 150ms, transform 120ms, box-shadow 120ms;
   }
+}
+
+/* a soft dark halo under words that sit on the painting, so they read on its brightest spots */
+.beat,
+.get-wrap,
+.private .words {
+  text-shadow: 0 1px 14px rgb(0 0 0 / 0.75), 0 0 2px rgb(0 0 0 / 0.6);
+}
+.beat :is(.btn, button),
+.get-wrap :is(.btn, button),
+.private .words .btn {
+  text-shadow: none;
 }

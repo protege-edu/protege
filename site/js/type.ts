@@ -30,7 +30,18 @@ export function typeInto(el: HTMLElement, text: string, { speed = 26, onKey }: {
 /** Show the first `share` (0..1) of a line (for typing that follows the scroll) */
 export function typeTo(el: HTMLElement, text: string, share: number) {
   const shown = el.dataset.text === text ? el.querySelector<HTMLElement>("[data-shown]")! : setup(el, text);
-  shown.textContent = calm ? text : text.slice(0, Math.round(Math.max(0, Math.min(1, share)) * text.length));
+  // the rest of the line sits there invisibly, so the box is its full size from the first letter
+  let rest = el.querySelector<HTMLElement>("[data-rest]");
+  if (!rest) {
+    rest = document.createElement("span");
+    rest.setAttribute("aria-hidden", "true");
+    rest.dataset.rest = "";
+    rest.style.visibility = "hidden";
+    el.append(rest);
+  }
+  const n = calm ? text.length : Math.round(Math.max(0, Math.min(1, share)) * text.length);
+  shown.textContent = text.slice(0, n);
+  rest.textContent = text.slice(n);
 }
 
 function setup(el: HTMLElement, text: string): HTMLElement {

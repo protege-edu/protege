@@ -58,6 +58,7 @@ async function main() {
     ["curious", "mood=curious&light=0"],
     ["proud", "mood=proud&light=0"],
     ["sheepish", "mood=sheepish&light=0"],
+    ["asleep", "mood=asleep&light=0"],
     ...["little", "junior", "middle", "senior"].map((age): [string, string] => [age, `rig=${age}&mood=proud&light=0.9`]),
   ];
   for (const [name, query] of shots) {

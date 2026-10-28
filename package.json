@@ -26,7 +26,8 @@
     "licenses": "tsx scripts/licenses.ts",
     "release": "tsx scripts/release.ts",
     "access-log": "tsx --conditions=react-server scripts/admin.ts access-log",
-    "site": "tsx scripts/site.ts"
+    "site": "tsx scripts/site.ts",
+    "site:check": "tsx scripts/site-check.ts"
   },
   "dependencies": {
     "@fontsource/opendyslexic": "^5.3.0",

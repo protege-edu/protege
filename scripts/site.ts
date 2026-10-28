@@ -56,7 +56,7 @@ function page({ at, lang, title, description, body, kind = "doc", extraNav = "" 
   const en = lang === "en" ? at : twin(at, lang);
   const fr = lang === "fr" ? at : twin(at, lang);
   return `<!doctype html>
-<html lang="${lang === "fr" ? "fr-CA" : "en-CA"}">
+<html lang="${lang === "fr" ? "fr-CA" : "en-CA"}" class="page-${kind}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -73,7 +73,11 @@ function page({ at, lang, title, description, body, kind = "doc", extraNav = "" 
 <body data-page="${kind}" data-root="${up}" data-windows="${links.windows}" data-mac="${links.mac}">
 <a class="skip" href="#main">${t.skip}</a>
 ${body.includes("<!--BAR-->") ? body.replace("<!--BAR-->", bar) : `${bar}\n${body}`}
-<footer><div class="wrap"><span>Protégé ${pkg.version}. ${t.footer.license} <a href="${repoUrl}/blob/main/LICENSE">GNU AGPL v3</a>. ${t.footer.noTrackers}</span><span class="foot-links"><a href="${local("guide.html")}">${t.nav.guide}</a><a href="${local("privacy.html")}">${t.nav.privacy}</a><a href="${up}board/accessibility.html">${t.nav.access}</a><a href="${up}board/README.html">${t.nav.boards}</a><a href="${up}board/security.html">${t.footer.security}</a><a href="${repoUrl}">${t.footer.source}</a></span></div></footer>
+<footer class="night-foot">
+  <div class="foot-sky" aria-hidden="true"><span class="stars"></span><span class="stars far"></span><img class="foot-far" src="${up}art/senior/valley-0-dark.webp" alt="" loading="lazy"><img class="foot-near" src="${up}art/senior/valley-2-dark.webp" alt="" loading="lazy"><span class="fly"></span><span class="fly"></span><span class="fly"></span><span class="fly"></span><span class="fly"></span></div>
+  <div class="foot-gloam"><button class="sleeper" type="button" aria-label="${t.foot.wake}" data-mumbles="${esc(JSON.stringify(t.foot.mumbles))}"><img class="asleep" src="${up}img/gloam-asleep.webp" alt="" loading="lazy" width="220" height="276"><img class="awake" src="${up}img/gloam-sheepish.webp" alt="" loading="lazy" width="220" height="276"></button><p class="mumble voice" aria-live="polite"></p></div>
+  <div class="wrap foot-row"><span>Protégé ${pkg.version}. ${t.footer.license} <a href="${repoUrl}/blob/main/LICENSE">GNU AGPL v3</a>. ${t.footer.noTrackers}</span><span class="foot-links"><a href="${local("guide.html")}">${t.nav.guide}</a><a href="${local("privacy.html")}">${t.nav.privacy}</a><a href="${up}board/accessibility.html">${t.nav.access}</a><a href="${up}board/README.html">${t.nav.boards}</a><a href="${up}board/security.html">${t.footer.security}</a><a href="${repoUrl}">${t.footer.source}</a></span></div>
+</footer>
 </body>
 </html>
 `;

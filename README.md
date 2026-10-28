@@ -257,6 +257,11 @@ How it's made:
 - Every word is in `site/i18n.ts`, in English and French (French pages are in `fr/`; Gloam's lines in
   `site/js/lines.ts`, recorded in both of its voices by `scripts/site-voice.ts`).
 - `site/content/` (and `site/content/fr/`) and `docs/board/` are the reading pages.
+- **`npm run site:check`** is the website's quality gate. It walks every page at 8 screen shapes (including
+  short, wide laptops at 150% scaling), with real scrollbars, in English and French, with motion on and off,
+  stopping every 100px. It fails on sideways scrolling, words cut off or under the top bar, words on top of
+  words or on Gloam, words on a picture under 4.5:1 contrast (measured from the pixels), and any console error.
+  Screenshots of every failure go to `screenshots/site-check/`. Run it before every push that touches the site.
 - `npx tsx scripts/site-art.ts http://localhost:3000` remakes the cut-out Gloams from the rig (`--setup` adds
   the setup page's screenshot). `scripts/installer-art.ts` does the same for the installers.
 

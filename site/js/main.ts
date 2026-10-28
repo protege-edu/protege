@@ -5,6 +5,7 @@
  */
 
 import { COPY } from "../i18n";
+import { footer } from "./footer";
 
 type OS = "windows" | "mac" | "chromeos" | "mobile" | "other";
 // the page's language (the French pages say lang="fr-CA")
@@ -93,4 +94,5 @@ document.documentElement.classList.add("js");
 const os = detectOS();
 downloads(os);
 contents();
+footer();
 if (document.body.dataset.page === "home") void import("./home").then((m) => m.home());
