@@ -59,6 +59,7 @@ forgotten. It's also forgotten whenever Protégé restarts. Nothing else is kept
 | Google account number, scrambled (if they use Google) | Signing in with Google | (same) |
 | Wrong password tries, lock-out time | Stops password guessing | Reset on a good sign-in |
 | Lessons they made: their notes, Gloam's draft, what they approved | Gloam teaches from the approved version | When the teacher deletes the lesson |
+| Units: a name and the file's name, grouping the lessons made from one upload | Drafting long notes as several lessons, in order | When the teacher deletes the unit (or its last lesson) |
 
 ## Records of what teachers do with students' information
 

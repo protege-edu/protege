@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { LostScreen } from "@/components/lost/LostScreen";
 import { lostFor } from "@/components/lost/who";
@@ -13,5 +14,7 @@ export default function NotFound() {
 }
 
 async function Lost() {
+  // (it depends on who's asking: never worked out ahead of time)
+  await connection();
   return <LostScreen kind="missing" {...await lostFor()} />;
 }

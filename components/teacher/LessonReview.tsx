@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { TEST_MODE_POSSIBLE } from "@/lib/testMode";
 import { useCallback, useEffect, useState } from "react";
@@ -22,6 +23,10 @@ interface Row {
   /** worth a look, but they don't stop approving (e.g. two ideas that overlap) */
   warnings?: { conceptId?: string; field: string; message: string }[];
   createdAt: string;
+  /** the unit it's part of (for "lesson 2 of 5" and the way to the others) */
+  unit: { id: string; title: string; lessons: { id: string; title: string; status: string }[] } | null;
+  /** this teacher's classes, and whether each one has this lesson */
+  classes: { id: string; name: string; has: boolean }[];
 }
 
 /** Titles and idea names are one line, even though they wrap on screen */
@@ -57,9 +62,9 @@ export function LessonReview({ id }: { id: string }) {
     void Promise.resolve().then(load);
   }, [load]);
 
-  // While Gloam is drafting, check in every couple of seconds
+  // While Gloam is drafting (or it's waiting its turn), check in every couple of seconds
   useEffect(() => {
-    if (row?.status !== "drafting") return;
+    if (row?.status !== "drafting" && row?.status !== "queued") return;
     const t = setInterval(load, 2500);
     return () => clearInterval(t);
   }, [row?.status, load]);
@@ -97,7 +102,7 @@ export function LessonReview({ id }: { id: string }) {
       setError(res.problems?.length ? `${res.error} ${res.problems.join(" ")}` : res.error);
       return;
     }
-    setNotice("Approved. Give it to a class from your home page.");
+    setNotice("Approved. Give it to a class below, and its students can play it right away.");
     await load();
   };
 
@@ -105,6 +110,19 @@ export function LessonReview({ id }: { id: string }) {
     if (!window.confirm("Delete this lesson? Students who already started it will lose access.")) return;
     const res = await api(`/api/teacher/lessons/${id}`, { method: "DELETE" });
     if (res.ok) router.push("/teacher");
+  };
+
+  const sooner = async () => {
+    const res = await api(`/api/teacher/lessons/${id}/sooner`, { method: "POST" });
+    if (!res.ok) return setError(res.error);
+    void load();
+  };
+
+  const give = async (classId: string, has: boolean) => {
+    const res = await api(`/api/teacher/classes/${classId}`, json("POST", has ? { removeLessonId: id } : { lessonId: id }));
+    if (!res.ok) return setError(res.error);
+    setNotice(null);
+    void load();
   };
 
   const retry = async () => {
@@ -136,6 +154,18 @@ export function LessonReview({ id }: { id: string }) {
         <p role="status" className="mt-6 rounded-md bg-[#dfe9d2] px-4 py-3 text-sm font-bold text-[#2c4a24]">
           {notice}
         </p>
+      )}
+
+      {row?.unit && <UnitNav unit={row.unit} id={id} />}
+
+      {row?.status === "queued" && (
+        <section className="mt-10 max-w-[56ch]" aria-live="polite">
+          <h1 className="text-xl font-bold text-ink">{row.title}</h1>
+          <p className="mt-3 text-md text-ink">This lesson is waiting its turn. Gloam drafts a unit&apos;s lessons one at a time, in order, so the laptop stays quick for students.</p>
+          <div className="mt-5 flex gap-3">
+            <Button onClick={() => void sooner()}>Draft this one next</Button>
+          </div>
+        </section>
       )}
 
       {row?.status === "drafting" && (
@@ -253,6 +283,8 @@ export function LessonReview({ id }: { id: string }) {
               )}
             </div>
           </header>
+
+          {row.status === "approved" && <GiveToClass classes={row.classes} onGive={(cid, has) => void give(cid, has)} />}
 
           {readOnly && <p className="mt-4 text-sm text-ink-dim">This lesson comes with Protégé, so it can&apos;t be edited.</p>}
 
@@ -434,5 +466,97 @@ function Field({
         </span>
       ))}
     </label>
+  );
+}
+
+/** Where this lesson is in its unit, with the way to the one before and after */
+function UnitNav({ unit, id }: { unit: NonNullable<Row["unit"]>; id: string }) {
+  const at = unit.lessons.findIndex((l) => l.id === id);
+  const prev = unit.lessons[at - 1];
+  const next = unit.lessons[at + 1];
+  return (
+    <nav aria-label="Lessons in this unit" className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-line pb-3 text-sm">
+      <span className="text-ink-dim">
+        Lesson {at + 1} of {unit.lessons.length} in{" "}
+        <Link href={`/teacher/units/${unit.id}`} className="font-bold text-ink underline underline-offset-4">
+          {unit.title}
+        </Link>
+      </span>
+      <span className="ml-auto flex gap-1">
+        {prev && (
+          <Link href={`/teacher/lessons/${prev.id}`} className="min-h-11 content-center rounded-md px-3 font-bold text-ink-dim hover:bg-chip hover:text-ink">
+            Previous: {prev.title.length > 32 ? `${prev.title.slice(0, 30)}…` : prev.title}
+          </Link>
+        )}
+        {next && (
+          <Link href={`/teacher/lessons/${next.id}`} className="min-h-11 content-center rounded-md px-3 font-bold text-ink-dim hover:bg-chip hover:text-ink">
+            Next: {next.title.length > 32 ? `${next.title.slice(0, 30)}…` : next.title}
+          </Link>
+        )}
+      </span>
+    </nav>
+  );
+}
+
+/**
+ * An approved lesson: give it to classes (or take it away) right here. A few classes are one button each;
+ * many classes become a picker, with the classes that already have it listed above.
+ */
+function GiveToClass({ classes, onGive }: { classes: Row["classes"]; onGive: (classId: string, has: boolean) => void }) {
+  const others = classes.filter((c) => !c.has);
+  const [pick, setPick] = useState("");
+  const chosen = others.some((c) => c.id === pick) ? pick : (others[0]?.id ?? "");
+  const many = classes.length > 6;
+  return (
+    <section aria-labelledby="give-title" className="mt-6 rounded-md border border-line bg-panel px-5 py-4">
+      <h2 id="give-title" className="text-md font-bold text-ink">
+        Give it to a class
+      </h2>
+      {classes.length === 0 ? (
+        <p className="mt-1 text-sm text-ink-dim">
+          Make a class on your{" "}
+          <Link href="/teacher" className="font-bold text-ink underline">
+            home page
+          </Link>{" "}
+          first.
+        </p>
+      ) : (
+        <>
+          <p className="mt-1 text-sm text-ink-dim">Students in the class see it on their page right away. Taking it away keeps what they taught Gloam.</p>
+          <ul className="mt-3 flex flex-wrap gap-2">
+            {(many ? classes.filter((c) => c.has) : classes).map((c) => (
+              <li key={c.id}>
+                <button
+                  type="button"
+                  aria-pressed={c.has}
+                  onClick={() => onGive(c.id, c.has)}
+                  title={c.has ? `Take it away from ${c.name}` : undefined}
+                  className={`min-h-11 cursor-pointer rounded-md border px-4 text-sm font-bold ${c.has ? "border-transparent bg-accent text-accent-ink hover:bg-accent-hover" : "border-line text-ink hover:bg-chip"}`}
+                >
+                  {c.has ? `In ${c.name}` : `Give to ${c.name}`}
+                </button>
+              </li>
+            ))}
+          </ul>
+          {many && others.length > 0 && (
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <label htmlFor="give-pick" className="sr-only">
+                Class
+              </label>
+              <select id="give-pick" value={chosen} onChange={(e) => setPick(e.target.value)} className="min-h-11 max-w-full rounded-md border border-line bg-bg px-3 text-sm">
+                {others.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+              <Button onClick={() => onGive(chosen, false)} disabled={!chosen}>
+                Give to this class
+              </Button>
+            </div>
+          )}
+        </>
+      )}
+    </section>
   );
 }

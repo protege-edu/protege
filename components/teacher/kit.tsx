@@ -40,11 +40,11 @@ export function Shell({ children, title, back }: { children: ReactNode; title?: 
   };
   return (
     <div className="mx-auto max-w-[1100px] px-5 pb-20 sm:px-8">
-      <header className="flex items-center justify-between gap-4 border-b border-line py-4">
+      <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b border-line py-4">
         <Link href="/teacher" className="inline-flex min-h-11 items-center text-lg text-ink" aria-label="Protégé, teacher home">
           <Wordmark tone="light" />
         </Link>
-        <nav className="flex items-center gap-1 text-sm" aria-label="Teacher">
+        <nav className="flex flex-wrap items-center gap-1 text-sm" aria-label="Teacher">
           <Link href="/teacher/status" className="min-h-11 content-center rounded-md px-3 font-bold text-ink-dim hover:text-ink">
             Ready for class?
           </Link>
@@ -123,6 +123,7 @@ export function StatusPill({ status }: { status: string }) {
     approved: ["Approved", "bg-[#dfe9d2] text-[#2c4a24]"],
     draft: ["Needs your review", "bg-[#f6e3c0] text-[#6b4510]"],
     drafting: ["Gloam is reading…", "bg-chip text-ink-dim"],
+    queued: ["Waiting its turn", "bg-chip text-ink-dim"],
     failed: ["Drafting failed", "bg-[#f3d6d6] text-[#7a2330]"],
   };
   const [label, cls] = map[status] ?? [status, "bg-chip text-ink-dim"];

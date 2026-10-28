@@ -18,6 +18,9 @@ import { inLine, queueStats } from "@/lib/ai/queue";
 import { seasons } from "@/lib/lesson/seasons";
 import { blueprintWarnings, checkBlueprint } from "@/lib/teacher/checks";
 import { dropRunningLines, pdfLinesToText } from "@/lib/teacher/pdf-text";
+import { MAX_SOURCE_CHARS } from "@/lib/teacher/limits";
+import { lessonSource, lessonsFrom, planBreaks, splitLong, splitPlainText } from "@/lib/teacher/plan";
+
 import { AccessPatch, cleanAccess, defaultAccess } from "@/lib/access/settings";
 import { checkWav, cleanTranscript } from "@/lib/voice/wav";
 import { isSpokenVoice, SPOKEN_MAX_CHARS, SPOKEN_VOICES, speakingPieces } from "@/lib/voice/voices";
@@ -441,6 +444,53 @@ test("a lesson's language is guessed from the teacher's notes", () => {
   assert.equal(detectLanguage("Les saisons sont causées par l'inclinaison de la Terre. Quand l'hémisphère nord est penché vers le Soleil, c'est l'été."), "fr");
   assert.equal(detectLanguage("Seasons happen because the Earth is tilted. When the north is tilted toward the Sun, it is summer."), "en");
   assert.equal(detectLanguage("French verbs: être and avoir are the two helper verbs used in the passé composé. Most verbs use avoir."), "en", "a lesson ABOUT French, written in English");
+});
+
+console.log("\nlong notes into lessons");
+const para = (n: number, word = "photosynthesis") => `${`Plants use ${word} to turn light into food. `.repeat(Math.ceil(n / 46))}`.slice(0, n);
+test("short notes stay one lesson", () => {
+  const parts = splitPlainText("# Seasons\n\n" + para(1200) + "\n\n## Day length\n\n" + para(900));
+  assert.deepEqual(planBreaks(parts), [0]);
+  assert.equal(lessonsFrom(parts, [0]).length, 1);
+});
+test("a whole unit becomes lessons that each fit what Gloam can read", () => {
+  const notes = Array.from({ length: 9 }, (_, i) => `# Topic ${i + 1}\n\n${para(2200)}\n\n## Detail ${i + 1}\n\n${para(1600)}`).join("\n\n");
+  const parts = splitLong(splitPlainText(notes));
+  const lessons = lessonsFrom(parts, planBreaks(parts));
+  assert.ok(lessons.length >= 5, `${lessons.length} lessons`);
+  for (const l of lessons) assert.ok(l.chars <= MAX_SOURCE_CHARS, `"${l.title}" is ${l.chars} characters`);
+  // every word of the notes is in exactly one lesson, in order
+  assert.equal(lessons.flatMap((l) => l.parts.map((p) => p.id)).join(), parts.map((p) => p.id).join());
+});
+test("lessons start at big headings, not in the middle of a topic", () => {
+  const notes = ["# Cells", para(1800), "## Organelles", para(1800), "# Energy", para(1800), "## Respiration", para(1800)].join("\n\n");
+  const parts = splitPlainText(notes);
+  const titles = lessonsFrom(parts, planBreaks(parts)).map((l) => l.title);
+  assert.deepEqual(titles, ["Cells", "Energy"]);
+});
+test("one huge section is cut at paragraph breaks into pieces that fit", () => {
+  const huge = Array.from({ length: 30 }, () => para(700)).join("\n\n");
+  const parts = splitLong([{ id: "p1", title: "Chapter 4", text: huge }]);
+  assert.ok(parts.length >= 4, `${parts.length} pieces`);
+  for (const p of parts) assert.ok(p.text.length <= MAX_SOURCE_CHARS * 0.6, `${p.text.length} characters`);
+  assert.equal(parts[1].title, "Chapter 4 (continued)");
+  assert.equal(parts.map((p) => p.text).join("").replace(/\s/g, ""), huge.replace(/\s/g, ""), "nothing lost");
+  const solid = splitLong([{ id: "p2", title: "No breaks", text: "x".repeat(20000) }]);
+  assert.ok(solid.every((p) => p.text.length <= MAX_SOURCE_CHARS * 0.6) && solid.map((p) => p.text).join("").length === 20000, "even text with no sentences");
+});
+test("a tiny last lesson joins the one before it", () => {
+  const parts = splitPlainText(["# A", para(3000), "# B", para(2000), "# C", para(300)].join("\n\n"));
+  assert.deepEqual(lessonsFrom(parts, planBreaks(parts)).map((l) => l.title), ["A", "B"]);
+});
+test("a short topic under its own big heading stays its own lesson", () => {
+  const parts = splitPlainText(["# A", para(3000), "# B", para(2000), "# C", para(1100)].join("\n\n"));
+  assert.deepEqual(lessonsFrom(parts, planBreaks(parts)).map((l) => l.title), ["A", "B", "C"]);
+});
+test("the teacher's unticked parts are left out, and a lesson left empty disappears", () => {
+  const parts = splitPlainText(["# A", para(3000), "# B", para(3000)].join("\n\n"));
+  const lessons = lessonsFrom(parts, [0, 1], new Set([parts[1].id]));
+  assert.deepEqual(lessons.map((l) => l.title), ["A"]);
+  assert.equal(lessonSource(lessons[0]), parts[0].text);
 });
 
 // ---- the AI line (async, so it runs last) ----

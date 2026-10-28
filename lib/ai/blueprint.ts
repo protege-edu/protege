@@ -92,6 +92,7 @@ async function ask<T>(
       continue;
     }
     if (res.reason === "unreachable") throw new DraftFailed("Gloam's brain (Ollama) isn't running. Open Ollama and try again.");
+    if (res.reason === "too_long") throw new DraftFailed("This part of your notes is too long for Gloam to read at once. Split it into two lessons, or leave a section out, and try again.");
     last = res.detail;
   }
   throw new DraftFailed(`The AI kept giving answers we couldn't use (${last.slice(0, 80)}). Try again, or use a shorter part of your notes.`);

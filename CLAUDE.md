@@ -162,7 +162,7 @@ Every phase must keep raising the bar for ALL age styles, never just one. When a
 
 ## TEACHER MATERIAL (Phase 2)
 
-Teachers bring their OWN lessons. Support uploading PDF, PowerPoint (.pptx), Word (.docx), and pasted text, using free libraries that run locally. If the material is too long for the model, the teacher picks which section to use. After the AI generates the blueprint, the teacher reviews and edits it (concepts, misconceptions, questions). STUDENTS ONLY EVER SEE A BLUEPRINT THE TEACHER APPROVED.
+Teachers bring their OWN lessons. Support uploading PDF, PowerPoint (.pptx), Word (.docx), and pasted text, using free libraries that run locally. Material can be any length: Protégé splits it into a unit of lessons at its headings, each a part the local model can read at once (the teacher can move the breaks), and drafts them one at a time, in order. After the AI generates the blueprint, the teacher reviews and edits it (concepts, misconceptions, questions). STUDENTS ONLY EVER SEE A BLUEPRINT THE TEACHER APPROVED.
 
 ## THE BIG VISION (where this is going, NOT for now)
 

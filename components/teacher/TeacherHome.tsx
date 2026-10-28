@@ -11,7 +11,8 @@ interface ClassItem {
   name: string;
   grade: number;
   students: number;
-  lessons: string[];
+  /** in the order students see them; latest = the one given most recently */
+  lessons: { id: string; title: string; latest: boolean }[];
 }
 interface LessonItem {
   id: string;
@@ -20,12 +21,27 @@ interface LessonItem {
   status: string;
   sourceName: string | null;
   builtIn?: boolean;
+  unitId: string | null;
+  position: number | null;
+  progress?: string;
+}
+interface UnitItem {
+  id: string;
+  title: string;
+  sourceName: string | null;
+  grade: number;
+  lessons: number;
+  approved: number;
+  toReview: number;
+  waiting: number;
+  failed: number;
 }
 
 /** The teacher's home: classes first (that's what they open during class), then lessons. */
 export function TeacherHome() {
   const [classes, setClasses] = useState<ClassItem[] | null>(null);
   const [lessons, setLessons] = useState<LessonItem[] | null>(null);
+  const [units, setUnits] = useState<UnitItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState("");
@@ -35,11 +51,12 @@ export function TeacherHome() {
   const [setupDone, setSetupDone] = useState(false);
 
   const load = useCallback(async () => {
-    const [c, l] = await Promise.all([api<ClassItem[]>("/api/teacher/classes"), api<LessonItem[]>("/api/teacher/lessons")]);
+    const [c, l, u] = await Promise.all([api<ClassItem[]>("/api/teacher/classes"), api<LessonItem[]>("/api/teacher/lessons"), api<UnitItem[]>("/api/teacher/units")]);
     if (!c.ok) return setError(c.error);
     if (!l.ok) return setError(l.error);
     setClasses(c.data);
     setLessons(l.data);
+    if (u.ok) setUnits(u.data);
   }, []);
 
   useEffect(() => {
@@ -120,13 +137,27 @@ export function TeacherHome() {
         <ul className="mt-4 divide-y divide-line border-y border-line">
           {classes?.length === 0 && <li className="py-6 text-sm text-ink-dim">No classes yet. Add one to see your students&apos; progress here.</li>}
           {classes?.map((c) => {
-            const firstLesson = c.lessons[0];
+            const firstLesson = (c.lessons.find((l) => l.latest) ?? c.lessons[0])?.id;
             return (
               <li key={c.id} className="flex flex-wrap items-center gap-x-6 gap-y-2 py-4">
                 <div className="min-w-56 flex-1">
                   <p className="text-md font-bold text-ink">{c.name}</p>
                   <p className="text-sm text-ink-dim">
                     {gradeLabel(c.grade)}, {c.students} {c.students === 1 ? "student" : "students"}
+                  </p>
+                  <p className="mt-1 text-sm text-ink">
+                    {c.lessons.length ? (
+                      <>
+                        <span className="text-ink-dim">{c.lessons.length === 1 ? "Lesson: " : `${c.lessons.length} lessons: `}</span>
+                        {c.lessons
+                          .slice(0, 3)
+                          .map((l) => l.title)
+                          .join(", ")}
+                        {c.lessons.length > 3 ? `, and ${c.lessons.length - 3} more` : ""}
+                      </>
+                    ) : (
+                      <span className="text-ink-dim">No lessons yet. Open the class to give it one.</span>
+                    )}
                   </p>
                 </div>
                 <Link
@@ -147,26 +178,64 @@ export function TeacherHome() {
             Lessons
           </h2>
           <Link href="/teacher/lessons/new" className="min-h-11 content-center rounded-md bg-accent px-4 text-sm font-bold text-accent-ink hover:bg-accent-hover">
-            New lesson from your notes
+            New lessons from your notes
           </Link>
         </div>
-        <ul className="mt-4 divide-y divide-line border-y border-line">
-          {lessons?.map((l) => (
-            <li key={l.id} className="flex flex-wrap items-center gap-x-6 gap-y-2 py-4">
-              <div className="min-w-56 flex-1">
-                <p className="text-md font-bold text-ink">{l.title}</p>
-                <p className="text-sm text-ink-dim">
-                  {gradeLabel(l.grade)}
-                  {l.builtIn ? ", comes with Protégé" : l.sourceName ? `, from ${l.sourceName}` : ""}
-                </p>
-              </div>
-              <StatusPill status={l.status} />
-              <Link href={`/teacher/lessons/${l.id}`} className="min-h-11 content-center rounded-md border border-line px-4 text-sm font-bold text-ink hover:bg-chip">
-                {l.status === "draft" ? "Review" : "Open"}
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <p className="mt-1 max-w-[66ch] text-sm text-ink-dim">A lesson can be one topic or a whole unit of your notes. Give approved lessons to a class from the class page, or from the lesson itself.</p>
+        <div className="mt-4 border-t border-line">
+          {units.map((u) => {
+            const mine = (lessons ?? []).filter((l) => l.unitId === u.id).sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+            const drafting = mine.findIndex((l) => l.status === "drafting");
+            return (
+              <section key={u.id} aria-label={`Unit: ${u.title}`} className="border-b border-line py-4">
+                <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+                  <div className="min-w-56 flex-1">
+                    <p className="text-md font-bold text-ink">{u.title}</p>
+                    <p className="text-sm text-ink-dim">
+                      {`A unit of ${u.lessons} lessons, ${gradeLabel(u.grade)}. `}
+                      {[drafting >= 0 ? `Drafting lesson ${drafting + 1}` : u.waiting ? `${u.waiting} waiting to be drafted` : "", u.toReview ? `${u.toReview} to review` : "", u.approved ? `${u.approved} approved` : "", u.failed ? `${u.failed} didn't draft` : ""]
+                        .filter(Boolean)
+                        .join(", ")}
+                    </p>
+                  </div>
+                  <Link href={`/teacher/units/${u.id}`} className="min-h-11 content-center rounded-md border border-line px-4 text-sm font-bold text-ink hover:bg-chip">
+                    Open unit
+                  </Link>
+                </div>
+                <ol className="mt-2 ml-1 border-l-2 border-line pl-4">
+                  {mine.map((l, i) => (
+                    <li key={l.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 py-1.5">
+                      <span className="w-6 text-sm font-bold text-ink-dim">{i + 1}</span>
+                      <Link href={`/teacher/lessons/${l.id}`} className="min-h-11 min-w-0 flex-1 content-center text-sm font-bold text-ink underline-offset-4 hover:underline">
+                        {l.title}
+                      </Link>
+                      <StatusPill status={l.status} />
+                    </li>
+                  ))}
+                </ol>
+              </section>
+            );
+          })}
+          <ul className="divide-y divide-line border-b border-line">
+            {lessons
+              ?.filter((l) => !l.unitId)
+              .map((l) => (
+                <li key={l.id} className="flex flex-wrap items-center gap-x-6 gap-y-2 py-4">
+                  <div className="min-w-56 flex-1">
+                    <p className="text-md font-bold text-ink">{l.title}</p>
+                    <p className="text-sm text-ink-dim">
+                      {gradeLabel(l.grade)}
+                      {l.builtIn ? ", comes with Protégé" : l.sourceName ? `, from ${l.sourceName}` : ""}
+                    </p>
+                  </div>
+                  <StatusPill status={l.status} />
+                  <Link href={`/teacher/lessons/${l.id}`} className="min-h-11 content-center rounded-md border border-line px-4 text-sm font-bold text-ink hover:bg-chip">
+                    {l.status === "draft" ? "Review" : "Open"}
+                  </Link>
+                </li>
+              ))}
+          </ul>
+        </div>
       </section>
 
       <InviteTeacher />

@@ -8,6 +8,7 @@ import { styleForGrade } from "@/lib/age-styles";
 import { BUILT_IN } from "@/lib/lesson";
 import type { LessonBlueprint } from "@/lib/lesson/types";
 import { checkBlueprint } from "./checks";
+import { draftNext, draftSooner, dropEmptyUnit } from "./units";
 
 /**
  * Teachers' lessons, from draft to approved.
@@ -20,21 +21,24 @@ export type LessonRow = typeof lessons.$inferSelect;
 // (kept on globalThis so it survives code reloads in development while a draft is still running)
 const store = globalThis as unknown as { protegeDraftProgress?: Map<string, string> };
 const progress = (store.protegeDraftProgress ??= new Map<string, string>());
+export { progress as draftProgress };
 
 /** A teacher sees their own lessons and the ones built into Protégé, never another teacher's */
 export function canSee(row: Pick<LessonRow, "id" | "teacherId">, teacherId: string) {
   return row.id in BUILT_IN || row.teacherId === teacherId;
 }
 
-export function listLessons(teacherId: string): (Pick<LessonRow, "id" | "title" | "grade" | "status" | "sourceName" | "updatedAt"> & { builtIn?: boolean })[] {
+export function listLessons(teacherId: string): (Pick<LessonRow, "id" | "title" | "grade" | "status" | "sourceName" | "updatedAt" | "unitId" | "position"> & { builtIn?: boolean; progress?: string })[] {
+  // (after a restart, the lessons still waiting in a unit carry on drafting)
+  draftNext();
   const rows = db
-    .select({ id: lessons.id, teacherId: lessons.teacherId, title: lessons.title, grade: lessons.grade, status: lessons.status, sourceName: lessons.sourceName, updatedAt: lessons.updatedAt })
+    .select({ id: lessons.id, teacherId: lessons.teacherId, title: lessons.title, grade: lessons.grade, status: lessons.status, sourceName: lessons.sourceName, updatedAt: lessons.updatedAt, unitId: lessons.unitId, position: lessons.position })
     .from(lessons)
     .where(or(eq(lessons.teacherId, teacherId), isNull(lessons.teacherId)))
     .orderBy(desc(lessons.updatedAt))
     .all()
     .filter((r) => canSee(r, teacherId));
-  return rows.map((r) => ({ id: r.id, title: r.title, grade: r.grade, status: r.status, sourceName: r.sourceName, updatedAt: r.updatedAt, builtIn: r.id in BUILT_IN }));
+  return rows.map((r) => ({ id: r.id, title: r.title, grade: r.grade, status: r.status, sourceName: r.sourceName, updatedAt: r.updatedAt, unitId: r.unitId, position: r.position, builtIn: r.id in BUILT_IN, progress: progress.get(r.id) }));
 }
 
 export function getLessonRow(id: string): (LessonRow & { progress?: string }) | null {
@@ -42,6 +46,12 @@ export function getLessonRow(id: string): (LessonRow & { progress?: string }) | 
   if (!row) return null;
   // Still says "drafting" but nothing is working on it (the server restarted): say so, offer a retry
   if (row.status === "drafting" && !progress.has(id)) {
+    // (a unit's lesson just goes back in line)
+    if (row.unitId) {
+      db.update(lessons).set({ status: "queued", updatedAt: new Date() }).where(eq(lessons.id, id)).run();
+      draftNext();
+      return { ...row, status: "queued" };
+    }
     const problem = "Drafting was interrupted (Protégé restarted). Press Try again to start it over.";
     db.update(lessons).set({ status: "failed", problem, updatedAt: new Date() }).where(eq(lessons.id, id)).run();
     return { ...row, status: "failed", problem };
@@ -68,7 +78,7 @@ export function playedBy(lesson: LessonBlueprint, studentId: string | null | und
 }
 
 /** Start drafting. Returns right away; the AI works in the background (a few minutes on a laptop). */
-export function startDraft(opts: { source: string; sourceName: string; grade: number; titleHint?: string; teacherId: string }): string {
+export function startDraft(opts: { source: string; sourceName: string; grade: number; titleHint?: string; ownTitle?: boolean; teacherId: string }): string {
   const id = randomUUID();
   const now = new Date();
   db.insert(lessons)
@@ -78,6 +88,7 @@ export function startDraft(opts: { source: string; sourceName: string; grade: nu
       teacherId: opts.teacherId,
       grade: opts.grade,
       status: "drafting",
+      ownTitle: !!opts.ownTitle,
       sourceName: opts.sourceName,
       sourceText: opts.source,
       createdAt: now,
@@ -89,14 +100,27 @@ export function startDraft(opts: { source: string; sourceName: string; grade: nu
   return id;
 }
 
-async function runDraft(id: string, opts: { source: string; grade: number; titleHint?: string }) {
+class Deleted extends Error {}
+
+/** Draft one lesson (its row already says "drafting"). Resolves when it's done, either way. */
+export async function runDraft(id: string, opts: { source: string; grade: number; titleHint?: string; ownTitle?: boolean }) {
   try {
-    const bp = await draftBlueprint({ ...opts, onProgress: (step) => progress.set(id, step) });
+    const bp = await draftBlueprint({
+      ...opts,
+      onProgress: (step) => {
+        // deleted while Gloam was drafting it: stop at the next step, so the laptop's AI isn't kept busy for nothing
+        if (!db.select({ id: lessons.id }).from(lessons).where(eq(lessons.id, id)).get()) throw new Deleted();
+        progress.set(id, step);
+      },
+    });
+    // a title the teacher typed stays (Gloam's suggestion is only for when they didn't)
+    if (opts.ownTitle && opts.titleHint) bp.title = opts.titleHint;
     db.update(lessons)
       .set({ status: "draft", title: bp.title, blueprint: { ...bp, id }, problem: null, updatedAt: new Date() })
       .where(eq(lessons.id, id))
       .run();
   } catch (err) {
+    if (err instanceof Deleted) return;
     const message = err instanceof DraftFailed ? err.message : "Something went wrong while drafting. Try again, or use a shorter part of your notes.";
     if (!(err instanceof DraftFailed)) console.error("[draft] failed", err);
     db.update(lessons).set({ status: "failed", problem: message, updatedAt: new Date() }).where(eq(lessons.id, id)).run();
@@ -108,9 +132,15 @@ async function runDraft(id: string, opts: { source: string; grade: number; title
 export function retryDraft(id: string) {
   const row = getLessonRow(id);
   if (!row?.sourceText) return false;
+  // a unit's lesson gets back in line, at the front (one draft at a time keeps the laptop quick for students)
+  if (row.unitId) {
+    db.update(lessons).set({ status: "queued", problem: null, updatedAt: new Date() }).where(eq(lessons.id, id)).run();
+    draftSooner(id);
+    return true;
+  }
   db.update(lessons).set({ status: "drafting", problem: null, updatedAt: new Date() }).where(eq(lessons.id, id)).run();
   progress.set(id, "Starting again");
-  void runDraft(id, { source: row.sourceText, grade: row.grade });
+  void runDraft(id, { source: row.sourceText, grade: row.grade, titleHint: row.ownTitle ? row.title : undefined, ownTitle: !!row.ownTitle });
   return true;
 }
 
@@ -136,6 +166,7 @@ export function approveLesson(id: string): { ok: true } | { ok: false; problems:
 
 /** Delete a lesson and everything students did in it (their sessions, messages and candle history). */
 export function deleteLesson(id: string) {
+  const unitId = db.select({ unitId: lessons.unitId }).from(lessons).where(eq(lessons.id, id)).get()?.unitId ?? null;
   db.transaction((tx) => {
     const sessions = tx.select({ id: teachSessions.id }).from(teachSessions).where(eq(teachSessions.lessonId, id)).all().map((s) => s.id);
     if (sessions.length) {
@@ -146,4 +177,5 @@ export function deleteLesson(id: string) {
     tx.delete(classLessons).where(eq(classLessons.lessonId, id)).run();
     tx.delete(lessons).where(eq(lessons.id, id)).run();
   });
+  dropEmptyUnit(unitId);
 }

@@ -1,11 +1,12 @@
 import "server-only";
 import { randomInt, randomUUID } from "node:crypto";
-import { and, asc, eq, inArray, isNotNull } from "drizzle-orm";
+import { and, asc, eq, inArray, isNotNull, sql } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { classLessons, classes, conceptEvents, gloams, messages, students, teachSessions } from "@/lib/db/schema";
 import type { Level, LessonBlueprint } from "@/lib/lesson/types";
 import { keySize } from "@/lib/student/pictures";
 import { newClassDeleteOn } from "@/lib/privacy/retention";
+import { getApprovedLesson } from "./lessons";
 
 export type ClassRow = typeof classes.$inferSelect;
 
@@ -40,7 +41,7 @@ export function listClasses(teacherId: string) {
   return rows.map((c) => ({
     ...c,
     students: db.select({ id: students.id }).from(students).where(eq(students.classId, c.id)).all().length,
-    lessons: db.select({ id: classLessons.lessonId }).from(classLessons).where(eq(classLessons.classId, c.id)).all().map((r) => r.id),
+    lessons: classLessonList(c.id),
   }));
 }
 
@@ -59,8 +60,52 @@ export function createClass(name: string, grade: number, teacherId: string, lang
   return id;
 }
 
+/**
+ * A class's lessons, in the order its students see them (the teacher can move them), approved ones only.
+ * `latest` is the one given most recently: what the class is probably on right now.
+ */
+export function classLessonList(classId: string): { id: string; title: string; latest: boolean }[] {
+  const rows = db
+    .select()
+    .from(classLessons)
+    .where(eq(classLessons.classId, classId))
+    // (lessons given before there was an order keep the order they were given in)
+    .orderBy(sql`coalesce(${classLessons.position}, 1e9)`, asc(classLessons.assignedAt))
+    .all();
+  const newest = Math.max(0, ...rows.map((r) => r.assignedAt.getTime()));
+  return rows.flatMap((r) => {
+    const l = getApprovedLesson(r.lessonId);
+    return l ? [{ id: l.id, title: l.title, latest: r.assignedAt.getTime() === newest }] : [];
+  });
+}
+
+/** Give a class a lesson: it goes at the end of the class's list (giving it again changes nothing) */
 export function assignLesson(classId: string, lessonId: string) {
-  db.insert(classLessons).values({ classId, lessonId, assignedAt: new Date() }).onConflictDoNothing().run();
+  const end = db.select({ n: sql<number>`coalesce(max(${classLessons.position}), -1) + 1` }).from(classLessons).where(eq(classLessons.classId, classId)).get()?.n ?? 0;
+  db.insert(classLessons).values({ classId, lessonId, assignedAt: new Date(), position: end }).onConflictDoNothing().run();
+}
+
+/** Take a lesson away from a class. What students taught Gloam in it stays (giving it back brings it back). */
+export function unassignLesson(classId: string, lessonId: string) {
+  db.delete(classLessons).where(and(eq(classLessons.classId, classId), eq(classLessons.lessonId, lessonId))).run();
+}
+
+/** Move a lesson one place earlier (-1) or later (+1) in the class's list */
+export function moveLesson(classId: string, lessonId: string, by: -1 | 1) {
+  const ids = db
+    .select({ id: classLessons.lessonId })
+    .from(classLessons)
+    .where(eq(classLessons.classId, classId))
+    .orderBy(sql`coalesce(${classLessons.position}, 1e9)`, asc(classLessons.assignedAt))
+    .all()
+    .map((r) => r.id);
+  const at = ids.indexOf(lessonId);
+  const to = at + by;
+  if (at < 0 || to < 0 || to >= ids.length) return;
+  [ids[at], ids[to]] = [ids[to], ids[at]];
+  db.transaction((tx) => {
+    ids.forEach((id, position) => tx.update(classLessons).set({ position }).where(and(eq(classLessons.classId, classId), eq(classLessons.lessonId, id))).run());
+  });
 }
 
 export interface StudentRow {

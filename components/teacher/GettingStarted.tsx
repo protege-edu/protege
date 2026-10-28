@@ -8,7 +8,7 @@ import { Button, api, json } from "./kit";
 interface ClassItem {
   id: string;
   students: number;
-  lessons: string[];
+  lessons: { id: string }[];
 }
 
 /**

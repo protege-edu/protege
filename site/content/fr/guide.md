@@ -80,9 +80,14 @@ autre chose en attendant.
 - **Créez une classe** et choisissez son année. L'année choisit l'apparence et la façon de parler de Gloam :
   quatre mondes différents, du pré ensoleillé de livre d'images pour la maternelle à la vallée de nuit pour le
   secondaire.
-- **Ajoutez une leçon** : téléversez vos notes (PDF, PowerPoint, Word) ou collez-les. Gloam prépare la leçon en
-  quelques minutes : les idées clés, les erreurs que les élèves font souvent, et son histoire. **Lisez-la,
-  changez ce que vous voulez, puis approuvez-la.** Les élèves ne voient jamais que des leçons approuvées.
+- **Ajoutez des leçons** : téléversez vos notes (PDF, PowerPoint, Word) ou collez-les, aussi longues que vous
+  voulez : un sujet ou une unité entière. Protégé coupe les longues notes en leçons à vos titres (chacune est une
+  partie que Gloam peut lire d'un coup), et vous pouvez déplacer les coupures. Gloam les prépare une à la fois,
+  quelques minutes chacune : les idées clés, les erreurs que les élèves font souvent, et son histoire.
+  **Lisez chacune, changez ce que vous voulez, puis approuvez-la.** Les élèves ne voient jamais que des leçons
+  approuvées.
+- **Donnez les leçons à votre classe** : directement sur une leçon approuvée, ou sur la page de la classe
+  (**Add a lesson**, ou une unité entière d'un coup). Les élèves les voient dans l'ordre que vous choisissez.
 - Ou commencez avec la leçon intégrée, « Pourquoi y a-t-il des saisons? »
 
 Les autres enseignants de votre école : appuyez sur **Make an invite code** sur votre page et

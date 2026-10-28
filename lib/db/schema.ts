@@ -87,13 +87,35 @@ export const students = sqliteTable("students", {
  * A lesson the teacher brought. The AI drafts a blueprint once; the teacher edits and approves it.
  * STUDENTS ONLY EVER SEE APPROVED LESSONS.
  */
+/**
+ * A unit: one upload of a teacher's notes (any length), split into lessons that each fit what Gloam can
+ * read at once (lib/teacher/plan.ts). Its lessons are drafted one at a time, in order (lib/teacher/units.ts).
+ */
+export const units = sqliteTable("units", {
+  id: text("id").primaryKey(),
+  teacherId: text("teacher_id")
+    .notNull()
+    .references(() => teachers.id),
+  title: text("title").notNull(),
+  /** Where it came from, e.g. "Unit 3 - Ecology.pptx" */
+  sourceName: text("source_name"),
+  grade: integer("grade").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+});
+
 export const lessons = sqliteTable("lessons", {
   id: text("id").primaryKey(),
   /** whose lesson it is (null = built into Protégé, or made before teacher accounts until claimed) */
   teacherId: text("teacher_id").references(() => teachers.id),
   title: text("title").notNull(),
   grade: integer("grade").notNull(),
-  status: text("status", { enum: ["drafting", "draft", "approved", "failed"] }).notNull(),
+  /** queued: in a unit, waiting for its turn to be drafted */
+  status: text("status", { enum: ["queued", "drafting", "draft", "approved", "failed"] }).notNull(),
+  /** the unit it's part of (null: a lesson on its own), and its place in it (0 first) */
+  unitId: text("unit_id").references(() => units.id),
+  position: integer("position"),
+  /** the teacher typed this title themselves: drafting keeps it (otherwise Gloam suggests one) */
+  ownTitle: integer("own_title", { mode: "boolean" }),
   blueprint: text("blueprint", { mode: "json" }).$type<LessonBlueprint>(),
   /** Where it came from, e.g. "Seasons notes.pdf" */
   sourceName: text("source_name"),
@@ -117,6 +139,8 @@ export const classLessons = sqliteTable(
       .notNull()
       .references(() => lessons.id),
     assignedAt: integer("assigned_at", { mode: "timestamp_ms" }).notNull(),
+    /** the order students see the class's lessons in (0 first; the teacher can move them) */
+    position: integer("position"),
   },
   (t) => [primaryKey({ columns: [t.classId, t.lessonId] })],
 );

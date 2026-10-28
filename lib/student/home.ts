@@ -6,6 +6,7 @@ import { db } from "@/lib/db/client";
 import { classLessons, classes, gloams, students, teachSessions } from "@/lib/db/schema";
 import type { AccessPatch } from "@/lib/access/settings";
 import { TRICKS, type TrickName } from "@/lib/gloam-rig/brain";
+import { classLessonList } from "@/lib/teacher/classes";
 import { getApprovedLesson } from "@/lib/teacher/lessons";
 import { studentAccessParts } from "./access";
 
@@ -32,13 +33,14 @@ export function studentHome(studentId: string): StudentHome | null {
   if (!c) return null;
   const g = db.select().from(gloams).where(eq(gloams.studentId, studentId)).get();
   const level = levelFor(g?.light ?? 0);
-  const assigned = db.select().from(classLessons).where(eq(classLessons.classId, c.id)).orderBy(desc(classLessons.assignedAt)).all();
+  // in the order the teacher set (a unit's lessons in order)
+  const assigned = classLessonList(c.id);
   const sessions = db.select().from(teachSessions).where(eq(teachSessions.studentId, studentId)).orderBy(desc(teachSessions.updatedAt)).all();
 
   const lessons = assigned.flatMap((a) => {
-    const lesson = getApprovedLesson(a.lessonId);
+    const lesson = getApprovedLesson(a.id);
     if (!lesson) return [];
-    const mine = sessions.find((x) => x.lessonId === a.lessonId);
+    const mine = sessions.find((x) => x.lessonId === a.id);
     const u = mine?.understanding ?? {};
     return [{ id: lesson.id, title: lesson.title, ideas: lesson.concepts.length, lit: lesson.concepts.filter((x) => u[x.id] === 3).length, finished: !!mine?.finishedAt, started: !!mine }];
   });

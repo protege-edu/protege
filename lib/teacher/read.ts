@@ -3,6 +3,7 @@ import JSZip from "jszip";
 import mammoth from "mammoth";
 import { getDocumentProxy } from "unpdf";
 import { dropRunningLines, pdfLinesToText } from "./pdf-text";
+import { firstLine, splitPlainText } from "./plan";
 
 /**
  * Reads a teacher's material into plain text, split into sections they can pick from.
@@ -17,6 +18,8 @@ export interface Section {
   id: string;
   title: string;
   text: string;
+  /** how big a heading starts it (1 = a new topic; see lib/teacher/plan.ts), if the file says */
+  level?: number;
 }
 
 export interface ReadResult {
@@ -45,7 +48,7 @@ export class UnsupportedFile extends Error {
 
 function finish(kind: ReadResult["kind"], raw: Section[]): ReadResult {
   const sections = raw
-    .map((s) => ({ ...s, text: tidy(s.text), title: tidy(s.title).slice(0, 80) }))
+    .map((s) => ({ ...s, text: tidy(s.text), title: shorten(tidy(s.title)) }))
     .filter((s) => s.text.length > 20);
   if (sections.length === 0) {
     throw new Error("We couldn't find any text in that file. If it's a scanned PDF (a picture of a page), try pasting the text instead.");
@@ -76,7 +79,9 @@ async function readPptx(data: Uint8Array): Promise<Section[]> {
     // speaker notes often hold the real explanation
     const notesFile = zip.file(`ppt/notesSlides/notesSlide${num(f)}.xml`);
     const notes = notesFile ? paragraphs(await notesFile.async("string")).filter((l) => !/^\d+$/.test(l)) : [];
-    out.push({ id: `s${num(f)}`, title: lines[0] ?? `Slide ${num(f)}`, text: [...lines, ...notes].join("\n") });
+    // a slide with just a title (and maybe a line under it) starts a new part of the deck
+    const header = lines.length <= 2 && lines.join(" ").length < 90 && !notes.length;
+    out.push({ id: `s${num(f)}`, title: lines[0] ?? `Slide ${num(f)}`, text: [...lines, ...notes].join("\n"), level: header ? 1 : undefined });
   }
   return out;
 }
@@ -85,32 +90,10 @@ async function readDocx(data: Uint8Array): Promise<Section[]> {
   const { value: html } = await mammoth.convertToHtml({ buffer: Buffer.from(data) });
   const parts = html.split(/(?=<h[1-3][^>]*>)/);
   return parts.map((part, i) => {
-    const heading = part.match(/^<h[1-3][^>]*>([\s\S]*?)<\/h[1-3]>/)?.[1];
+    const head = part.match(/^<h([1-3])[^>]*>([\s\S]*?)<\/h[1-3]>/);
     const text = decode(part.replace(/<\/(p|li|h[1-6])>/g, "\n").replace(/<[^>]+>/g, " "));
-    return { id: `d${i + 1}`, title: heading ? decode(heading.replace(/<[^>]+>/g, "")) : firstLine(text) || `Part ${i + 1}`, text };
+    return { id: `d${i + 1}`, title: head ? decode(head[2].replace(/<[^>]+>/g, "")) : firstLine(text) || `Part ${i + 1}`, text, level: head ? Number(head[1]) : undefined };
   });
-}
-
-/** Pasted text: split on markdown-style headings, or into ~900-character chunks at paragraph breaks */
-export function splitPlainText(text: string): Section[] {
-  const byHeading = text.split(/\n(?=#{1,3}\s)/);
-  const blocks = byHeading.length > 1 ? byHeading : chunkParagraphs(text, 900);
-  return blocks.map((b, i) => ({ id: `t${i + 1}`, title: firstLine(b.replace(/^#+\s*/, "")) || `Part ${i + 1}`, text: b.replace(/^#+\s*/, "") }));
-}
-
-function chunkParagraphs(text: string, size: number): string[] {
-  const paras = text.split(/\n\s*\n/);
-  const out: string[] = [];
-  let cur = "";
-  for (const p of paras) {
-    if (cur && cur.length + p.length > size) {
-      out.push(cur);
-      cur = "";
-    }
-    cur += (cur ? "\n\n" : "") + p;
-  }
-  if (cur) out.push(cur);
-  return out;
 }
 
 /** Text in a slide's XML, one line per paragraph */
@@ -122,7 +105,8 @@ function paragraphs(xml: string): string[] {
 }
 
 const num = (f: string) => Number(f.match(/(\d+)\.xml$/)?.[1] ?? 0);
-const firstLine = (t: string) => t.split("\n").map((l) => l.trim()).find((l) => l.length > 2) ?? "";
+/** A title of 80 characters at most, cut between words (a slide that starts with a long sentence) */
+const shorten = (t: string) => (t.length <= 80 ? t : `${t.slice(0, 78).replace(/\s+\S*$/, "")}…`);
 const tidy = (t: string) => t.replace(/[ \t]+/g, " ").replace(/\n{3,}/g, "\n\n").trim();
 const decode = (s: string) =>
   s

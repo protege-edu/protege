@@ -73,9 +73,13 @@ make your teacher account while it downloads, and do other things meanwhile.
 
 - **Make a class**, and pick its grade. The grade picks how Gloam looks and talks: four different worlds,
   from a sunny storybook meadow for kindergarten to a moody night valley for high school.
-- **Add a lesson:** upload your notes (PDF, PowerPoint, Word) or paste them. Gloam drafts the lesson in a few
-  minutes: the key ideas, the wrong ideas students often have, and its story. **Read it, change anything, and
-  approve it.** Students only ever see lessons you approved.
+- **Add lessons:** upload your notes (PDF, PowerPoint, Word) or paste them, as long as you like: one topic or a
+  whole unit. Protégé splits long notes into lessons at your headings (each one a part Gloam can read at once),
+  and you can move the breaks. Gloam drafts them one at a time, a few minutes each: the key ideas, the wrong
+  ideas students often have, and its story. **Read each one, change anything, and approve it.** Students only
+  ever see lessons you approved.
+- **Give lessons to your class:** right on an approved lesson, or from the class page (**Add a lesson**, or a
+  whole unit at once). Students see them in the order you set.
 - Or start with the built-in lesson, "Why do we have seasons?"
 
 Other teachers at your school: press **Make an invite code** on your teacher page and give it to them.

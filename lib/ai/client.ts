@@ -9,7 +9,8 @@ export interface ChatMessage {
 
 export type ChatResult<T> =
   | { ok: true; data: T; ms: number }
-  | { ok: false; reason: "unreachable" | "timeout" | "invalid"; detail: string; ms: number };
+  // too_long: more than the model can read at once (Ollama's context), so asking again won't help
+  | { ok: false; reason: "unreachable" | "timeout" | "invalid" | "too_long"; detail: string; ms: number };
 
 /**
  * Ask the model for JSON that matches a Zod schema.
@@ -59,7 +60,10 @@ async function callModel<T>(opts: { messages: ChatMessage[]; schema: z.ZodType<T
     });
 
     if (!res.ok) {
-      return { ok: false, reason: "unreachable", detail: `HTTP ${res.status}`, ms: Date.now() - start };
+      const said = (await res.text().catch(() => "")).slice(0, 300);
+      // Ollama turns down a request longer than it can read: that isn't "the AI is off"
+      if (res.status === 400 && /context/i.test(said)) return { ok: false, reason: "too_long", detail: said, ms: Date.now() - start };
+      return { ok: false, reason: res.status >= 500 || res.status === 404 ? "unreachable" : "invalid", detail: `HTTP ${res.status} ${said}`, ms: Date.now() - start };
     }
 
     const body = (await res.json()) as { choices?: { message?: { content?: string } }[] };

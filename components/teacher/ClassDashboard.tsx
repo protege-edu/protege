@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence } from "motion/react";
+import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Access } from "@/lib/access/settings";
@@ -15,7 +16,8 @@ import { ShowCode } from "./ShowCode";
 /** The class itself (no lesson): settings, its lessons, who's in it, and where students go */
 interface Info {
   class: { id: string; name: string; grade: number; code: string; googleSignIn: boolean; pausedAt: string | null; language: "en" | "fr"; deleteOn: string | null };
-  lessons: { id: string; title: string }[];
+  /** in the order students see them; latest = the one given most recently (what the class is probably on) */
+  lessons: { id: string; title: string; latest: boolean }[];
   roster: { id: string; nickname: string; google: boolean; hasKey: boolean }[];
   google: boolean;
   address: { url: string; local: boolean };
@@ -52,8 +54,11 @@ export function ClassDashboard() {
     const res = await api<Info>(`/api/teacher/classes/${id}`);
     if (!res.ok) return setError(res.error);
     setInfo(res.data);
-    // no lesson picked yet: open the newest one this class was given
-    if (!lessonId && res.data.lessons[0]) router.replace(`/teacher/classes/${id}?lesson=${encodeURIComponent(res.data.lessons[0].id)}`);
+    // no lesson picked yet (or it was taken away): open the one this class was given most recently
+    const pickNew = !lessonId || !res.data.lessons.some((l) => l.id === lessonId);
+    const latest = res.data.lessons.find((l) => l.latest) ?? res.data.lessons[0];
+    if (pickNew && latest) router.replace(`/teacher/classes/${id}?lesson=${encodeURIComponent(latest.id)}`);
+    else if (pickNew && lessonId) router.replace(`/teacher/classes/${id}`);
   }, [id, lessonId, router]);
 
   const load = useCallback(async () => {
@@ -99,7 +104,6 @@ export function ClassDashboard() {
       {info && (
         <ClassHeader
           info={info}
-          lessonId={lessonId}
           paused={paused}
           onShowCode={() => setShowCode(true)}
           onPause={() => void change({ paused: !paused })}
@@ -107,8 +111,19 @@ export function ClassDashboard() {
           onLanguage={(language) => void change({ language })}
           onGrade={(grade) => void change({ grade })}
           onDeleteOn={(deleteOn) => void change({ deleteOn })}
-          onLesson={(lid) => router.replace(`/teacher/classes/${id}?lesson=${encodeURIComponent(lid)}`)}
-          onAssigned={() => void loadInfo()}
+        />
+      )}
+      {info && (
+        <ClassLessons
+          info={info}
+          lessonId={lessonId}
+          onShow={(lid) => router.replace(`/teacher/classes/${id}?lesson=${encodeURIComponent(lid)}`)}
+          onChange={async (body) => {
+            const res = await api(`/api/teacher/classes/${id}`, json("POST", body));
+            if (!res.ok) return setError(res.error);
+            setError(null);
+            await loadInfo();
+          }}
         />
       )}
       {data && (
@@ -392,7 +407,6 @@ function Transcript({
 /** The class at a glance: its name, its code, the buttons a teacher needs during class */
 function ClassHeader({
   info,
-  lessonId,
   paused,
   onShowCode,
   onPause,
@@ -400,11 +414,8 @@ function ClassHeader({
   onLanguage,
   onGrade,
   onDeleteOn,
-  onLesson,
-  onAssigned,
 }: {
   info: Info;
-  lessonId: string;
   paused: boolean;
   onShowCode: () => void;
   onPause: () => void;
@@ -412,8 +423,6 @@ function ClassHeader({
   onLanguage: (language: "en" | "fr") => void;
   onGrade: (grade: number) => void;
   onDeleteOn: (when: number | null) => void;
-  onLesson: (lessonId: string) => void;
-  onAssigned: () => void;
 }) {
   // a grade that changes the size of the secret key waits for the teacher to say yes
   const [grade, setGrade] = useState<number | null>(null);
@@ -447,20 +456,6 @@ function ClassHeader({
       )}
 
       <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-3 border-y border-line py-3 text-sm">
-        {info.lessons.length > 1 && (
-          <label className="flex items-center gap-2 font-bold text-ink">
-            Lesson
-            <select value={lessonId} onChange={(e) => onLesson(e.target.value)} className="min-h-11 rounded-md border border-line bg-panel px-3 font-normal">
-              {info.lessons.map((l) => (
-                <option key={l.id} value={l.id}>
-                  {l.title}
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
-        {info.lessons.length === 1 && <span className="font-bold text-ink">{info.lessons[0].title}</span>}
-        {info.lessons.length === 0 && <GiveLesson classId={info.class.id} onDone={onAssigned} />}
         {info.google && (
           <label className="flex min-h-11 cursor-pointer items-center gap-2 text-ink">
             <input type="checkbox" checked={info.class.googleSignIn} onChange={(e) => onGoogle(e.target.checked)} className="h-5 w-5 accent-[var(--t-accent)]" />
@@ -523,38 +518,145 @@ function ClassHeader({
   );
 }
 
-/** A class with no lesson yet: give it one */
-function GiveLesson({ classId, onDone }: { classId: string; onDone: () => void }) {
-  const [lessons, setLessons] = useState<{ id: string; title: string; status: string }[] | null>(null);
+interface LibraryLesson {
+  id: string;
+  title: string;
+  status: string;
+  unitId: string | null;
+  position: number | null;
+}
+
+/**
+ * The class's lessons, in the order its students see them: show any one's progress below, move them,
+ * take one away (what students taught Gloam stays), and add more (one lesson, or a whole unit's approved ones).
+ */
+function ClassLessons({ info, lessonId, onShow, onChange }: { info: Info; lessonId: string; onShow: (lessonId: string) => void; onChange: (body: object) => Promise<void> }) {
+  const [library, setLibrary] = useState<LibraryLesson[] | null>(null);
+  const [units, setUnits] = useState<{ id: string; title: string }[]>([]);
   const [pick, setPick] = useState("");
+  const [working, setWorking] = useState(false);
   useEffect(() => {
-    void api<{ id: string; title: string; status: string }[]>("/api/teacher/lessons").then((r) => {
-      if (!r.ok) return;
-      const ok = r.data.filter((l) => l.status === "approved");
-      setLessons(ok);
-      setPick(ok[0]?.id ?? "");
+    void Promise.all([api<LibraryLesson[]>("/api/teacher/lessons"), api<{ id: string; title: string }[]>("/api/teacher/units")]).then(([l, u]) => {
+      if (l.ok) setLibrary(l.data);
+      if (u.ok) setUnits(u.data);
     });
-  }, []);
-  if (!lessons) return null;
-  if (!lessons.length) return <span className="text-ink-dim">Approve a lesson first, then give it to this class.</span>;
-  const give = async () => {
-    const res = await api(`/api/teacher/classes/${classId}`, json("POST", { lessonId: pick }));
-    if (res.ok) onDone();
+  }, [info.lessons.length]);
+
+  const here = new Set(info.lessons.map((l) => l.id));
+  const free = (library ?? []).filter((l) => l.status === "approved" && !here.has(l.id));
+  // what can be added, by unit (a unit with 2+ lessons to add can be added whole), then lessons on their own
+  const groups = units
+    .map((u) => ({ unit: u, lessons: free.filter((l) => l.unitId === u.id).sort((a, b) => (a.position ?? 0) - (b.position ?? 0)) }))
+    .filter((g) => g.lessons.length);
+  const loose = free.filter((l) => !l.unitId);
+  const first = groups[0] ? (groups[0].lessons.length > 1 ? `unit:${groups[0].unit.id}` : groups[0].lessons[0].id) : (loose[0]?.id ?? "");
+  const chosen = free.some((l) => l.id === pick) || groups.some((g) => `unit:${g.unit.id}` === pick) ? pick : first;
+
+  const act = async (body: object) => {
+    setWorking(true);
+    await onChange(body);
+    setWorking(false);
   };
+  const add = () => void act(chosen.startsWith("unit:") ? { unitId: chosen.slice(5) } : { lessonId: chosen });
+
   return (
-    <span className="flex flex-wrap items-center gap-2">
-      <label htmlFor="give-lesson" className="font-bold text-ink">
-        No lesson yet
-      </label>
-      <select id="give-lesson" value={pick} onChange={(e) => setPick(e.target.value)} className="min-h-11 rounded-md border border-line bg-panel px-3">
-        {lessons.map((l) => (
-          <option key={l.id} value={l.id}>
-            {l.title}
-          </option>
-        ))}
-      </select>
-      <Button onClick={() => void give()}>Give to class</Button>
-    </span>
+    <section aria-labelledby="class-lessons" className="mt-8">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4">
+        <h2 id="class-lessons" className="text-lg font-bold text-ink">
+          Lessons
+        </h2>
+        <p className="text-sm text-ink-dim">Students see these in this order and can play any of them.</p>
+      </div>
+      {info.lessons.length === 0 ? (
+        <p className="mt-3 rounded-md border border-dashed border-line px-4 py-4 text-sm text-ink">
+          <span className="font-bold">No lessons yet.</span> Add one below, and students see it as soon as they join.
+        </p>
+      ) : (
+        <ol className="mt-3 divide-y divide-line rounded-md border border-line bg-panel">
+          {info.lessons.map((l, i) => {
+            const showing = l.id === lessonId;
+            return (
+              <li key={l.id} className={`flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 ${showing ? "bg-chip" : ""}`}>
+                <span className="w-6 text-center text-sm font-bold text-ink-dim">{i + 1}</span>
+                <span className="min-w-40 flex-1 text-sm font-bold text-ink">{l.title}</span>
+                {showing ? (
+                  <span className="px-3 text-xs font-bold text-ink-dim">Progress below</span>
+                ) : (
+                  <Button variant="quiet" className="border-0" onClick={() => onShow(l.id)}>
+                    Show progress
+                  </Button>
+                )}
+                <span className="flex">
+                  <button
+                    type="button"
+                    disabled={working || i === 0}
+                    onClick={() => void act({ moveLessonId: l.id, by: -1 })}
+                    aria-label={`Move ${l.title} earlier`}
+                    className="grid h-11 w-11 cursor-pointer place-items-center rounded-md text-ink-dim hover:bg-bg hover:text-ink disabled:cursor-default disabled:opacity-30"
+                  >
+                    <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
+                      <path d="M3 10l5-5 5 5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    disabled={working || i === info.lessons.length - 1}
+                    onClick={() => void act({ moveLessonId: l.id, by: 1 })}
+                    aria-label={`Move ${l.title} later`}
+                    className="grid h-11 w-11 cursor-pointer place-items-center rounded-md text-ink-dim hover:bg-bg hover:text-ink disabled:cursor-default disabled:opacity-30"
+                  >
+                    <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
+                      <path d="M3 6l5 5 5-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                </span>
+                <Button variant="quiet" className="border-0" disabled={working} onClick={() => void act({ removeLessonId: l.id })}>
+                  Take away
+                </Button>
+              </li>
+            );
+          })}
+        </ol>
+      )}
+      <div className="mt-3 flex flex-wrap items-center gap-3">
+        {library === null ? null : free.length ? (
+          <>
+            <label htmlFor="add-lesson" className="text-sm font-bold text-ink">
+              Add a lesson
+            </label>
+            <select id="add-lesson" value={chosen} onChange={(e) => setPick(e.target.value)} className="min-h-11 max-w-full rounded-md border border-line bg-panel px-3 text-sm">
+              {groups.map((g) => (
+                <optgroup key={g.unit.id} label={g.unit.title}>
+                  {g.lessons.length > 1 && <option value={`unit:${g.unit.id}`}>{`All ${g.lessons.length} approved lessons in this unit`}</option>}
+                  {g.lessons.map((l) => (
+                    <option key={l.id} value={l.id}>
+                      {l.title}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+              {loose.length > 0 && (
+                <optgroup label={groups.length ? "Lessons on their own" : "Your lessons"}>
+                  {loose.map((l) => (
+                    <option key={l.id} value={l.id}>
+                      {l.title}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+            </select>
+            <Button onClick={add} disabled={working || !chosen}>
+              Add to class
+            </Button>
+          </>
+        ) : (
+          <p className="text-sm text-ink-dim">{info.lessons.length ? "Every approved lesson is already here." : "You don't have an approved lesson yet."}</p>
+        )}
+        <Link href="/teacher/lessons/new" className="min-h-11 content-center px-1 text-sm font-bold text-ink-dim underline underline-offset-4 hover:text-ink">
+          New lessons from your notes
+        </Link>
+      </div>
+    </section>
   );
 }
 
