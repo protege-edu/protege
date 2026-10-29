@@ -1,3 +1,4 @@
+import os from "node:os";
 import type { NextConfig } from "next";
 
 const dev = process.env.NODE_ENV !== "production";
@@ -35,8 +36,17 @@ const securityHeaders = [
   { key: "Strict-Transport-Security", value: "max-age=31536000" },
 ];
 
+/**
+ * This laptop's own addresses on the school network. Students open those (the join code on the projector
+ * sends them there), and while developing, Next only serves its page files to addresses it's told about.
+ */
+const ownAddresses = Object.values(os.networkInterfaces())
+  .flat()
+  .flatMap((i) => (i && i.family === "IPv4" && !i.internal && /^(10|172\.(1[6-9]|2\d|3[01])|192\.168)\./.test(i.address) ? [i.address] : []));
+
 const nextConfig: NextConfig = {
   cacheComponents: true,
+  allowedDevOrigins: ownAddresses,
   devIndicators: false,
   partialPrefetching: true,
   // `npm run release` builds a self-contained copy a teacher can run without installing anything else

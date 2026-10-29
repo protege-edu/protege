@@ -56,7 +56,7 @@ function backupCheck(): StatusCheck {
     : { id: "backup", ok: true, title: "Backed up", detail: `The last 7 days are kept, on this laptop only. Newest: ${last.at.toLocaleString("en-CA", { dateStyle: "medium", timeStyle: "short" })}` };
 }
 
-export async function laptopStatus(address: { url: string; local: boolean }): Promise<StatusCheck[]> {
+export async function laptopStatus(address: { url: string; local: boolean; locator: string | null; site: string }): Promise<StatusCheck[]> {
   const [voice, reading] = await Promise.all([voiceReady(), speakReady()]);
   return [
     await aiCheck(),
@@ -66,7 +66,9 @@ export async function laptopStatus(address: { url: string; local: boolean }): Pr
     reading
       ? { id: "reading", ok: true, title: "Gloam's voice is on", detail: "Read-aloud uses Gloam's natural voice, made on this laptop. Nothing is saved." }
       : { id: "reading", ok: "optional", title: "Read-aloud uses each device's voice", detail: "Optional: for Gloam's natural voice, run `npm run voice:setup` once, then start class with `npm run class`. Until then, students' own devices read aloud (it sounds more robotic)." },
-    address.local
+    address.locator
+      ? { id: "address", ok: true, title: `Students go to ${address.site.replace(/^https?:\/\//, "")}/j`, detail: `And type the code on the projector (Show the code). It sends them to this laptop (${address.url}), so it works when students are on the same Wi-Fi. To let students join from anywhere, see "Students outside the school network" in the setup guide.` }
+      : address.local
       ? { id: "address", ok: true, title: `Students go to ${address.url}`, detail: "Works when students are on the same Wi-Fi as this laptop. To let students join from anywhere, see \"Students outside the school network\" in the setup guide." }
       : /trycloudflare\.com/.test(address.url)
         ? { id: "address", ok: false, title: `Students go to ${address.url}`, detail: "This is a Cloudflare quick tunnel: students' messages pass through Cloudflare's servers. Use the school network or Tailscale instead, unless your school approved it." }

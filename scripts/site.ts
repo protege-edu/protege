@@ -34,11 +34,32 @@ const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replac
 /** A page's twin in the other language (the board pack is in English: its French twin is the French home) */
 function twin(at: string, lang: Lang): string {
   if (lang === "fr") return at.replace(/^fr\//, "");
-  return ["index.html", "guide.html", "privacy.html", "404.html"].includes(at) ? `fr/${at}` : "fr/index.html";
+  return ["index.html", "guide.html", "privacy.html", "404.html", "j/index.html"].includes(at) ? `fr/${at}` : "fr/index.html";
 }
 
 /** One page: the bar, the content, the footer. `at` = where the page lives (e.g. "fr/guide.html") */
-function page({ at, lang, title, description, body, kind = "doc", extraNav = "", absolute = false }: { at: string; lang: Lang; title: string; description: string; body: string; kind?: string; extraNav?: string; absolute?: boolean }) {
+function page({
+  at,
+  lang,
+  title,
+  description,
+  body,
+  kind = "doc",
+  extraNav = "",
+  absolute = false,
+  bare = false,
+}: {
+  at: string;
+  lang: Lang;
+  title: string;
+  description: string;
+  body: string;
+  kind?: string;
+  extraNav?: string;
+  absolute?: boolean;
+  /** a page for students: just the logo and the other language, no teacher links and no footer */
+  bare?: boolean;
+}) {
   const t = COPY[lang];
   // (a 404 page is shown at whatever address was wrong, however deep: its links start from the site's root)
   const up = absolute ? "/" : "../".repeat(at.split("/").length - 1);
@@ -55,7 +76,8 @@ function page({ at, lang, title, description, body, kind = "doc", extraNav = "",
     .join("");
   const otherLang = lang === "fr" ? "en" : "fr";
   const other = `<a class="lang" href="${up}${twin(at, lang)}" hreflang="${otherLang}" lang="${otherLang}" aria-label="${t.nav.otherLabel}">${t.nav.other}</a>`;
-  const bar = `<header class="wrap bar"><a class="mark voice" href="${local("index.html")}" aria-label="${t.nav.home}"><img src="${up}img/mark.svg" alt="" width="34" height="34">protégé</a><nav aria-label="Protégé">${nav}<a href="${repoUrl}">${t.nav.code}</a>${other}${extraNav}</nav></header>`;
+  const navLinks = bare ? other : `${nav}<a href="${repoUrl}">${t.nav.code}</a>${other}${extraNav}`;
+  const bar = `<header class="wrap bar"><a class="mark voice" href="${local("index.html")}" aria-label="${t.nav.home}"><img src="${up}img/mark.svg" alt="" width="34" height="34">protégé</a><nav aria-label="Protégé">${navLinks}</nav></header>`;
   const en = lang === "en" ? at : twin(at, lang);
   const fr = lang === "fr" ? at : twin(at, lang);
   return `<!doctype html>
@@ -76,11 +98,11 @@ function page({ at, lang, title, description, body, kind = "doc", extraNav = "",
 <body data-page="${kind}" data-root="${up}" data-windows="${links.windows}" data-mac="${links.mac}">
 <a class="skip" href="#main">${t.skip}</a>
 ${body.includes("<!--BAR-->") ? body.replace("<!--BAR-->", bar) : `${bar}\n${body}`}
-<footer class="night-foot">
+${bare ? "" : `<footer class="night-foot">
   <div class="foot-sky" aria-hidden="true"><span class="stars"></span><span class="stars far"></span><img class="foot-far" src="${up}art/senior/valley-0-dark.webp" alt="" loading="lazy"><img class="foot-near" src="${up}art/senior/valley-2-dark.webp" alt="" loading="lazy"><span class="fly"></span><span class="fly"></span><span class="fly"></span><span class="fly"></span><span class="fly"></span></div>
   <div class="foot-gloam"><button class="sleeper" type="button" aria-label="${t.foot.wake}" data-mumbles="${esc(JSON.stringify(t.foot.mumbles))}"><img class="asleep" src="${up}img/gloam-asleep.webp" alt="" loading="lazy" width="220" height="276"><img class="awake" src="${up}img/gloam-sheepish.webp" alt="" loading="lazy" width="220" height="276"></button><p class="mumble voice" aria-live="polite"></p></div>
   <div class="wrap foot-row"><span>Protégé ${pkg.version}. ${t.footer.license} <a href="${repoUrl}/blob/main/LICENSE">GNU AGPL v3</a>. ${t.footer.noTrackers}</span><span class="foot-links"><a href="${local("guide.html")}">${t.nav.guide}</a><a href="${local("privacy.html")}">${t.nav.privacy}</a><a href="${up}board/accessibility.html">${t.nav.access}</a><a href="${up}board/README.html">${t.nav.boards}</a><a href="${up}board/security.html">${t.footer.security}</a><a href="${repoUrl}">${t.footer.source}</a></span></div>
-</footer>
+</footer>`}
 </body>
 </html>
 `;
@@ -167,6 +189,40 @@ function lost(lang: Lang) {
   fs.writeFileSync(path.join(out, at), page({ at, lang, title: t.lost.meta, description: t.lost.title, body: `<!--BAR-->\n${body}`, kind: "lost", absolute: true }));
 }
 
+/**
+ * Where students join (/j, or /fr/j): the same link every class, every year. They type the code on the
+ * projector, which holds their teacher's laptop's address on the school network, and the page sends them
+ * there (lib/hosting/locator.ts, site/js/join.ts). Nothing is stored or sent anywhere.
+ */
+function joinPage(lang: Lang) {
+  const t = COPY[lang].join;
+  const at = lang === "fr" ? "fr/j/index.html" : "j/index.html";
+  const up = lang === "fr" ? "../../" : "../";
+  const body = `<!--BAR-->
+<main id="main" class="join">
+  <img class="join-sky" src="${up}art/senior/valley-0-dark.webp" alt="">
+  <img class="join-hills" src="${up}art/senior/valley-2-dark.webp" alt="">
+  <div class="wrap join-grid">
+    <form class="join-card" novalidate>
+      <h1>${esc(t.title)}</h1>
+      <p class="join-lede">${esc(t.lede)}</p>
+      <label for="join-code">${esc(t.label)}</label>
+      <input id="join-code" name="code" autocomplete="off" autocapitalize="characters" spellcheck="false" inputmode="text" maxlength="40" aria-describedby="join-hint join-said" data-problems="${esc(JSON.stringify({ unreadable: t.unreadable, short: t.short, typo: t.typo, going: t.going, stuck: t.stuck }))}">
+      <p id="join-hint" class="join-hint">${esc(t.hint)}</p>
+      <button class="btn primary big" type="submit">${esc(t.button)}</button>
+      <p id="join-said" class="join-said" role="status" aria-live="polite"></p>
+      <p class="join-privacy">${esc(t.privacy)}</p>
+    </form>
+    <figure class="join-gloam" aria-hidden="true">
+      <img src="${up}img/gloam-curious.webp" alt="" width="220" height="276">
+      <figcaption class="voice">${esc(t.gloam)}</figcaption>
+    </figure>
+  </div>
+</main>`;
+  fs.mkdirSync(path.dirname(path.join(out, at)), { recursive: true });
+  fs.writeFileSync(path.join(out, at), page({ at, lang, title: t.meta, description: t.lede, body, kind: "join", bare: true }));
+}
+
 /** Copy a folder, file by file (Node's own folder copy crashes on Windows with Node 25) */
 function copyDir(from: string, to: string) {
   fs.mkdirSync(to, { recursive: true });
@@ -221,6 +277,7 @@ async function main() {
   for (const lang of ["en", "fr"] as Lang[]) {
     home(lang);
     lost(lang);
+    joinPage(lang);
     const dir = lang === "fr" ? path.join(root, "site", "content", "fr") : path.join(root, "site", "content");
     const prefix = lang === "fr" ? "fr/" : "";
     doc(path.join(dir, "guide.md"), `${prefix}guide.html`, lang);

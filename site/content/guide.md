@@ -88,8 +88,10 @@ Other teachers at your school: press **Make an invite code** on your teacher pag
 
 1. Open **Protégé** from your desktop or Start menu (keep the laptop plugged in and awake).
 2. On your class page, press **Show the code** and put it on the projector.
-3. Students open the address on the screen (or scan the QR code), type the class code, pick a nickname and
-   their secret pictures. Next time, they tap their nickname and their pictures, on any Chromebook.
+3. Students go to **protege-edu.pages.dev/j** (the same link every class: bookmark it or pin it in Google
+   Classroom) and type the code on the screen, like GLOW-42-25RM. It sends them to your laptop, so they need to
+   be on the same Wi-Fi. They pick a nickname and their secret pictures; next time, they tap their nickname
+   and their pictures, on any Chromebook. (Phones and tablets can scan the QR code instead.)
 4. Watch the class page: each student's candles, who's stuck, and what the class thinks. Open a student to
    read their conversation with Gloam, and correct any candle Gloam got wrong.
 

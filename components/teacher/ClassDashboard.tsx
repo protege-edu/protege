@@ -20,7 +20,8 @@ interface Info {
   lessons: { id: string; title: string; latest: boolean }[];
   roster: { id: string; nickname: string; google: boolean; hasKey: boolean }[];
   google: boolean;
-  address: { url: string; local: boolean };
+  /** where students go: the address, and (on a school network) the laptop's part of the join code */
+  address: { url: string; local: boolean; locator: string | null; site: string };
   /** the school board's rule for how long classes are kept (lib/privacy/retention.ts) */
   retention: "after-a-year" | "end-of-school-year" | "never";
 }
@@ -248,7 +249,17 @@ export function ClassDashboard() {
       {info && <ClassData classId={id} className={info.class.name} lessonId={lessonId} />}
       <AnimatePresence>
         {showCode && info && (
-          <ShowCode key="code" code={info.class.code} address={info.address.url} local={info.address.local} roster={info.roster} onClose={() => setShowCode(false)} />
+          <ShowCode
+            key="code"
+            code={info.class.code}
+            address={info.address.url}
+            local={info.address.local}
+            locator={info.address.locator}
+            site={info.address.site}
+            french={info.class.language === "fr"}
+            roster={info.roster}
+            onClose={() => setShowCode(false)}
+          />
         )}
       </AnimatePresence>
     </Shell>

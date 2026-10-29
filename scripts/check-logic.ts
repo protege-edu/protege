@@ -19,6 +19,7 @@ import { seasons } from "@/lib/lesson/seasons";
 import { blueprintWarnings, checkBlueprint } from "@/lib/teacher/checks";
 import { dropRunningLines, pdfLinesToText } from "@/lib/teacher/pdf-text";
 import { MAX_SOURCE_CHARS } from "@/lib/teacher/limits";
+import { decodeLocator, encodeLocator, joinTarget } from "@/lib/hosting/locator";
 import { lessonSource, lessonsFrom, planBreaks, splitLong, splitPlainText } from "@/lib/teacher/plan";
 
 import { AccessPatch, cleanAccess, defaultAccess } from "@/lib/access/settings";
@@ -491,6 +492,46 @@ test("the teacher's unticked parts are left out, and a lesson left empty disappe
   const lessons = lessonsFrom(parts, [0, 1], new Set([parts[1].id]));
   assert.deepEqual(lessons.map((l) => l.title), ["A"]);
   assert.equal(lessonSource(lessons[0]), parts[0].text);
+});
+
+console.log("\njoining from the website (the laptop's address in the code)");
+test("every private address comes back exactly, on the usual port and others", () => {
+  for (const ip of ["192.168.1.23", "192.168.0.1", "192.168.255.254", "10.0.0.1", "10.12.34.56", "10.255.255.254", "172.16.0.5", "172.31.200.9"]) {
+    for (const port of [3000, 3100, 8080, 65535]) {
+      const loc = encodeLocator(ip, port)!;
+      assert.deepEqual(decodeLocator(loc), { host: ip, port }, `${ip}:${port} -> ${loc}`);
+    }
+  }
+});
+test("a home or school network's code is short", () => {
+  assert.ok(encodeLocator("192.168.1.23")!.length <= 4, encodeLocator("192.168.1.23")!);
+  assert.ok(encodeLocator("10.12.34.56")!.length <= 6, encodeLocator("10.12.34.56")!);
+});
+test("only addresses on a private network can be in a code", () => {
+  for (const ip of ["8.8.8.8", "172.32.0.1", "127.0.0.1", "192.169.1.1", "not an address"]) assert.equal(encodeLocator(ip), null, ip);
+});
+test("students can type it any way they like", () => {
+  const loc = encodeLocator("10.20.30.40")!;
+  const url = `http://10.20.30.40:3000/join?code=GLOW-42`;
+  for (const typed of [`GLOW-42-${loc}`, `glow 42 ${loc.toLowerCase()}`, `Glow42${loc}`, ` glow - 42 - ${loc} `]) assert.deepEqual(joinTarget(typed), { url }, typed);
+  // letters that look like numbers are read as the numbers
+  const fuzzy = loc.replace(/0/g, "O").replace(/1/g, "l");
+  assert.deepEqual(joinTarget(`GLOW-42-${fuzzy}`), { url });
+});
+test("a typo is caught instead of sending a student to the wrong place", () => {
+  const loc = encodeLocator("10.12.34.56")!;
+  let caught = 0;
+  let tries = 0;
+  for (let i = 0; i < loc.length; i++) {
+    for (const c of "0123456789ABCDEFGHJKMNPQRSTVWXYZ") {
+      if (c === loc[i]) continue;
+      tries++;
+      if (decodeLocator(loc.slice(0, i) + c + loc.slice(i + 1)) === null) caught++;
+    }
+  }
+  assert.ok(caught / tries > 0.9, `${caught} of ${tries} one-letter typos caught`);
+  assert.deepEqual(joinTarget("GLOW-42"), { problem: "short" }, "just the class code: ask for the rest");
+  assert.deepEqual(joinTarget("hello"), { problem: "unreadable" });
 });
 
 // ---- the AI line (async, so it runs last) ----

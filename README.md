@@ -28,7 +28,8 @@ the [setup guide on the website](https://protege-edu.pages.dev/guide).
    your teacher account while it downloads, and **save your recovery code**.
 3. **Make a class** and give it lessons: upload your notes (one topic or a whole unit, any length: long notes
    become several lessons, drafted one at a time) or use the built-in one. Approve each lesson, add it to the
-   class, and press **Show the code**. Students go to the address on the screen and type the class code.
+   class, and press **Show the code**. Students go to **protege-edu.pages.dev/j** (the same link every class) and
+   type the code on the screen: it holds the laptop's address on the school network and sends them there.
 4. **Other teachers at your school:** at the bottom of your teacher page, press **Make an invite code** and give
    it to them. They choose **Make an account** and type it in. Each code works once, for a week, and their
    classes stay separate from yours.

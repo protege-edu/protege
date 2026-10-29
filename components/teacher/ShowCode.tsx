@@ -15,11 +15,34 @@ export interface RosterEntry {
 
 /**
  * "Show the code": made for the classroom projector, readable from the back row.
- * The address, the class code (huge), and a QR code that opens the join page with the code already in.
+ * On the school network: Protégé's website (SITE_URL/j, the same link every class) and one join code, the
+ * class code plus the laptop's letters (lib/hosting/locator.ts), with the laptop's own address as a backup.
+ * Online (a tunnel): the address and the class code. Either way, a QR code that opens the join page directly.
  * Nicknames pop in as students join, so the class watches itself arrive.
  * The QR is drawn right here (the qrcode package), nothing is sent anywhere.
  */
-export function ShowCode({ code, address, local, roster, onClose }: { code: string; address: string; local: boolean; roster: RosterEntry[]; onClose: () => void }) {
+export function ShowCode({
+  code,
+  address,
+  local,
+  locator,
+  site,
+  french,
+  roster,
+  onClose,
+}: {
+  code: string;
+  address: string;
+  local: boolean;
+  /** the laptop's part of the join code (null: not on a school network, students use the address) */
+  locator: string | null;
+  /** Protégé's website, where students type the join code */
+  site: string;
+  /** a French class goes to the French page */
+  french: boolean;
+  roster: RosterEntry[];
+  onClose: () => void;
+}) {
   const calm = useCalmMotion();
   const [svg, setSvg] = useState<string>("");
   const close = useRef<HTMLButtonElement>(null);
@@ -43,6 +66,8 @@ export function ShowCode({ code, address, local, roster, onClose }: { code: stri
   }, [onClose]);
 
   const shownAddress = address.replace(/^https?:\/\//, "");
+  const joinCode = locator ? `${code}-${locator}` : code;
+  const go = locator ? `${site.replace(/^https?:\/\//, "")}${french ? "/fr" : ""}/j` : shownAddress;
 
   return (
     <motion.div
@@ -72,14 +97,22 @@ export function ShowCode({ code, address, local, roster, onClose }: { code: stri
         <div className="mt-[2vh] grid flex-1 items-center gap-[4vw] md:grid-cols-[1.4fr_1fr]">
           <div>
             <p className="text-[clamp(1rem,min(2vw,3.4vh),1.8rem)] text-[#9fb2a8]">Go to</p>
-            <p className="text-[clamp(1.4rem,min(3.4vw,6vh),3.2rem)] font-bold break-all">{shownAddress}</p>
+            <p className="text-[clamp(1.4rem,min(3.4vw,6vh),3.2rem)] font-bold break-all">{go}</p>
             <p id="show-code-title" className="mt-[3vh] text-[clamp(1rem,min(2vw,3.4vh),1.8rem)] text-[#9fb2a8]">
-              and type the class code
+              {locator ? "and type the code" : "and type the class code"}
             </p>
-            <p className="text-[clamp(3rem,min(8.5vw,17vh),10rem)] leading-[1] font-bold tracking-[0.05em] whitespace-nowrap text-[#f4f1e8]" aria-label={`Class code ${code.split("").join(" ")}`}>
-              {code}
+            <p
+              className={`${locator ? "text-[clamp(2.4rem,min(6.2vw,14vh),7.5rem)]" : "text-[clamp(3rem,min(8.5vw,17vh),10rem)]"} leading-[1] font-bold tracking-[0.05em] whitespace-nowrap text-[#f4f1e8]`}
+              aria-label={`Code ${joinCode.split("").join(" ")}`}
+            >
+              {joinCode}
             </p>
-            {local && (
+            {locator && (
+              <p className="mt-[2vh] text-[clamp(0.9rem,min(1.4vw,2.6vh),1.2rem)] text-[#9fb2a8]">
+                Or go straight to <span className="font-bold text-[#d3ddd6]">{shownAddress}</span> and type <span className="font-bold text-[#d3ddd6]">{code}</span>
+              </p>
+            )}
+            {local && !locator && (
               <p className="mt-[2vh] max-w-[52ch] text-sm text-[#9fb2a8]">
                 This address only works on the school network. To let students join from anywhere, see &ldquo;Students outside the school network&rdquo; in the setup guide.
               </p>

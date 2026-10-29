@@ -97,3 +97,4 @@ contents();
 footer();
 if (document.body.dataset.page === "home") void import("./home").then((m) => m.home());
 if (document.body.dataset.page === "lost") void import("./lost").then((m) => m.lost());
+if (document.body.dataset.page === "join") void import("./join").then((m) => m.join());

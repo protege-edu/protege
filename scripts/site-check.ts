@@ -40,7 +40,7 @@ const langs = quick ? ["en"] : ["en", "fr"];
 const motions = quick ? [false] : [false, true];
 // (the last is an address that doesn't exist: the lost page, 404.html)
 const LOST = "no/such/page";
-const pages = ["index.html", "guide.html", "privacy.html", "board/README.html", "board/data-inventory.html", LOST];
+const pages = ["index.html", "guide.html", "privacy.html", "board/README.html", "board/data-inventory.html", "j/index.html", LOST];
 
 // ---- a tiny server that sends the same headers as the real site (so the security policy is tested too) ----
 const headers = Object.fromEntries(
@@ -296,7 +296,7 @@ async function main() {
         // (the lost page itself is meant to answer 404)
         page.on("response", (r) => r.status() >= 400 && !r.url().endsWith(LOST) && errors.push(`${r.status()} ${r.url()}`));
         for (const p of pages) {
-          const url = lang === "fr" && ["index.html", "guide.html", "privacy.html", LOST].includes(p) ? `fr/${p}` : p;
+          const url = lang === "fr" && ["index.html", "guide.html", "privacy.html", "j/index.html", LOST].includes(p) ? `fr/${p}` : p;
           if (lang === "fr" && url === p && p !== "index.html") continue; // the board pack is English only: checked once
           const where = `${w}x${h} ${lang}${calm ? " calm" : ""} ${url}`;
           await page.goto(`http://localhost:8790/${url}`, { waitUntil: "networkidle" });

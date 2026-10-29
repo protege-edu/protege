@@ -97,9 +97,11 @@ donnez-le-leur.
 
 1. Ouvrez **Protégé** depuis votre bureau ou le menu Démarrer (gardez le portable branché et réveillé).
 2. Sur la page de votre classe, appuyez sur **Show the code** et projetez-le.
-3. Les élèves ouvrent l'adresse affichée (ou balaient le code QR), tapent le code de la classe, choisissent un
-   surnom et leurs images secrètes. La fois suivante, ils touchent leur surnom et leurs images, sur n'importe
-   quel Chromebook.
+3. Les élèves vont sur **protege-edu.pages.dev/fr/j** (le même lien à chaque cours : ajoutez-le aux favoris ou
+   épinglez-le dans Google Classroom) et tapent le code affiché, comme GLOW-42-25RM. Il les envoie vers votre
+   portable, donc ils doivent être sur le même Wi-Fi. Ils choisissent un surnom et leurs images secrètes; la
+   fois suivante, ils touchent leur surnom et leurs images, sur n'importe quel Chromebook. (Les téléphones et
+   tablettes peuvent balayer le code QR.)
 4. Suivez la page de la classe : les bougies de chaque élève, qui bloque, et ce que pense la classe. Ouvrez un
    élève pour lire sa conversation avec Gloam, et corrigez toute bougie que Gloam aurait mal estimée.
 
