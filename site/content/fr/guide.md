@@ -116,8 +116,10 @@ lieu de **Protégé**. Il ouvre un tunnel rapide Cloudflare gratuit : votre port
 tous vers Internet, donc ça marche sur n'importe quel réseau, même de la maison. Aucun compte n'est nécessaire,
 et Protégé va chercher lui-même le petit programme de tunnel de Cloudflare la première fois.
 
-- Sur **Show the code**, appuyez sur **Copy link for students** et publiez le lien dans Google Classroom : il
-  s'ouvre avec le code de la classe déjà rempli. L'adresse change chaque fois que vous démarrez Protégé en ligne.
+- Les élèves vont sur **protege-edu.pages.dev/fr/j** et tapent le code affiché sur **Show the code**, comme
+  GLOW-42-K7Q2. Ou appuyez sur **Copy link for students** et publiez le lien une fois dans Google Classroom :
+  c'est le même lien à chaque cours (votre portable garde sa « salle » sur le site), et il indique que la classe
+  n'est pas ouverte quand Protégé ne fonctionne pas en ligne.
 - Votre portable fait toujours tout le travail : gardez-le allumé et éveillé pendant le cours.
 - Clairement : les serveurs de Cloudflare peuvent voir ce que les élèves tapent dans un tunnel rapide. C'est
   correct pour essayer Protégé; pour de vrais cours, vérifiez que votre école est d'accord, ou demandez au

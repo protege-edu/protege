@@ -66,8 +66,10 @@ export async function laptopStatus(address: { url: string; local: boolean; locat
     reading
       ? { id: "reading", ok: true, title: "Gloam's voice is on", detail: "Read-aloud uses Gloam's natural voice, made on this laptop. Nothing is saved." }
       : { id: "reading", ok: "optional", title: "Read-aloud uses each device's voice", detail: "Optional: for Gloam's natural voice, run `npm run voice:setup` once, then start class with `npm run class`. Until then, students' own devices read aloud (it sounds more robotic)." },
-    address.locator
-      ? { id: "address", ok: true, title: `Students go to ${address.site.replace(/^https?:\/\//, "")}/j`, detail: `And type the code on the projector (Show the code). It sends them to this laptop (${address.url}), so it works when students are on the same Wi-Fi. To let students join from anywhere, see "Students outside the school network" in the setup guide.` }
+    address.locator && !address.local && /trycloudflare\.com/.test(address.url)
+      ? { id: "address", ok: true, title: `Students go to ${address.site.replace(/^https?:\/\//, "")}/j`, detail: `And type the code on the projector (Show the code). Online through a Cloudflare quick tunnel (${address.url}), so it works on any network; this laptop's room on the website keeps the link the same every class. Cloudflare's servers can see what students type through it, so it's fine for trying Protégé out; for a real class, check your school is okay with it.` }
+      : address.locator
+      ? { id: "address", ok: true, title: `Students go to ${address.site.replace(/^https?:\/\//, "")}/j`, detail: `And type the code on the projector (Show the code). It sends them to this laptop (${address.url}), so it works when students are on the same Wi-Fi. If your school's Wi-Fi keeps devices apart, start Protégé online instead.` }
       : address.local
       ? { id: "address", ok: true, title: `Students go to ${address.url}`, detail: "Works when students are on the same Wi-Fi as this laptop. To let students join from anywhere, see \"Students outside the school network\" in the setup guide." }
       : /trycloudflare\.com/.test(address.url)

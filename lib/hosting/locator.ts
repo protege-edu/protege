@@ -51,8 +51,11 @@ export function encodeLocator(ip: string, port = USUAL_PORT): string | null {
 }
 
 /** Back to the laptop's address, or null if it isn't one (a typo, a missing letter) */
+/** What a student typed, read the way it was meant: capitals, and look-alikes as the real ones (O is 0, I and L are 1) */
+export const normalizeLetters = (text: string) => text.toUpperCase().replace(/O/g, "0").replace(/[IL]/g, "1").replace(/U/g, "V");
+
 export function decodeLocator(text: string): { host: string; port: number } | null {
-  const s = text.toUpperCase().replace(/O/g, "0").replace(/[IL]/g, "1").replace(/U/g, "V");
+  const s = normalizeLetters(text);
   if (!/^[0-9A-Z]{2,12}$/.test(s) || [...s].some((c) => !DIGITS.includes(c))) return null;
   const body = s.slice(0, -1);
   if (check(body) !== s.at(-1)) return null;

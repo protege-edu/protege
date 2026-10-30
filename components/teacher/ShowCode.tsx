@@ -109,10 +109,15 @@ export function ShowCode({
             </p>
             {locator && (
               <p className="mt-[2vh] text-[clamp(0.9rem,min(1.4vw,2.6vh),1.2rem)] text-[#9fb2a8]">
-                Or go straight to <span className="font-bold text-[#d3ddd6]">{shownAddress}</span> and type <span className="font-bold text-[#d3ddd6]">{code}</span>
+                Or go straight to <span className="font-bold text-[#d3ddd6]">{breakable(shownAddress)}</span> and type <span className="font-bold text-[#d3ddd6]">{code}</span>
               </p>
             )}
-            {!local && !locator && <CopyLink link={joinUrl} changes={/trycloudflare\.com/.test(address)} />}
+            {!local && (
+              <CopyLink
+                link={locator ? `${site}${french ? "/fr" : ""}/j?c=${encodeURIComponent(joinCode)}` : joinUrl}
+                kind={locator ? "room" : /trycloudflare\.com/.test(address) ? "changes" : "fixed"}
+              />
+            )}
             {local && !locator && (
               <p className="mt-[2vh] max-w-[52ch] text-sm text-[#9fb2a8]">
                 This address only works on the school network. To let students join from anywhere, see &ldquo;Students outside the school network&rdquo; in the setup guide.
@@ -180,7 +185,7 @@ function breakable(text: string) {
  * Online, the address is long (and a quick tunnel's is new every time): the teacher copies the link, with the
  * class code in it, and posts it where students already are (Google Classroom), so nobody types it.
  */
-function CopyLink({ link, changes }: { link: string; changes: boolean }) {
+function CopyLink({ link, kind }: { link: string; kind: "room" | "changes" | "fixed" }) {
   const [copied, setCopied] = useState(false);
   const copy = async () => {
     await navigator.clipboard.writeText(link).catch(() => undefined);
@@ -192,7 +197,13 @@ function CopyLink({ link, changes }: { link: string; changes: boolean }) {
         {copied ? "Copied" : "Copy link for students"}
       </InkButton>
       <p className="max-w-[46ch] text-sm text-[#9fb2a8]" aria-live="polite">
-        {copied ? "Paste it in Google Classroom (or anywhere students click). It opens with the class code already in." : changes ? "This address is new each time Protégé starts online, so share the link each class." : "Share it once: it stays the same."}
+        {copied
+          ? "Paste it in Google Classroom (or anywhere students click). It opens with the class code already in."
+          : kind === "room"
+            ? "Post it once: it's the same link every class, and it works whenever Protégé online is running."
+            : kind === "changes"
+              ? "This address is new each time Protégé starts online, so share the link each class."
+              : "Share it once: it stays the same."}
       </p>
     </div>
   );

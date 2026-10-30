@@ -207,7 +207,7 @@ function joinPage(lang: Lang) {
       <h1>${esc(t.title)}</h1>
       <p class="join-lede">${esc(t.lede)}</p>
       <label for="join-code">${esc(t.label)}</label>
-      <input id="join-code" name="code" autocomplete="off" autocapitalize="characters" spellcheck="false" inputmode="text" maxlength="40" aria-describedby="join-hint join-said" data-problems="${esc(JSON.stringify({ unreadable: t.unreadable, short: t.short, typo: t.typo, going: t.going, stuck: t.stuck }))}">
+      <input id="join-code" name="code" autocomplete="off" autocapitalize="characters" spellcheck="false" inputmode="text" maxlength="40" aria-describedby="join-hint join-said" data-problems="${esc(JSON.stringify({ unreadable: t.unreadable, short: t.short, typo: t.typo, going: t.going, stuck: t.stuck, checking: t.checking, closed: t.closed, offline: t.offline }))}">
       <p id="join-hint" class="join-hint">${esc(t.hint)}</p>
       <button class="btn primary big" type="submit">${esc(t.button)}</button>
       <p id="join-said" class="join-said" role="status" aria-live="polite"></p>

@@ -11,21 +11,30 @@ const file = () => path.join(dataDir(), "tunnel.json");
 
 export function saveTunnel(url: string, pid: number) {
   fs.mkdirSync(dataDir(), { recursive: true });
-  fs.writeFileSync(file(), JSON.stringify({ url, pid, at: Date.now() }));
+  fs.writeFileSync(file(), JSON.stringify({ url, pid, room: null, at: Date.now() }));
+}
+
+/** The tunnel's room on the website (functions/api/room), once it has one */
+export function saveTunnelRoom(room: string) {
+  try {
+    fs.writeFileSync(file(), JSON.stringify({ ...JSON.parse(fs.readFileSync(file(), "utf8")), room }));
+  } catch {
+    // (no tunnel any more: nothing to add it to)
+  }
 }
 
 export function clearTunnel() {
   fs.rmSync(file(), { force: true });
 }
 
-/** The tunnel's address, if one is running right now */
-export function currentTunnel(): string | null {
+/** The tunnel's address (and its room on the website), if one is running right now */
+export function currentTunnel(): { url: string; room: string | null } | null {
   try {
-    const t = JSON.parse(fs.readFileSync(file(), "utf8")) as { url?: string; pid?: number };
+    const t = JSON.parse(fs.readFileSync(file(), "utf8")) as { url?: string; pid?: number; room?: string | null };
     if (!t.url || !t.pid) return null;
     // (throws if that process is gone)
     process.kill(t.pid, 0);
-    return t.url;
+    return { url: t.url, room: t.room ?? null };
   } catch {
     return null;
   }

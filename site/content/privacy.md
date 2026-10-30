@@ -43,11 +43,18 @@ then keeps only a scrambled account number: no name, email or photo.
 
 ## This website
 
-This website is only information and downloads: Protégé itself never runs here, and no student ever uses it.
-It has no cookies, sign-ins, forms, analytics, ads or trackers, and loads nothing from other websites. It
-remembers one thing, on your own device only: whether you switched Gloam's voice on. It's hosted for free by
-Cloudflare Pages. Like any website host, Cloudflare sees the internet address of whoever
-visits, so it can deliver the pages and block attacks.
+This website is information, downloads, and the page where students type their class code (/j). Protégé
+itself never runs here: lessons, students and what they teach Gloam stay on the school's computer. It has no
+cookies, sign-ins, analytics, ads or trackers, and loads nothing from other websites. It remembers one thing,
+on your own device only: whether you switched Gloam's voice on.
+
+When a teacher starts **Protégé online**, their computer tells this website where its class is today (a
+"room": a short code and the tunnel's address). That's all a room holds: no names, nicknames or anything
+students type. The join page looks the code up and sends the student to the class. A room is forgotten after
+90 days unused, and a class code someone types is never kept.
+
+It's hosted for free by Cloudflare Pages. Like any website host, Cloudflare sees the internet address of
+whoever visits, so it can deliver the pages and block attacks.
 
 ## Questions
 

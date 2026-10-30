@@ -105,8 +105,10 @@ address. Then open **Protégé online** from the Start menu instead of **Protég
 quick tunnel: your laptop and the students both connect out to the internet, so it works on any network, even
 from home. No account is needed, and Protégé gets Cloudflare's small tunnel program by itself the first time.
 
-- On **Show the code**, press **Copy link for students** and post the link in Google Classroom: it opens with
-  the class code already in. The address is new each time you start Protégé online.
+- Students go to **protege-edu.pages.dev/j** and type the code on **Show the code**, like GLOW-42-K7Q2. Or
+  press **Copy link for students** and post the link in Google Classroom once: it's the same link every class
+  (your laptop keeps its "room" on the website), and it says "your class isn't open right now" when Protégé
+  isn't running online.
 - Your laptop still does all the work, so keep it on and awake during class.
 - Plainly: Cloudflare's servers can see what students type through a quick tunnel. It's fine for trying
   Protégé out; for real classes, check your school is okay with it, or ask IT to let student devices reach

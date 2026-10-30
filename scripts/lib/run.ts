@@ -10,7 +10,8 @@ import { speakConfig, voiceConfig } from "@/lib/voice/config";
 import { speakMissing, startSpeaker } from "../speak";
 import { voiceCommand } from "../voice";
 import { clearTunnel } from "@/lib/hosting/tunnel";
-import { cloudflared, quickTunnel } from "./tunnel";
+import { SITE_URL } from "@/lib/hosting/site";
+import { cloudflared, quickTunnel, registerRoom } from "./tunnel";
 
 export const say = (s = "") => console.log(s);
 export const children: ChildProcess[] = [];
@@ -149,7 +150,13 @@ export async function tunnel(port: number): Promise<string | null> {
   // said plainly every time: a quick tunnel isn't private from Cloudflare
   say("… opening a Cloudflare quick tunnel. Cloudflare's servers can see what students type through it: fine for trying Protégé out; for a real class, check your school is okay with it.");
   const url = await quickTunnel(bin, port, children);
-  if (!url) say("! The tunnel didn't open (some networks block it). Students on this computer's network can still join with the address below.");
+  if (!url) {
+    say("! The tunnel didn't open (some networks block it). Students on this computer's network can still join with the address below.");
+    return null;
+  }
+  // its room on the website: students go to the website and type the short code on "Show the code"
+  const room = await registerRoom(url, say);
+  if (room) say(`✓ This laptop's room on the website: ${room} (the same every time). Students go to ${SITE_URL.replace(/^https?:\/\//, "")}/j and type the code on Show the code.`);
   return url;
 }
 

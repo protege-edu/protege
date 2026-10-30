@@ -4,7 +4,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { dataDir } from "@/lib/db/location";
-import { clearTunnel, saveTunnel } from "@/lib/hosting/tunnel";
+import { SITE_URL } from "@/lib/hosting/site";
+import { clearTunnel, saveTunnel, saveTunnelRoom } from "@/lib/hosting/tunnel";
 
 /**
  * "Start Protégé online": Cloudflare's quick tunnel, so students reach this computer from any network (even a
@@ -89,4 +90,32 @@ export function quickTunnel(bin: string, port: number, children: ChildProcess[])
       done(null);
     });
   });
+}
+
+/** This laptop's room on the website, and the secret that proves it's this laptop's (it stays here) */
+const roomFile = () => path.join(dataDir(), "room.json");
+
+/**
+ * Tell the website where this laptop's room is now (site/room.ts), so students go to SITE_URL/j and type
+ * the short code. The same room every time, so a link a teacher posted once keeps working. If the website
+ * can't be reached (or has no rooms set up), students use the tunnel's own address instead.
+ */
+export async function registerRoom(url: string, say: (s: string) => void): Promise<string | null> {
+  let mine: { room?: string; secret?: string } = {};
+  try {
+    mine = JSON.parse(fs.readFileSync(roomFile(), "utf8"));
+  } catch {
+    // (the first time online: the website gives this laptop a room)
+  }
+  try {
+    const res = await fetch(`${SITE_URL}/api/room`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ url, room: mine.room, secret: mine.secret }), signal: AbortSignal.timeout(10_000) });
+    const r = (await res.json().catch(() => ({}))) as { room?: string; secret?: string; error?: string };
+    if (!res.ok || !r.room || !r.secret) throw new Error(r.error ?? `the website answered ${res.status}`);
+    fs.writeFileSync(roomFile(), JSON.stringify({ room: r.room, secret: r.secret }));
+    saveTunnelRoom(r.room);
+    return r.room;
+  } catch (e) {
+    say(`· No room on ${SITE_URL.replace(/^https?:\/\//, "")} this time (${e instanceof Error ? e.message : e}). Students use the tunnel's address instead.`);
+    return null;
+  }
 }

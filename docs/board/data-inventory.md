@@ -122,4 +122,8 @@ Also:
   A school can use its own fixed tunnel instead (e.g. **Tailscale Funnel**, which stays encrypted all the way
   to the computer) by setting `PUBLIC_URL`. On a school network where devices can reach each other, no tunnel
   is needed at all.
+- **Protégé's website** (protege-edu.pages.dev, Cloudflare Pages), only with **Protégé online**: the computer
+  keeps a "room" there so students can type a short code (a four-letter room code, the tunnel's current
+  address, and a scrambled copy of the computer's secret for its room). No student information. Forgotten
+  after 90 days unused (`site/room.ts`). The join page never keeps what students type.
 - **Ollama, whisper.cpp, Kokoro and the models** run on the same computer. They don't send anything anywhere.

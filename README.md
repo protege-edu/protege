@@ -111,8 +111,10 @@ shows. Many school Wi-Fi networks keep devices apart, though; then start with **
 - It opens a **Cloudflare quick tunnel** (free, no account): the laptop and the students both connect out to
   the internet, so it works on any network. Protégé downloads `cloudflared` once into its data folder, checked
   against the checksum GitHub publishes (`scripts/lib/tunnel.ts`), unless it's already installed.
-- The projector and **Ready for class?** show the address; **Copy link for students** copies it with the
-  class code in, for Google Classroom. It's new each time.
+- The laptop keeps a **room** on Protégé's website (`functions/api/room`, `site/room.ts`): students go to
+  `protege-edu.pages.dev/j` and type the code on the projector (like `GLOW-42-K7Q2`), or click the link from
+  **Copy link for students**, which stays the same every class. A room holds only the tunnel's address, and is
+  forgotten after 90 days unused. If the website can't be reached, the projector shows the tunnel's own address.
 - Cloudflare's servers can see what passes through a quick tunnel: fine for trying Protégé out; for real
   classes, the school should agree, or let student devices reach the laptop on its network.
 
@@ -249,6 +251,14 @@ Cloudflare Pages, which rebuilds it on every push to `main`. The Cloudflare proj
 | Build output directory | `site-dist` |
 | Node version | from `.node-version` |
 | Web Analytics | **off** (the site has no trackers, and its privacy page says so) |
+
+**Rooms (once, for Protégé online):** the website's `functions/` folder answers `/api/room`, and needs a small
+free storage space on the same Cloudflare account. In the Cloudflare dashboard:
+1. **Storage & databases → KV → Create**, named `protege-rooms`.
+2. **Workers & Pages →** the website's project **→ Settings → Bindings → Add → KV namespace**: variable name
+   `ROOMS`, namespace `protege-rooms`. Save, then deploy again (push any change, or **Retry deployment**).
+3. Check: `https://protege-edu.pages.dev/api/room/TEST1` should answer "No such room." (Before step 2, it says
+   rooms aren't set up, and Protégé online shows the tunnel's own address instead.)
 
 The site sets strict headers (`site-dist/_headers`): nothing from other websites can load, and no cookies are
 used. Any static host works too: upload `site-dist/`.

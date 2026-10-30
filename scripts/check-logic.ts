@@ -20,6 +20,7 @@ import { blueprintWarnings, checkBlueprint } from "@/lib/teacher/checks";
 import { dropRunningLines, pdfLinesToText } from "@/lib/teacher/pdf-text";
 import { MAX_SOURCE_CHARS } from "@/lib/teacher/limits";
 import { decodeLocator, encodeLocator, joinTarget } from "@/lib/hosting/locator";
+import { findRoom, openRoom } from "@/site/room";
 import { lessonSource, lessonsFrom, planBreaks, splitLong, splitPlainText } from "@/lib/teacher/plan";
 
 import { AccessPatch, cleanAccess, defaultAccess } from "@/lib/access/settings";
@@ -592,6 +593,43 @@ void (async () => {
     assert.deepEqual(heard, [...heard].sort((x, y) => y - x), "only ever moves forward");
     assert.equal(heard[heard.length - 1], 0);
     assert.equal(heard[0], 2);
+  });
+
+  console.log("\nrooms (the website's lookup for classes online)");
+  const memory = () => {
+    const m = new Map<string, string>();
+    return { get: async (k: string) => m.get(k) ?? null, put: async (k: string, v: string) => void m.set(k, v), m };
+  };
+  const tunnelA = "https://brave-otter-lamp-sky.trycloudflare.com";
+  const tunnelB = "https://seven-green-ferns-wave.trycloudflare.com";
+  const laptop = (up: boolean) => (async () => new Response("", { status: up ? 200 : 502 })) as unknown as typeof fetch;
+  await at("a laptop keeps its room (and its link) every time it goes online", async () => {
+    const store = memory();
+    const first = await openRoom(store, { url: tunnelA });
+    assert.ok("room" in first, JSON.stringify(first));
+    assert.equal(decodeLocator(first.room), null, "a room never reads as a school-network code");
+    const again = await openRoom(store, { url: tunnelB, room: first.room, secret: first.secret });
+    assert.ok("room" in again && again.room === first.room, "same room, new tunnel");
+    assert.deepEqual(await findRoom(store, first.room.toLowerCase(), laptop(true)), { url: tunnelB });
+  });
+  await at("nobody can take over someone else's room, or point one anywhere but a tunnel", async () => {
+    const store = memory();
+    const mine = await openRoom(store, { url: tunnelA });
+    assert.ok("room" in mine);
+    const theirs = await openRoom(store, { url: tunnelB, room: mine.room, secret: "x".repeat(32) });
+    assert.ok("room" in theirs && theirs.room !== mine.room, "a wrong secret gets a different room");
+    assert.deepEqual(await findRoom(store, mine.room, laptop(true)), { url: tunnelA }, "the first room is untouched");
+    for (const url of ["https://evil.example.com", "http://brave-otter.trycloudflare.com", "https://a.trycloudflare.com.evil.com", 42]) {
+      assert.ok("error" in (await openRoom(store, { url })), String(url));
+    }
+  });
+  await at("a room whose laptop isn't answering says the class is closed; a made-up room isn't found", async () => {
+    const store = memory();
+    const r = await openRoom(store, { url: tunnelA });
+    assert.ok("room" in r);
+    assert.deepEqual(await findRoom(store, r.room, laptop(false)), { closed: true });
+    assert.equal(await findRoom(store, "ZZZZ", laptop(true)), null);
+    assert.equal(await findRoom(store, "nope!", laptop(true)), null);
   });
   console.log(`\n${passed} passed${process.exitCode ? ", some FAILED" : ""}`);
 })();

@@ -44,12 +44,19 @@ l'école. Protégé garde alors seulement un numéro de compte brouillé : aucun
 
 ## Ce site Web
 
-Ce site n'offre que de l'information et des téléchargements : Protégé lui-même n'y fonctionne jamais, et aucun
-élève ne l'utilise. Il n'a ni témoins (cookies), ni connexion, ni formulaire, ni outil d'analyse, ni publicité,
-ni traceur, et il ne charge rien depuis d'autres sites. Il retient une seule chose, sur votre propre appareil
-seulement : si vous avez activé la voix de Gloam. Il est hébergé gratuitement par Cloudflare Pages. Comme tout
-hébergeur, Cloudflare voit l'adresse Internet des visiteurs, pour pouvoir livrer les pages et bloquer les
-attaques.
+Ce site offre de l'information, des téléchargements, et la page où les élèves tapent le code de leur classe
+(/j). Protégé lui-même n'y fonctionne jamais : les leçons, les élèves et ce qu'ils apprennent à Gloam restent
+sur l'ordinateur de l'école. Il n'a ni témoins (cookies), ni connexion, ni outil d'analyse, ni publicité, ni
+traceur, et il ne charge rien depuis d'autres sites. Il retient une seule chose, sur votre propre appareil
+seulement : si vous avez activé la voix de Gloam.
+
+Quand un enseignant démarre **Protégé en ligne**, son ordinateur indique à ce site où se trouve sa classe
+aujourd'hui (une « salle » : un code court et l'adresse du tunnel). C'est tout ce qu'une salle contient : ni
+noms, ni surnoms, ni rien de ce que tapent les élèves. La page pour rejoindre cherche le code et envoie l'élève
+vers la classe. Une salle est oubliée après 90 jours sans usage, et un code tapé n'est jamais gardé.
+
+Il est hébergé gratuitement par Cloudflare Pages. Comme tout hébergeur, Cloudflare voit l'adresse Internet des
+visiteurs, pour pouvoir livrer les pages et bloquer les attaques.
 
 ## Des questions?
 
