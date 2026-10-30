@@ -105,17 +105,19 @@ Details: [data inventory](docs/board/data-inventory.md).
 
 ## Putting Protégé online
 
-On the school network, students just use the address Protégé shows. To let them join from anywhere, use
-**Tailscale Funnel** (free). It gives the computer a fixed https address and keeps traffic encrypted all the
-way to it:
-1. Install [Tailscale](https://tailscale.com/download), sign in, and run `tailscale funnel 3000` once to
-   switch Funnel on.
-2. Put the address it gives you (like `https://your-laptop.your-tailnet.ts.net`) in `protege.env` as
-   `PUBLIC_URL`.
-3. Start with **Start Protégé online**.
+On a school network where devices can reach each other, students use the address (or website code) Protégé
+shows. Many school Wi-Fi networks keep devices apart, though; then start with **Start Protégé online**
+(`npm run class -- --tunnel` from the code):
+- It opens a **Cloudflare quick tunnel** (free, no account): the laptop and the students both connect out to
+  the internet, so it works on any network. Protégé downloads `cloudflared` once into its data folder, checked
+  against the checksum GitHub publishes (`scripts/lib/tunnel.ts`), unless it's already installed.
+- The projector and **Ready for class?** show the address; **Copy link for students** copies it with the
+  class code in, for Google Classroom. It's new each time.
+- Cloudflare's servers can see what passes through a quick tunnel: fine for trying Protégé out; for real
+  classes, the school should agree, or let student devices reach the laptop on its network.
 
-Protégé refuses Cloudflare's quick tunnel unless `PROTEGE_ALLOW_CLOUDFLARE=1` is set. Cloudflare decrypts
-traffic on its own servers, so only use it if your school approved that.
+A school with its own fixed tunnel (e.g. Tailscale Funnel) puts its address in `protege.env` as `PUBLIC_URL`,
+and **Start Protégé online** uses that instead.
 
 ## Google sign-in (optional)
 

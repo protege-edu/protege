@@ -46,7 +46,8 @@ const ownAddresses = Object.values(os.networkInterfaces())
 
 const nextConfig: NextConfig = {
   cacheComponents: true,
-  allowedDevOrigins: ownAddresses,
+  // (and a Cloudflare quick tunnel's address, for trying the online way while developing)
+  allowedDevOrigins: [...ownAddresses, "*.trycloudflare.com"],
   devIndicators: false,
   partialPrefetching: true,
   // `npm run release` builds a self-contained copy a teacher can run without installing anything else

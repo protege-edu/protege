@@ -115,8 +115,11 @@ Also:
 
 - **Google**, only if a teacher allows "Continue with Google" for a class. Google then knows that account
   signed in to this Protégé. Protégé gets no name, email or photo.
-- **The tunnel provider**, if Protégé is put online. With **Tailscale Funnel**, traffic stays encrypted all the
-  way to the computer running Protégé. Tailscale relays it but can't read it. Protégé refuses Cloudflare's
-  quick tunnel unless the school explicitly allows it, because Cloudflare decrypts traffic on its own
-  servers. On the school network alone, no tunnel is needed.
+- **The tunnel provider**, only when a teacher starts **Protégé online** (for a school network that keeps
+  devices apart). By default that's a **Cloudflare quick tunnel**: Cloudflare's servers decrypt the traffic
+  as it passes (students' nicknames and what they type), store nothing Protégé knows of, and the address
+  changes every time. Protégé says so every time it opens one, and on the teacher's "Ready for class?" page.
+  A school can use its own fixed tunnel instead (e.g. **Tailscale Funnel**, which stays encrypted all the way
+  to the computer) by setting `PUBLIC_URL`. On a school network where devices can reach each other, no tunnel
+  is needed at all.
 - **Ollama, whisper.cpp, Kokoro and the models** run on the same computer. They don't send anything anywhere.

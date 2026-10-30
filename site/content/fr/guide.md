@@ -108,12 +108,21 @@ donnez-le-leur.
 **Pause the class** endort tous les Gloam quand vous voulez l'attention de tout le monde. Quand vous
 avez fini, fermez la fenêtre de Protégé (ou appuyez sur **Stop Protégé** dans **Ready for class?**).
 
-## Les élèves hors du réseau de l'école (facultatif)
+## Quand les élèves n'arrivent pas à joindre votre portable (Wi-Fi d'école qui sépare les appareils)
 
-Seulement si votre école le permet. Installez [Tailscale](https://tailscale.com/download) (gratuit), connectez-vous
-et lancez `tailscale funnel 3000` une fois. Ajoutez `PUBLIC_URL=` avec l'adresse que Tailscale vous donne au
-fichier `protege.env` (dans le dossier où Protégé est installé), puis ouvrez **Protégé en ligne** depuis le menu
-Démarrer. Les échanges restent chiffrés jusqu'à votre portable.
+Beaucoup de réseaux d'école empêchent les appareils de se joindre entre eux : les Chromebooks des élèves ne
+peuvent pas ouvrir l'adresse de votre portable. Ouvrez alors **Protégé en ligne** depuis le menu Démarrer au
+lieu de **Protégé**. Il ouvre un tunnel rapide Cloudflare gratuit : votre portable et les élèves se connectent
+tous vers Internet, donc ça marche sur n'importe quel réseau, même de la maison. Aucun compte n'est nécessaire,
+et Protégé va chercher lui-même le petit programme de tunnel de Cloudflare la première fois.
+
+- Sur **Show the code**, appuyez sur **Copy link for students** et publiez le lien dans Google Classroom : il
+  s'ouvre avec le code de la classe déjà rempli. L'adresse change chaque fois que vous démarrez Protégé en ligne.
+- Votre portable fait toujours tout le travail : gardez-le allumé et éveillé pendant le cours.
+- Clairement : les serveurs de Cloudflare peuvent voir ce que les élèves tapent dans un tunnel rapide. C'est
+  correct pour essayer Protégé; pour de vrais cours, vérifiez que votre école est d'accord, ou demandez au
+  service informatique de laisser les appareils des élèves joindre votre portable sur le réseau de l'école
+  (alors aucun tunnel n'est nécessaire).
 
 ## Vérifier que tout fonctionne
 

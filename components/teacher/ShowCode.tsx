@@ -97,7 +97,7 @@ export function ShowCode({
         <div className="mt-[2vh] grid flex-1 items-center gap-[4vw] md:grid-cols-[1.4fr_1fr]">
           <div>
             <p className="text-[clamp(1rem,min(2vw,3.4vh),1.8rem)] text-[#9fb2a8]">Go to</p>
-            <p className="text-[clamp(1.4rem,min(3.4vw,6vh),3.2rem)] font-bold break-all">{go}</p>
+            <p className={`${go.length > 32 ? "text-[clamp(1.1rem,min(2.3vw,4.4vh),2.2rem)]" : "text-[clamp(1.4rem,min(3.4vw,6vh),3.2rem)]"} font-bold break-words`}>{breakable(go)}</p>
             <p id="show-code-title" className="mt-[3vh] text-[clamp(1rem,min(2vw,3.4vh),1.8rem)] text-[#9fb2a8]">
               {locator ? "and type the code" : "and type the class code"}
             </p>
@@ -112,6 +112,7 @@ export function ShowCode({
                 Or go straight to <span className="font-bold text-[#d3ddd6]">{shownAddress}</span> and type <span className="font-bold text-[#d3ddd6]">{code}</span>
               </p>
             )}
+            {!local && !locator && <CopyLink link={joinUrl} changes={/trycloudflare\.com/.test(address)} />}
             {local && !locator && (
               <p className="mt-[2vh] max-w-[52ch] text-sm text-[#9fb2a8]">
                 This address only works on the school network. To let students join from anywhere, see &ldquo;Students outside the school network&rdquo; in the setup guide.
@@ -159,6 +160,40 @@ function QrCard({ svg }: { svg: string }) {
         <div className="relative z-[1] aspect-square [&>svg]:h-full [&>svg]:w-full" role="img" aria-label="QR code that opens the join page" dangerouslySetInnerHTML={{ __html: svg }} />
       </div>
       <p className="mt-4 text-center text-sm text-[#9fb2a8]">Or scan this with a camera</p>
+    </div>
+  );
+}
+
+/**
+ * A long address wraps only after a dash or its first dot, and keeps the rest together
+ * ("concern-kathy-connections-perl." then "trycloudflare.com", never "trycloudflare.c" then "om")
+ */
+function breakable(text: string) {
+  const dot = text.indexOf(".");
+  const head = dot < 0 ? text : text.slice(0, dot + 1);
+  const rest = dot < 0 ? "" : text.slice(dot + 1);
+  const parts = head.split(/(?<=-)/).flatMap((part, i) => (i ? [<wbr key={i} />, part] : [part]));
+  return [...parts, <wbr key="dot" />, <span key="rest" className="whitespace-nowrap">{rest}</span>];
+}
+
+/**
+ * Online, the address is long (and a quick tunnel's is new every time): the teacher copies the link, with the
+ * class code in it, and posts it where students already are (Google Classroom), so nobody types it.
+ */
+function CopyLink({ link, changes }: { link: string; changes: boolean }) {
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    await navigator.clipboard.writeText(link).catch(() => undefined);
+    setCopied(true);
+  };
+  return (
+    <div className="mt-[2.4vh] flex flex-wrap items-center gap-x-4 gap-y-2">
+      <InkButton variant="quiet" onClick={() => void copy()}>
+        {copied ? "Copied" : "Copy link for students"}
+      </InkButton>
+      <p className="max-w-[46ch] text-sm text-[#9fb2a8]" aria-live="polite">
+        {copied ? "Paste it in Google Classroom (or anywhere students click). It opens with the class code already in." : changes ? "This address is new each time Protégé starts online, so share the link each class." : "Share it once: it stays the same."}
+      </p>
     </div>
   );
 }

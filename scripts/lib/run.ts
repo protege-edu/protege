@@ -9,6 +9,8 @@ import QRCode from "qrcode";
 import { speakConfig, voiceConfig } from "@/lib/voice/config";
 import { speakMissing, startSpeaker } from "../speak";
 import { voiceCommand } from "../voice";
+import { clearTunnel } from "@/lib/hosting/tunnel";
+import { cloudflared, quickTunnel } from "./tunnel";
 
 export const say = (s = "") => console.log(s);
 export const children: ChildProcess[] = [];
@@ -129,33 +131,26 @@ function exists(cmd: string) {
   return spawnSync(process.platform === "win32" ? "where" : "which", [cmd], { stdio: "ignore" }).status === 0;
 }
 
-/** Open a free tunnel. Tailscale Funnel gives a fixed address (needed for Google); Cloudflare's quick tunnel needs no account. */
-export function tunnel(port: number): Promise<string | null> {
+/**
+ * Open a free tunnel, so students reach this computer from any network. A fixed address (PUBLIC_URL, e.g. a
+ * school's own Tailscale Funnel) if there is one; otherwise Cloudflare's quick tunnel, which needs no account
+ * (scripts/lib/tunnel.ts). The projector and "Ready for class?" show its address while it runs.
+ */
+export async function tunnel(port: number): Promise<string | null> {
   if (process.env.PUBLIC_URL && exists("tailscale")) {
     children.push(spawn("tailscale", ["funnel", String(port)], { stdio: "ignore" }));
-    return Promise.resolve(process.env.PUBLIC_URL);
+    return process.env.PUBLIC_URL;
   }
-  // Cloudflare's quick tunnel decrypts traffic on Cloudflare's servers (in another country): students' words would
-  // pass through a company the school hasn't approved. Only when the school explicitly says that's okay.
-  if (exists("cloudflared") && process.env.PROTEGE_ALLOW_CLOUDFLARE === "1") {
-    say("! Using a Cloudflare quick tunnel: students' messages pass through Cloudflare's servers. Only use it if your school approved that.");
-    return new Promise((resolve) => {
-      const c = spawn("cloudflared", ["tunnel", "--url", `http://localhost:${port}`]);
-      children.push(c);
-      const timer = setTimeout(() => resolve(null), 30000);
-      const find = (chunk: Buffer) => {
-        const m = chunk.toString().match(/https:\/\/[a-z0-9-]+\.trycloudflare\.com/);
-        if (m) {
-          clearTimeout(timer);
-          resolve(m[0]);
-        }
-      };
-      c.stdout?.on("data", find);
-      c.stderr?.on("data", find);
-    });
+  const bin = await cloudflared(say);
+  if (!bin) {
+    say("No tunnel this time. Students on this computer's network can still join with the address below.");
+    return null;
   }
-  say("No tunnel ready. Install Tailscale and set PUBLIC_URL (see the guide, \"Putting Protégé online\"). Students on the school network can join without one.");
-  return Promise.resolve(null);
+  // said plainly every time: a quick tunnel isn't private from Cloudflare
+  say("… opening a Cloudflare quick tunnel. Cloudflare's servers can see what students type through it: fine for trying Protégé out; for a real class, check your school is okay with it.");
+  const url = await quickTunnel(bin, port, children);
+  if (!url) say("! The tunnel didn't open (some networks block it). Students on this computer's network can still join with the address below.");
+  return url;
 }
 
 /** Wait for Protégé to answer, warm Gloam up, and print where teachers and students go */
@@ -200,5 +195,6 @@ export function relay(server: ChildProcess) {
 
 export function stopAll() {
   for (const c of children) c.kill();
+  clearTunnel();
   process.exit(0);
 }

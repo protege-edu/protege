@@ -98,12 +98,19 @@ Other teachers at your school: press **Make an invite code** on your teacher pag
 **Pause the class** puts every Gloam to sleep when you want everyone's attention. When you're done, close the
 Protégé window (or press **Stop Protégé** on **Ready for class?**).
 
-## Students outside the school network (optional)
+## When students can't reach your laptop (school Wi-Fi that keeps devices apart)
 
-Only if your school allows it. Install [Tailscale](https://tailscale.com/download) (free), sign in, and run
-`tailscale funnel 3000` once. Add `PUBLIC_URL=` with the address Tailscale gives you to `protege.env` (in the
-folder Protégé is installed in), and open **Protégé online** from the Start menu. Traffic stays encrypted all
-the way to your laptop.
+Many school networks stop devices from reaching each other, so students' Chromebooks can't open your laptop's
+address. Then open **Protégé online** from the Start menu instead of **Protégé**. It opens a free Cloudflare
+quick tunnel: your laptop and the students both connect out to the internet, so it works on any network, even
+from home. No account is needed, and Protégé gets Cloudflare's small tunnel program by itself the first time.
+
+- On **Show the code**, press **Copy link for students** and post the link in Google Classroom: it opens with
+  the class code already in. The address is new each time you start Protégé online.
+- Your laptop still does all the work, so keep it on and awake during class.
+- Plainly: Cloudflare's servers can see what students type through a quick tunnel. It's fine for trying
+  Protégé out; for real classes, check your school is okay with it, or ask IT to let student devices reach
+  your laptop on the school network (then no tunnel is needed).
 
 ## Checking everything works
 

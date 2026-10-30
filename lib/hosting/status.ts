@@ -71,7 +71,7 @@ export async function laptopStatus(address: { url: string; local: boolean; locat
       : address.local
       ? { id: "address", ok: true, title: `Students go to ${address.url}`, detail: "Works when students are on the same Wi-Fi as this laptop. To let students join from anywhere, see \"Students outside the school network\" in the setup guide." }
       : /trycloudflare\.com/.test(address.url)
-        ? { id: "address", ok: false, title: `Students go to ${address.url}`, detail: "This is a Cloudflare quick tunnel: students' messages pass through Cloudflare's servers. Use the school network or Tailscale instead, unless your school approved it." }
+        ? { id: "address", ok: true, title: `Students go to ${address.url}`, detail: "Online through a Cloudflare quick tunnel: it works on any network, even school Wi-Fi that keeps devices apart. The address is new each time you start Protégé online. Cloudflare's servers can see what students type through it, so it's fine for trying Protégé out; for a real class, check your school is okay with it." }
         : { id: "address", ok: true, title: `Students go to ${address.url}`, detail: "Reachable from anywhere, over https, encrypted all the way to this laptop." },
     diskCheck(),
     backupCheck(),

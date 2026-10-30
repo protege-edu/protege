@@ -27,7 +27,8 @@ shouldn't, or is lost. For example:
      `npm run reset-teacher -- <email>`).
    - If the computer is lost, the board's IT department follows its lost-device procedure (remote lock or
      wipe). Full-disk encryption is what keeps the data safe in that case.
-   - If a tunnel was the problem, stop it (`tailscale funnel off`).
+   - If a tunnel was the problem, stop it: close Protégé's window (it closes a Cloudflare quick tunnel with it),
+     or for a school's own Tailscale Funnel, `tailscale funnel off`.
 2. **Find out what happened.**
    - On the computer running Protégé, open a terminal in the Protégé folder and run
      `node\node.exe launch.js --access-log --all` (from the code: `npm run access-log -- --all`). It shows
