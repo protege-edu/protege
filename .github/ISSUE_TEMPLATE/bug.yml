@@ -30,7 +30,7 @@ body:
     attributes:
       label: Protégé version
       description: It's on the teacher page, under "Ready for class?"
-      placeholder: "0.4.0"
+      placeholder: "0.4.1"
   - type: input
     id: device
     attributes:
