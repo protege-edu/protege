@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Atkinson_Hyperlegible_Next, Recursive, Shantell_Sans } from "next/font/google";
 import localFont from "next/font/local";
 import { ACCESS_BOOT } from "@/lib/access/boot";
+import { OLD_BROWSER_CHECK } from "@/lib/browser/old";
 import "./globals.css";
 
 // Gloam's voice for younger age styles. BNCE (bounce) lets its handwriting change with mood.
@@ -51,6 +52,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <head>
         {/* the student's bigger text, contrast and reading settings, before the first paint (lib/access) */}
         <script dangerouslySetInnerHTML={{ __html: ACCESS_BOOT }} />
+        {/* a browser too old to run Protégé says so, instead of showing a dark page (lib/browser/old.ts) */}
+        <script dangerouslySetInnerHTML={{ __html: OLD_BROWSER_CHECK }} />
       </head>
       <body>{children}</body>
     </html>
