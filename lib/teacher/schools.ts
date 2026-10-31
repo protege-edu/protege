@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { asc, count, eq, inArray } from "drizzle-orm";
 import { randomCode } from "@/lib/auth/crypto";
 import { db } from "@/lib/db/client";
-import { accessLog, classes, lessons, schools, teachers, units } from "@/lib/db/schema";
+import { classes, lessons, schools, teachers, units } from "@/lib/db/schema";
 import { deleteClass } from "./classes";
 import { deleteLesson } from "./lessons";
 
@@ -69,6 +69,7 @@ export async function joinSchool(teacherId: string, schoolId: string) {
 
 /**
  * Remove someone from a school, with everything they made (classes and their students, lessons, units).
+ * What they did stays in the access log.
  * Only a teacher at the same school (or the owner) can, never themselves, and never the owner.
  */
 export async function removeTeacher(by: { id: string; schoolId: string | null; owner: boolean }, teacherId: string): Promise<{ ok: true } | { ok: false; error: string }> {
@@ -80,7 +81,7 @@ export async function removeTeacher(by: { id: string; schoolId: string | null; o
   for (const l of await db.select({ id: lessons.id }).from(lessons).where(eq(lessons.teacherId, teacherId)).all()) await deleteLesson(l.id);
   const theirUnits = (await db.select({ id: units.id }).from(units).where(eq(units.teacherId, teacherId)).all()).map((u) => u.id);
   if (theirUnits.length) await db.delete(units).where(inArray(units.id, theirUnits)).run();
-  await db.delete(accessLog).where(eq(accessLog.teacherId, teacherId)).run();
+  // (their entries in the access log stay: that's how a board looks into what happened, for 2 years)
   await db.delete(teachers).where(eq(teachers.id, teacherId)).run();
   return { ok: true };
 }

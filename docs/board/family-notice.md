@@ -23,9 +23,16 @@ confused about the lesson. Your child explains ideas in their own words, and Glo
 understands. Gloam is an AI (a computer program). It is not a person, and it is not a test: nothing in Protégé
 is a mark.
 
-**Who runs it.** **[The board / the school]** runs Protégé on its own computer. It is free, open-source
-software. The people who make it don't receive any information about your child. The AI runs on that same
-computer: nothing your child writes is sent to an AI company.
+**Who runs it.** Protégé is free, open-source software, used online in a web browser. **[Operator: for
+example "The Protégé project, contact …" or "The board"]** operates it for **[the board / the school]**. It
+uses three companies in the **United States**:
+- **Vercel** runs the app.
+- **Turso** stores the information.
+- **Anthropic** provides Gloam's AI, called Claude.
+
+**What goes to the AI.** When Gloam needs to answer, what your child just wrote and the last few messages of
+that conversation are sent to Claude, with the lesson. Your child's nickname, and anything else that says who
+they are, is never sent. Anthropic does not use this information to train its AI by default.
 
 **What information is collected.**
 - **A nickname** your child chooses (we ask them not to use their real name).
@@ -37,16 +44,20 @@ computer: nothing your child writes is sent to an AI company.
   teacher doesn't see the ones your child picks.
 - **Dates and times** they used it.
 
-If your child uses voice typing, their voice is turned into words on the school's computer and never saved.
+If your child uses voice typing or read-aloud, it happens on their own device. Their voice is never sent
+anywhere or saved.
 
 **Why.** To give your child a learning activity where they explain ideas in their own words, and to show
 their teacher which ideas they understand and where they need help. Authority: the *Education Act*
 and the *Municipal Freedom of Information and Protection of Privacy Act* (MFIPPA). [Board to confirm.]
 
-**Who sees it.** Your child and their teacher. [If used: Google only learns that the account signed in.]
+**Who sees it.** Your child and their teacher. The companies above store or process it to run Protégé, in
+the United States, where it can be subject to US law. [If used: Google only learns that the account signed in.]
 
-**How long it's kept.** [Board's rule, for example: "until one year after the class last uses it", or
-"until the end of the school year"], then deleted, including from backups within a week.
+**How long it's kept.** [The rule in use, for example: "until one year after the class last uses it", or
+"until the end of the school year"], then deleted. A short history kept by the database company for fixing
+mistakes is cleared soon after. Messages sent to the AI are kept by Anthropic only as its terms allow, without
+your child's nickname. [Board to confirm.]
 
 **Your rights.** You can ask to see the information about your child, to correct it, or to have it deleted,
 and you can ask questions or make a complaint: contact **[name, role, email, phone]**. You may also contact
@@ -64,9 +75,17 @@ personnage appelé Gloam, qui ne comprend pas la leçon. Votre enfant explique l
 et Gloam pose des questions jusqu'à ce qu'il comprenne. Gloam est une IA (un programme informatique). Ce n'est
 pas une personne, et ce n'est pas un test : rien dans Protégé n'est une note.
 
-**Qui l'exploite?** **[Le conseil scolaire / l'école]** exploite Protégé sur son propre ordinateur. C'est un
-logiciel libre et gratuit. Les personnes qui le créent ne reçoivent aucun renseignement sur votre enfant. L'IA
-fonctionne sur ce même ordinateur : rien de ce que votre enfant écrit n'est envoyé à une entreprise d'IA.
+**Qui l'exploite?** Protégé est un logiciel libre et gratuit, utilisé en ligne dans un navigateur Web.
+**[Exploitant : par exemple « Le projet Protégé, contact … » ou « Le conseil scolaire »]** l'exploite pour
+**[le conseil scolaire / l'école]**. Il fait appel à trois entreprises situées aux **États-Unis** :
+- **Vercel** fait fonctionner l'application.
+- **Turso** conserve les renseignements.
+- **Anthropic** fournit l'IA de Gloam, appelée Claude.
+
+**Ce qui est envoyé à l'IA.** Quand Gloam doit répondre, ce que votre enfant vient d'écrire et les derniers
+messages de cette conversation sont envoyés à Claude, avec la leçon. Le surnom de votre enfant, et tout ce qui
+pourrait dire qui il est, ne sont jamais envoyés. Par défaut, Anthropic n'utilise pas ces renseignements pour
+entraîner son IA.
 
 **Quels renseignements sont recueillis?**
 - **Un surnom** que votre enfant choisit (nous lui demandons de ne pas utiliser son vrai nom).
@@ -79,20 +98,23 @@ fonctionne sur ce même ordinateur : rien de ce que votre enfant écrit n'est en
   lecture à voix haute). L'enseignante ou l'enseignant ne voit pas ceux que votre enfant choisit.
 - **Les dates et heures** d'utilisation.
 
-Si votre enfant utilise la dictée vocale, sa voix est transformée en mots sur l'ordinateur de l'école et n'est
-jamais enregistrée.
+Si votre enfant utilise la dictée vocale ou la lecture à voix haute, cela se fait sur son propre appareil. Sa
+voix n'est jamais envoyée ailleurs ni enregistrée.
 
 **Pourquoi?** Pour offrir à votre enfant une activité où il explique les idées dans ses propres mots, et
 montrer à son enseignante ou enseignant les idées qu'il comprend et celles où il a besoin d'aide. Autorité :
 la *Loi sur l'éducation* et la *Loi sur l'accès à l'information municipale et la protection de la vie privée*
 (LAIMPVP). [À confirmer par le conseil.]
 
-**Qui y a accès?** Votre enfant et son enseignante ou enseignant. [Le cas échéant : Google apprend seulement
-que le compte s'est connecté.]
+**Qui y a accès?** Votre enfant et son enseignante ou enseignant. Les entreprises nommées plus haut les
+conservent ou les traitent pour faire fonctionner Protégé, aux États-Unis, où ils peuvent être soumis aux lois
+américaines. [Le cas échéant : Google apprend seulement que le compte s'est connecté.]
 
-**Combien de temps?** [Règle du conseil, par exemple : « jusqu'à un an après la dernière utilisation de la
-classe » ou « jusqu'à la fin de l'année scolaire »], puis c'est effacé, y compris des copies de sauvegarde en
-moins d'une semaine.
+**Combien de temps?** [Règle en vigueur, par exemple : « jusqu'à un an après la dernière utilisation de la
+classe » ou « jusqu'à la fin de l'année scolaire »], puis c'est effacé. Un court historique gardé par
+l'entreprise de la base de données pour corriger les erreurs est effacé peu après. Les messages envoyés à l'IA
+sont conservés par Anthropic seulement dans la mesure permise par ses conditions, sans le surnom de votre
+enfant. [À confirmer par le conseil.]
 
 **Vos droits.** Vous pouvez demander à voir les renseignements sur votre enfant, à les corriger ou à les
 faire effacer, et poser des questions ou porter plainte : communiquez avec **[nom, rôle, courriel,

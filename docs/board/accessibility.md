@@ -4,9 +4,14 @@
 Accessibility Standards Regulation, s. 14) requires WCAG 2.0 AA. WCAG 2.2 AA includes everything in 2.0 and
 2.1 AA.
 
-**Status for version 0.1:** partially conformant (the WCAG term). Every screen was checked with the methods
+**Status for version 0.6:** partially conformant (the WCAG term). Every screen was checked with the methods
 below and the problems found were fixed. What's left, and what hasn't been tested, is listed honestly at the
 end.
+
+**Since the last full check,** Protégé moved from a school computer to a hosted web app (version 0.6). Voice
+typing and read-aloud now run only on the student's own device, and teacher screens were added (the Owner
+page and Your school). The full check below was run on version 0.1, before these changes. **[Operator to complete: re-run the full check on
+version 0.6 and update the results.]**
 
 ## How it was checked
 
@@ -36,9 +41,9 @@ end.
 
 | Need | What Protégé does | WCAG |
 |---|---|---|
-| Reading | Read-aloud of Gloam's words, the join steps and the recap, in a natural voice made on the school's computer (or the device's own voices); easier reading (spacing, OpenDyslexic); plain, short words per age | 1.4.12, 3.1.5 (AAA, partly) |
+| Reading | Read-aloud of Gloam's words, the join steps and the recap, with the voices on the student's own device; easier reading (spacing, OpenDyslexic); plain, short words per age | 1.4.12, 3.1.5 (AAA, partly) |
 | Seeing | Up to 132% text that reflows; stronger contrast (near-solid backgrounds behind words, full-strength text, firm borders); layouts from phone to projector | 1.4.3, 1.4.4, 1.4.10, 1.4.11 |
-| Typing | Voice typing (private: on the school's computer); sentence starters for younger students; nothing is timed | 2.1.1, 2.2.1 |
+| Typing | Voice typing (private: done on the student's own device, and only offered where the device can); sentence starters for younger students; nothing is timed | 2.1.1, 2.2.1 |
 | Moving | Less motion (also follows the device's setting); no flashing; the "I get it" moment can be skipped | 2.3.1, 2.3.3 (AAA), 2.2.2 |
 | Screen readers | Every control is named; Gloam's lines, waiting messages and candle changes are announced; the painted world is skipped (it's decoration); each screen declares its language, so French is read as French | 1.1.1, 1.3.1, 3.1.1, 3.1.2, 4.1.2, 4.1.3 |
 | Keyboard | Everything works by keyboard; visible focus everywhere; panels trap focus and close with Escape | 2.1.1, 2.1.2, 2.4.3, 2.4.7, 2.4.11 |
@@ -81,15 +86,16 @@ The first full run found 77 problems. All were fixed before this one. For exampl
 - **Contrast over the painted worlds** can't be measured by automated tools, because the background is a
   painting. Words over the world always have a shading layer behind them, made near-solid by "stronger
   contrast", and were checked by eye.
-- **Read-aloud** sounds natural when the school's computer has Gloam's voice set up ("Set up voices"). Without
-  it, it uses the voices on the student's device, which sound more robotic. If neither is there, the button
-  doesn't appear (rather than sending text to an online voice). Gloam's French voice sometimes misreads
-  slang and joined words (like "vas-y").
-- **Voice typing** is less accurate with background noise, young children's voices and strong accents.
-  Students always see and can fix the words.
+- **Read-aloud** uses only the voices on the student's device that run on the device itself, so it never
+  sends text to an online voice. How natural it sounds depends on the device; on some it sounds robotic. If the
+  device has no such voice in the lesson's language, the button doesn't appear.
+- **Voice typing** only appears on devices and browsers that can turn speech into words on the device itself
+  (for example, a recent Chrome). On other devices, students who need it don't get it, so a teacher should
+  check the school's Chromebooks before relying on it as an accommodation. It is less accurate with background
+  noise, young children's voices and strong accents. Students always see and can fix the words.
 - **Sounds** are decorative only. Nothing important is said only by sound.
 - **Teacher pages** follow the same rules but don't have their own "Ways to play". They use the browser's zoom
   (up to 200% reflows) and the operating system's settings.
 
-To report a barrier: tell whoever runs Protégé at your school, or open an issue on the project. Barriers are
+To report a barrier: tell your school's Protégé contact, or open an issue on the project. Barriers are
 fixed first.
