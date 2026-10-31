@@ -1,5 +1,4 @@
 import os from "node:os";
-import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 import type { NextConfig } from "next";
 
 const dev = process.env.NODE_ENV !== "production";
@@ -46,11 +45,11 @@ const ownAddresses = Object.values(os.networkInterfaces())
   .flatMap((i) => (i && i.family === "IPv4" && !i.internal && /^(10|172\.(1[6-9]|2\d|3[01])|192\.168)\./.test(i.address) ? [i.address] : []));
 
 const nextConfig: NextConfig = {
-  // (no Cache Components: on Cloudflare Workers its render stages wait on timers that never fire, and every page hangs.
-  // Protégé builds every page fresh per request anyway.)
+  cacheComponents: true,
   // (and a Cloudflare quick tunnel's address, for trying the online way while developing)
   allowedDevOrigins: [...ownAddresses, "*.trycloudflare.com"],
   devIndicators: false,
+  partialPrefetching: true,
   // `npm run release` builds a self-contained copy a teacher can run without installing anything else
   // (into its own folder, so building a release never disturbs a running dev server)
   output: process.env.PROTEGE_RELEASE ? "standalone" : undefined,
@@ -75,6 +74,3 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
-
-// `next dev` gets Cloudflare's bindings (the local database in .wrangler/state) like the real Worker
-initOpenNextCloudflareForDev();

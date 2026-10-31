@@ -1,12 +1,11 @@
 /**
- * Jobs for whoever runs Protégé, on the local database `next dev` uses (.wrangler/state). From the code:
+ * Jobs for whoever runs Protégé. From the code (the local database, or the online one when
+ * TURSO_DATABASE_URL and TURSO_AUTH_TOKEN are set):
  *   npm run access-log [-- --all]          who viewed or changed students' information, and when
  *   npm run reset-teacher -- their@email   a new recovery code for a teacher who lost theirs
- * To put the online database back to an earlier moment, Cloudflare keeps 30 days of history:
- *   npx wrangler d1 time-travel restore protege --timestamp=2026-10-25T08:00:00Z
+ * To put the online database back to an earlier moment, Turso keeps its recent history: see the README.
  */
 import path from "node:path";
-import { openDatabase } from "./lib/d1";
 
 const say = (s = "") => console.log(s);
 
@@ -39,14 +38,9 @@ async function resetTeacher(email?: string) {
 
 export async function admin(args: string[]) {
   const [job, arg] = args;
-  const database = await openDatabase();
-  try {
-    if (job === "access-log") return await accessLog(arg === "--all");
-    if (job === "reset-teacher") return await resetTeacher(arg);
-    say("Jobs: access-log [--all], reset-teacher <email>");
-  } finally {
-    await database.close();
-  }
+  if (job === "access-log") return accessLog(arg === "--all");
+  if (job === "reset-teacher") return resetTeacher(arg);
+  say("Jobs: access-log [--all], reset-teacher <email>");
 }
 
 if (process.argv[1] && /admin/.test(path.basename(process.argv[1]))) {

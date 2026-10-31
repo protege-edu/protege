@@ -49,7 +49,7 @@ export async function draftNext() {
       .set({ status: "drafting", progress: "Getting started", soonerAt: null, updatedAt: new Date() })
       .where(and(eq(lessons.id, nextId), eq(lessons.status, "queued")))
       .run();
-    if (claimed.meta.changes === 1) return draftLater(nextId);
+    if (claimed.rowsAffected === 1) return draftLater(nextId);
   }
 }
 

@@ -258,7 +258,7 @@ export async function setClassGrade(classId: string, grade: number): Promise<num
     .set({ keyHash: null, failedKeys: 0, lockedUntil: null })
     .where(and(eq(students.classId, classId), isNotNull(students.keyHash)));
   const [, reset] = await db.batch([setGrade, resetKeys]);
-  return reset.meta.changes;
+  return reset.rowsAffected;
 }
 
 /**

@@ -2,7 +2,7 @@
  * Creates a PRACTICE class of 12 fake students (nicknames only) with believable progress on the
  * built-in seasons lesson, so the teacher dashboard has something to show. No AI, no real people.
  *
- *   npx tsx --conditions=react-server scripts/seed-practice-class.ts     (into the local database `next dev` uses)
+ *   npx tsx --conditions=react-server scripts/seed-practice-class.ts     (into the local database `npm run dev` uses)
  */
 import { randomUUID } from "node:crypto";
 import { eq, inArray, like } from "drizzle-orm";
@@ -17,7 +17,7 @@ import {
   teachSessions,
 } from "@/lib/db/schema";
 import { seasons } from "@/lib/lesson/seasons";
-import { openDatabase } from "./lib/d1";
+import { migrateDatabase } from "./migrate";
 
 const NICKNAMES = [
   "Pixel Fox",
@@ -52,7 +52,7 @@ const PROFILES: [number, number, number, number, number][] = [
 const WRONG_DISTANCE = new Set([1, 3, 4, 5, 8, 10, 7]);
 
 async function main() {
-  const database = await openDatabase();
+  await migrateDatabase();
   // Start clean: remove any earlier practice classes and everything in them
   for (const old of await db
     .select()
@@ -196,7 +196,6 @@ async function main() {
   console.log(
     `Practice class created with ${NICKNAMES.length} fake students (nicknames only).`,
   );
-  await database.close();
 }
 
 void main();

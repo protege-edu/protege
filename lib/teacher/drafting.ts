@@ -1,18 +1,20 @@
 import "server-only";
-import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { after } from "next/server";
 import { eq } from "drizzle-orm";
+import { secret } from "@/lib/auth/crypto";
 import { db } from "@/lib/db/client";
 import { lessons } from "@/lib/db/schema";
+import { appUrl } from "@/lib/hosting/app";
 import { runDraft } from "./lessons";
 import { draftNext } from "./units";
 
 /**
  * Who drafts lessons, and when.
  *
- * Drafting a lesson takes Claude about 40 seconds: longer than Cloudflare lets work carry on after a page
- * has its answer. So online, a lesson to draft goes into a Cloudflare Queue (wrangler.jsonc: DRAFTS), and
- * the queue hands it back to the app as an internal request (worker.ts -> app/api/internal/draft), which
- * may take up to 15 minutes. While developing (`next dev`, no queue), it's drafted in the background.
+ * Drafting a lesson takes Claude about 40 seconds. Online (Vercel), each lesson is drafted in its OWN
+ * request to app/api/internal/draft, which answers straight away and keeps working afterwards (up to
+ * 5 minutes): so a long unit, drafted one lesson after another, never runs out of time. On this computer
+ * (`next dev`), it's drafted in the background of the request that asked.
  *
  * Everything about a draft lives in the database (status, progress), never in one server's memory,
  * because online every request can land on a different copy of the server.
@@ -20,18 +22,27 @@ import { draftNext } from "./units";
 
 /** The lesson's row already says "drafting": get it drafted */
 export async function draftLater(lessonId: string) {
-  const queue = process.env.NODE_ENV === "production" ? getCloudflareContext().env.DRAFTS : undefined;
-  if (queue) {
-    await queue.send({ lessonId });
-    return;
+  const online = appUrl();
+  if (online) {
+    try {
+      const res = await fetch(`${online}/api/internal/draft`, {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-protege-internal": await secret() },
+        body: JSON.stringify({ lessonId }),
+        signal: AbortSignal.timeout(15_000),
+      });
+      if (res.ok) return;
+    } catch {
+      // (couldn't reach ourselves: draft it right here instead)
+    }
   }
   inBackground(() => draftNow(lessonId));
 }
 
-/** Draft it now (the queue's internal request, or the background while developing). Resolves when done, either way. */
+/** Draft it now. Resolves when done, either way. */
 export async function draftNow(lessonId: string) {
   const row = await db.select().from(lessons).where(eq(lessons.id, lessonId)).get();
-  // deleted, or already done (a queue can deliver a message twice)
+  // deleted, or already done
   if (!row?.sourceText || row.status !== "drafting") return;
   // the title is a hint for Gloam unless it's just the file's name (lib/teacher/lessons.ts startDraft)
   const hinted = row.ownTitle || row.unitId || (row.title !== row.sourceName && row.title !== "New lesson");
@@ -40,12 +51,13 @@ export async function draftNow(lessonId: string) {
   if (row.unitId) await draftNext();
 }
 
-/** Keep `job` running after the response is sent (Cloudflare allows ~30 s: use the queue for anything longer) */
+/** Keep `job` running after the response is sent */
 export function inBackground(job: () => Promise<unknown>) {
-  const running = job().catch((err) => console.error("[background]", err));
+  const run = () => job().catch((err) => console.error("[background]", err));
   try {
-    getCloudflareContext().ctx.waitUntil(running);
+    after(run);
   } catch {
-    // (outside a request, e.g. a script: it just runs)
+    // (outside a request, e.g. a script, or already inside an after(): it just runs)
+    void run();
   }
 }

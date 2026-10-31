@@ -8,7 +8,7 @@ import { PRACTICE_DAYS, UNUSED_DAYS, retentionRule } from "./retention";
 /**
  * The daily clean-up: classes past their delete date go (with all their students' work), and practice-mode
  * students nobody has used for a while. Returns what it removed (counts only).
- * Cloudflare runs it once a day (wrangler.jsonc: triggers -> worker.ts -> app/api/internal/sweep).
+ * Vercel runs it once a day (vercel.json: crons -> app/api/internal/sweep).
  */
 export async function sweep(now = new Date()): Promise<{ classes: number; practice: number }> {
   const due = await db.select({ id: classes.id }).from(classes).where(and(isNotNull(classes.deleteOn), lte(classes.deleteOn, now))).all();

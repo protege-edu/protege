@@ -8,7 +8,7 @@
   "repository": "github:protege-edu/protege",
   "bugs": "https://github.com/protege-edu/protege/issues",
   "scripts": {
-    "dev": "next dev",
+    "dev": "tsx scripts/migrate.ts && next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -27,16 +27,13 @@
     "access-log": "tsx --conditions=react-server scripts/admin.ts access-log",
     "site": "tsx scripts/site.ts",
     "site:check": "tsx scripts/site-check.ts",
-    "db:migrate": "wrangler d1 migrations apply protege --local",
-    "db:migrate:online": "wrangler d1 migrations apply protege --remote",
-    "cf:build": "node --require ./scripts/lib/fix-cpsync.cjs node_modules/@opennextjs/cloudflare/dist/cli/index.js build",
-    "cf:preview": "npm run cf:build && opennextjs-cloudflare preview",
+    "db:migrate": "tsx scripts/migrate.ts",
     "lint:promises": "eslint -c eslint.promises.mjs lib app components scripts/*.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.3.0",
     "@fontsource/opendyslexic": "^5.3.0",
-    "@opennextjs/cloudflare": "^1.20.15",
+    "@libsql/client": "^0.18.0",
     "drizzle-orm": "^0.45.4",
     "gsap": "^3.15.0",
     "jszip": "^3.10.2",
@@ -54,7 +51,6 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.10.2",
-    "@cloudflare/workers-types": "^5.20261031.1",
     "@fontsource-variable/recursive": "^5.3.0",
     "@fontsource/atkinson-hyperlegible-next": "^5.3.0",
     "@playwright/test": "^1.64.1",
@@ -70,7 +66,6 @@
     "marked": "^15.0.12",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
-    "typescript": "^5",
-    "wrangler": "^4.156.0"
+    "typescript": "^5"
   }
 }

@@ -40,8 +40,6 @@
   ],
   "exclude": [
     "node_modules",
-    "worker.ts",
-    ".open-next",
     "scripts/_*"
   ]
 }

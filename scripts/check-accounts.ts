@@ -10,6 +10,8 @@ import os from "node:os";
 import path from "node:path";
 
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "protege-test-"));
+process.env.PROTEGE_DATA_DIR = tmp;
+delete process.env.TURSO_DATABASE_URL;
 
 let passed = 0;
 async function test(name: string, fn: () => void | Promise<void>) {
@@ -24,9 +26,8 @@ async function test(name: string, fn: () => void | Promise<void>) {
 }
 
 async function main() {
-  // a throwaway copy of the database, in the temp folder
-  const { openDatabase } = await import("./lib/d1");
-  const database = await openDatabase({ folder: tmp });
+  // a throwaway database in the temp folder (imported after PROTEGE_DATA_DIR is set)
+  await (await import("./migrate")).migrateDatabase();
   const { hash, verify, sign, signedEquals, randomCode, keyedHash } = await import("@/lib/auth/crypto");
   const { sameOrigin } = await import("@/lib/auth/request");
   const { db } = await import("@/lib/db/client");
@@ -408,7 +409,6 @@ async function main() {
   });
 
   console.log(`\n${passed} passed${process.exitCode ? ", some FAILED" : ""}`);
-  await database.close();
 }
 
 main()

@@ -109,7 +109,7 @@ export async function runDraft(id: string, opts: { source: string; grade: number
       onProgress: async (step) => {
         // the teacher sees the step (and it shows the draft is still alive). Deleted meanwhile: stop, so Claude isn't paid for nothing
         const saved = await db.update(lessons).set({ progress: step, updatedAt: new Date() }).where(eq(lessons.id, id)).run();
-        if (saved.meta.changes === 0) throw new Deleted();
+        if (saved.rowsAffected === 0) throw new Deleted();
       },
     });
     // a title the teacher typed stays (Gloam's suggestion is only for when they didn't)

@@ -17,9 +17,6 @@ const eslintConfig = defineConfig([
     "release/**",
     "site-dist/**",
     "scripts/_*",
-    // Cloudflare's build output and local dev state
-    ".open-next/**",
-    ".wrangler/**",
   ]),
 ]);
 

@@ -10,7 +10,7 @@
  *   "never"               kept until a teacher deletes them
  * A teacher can always set a date for one class, or delete it, a student, or their data, themselves.
  * Practice mode (no class, no name) is deleted after PRACTICE_DAYS without use.
- * Cloudflare keeps the database's history for its restore window (D1 Time Travel), then it's gone for good.
+ * Online, Turso keeps a short history of the database (to undo a mistake), then it's gone for good.
  */
 export type RetentionRule = "after-a-year" | "end-of-school-year" | "never";
 export const RULES: RetentionRule[] = ["after-a-year", "end-of-school-year", "never"];
