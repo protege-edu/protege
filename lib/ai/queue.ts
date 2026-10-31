@@ -2,9 +2,9 @@ import { AsyncLocalStorage } from "node:async_hooks";
 import { aiConfig } from "./config";
 
 /**
- * The line for the AI. One laptop runs the model for a whole class, and a small model answering
- * 30 students at once would slow down for everyone. So at most `aiConfig.concurrency` calls run at
- * a time, and the rest wait in line:
+ * The line for the AI. Claude answers many calls at once, but a whole class hitting it in the same
+ * second can still run into our rate limit, and a lesson draft shouldn't slow students down. So at most
+ * `aiConfig.concurrency` calls run at a time on one server, and the rest wait in line:
  *   continue:    the next call of a message that's already being answered (finish what we started)
  *   live:        a student's new message (in the order they arrived)
  *   background:  drafting a lesson (only when no student is waiting, and never the last free slot)

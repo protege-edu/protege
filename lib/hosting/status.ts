@@ -1,6 +1,6 @@
 import "server-only";
 import fs from "node:fs";
-import { aiConfig } from "@/lib/ai/config";
+import { checkBrain } from "@/lib/ai/client";
 import { listBackups } from "@/lib/db/backup";
 import { dataDir } from "@/lib/db/location";
 import { voiceReady } from "@/lib/voice/server";
@@ -23,16 +23,10 @@ export const VERSION: string = pkg.version;
 export const UPDATE_REPO: string | null = process.env.PROTEGE_REPO ?? ((pkg as { repository?: string }).repository?.replace(/^github:/, "") || null);
 
 async function aiCheck(): Promise<StatusCheck> {
-  const base = aiConfig.baseUrl.replace(/\/v1\/?$/, "");
-  try {
-    const tags = (await (await fetch(`${base}/api/tags`, { signal: AbortSignal.timeout(3000) })).json()) as { models?: { name: string }[] };
-    const has = tags.models?.some((m) => m.name === aiConfig.model || m.name === `${aiConfig.model}:latest`);
-    return has
-      ? { id: "ai", ok: true, title: "Gloam's brain is ready", detail: `The AI model (${aiConfig.model}) runs on this laptop.` }
-      : { id: "ai", ok: false, title: "Gloam's brain isn't downloaded", detail: `Open a terminal and run: ollama pull ${aiConfig.model}` };
-  } catch {
-    return { id: "ai", ok: false, title: "Gloam's brain isn't running", detail: "Open the Ollama app on this laptop. Students' messages wait safely until it's back." };
-  }
+  const { online, model } = await checkBrain();
+  return online
+    ? { id: "ai", ok: true, title: "Gloam's brain is ready", detail: `Claude (${model}) is answering.` }
+    : { id: "ai", ok: false, title: "Gloam's brain can't be reached", detail: "Check the internet connection and the Claude API key. Students' messages wait safely until it's back." };
 }
 
 function diskCheck(): StatusCheck {

@@ -1,40 +1,33 @@
-import type { Concept, LessonBlueprint } from "@/lib/lesson/types";
+import type { LessonBlueprint } from "@/lib/lesson/types";
 
 /**
- * The judge never talks to the student. It answers small, focused questions,
- * because small models are much more reliable at "A or B?" than at juggling a whole lesson.
+ * The judge never talks to the student. It labels one message: what it's doing, and which of the
+ * lesson's ideas it says something about (and which side of each idea it's on).
+ * One call per message reads every idea at once. This prompt only changes when the lesson does,
+ * so it's cached, and every message after the first reads it at a tenth of the price.
  */
+export function judgePrompt(lesson: LessonBlueprint): string {
+  const ideas = lesson.concepts.map((c) => `- id "${c.id}"\n  TRUE: ${c.truth}\n  WRONG: ${c.misconception}`).join("\n");
+  return `You read one chat message from a student who is teaching a confused character the lesson "${lesson.title}". You never reply to the student. You only label their message, carefully and fairly.
 
-/** "Which version of THIS idea does the student agree with?" One idea at a time. */
-export function conceptCheckPrompt(concept: Concept): string {
-  return `You check one thing: which version of an idea a grade 9 student's message agrees with.
+THE LESSON'S IDEAS (each one has the TRUE version and a common WRONG version)
+${ideas}
 
-TRUE version: ${concept.truth}
-WRONG version: ${concept.misconception}
+LABEL THE MESSAGE
+intent: what the message is doing.
+- "explaining": trying to explain something about the lesson, even if it's wrong
+- "stuck": "idk", "i'm confused", giving up
+- "asking_for_answer": wants to be told the answer ("just tell me", "you explain it")
+- "off_topic": not about the lesson at all (games, food, people, other subjects)
+- "chatting": greetings, "ok", "lol", short reactions, being rude
 
-Return JSON:
-- matches: "TRUE" if the message agrees with the TRUE version. Saying the WRONG version is false (like "it's NOT that") also counts as TRUE.
-           "WRONG" if the message agrees with the WRONG version.
-           "NEITHER" if the message isn't really about this idea, or you can't tell.
-  Slang, typos and short answers can still be TRUE.
-- gaveReason: true only if the message also says WHY or HOW (because, so, which means, that's why).`;
+ideas: only the ideas the message actually says something about. Leave out every other idea: most messages are about zero or one.
+- matches "TRUE" if it agrees with the TRUE version. Saying the WRONG version is false ("it's NOT because...") also counts as TRUE.
+- matches "WRONG" if it agrees with the WRONG version.
+- Slang, typos, short answers and other languages still count. Judge what they mean, not how well it's written.
+- gaveReason: true only if the message also says WHY or HOW (because, so, which means).`;
 }
 
-export function conceptCheckMessage(message: string): string {
-  return `STUDENT'S MESSAGE: "${message}"`;
-}
-
-/** For messages that don't mention any idea: what is the student doing? */
-export function intentPrompt(lesson: LessonBlueprint): string {
-  return `A grade 9 student is chatting with a character while learning "${lesson.title}". Say what their message is doing.
-
-- "explaining": trying to explain something about the lesson, even if wrong
-- "stuck": "idk", "no idea", "i'm confused", giving up
-- "asking_for_answer": wants the answer told to them ("just tell me", "what's the answer", "you explain it")
-- "off_topic": not about the lesson at all (games, food, people, other subjects, random stuff)
-- "chatting": greetings, "ok", "yes", "lol", short reactions, being mean`;
-}
-
-export function intentMessage(message: string): string {
+export function judgeMessage(message: string): string {
   return `STUDENT'S MESSAGE: "${message}"`;
 }

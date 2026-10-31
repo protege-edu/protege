@@ -1,9 +1,9 @@
 import { chatJSON, type ChatMessage } from "./client";
 import { busy } from "./queue";
 import { comparisonsIn, gloamSystemPrompt, gloamTurnMessage } from "./prompts/gloam";
-import { conceptCheckMessage, conceptCheckPrompt, intentMessage, intentPrompt } from "./prompts/judge";
+import { judgeMessage, judgePrompt } from "./prompts/judge";
 import { checkSafety } from "./safety";
-import { conceptCheckSchema, intentSchema, performSchema, type Emotion, type Intent, type Quality } from "./schemas";
+import { judgeSchema, performSchema, type Emotion, type Intent, type Quality } from "./schemas";
 import { getAgeStyle, pickLine, type AgeStyle } from "@/lib/age-styles";
 import { currentBeliefs, directBeat, nextQuestion } from "@/lib/companion/director";
 import { candidateConcepts, gradeCheck } from "@/lib/companion/grade";
@@ -46,7 +46,8 @@ export interface TurnOutput extends JudgedEvent {
 /**
  * One companion turn:
  *   1. safety check (plain code, no AI)
- *   2. judge: code picks which ideas the message could be about, the AI checks each one
+ *   2. judge: ONE AI call labels the message against every idea (skipped when plain code already knows,
+ *      like "idk" or "lol"); code decides which of its labels count
  *   3. progress rules + director (plain code): what happens in the story
  *   4. Gloam speaks: a hand-written line from the age style, or (when the student explained
  *      something) an AI reply that reacts to their exact words, checked before it's shown
@@ -84,42 +85,39 @@ export async function runTurn(input: TurnInput, hooks: { onJudged?: (e: JudgedEv
     return done({ ...unchanged, reply: voice(reply, style), emotion: "skeptical", intent: "chatting", onTopic: true, source: "line" });
   }
 
-  // 2. Judge (one small question per idea the message might be about, asked side by side)
+  // 2. Judge: one call reads the message against every idea in the lesson
   const judged: { id: string; quality: Quality }[] = [];
-  const checks = await Promise.all(
-    candidateConcepts(lesson, message).map(async (concept) => ({ concept, res: await ask(conceptCheckSchema, "concept_check", conceptCheckPrompt(concept), conceptCheckMessage(message)) })),
-  );
-  if (checks.some((c) => c.res === "offline")) return done({ ...offline(understanding) });
-  for (const { concept, res } of checks) {
-    const quality = res && res !== "offline" ? gradeCheck(message, res) : null;
-    if (quality) judged.push({ id: concept.id, quality });
-  }
-  let intent: Intent = "explaining";
-  if (judged.length === 0) {
-    intent = quickIntent(message) ?? "chatting";
-    if (quickIntent(message) === null) {
-      const res = await ask(intentSchema, "intent", intentPrompt(lesson), intentMessage(message));
-      if (res === "offline") return done({ ...offline(understanding) });
-      intent = res?.intent ?? "chatting";
+  const candidates = candidateConcepts(lesson, message);
+  const quick = quickIntent(message);
+  let intent: Intent = "chatting";
+  if (candidates.length === 0 && quick !== null) {
+    // "idk", "lol", "just tell me": plain code already knows, so no AI (and no tokens)
+    intent = quick;
+  } else {
+    const ids = lesson.concepts.map((c) => c.id) as [string, ...string[]];
+    const res = await ask(judgeSchema(ids), "judge", judgePrompt(lesson), judgeMessage(message));
+    if (res === "offline") return done({ ...offline(understanding) });
+    const said = new Map((res?.ideas ?? []).map((i) => [i.id, i]));
+    // Only ideas whose evidence words the message uses can count, so the judge can't file an answer under the wrong idea
+    for (const c of candidates) {
+      const quality = gradeCheck(message, said.get(c.id) ?? { matches: "NEITHER", gaveReason: false });
+      if (quality) judged.push({ id: c.id, quality });
     }
-    // An explanation in words the lesson didn't expect (no idea's evidence words matched at all):
-    // ask about every idea. If it seems to be about more than 2, it's too vague to count.
-    if (intent === "explaining" && checks.length === 0 && message.trim().split(/\s+/).length >= 5) {
-      const all = await Promise.all(
-        lesson.concepts.map(async (concept) => ({ concept, res: await ask(conceptCheckSchema, "concept_check", conceptCheckPrompt(concept), conceptCheckMessage(message)) })),
-      );
-      if (all.some((c) => c.res === "offline")) return done({ ...offline(understanding) });
-      const hits = all.flatMap(({ concept, res }) => {
-        const quality = res && res !== "offline" ? gradeCheck(message, res) : null;
-        return quality && quality !== "vague" ? [{ id: concept.id, quality }] : [];
+    // An explanation in words the lesson didn't expect (no idea's evidence words at all): trust the judge,
+    // unless it seems to be about more than 2 ideas (then it's too vague to count)
+    if (candidates.length === 0 && res && message.trim().split(/\s+/).length >= 5) {
+      const hits = res.ideas.flatMap((i) => {
+        const quality = gradeCheck(message, i);
+        return quality && quality !== "vague" ? [{ id: i.id, quality }] : [];
       });
       if (hits.length > 0 && hits.length <= 2) judged.push(...hits);
     }
-    // "explaining" but it touched no idea: a vague attempt, not a lesson point
-    if (intent === "explaining" && judged.length === 0) intent = "chatting";
-    // "the sun", "summer?" are about the lesson even if they explain nothing: never call them off topic
-    if (intent === "off_topic" && mentionsLesson(lesson, message)) intent = "chatting";
+    intent = judged.length > 0 ? "explaining" : (quick ?? res?.intent ?? "chatting");
   }
+  // "explaining" but it touched no idea: a vague attempt, not a lesson point
+  if (intent === "explaining" && judged.length === 0) intent = "chatting";
+  // "the sun", "summer?" are about the lesson even if they explain nothing: never call them off topic
+  if (intent === "off_topic" && mentionsLesson(lesson, message)) intent = "chatting";
 
   // 3. Progress + director
   const progress = applyProgress(understanding, judged);
@@ -160,9 +158,12 @@ export async function runTurn(input: TurnInput, hooks: { onJudged?: (e: JudgedEv
   ];
 
   for (let attempt = 0; attempt < 3; attempt++) {
-    const res = await chatJSON({ name: "gloam", schema: performSchema, temperature: 0.85, maxTokens: 100, messages });
+    // (a reply is about 50 tokens: the cap only stops a runaway answer from costing much)
+    const res = await chatJSON({ name: "gloam", schema: performSchema, maxTokens: 200, messages });
     if (!res.ok) {
       if (res.reason === "unreachable") return done({ ...offline(understanding) });
+      // Claude is overloaded, or declined: Gloam's hand-written line for this moment (asking again would cost more for the same answer)
+      if (res.reason === "busy" || res.reason === "refused") return done({ ...result, reply: voice(beat.line, style), source: "busy" });
       continue;
     }
     const problem = checkReply(res.data.reply, { lesson, style, understanding: progress.understanding, allowed, gloamSaid, usedComparisons });
@@ -197,12 +198,13 @@ function checkReply(
   return null;
 }
 
-/** One small judge question. Returns null if the model gave nonsense twice, "offline" if it isn't running. */
+/** The judge's question. Returns null if it couldn't answer twice (or declined), "offline" if Claude can't be reached. */
 async function ask<T>(schema: z.ZodType<T>, name: string, system: string, user: string): Promise<T | null | "offline"> {
   for (let attempt = 0; attempt < 2; attempt++) {
-    const res = await chatJSON({ name, schema, temperature: 0, maxTokens: 40, messages: [{ role: "system", content: system }, { role: "user", content: user }] });
+    const res = await chatJSON({ name, schema, maxTokens: 300, messages: [{ role: "system", content: system }, { role: "user", content: user }] });
     if (res.ok) return res.data;
-    if (res.reason === "unreachable") return "offline";
+    if (res.reason === "unreachable" || res.reason === "busy") return "offline";
+    if (res.reason === "refused") return null;
   }
   return null;
 }
@@ -263,7 +265,7 @@ function tidy(reply: string, style: AgeStyle): string {
   // "vs." and "e.g." aren't the end of a sentence: swap their dots for a look-alike so the splitter ignores them
   const safe = text.replace(/\b(vs|e\.g|i\.e|etc)\./gi, (m) => m.replace(/\./g, "․"));
   let sentences: string[] = safe.match(/[^.!?…]+[.!?…]+["')]*|[^.!?…]+$/g) ?? [safe];
-  // Small models ramble: keep it under the age style's word limit (always at least one sentence)
+  // Never longer than the age style allows: keep it under the age style's word limit (always at least one sentence)
   const count = (xs: string[]) => xs.join(" ").split(/\s+/).filter(Boolean).length;
   while (sentences.length > 1 && count(sentences) > style.voice.maxWords) sentences = sentences.slice(0, -1);
   // Drop a dangling "So…" fragment at the end

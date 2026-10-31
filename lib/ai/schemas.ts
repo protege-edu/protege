@@ -21,18 +21,21 @@ export type Quality = (typeof QUALITIES)[number];
 export const INTENTS = ["explaining", "stuck", "asking_for_answer", "off_topic", "chatting"] as const;
 export type Intent = (typeof INTENTS)[number];
 
-/**
- * Step 1 of a turn: the judge. Cold and fast (temperature 0).
- * Code picks which ideas a message might be about; the model answers one focused question per idea.
- * An explicit choice ("TRUE"/"WRONG"/"NEITHER") is much more reliable for small models than a yes/no "correct" flag.
- */
-export const conceptCheckSchema = z.object({
-  matches: z.enum(["TRUE", "WRONG", "NEITHER"]),
-  gaveReason: z.boolean(),
-});
-export type ConceptCheck = z.infer<typeof conceptCheckSchema>;
+/** How the judge sees one idea in a message. NEITHER: the message isn't about it. */
+export interface ConceptCheck {
+  matches: "TRUE" | "WRONG" | "NEITHER";
+  gaveReason: boolean;
+}
 
-export const intentSchema = z.object({ intent: z.enum(INTENTS) });
+/**
+ * Step 1 of a turn: the judge. One call labels the message against every idea in the lesson.
+ * An explicit side ("TRUE"/"WRONG") is more reliable than a yes/no "correct" flag. Ideas it leaves out are NEITHER.
+ */
+export const judgeSchema = (ids: [string, ...string[]]) =>
+  z.object({
+    intent: z.enum(INTENTS),
+    ideas: z.array(z.object({ id: z.enum(ids), matches: z.enum(["TRUE", "WRONG"]), gaveReason: z.boolean() })),
+  });
 
 /** Step 2 of a turn: Gloam performs the beat the director picked. */
 export const performSchema = z.object({

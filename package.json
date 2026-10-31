@@ -13,7 +13,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "eval": "tsx scripts/companion-eval.ts",
+    "eval": "tsx --env-file-if-exists=.env scripts/companion-eval.ts",
     "screenshots": "tsx scripts/screenshot.ts",
     "test:logic": "tsx scripts/check-logic.ts",
     "test:accounts": "tsx --conditions=react-server scripts/check-accounts.ts",
@@ -30,6 +30,7 @@
     "site:check": "tsx scripts/site-check.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^1.3.0",
     "@fontsource/opendyslexic": "^5.3.0",
     "better-sqlite3": "^13.0.3",
     "drizzle-orm": "^0.45.4",

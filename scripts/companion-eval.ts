@@ -1,11 +1,12 @@
 /**
  * Talks to the real model with scripted students and checks whether Gloam behaves.
  *
- *   npx tsx scripts/companion-eval.ts            (uses AI_MODEL or the default)
- *   AI_MODEL=llama3.2:3b npx tsx scripts/companion-eval.ts
+ *   npm run eval                     (uses AI_MODEL or the default, and the key in .env)
  *
  * It prints full transcripts so we can judge the most important thing by eye: is it FUN?
+ * It also prints what the run cost in tokens and dollars (Claude bills per token).
  */
+import { usageTotals } from "@/lib/ai/client";
 import { runTurn, findGiveaway } from "@/lib/ai/companion";
 import { aiConfig } from "@/lib/ai/config";
 import { currentBeliefs } from "@/lib/companion/director";
@@ -85,7 +86,7 @@ const SCENARIOS: Scenario[] = [
 const sum = (u: Understanding) => Object.values(u).reduce<number>((a, b) => a + b, 0);
 
 async function main() {
-  console.log(`\nModel: ${aiConfig.model} @ ${aiConfig.baseUrl}\n`);
+  console.log(`\nModel: ${aiConfig.model}\n`);
   let turns = 0;
   let fallbacks = 0;
   let leaks = 0;
@@ -104,7 +105,7 @@ async function main() {
       turns++;
       times.push(out.ms);
       if (out.source === "offline") {
-        console.log("Ollama isn't reachable. Start it with `ollama serve` and try again.");
+        console.log("Claude isn't reachable. Check ANTHROPIC_API_KEY (or CLAUDE_API_KEY) in .env, and the internet connection.");
         process.exit(1);
       }
       if (out.source === "fallback") fallbacks++;
@@ -139,6 +140,12 @@ async function main() {
   console.log(`\n━━━ summary (${aiConfig.model}) ━━━`);
   console.log(`turns ${turns}, fallbacks ${fallbacks}, leaks that got through ${leaks}, failed scenarios ${failures}/${SCENARIOS.length}`);
   console.log(`median ${(times[Math.floor(times.length / 2)] / 1000).toFixed(1)}s, slowest ${(times[times.length - 1] / 1000).toFixed(1)}s`);
+  const u = usageTotals;
+  // Claude Haiku 5.5 prices per million tokens: input $0.10, output $0.50, cache read 0.1x, cache write 1.25x
+  const PRICE = { input: 0.1, output: 0.5, cacheRead: 0.01, cacheWrite: 0.125 };
+  const dollars = (u.input * PRICE.input + u.output * PRICE.output + u.cacheRead * PRICE.cacheRead + u.cacheWrite * PRICE.cacheWrite) / 1e6;
+  console.log(`AI calls ${u.calls} (${(u.calls / turns).toFixed(2)} per message). tokens: input ${u.input}, output ${u.output}, cache read ${u.cacheRead}, cache write ${u.cacheWrite}`);
+  console.log(`cost $${dollars.toFixed(4)} (about $${((dollars / turns) * 1200).toFixed(2)} for 30 students × 40 messages, at Haiku 5.5 prices)`);
 }
 
 main();

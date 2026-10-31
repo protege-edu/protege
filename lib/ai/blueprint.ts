@@ -8,7 +8,7 @@ import type { Concept, LessonBlueprint } from "@/lib/lesson/types";
 import { checkConcept, slug } from "@/lib/teacher/checks";
 
 /**
- * Drafts a lesson blueprint from a teacher's material, in small steps a laptop model can do well:
+ * Drafts a lesson blueprint from a teacher's material, in small, focused steps:
  *   1. outline: the key ideas, each with the truth and the realistic wrong idea
  *   2. each idea: Gloam's 4 belief stages, questions, answer words, evidence words, recap (in the class's age-style voice)
  *   3. the story: Gloam's wrong opening theory, 5 story beats, the finale
@@ -78,9 +78,11 @@ async function ask<T>(
 ): Promise<T> {
   let last = "";
   for (let i = 0; i < tries; i++) {
-    // Writing a lesson takes a laptop model much longer than a chat reply, so each step gets up to 5 minutes
-    const res = await chatJSON({ name, schema, messages, temperature: i === 0 ? 0.4 : 0.7, timeoutMs: 300_000, priority: "background" });
-    // Small models sometimes slip into another script mid-word ("乘"): that answer can't be used
+    // A lesson is drafted once for the whole class, so the steps that decide what's TRUE (the outline, the
+    // fact check) may think first. Every other step is a short writing job and doesn't need to.
+    const think = name === "outline" || name === "fact_check";
+    const res = await chatJSON({ name, schema, messages, thinking: think, effort: think ? "medium" : "low", maxTokens: think ? 8000 : 2000, timeoutMs: 120_000, priority: "background" });
+    // A model can slip into another alphabet mid-word ("乘"): that answer can't be used
     if (res.ok && OTHER_SCRIPT.test(JSON.stringify(res.data))) {
       last = "text in an unexpected alphabet";
       continue;
@@ -91,7 +93,8 @@ async function ask<T>(
       last = problem;
       continue;
     }
-    if (res.reason === "unreachable") throw new DraftFailed("Gloam's brain (Ollama) isn't running. Open Ollama and try again.");
+    if (res.reason === "unreachable") throw new DraftFailed("Protégé can't reach Gloam's brain (Claude) right now. Try again in a minute.");
+    if (res.reason === "busy") throw new DraftFailed("Gloam's brain (Claude) is very busy right now. Try again in a minute.");
     if (res.reason === "too_long") throw new DraftFailed("This part of your notes is too long for Gloam to read at once. Split it into two lessons, or leave a section out, and try again.");
     last = res.detail;
   }
