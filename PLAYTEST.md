@@ -1,14 +1,13 @@
 # Play-testing Protégé with friends
 
-Phase 1 isn't done until real people have played it. This is a short plan for one play-test session (about 30 minutes per friend). You need this laptop, and friends can use their own phones or Chromebooks on the same Wi-Fi.
+Phase 1 isn't done until real people have played it. This is a short plan for one play-test session (about 30 minutes per friend). Friends use their own phones or Chromebooks, on any internet connection.
 
 ## Before they arrive
 
-1. Open the **Ollama** app, then run `npm run class`. It checks the AI, starts Protégé in real mode, and prints the address for friends with a QR code.
-2. On this laptop, open http://localhost:3000/teacher, sign in (or make your account with the setup code), and make a class called "Play-test" for your grade. Give it the seasons lesson (or your own).
-3. On the class page, press **Show the code**. Friends open the address or scan the QR code, type the code, and pick a **made-up nickname** (no real names) and their secret pictures. Joining is part of the test: watch whether it's easy.
-4. Don't use `?test`: test mode lets pasted answers work, and you want to see what friends do without it (it doesn't exist in `npm run class` anyway).
-5. Have a piece of paper ready for notes. Write notes about what happened, not about who they are.
+1. Open https://protege-edu.vercel.app/teacher, sign in, and make a class called "Play-test" for your grade. Give it the seasons lesson (or your own).
+2. On the class page, press **Show the code**. Friends go to protege-edu.pages.dev/j or scan the QR code, type the code, and pick a **made-up nickname** (no real names) and their secret pictures. Joining is part of the test: watch whether it's easy.
+3. Don't use `?test`: test mode lets pasted answers work, and you want to see what friends do without it (it only exists while developing anyway).
+4. Have a piece of paper ready for notes. Write notes about what happened, not about who they are.
 
 ## What to say (and not say)
 

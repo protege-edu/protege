@@ -1,4 +1,3 @@
-import os from "node:os";
 import type { NextConfig } from "next";
 
 const dev = process.env.NODE_ENV !== "production";
@@ -32,31 +31,17 @@ const securityHeaders = [
   { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
   // the microphone (voice typing) for Protégé only; nothing else a page could ask for
   { key: "Permissions-Policy", value: "microphone=(self), camera=(), geolocation=(), payment=(), usb=(), browsing-topics=()" },
-  // over the https tunnel, browsers only ever use https (ignored on the plain school-network address)
+  // browsers only ever use https
   { key: "Strict-Transport-Security", value: "max-age=31536000" },
 ];
 
-/**
- * This laptop's own addresses on the school network. Students open those (the join code on the projector
- * sends them there), and while developing, Next only serves its page files to addresses it's told about.
- */
-const ownAddresses = Object.values(os.networkInterfaces())
-  .flat()
-  .flatMap((i) => (i && i.family === "IPv4" && !i.internal && /^(10|172\.(1[6-9]|2\d|3[01])|192\.168)\./.test(i.address) ? [i.address] : []));
-
 const nextConfig: NextConfig = {
   cacheComponents: true,
-  // (and a Cloudflare quick tunnel's address, for trying the online way while developing)
-  allowedDevOrigins: [...ownAddresses, "*.trycloudflare.com"],
   devIndicators: false,
   partialPrefetching: true,
-  // `npm run release` builds a self-contained copy a teacher can run without installing anything else
-  // (into its own folder, so building a release never disturbs a running dev server)
-  output: process.env.PROTEGE_RELEASE ? "standalone" : undefined,
-  distDir: process.env.PROTEGE_RELEASE ? ".next-release" : ".next",
-  // never ship a database (or the art workshop, screenshots and tools) inside a release: data stays on each school's laptop
+  // never ship the art workshop, screenshots or tools inside the app
   outputFileTracingExcludes: {
-    "*": ["data/**", "**/*.db", "**/*.db-*", "**/*.sqlite", "art/**", "screenshots/**", "scripts/**", "release/**", "app/**/*.ts", "app/**/*.tsx", "lib/**/*.ts"],
+    "*": ["data/**", "**/*.db", "**/*.db-*", "**/*.sqlite", "art/**", "screenshots/**", "scripts/**"],
   },
   // no "X-Powered-By: Next.js" (one less thing to tell a stranger)
   poweredByHeader: false,

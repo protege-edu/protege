@@ -16,11 +16,11 @@ Core principle: NOTHING IN THIS APP SHOULD FEEL LIKE A TEST, A PUNISHMENT, OR HO
 
 ## 🚨 NON-NEGOTIABLE RULES 🚨
 
-1. **NO PAID SERVICES. EVER.** No paid APIs, no paid hosting, no paid databases, no paid auth, no paid fonts, no paid animation tools, no free trials that turn paid, no services that need a credit card. Everything must be free and open source or free forever. If you think something paid is needed, STOP AND ASK ME FIRST.
+1. **NO PAID SERVICES, EXCEPT GLOAM'S BRAIN.** The one paid service is the Claude API (Gloam's AI). Everything else stays free: no paid hosting, no paid databases, no paid auth, no paid fonts, no paid animation tools, no free trials that turn paid. Keep Claude's cost tiny (don't waste tokens) and capped (daily limits). Never write "free forever" anywhere. If you think anything else paid is needed, STOP AND ASK ME FIRST.
 
-2. **ALL AI RUNS LOCALLY THROUGH OLLAMA.** Use Ollama's OpenAI-compatible endpoint (http://localhost:11434/v1). ALL AI CODE LIVES IN ONE MODULE (e.g. `lib/ai/`) behind one clean interface, so I can swap to a different model or provider later by changing config only. Pick a small, efficient model by default and make the model name a single config value.
+2. **ALL AI GOES THROUGH CLAUDE (Claude Haiku 5.5) WITH THE ANTHROPIC SDK.** The key is a server-only environment variable, never sent to a browser or committed. ALL AI CODE LIVES IN ONE MODULE (`lib/ai/`) behind one clean interface, so I can swap the model later by changing config only. The model name is a single config value. Use every token-saving trick (prompt caching, no thinking for chat, short answers, hand-written lines where they work), but Gloam must still be genuinely good.
 
-3. **NO REAL STUDENT DATA.** During development, use only fake students and nicknames. Don't collect real names, emails, birthdays, or anything personal. No analytics, no trackers, no third-party scripts. Data stays on the machine in a local database.
+3. **NO REAL STUDENT DATA.** During development, use only fake students and nicknames. Don't collect real names, emails, birthdays, or anything personal. No analytics, no trackers, no third-party scripts. Data lives in Protégé's own online database (Turso); a student's nickname or anything identifying is never sent to the AI.
 
 4. **THE UI HAS ZERO COMPROMISE. IT MUST NOT LOOK VIBE-CODED.** (Full design rules below. Read them twice.)
 
@@ -35,12 +35,12 @@ Core principle: NOTHING IN THIS APP SHOULD FEEL LIKE A TEST, A PUNISHMENT, OR HO
 - Motion (Framer Motion) for interaction and UI animation
 - GSAP for choreographed story scenes and sequences (it's free)
 - Hand-built SVG for the companion character, animated with code (expressions, blinking, idle movement, reactions)
-- SQLite + Drizzle ORM for local data
+- SQLite (Turso online, a local file while developing) + Drizzle ORM
 - Zod to validate everything the AI returns
 - Playwright for screenshotting pages so you can critique your own UI
 - Fonts: free, open-license fonts loaded with next/font
 
-It must run in a browser and work well on school Chromebooks (design for 1366×768 screens and touch, then scale up and down). Later, one teacher laptop will host it for a whole class over the school network, so keep the architecture compatible with that.
+It must run in a browser and work well on school Chromebooks (design for 1366×768 screens and touch, then scale up and down). It's hosted online (the app on Vercel, the database on Turso, the public website on Cloudflare Pages), reachable from anywhere with internet. Nothing to download or install.
 
 ## HOW THE COMPANION WORKS (IMPORTANT)
 
@@ -52,7 +52,7 @@ Don't just chat freely with the model. Every companion turn must return STRUCTUR
 
 This structure powers the progress meter, the story progression, and the teacher dashboard. If the model returns bad JSON, retry or fall back gracefully. Never crash, never show raw errors to students.
 
-When a teacher pastes a lesson, generate a "lesson blueprint" ONCE (key concepts, realistic misconceptions the companion will start with, questions it'll ask, story beats) and store it. The whole class reuses that blueprint. Only live companion chat should call the AI per student. This keeps it fast on a laptop.
+When a teacher pastes a lesson, generate a "lesson blueprint" ONCE (key concepts, realistic misconceptions the companion will start with, questions it'll ask, story beats) and store it. The whole class reuses that blueprint. Only live companion chat should call the AI per student. This keeps it fast and cheap.
 
 The companion's personality matters more than anything else in this app. It should be genuinely funny, curious, a little dramatic, and lovable. Write its system prompt carefully, test it a lot, and iterate until talking to it is FUN.
 
@@ -97,7 +97,7 @@ Then review your plan and ask: "Would I produce this same design for any other a
 
 **Phase 3 — The story/game layer.** Chapters, companion leveling up, one polished themed world. One world done beautifully beats five half-done ones.
 
-**Phase 4 — Classroom mode.** Teacher's laptop hosts a session, students join from their browsers with a short class code and a nickname. Must handle ~30 students at once without falling apart (queue AI requests if needed and show fun in-character waiting states).
+**Phase 4 — Classroom mode.** Students join a class from their browsers with a short class code and a nickname. Must handle ~30 students at once without falling apart (queue AI requests if needed and show fun in-character waiting states).
 
 Later (not now): interest-based themes, student creator mode for building levels.
 
@@ -106,7 +106,7 @@ Later (not now): interest-based themes, student creator mode for building levels
 - Start by reading this whole brief, then give me your Phase 1 plan (including the design plan) before coding.
 - Explain big decisions in simple language. I'm in grade 9 and I want to learn how this works, not just get code.
 - Write clean, organized code with clear file structure. Commit to git after each working step with clear messages.
-- Write a README explaining how to install Ollama, pull the model, and run the app.
+- Write a README explaining how to run the app and how to put it online.
 - If something is unclear or a decision is mine to make, ask me instead of guessing.
 - Never say a phase is done until you've tested it and checked the screenshots.
 
@@ -126,13 +126,13 @@ LET'S BUILD SOMETHING INSANE.
 - Full eureka cinematic only for the first concept and the finale. Others are shorter and all are skippable.
 - Phase 1 isn't done until real people (me and friends) have play-tested it.
 - Accounts: teachers use email + password (or Google). Students join with a class code + nickname + secret picture key (2 pictures for K–2, 3 after). A teacher can switch on "Continue with Google" for a class; then Protégé asks Google ONLY for "openid" and stores ONLY a keyed hash of the Google account id (no name, email or photo), and the student still picks a nickname. This keeps Rule 3.
-- Hosting: Protégé and Ollama run on the teacher's laptop; students reach it through a free tunnel (Tailscale Funnel or Cloudflare). Hosting settings stay in one place so a move (e.g. Vercel) later is contained.
+- Hosting: everything is online, reachable from anywhere. The app runs on Vercel (Hobby: free, non-commercial, so Protégé stays free for schools), the database on Turso, the public website on Cloudflare Pages (only the website: Cloudflare's free Workers can't run the app). Students join at protege-edu.pages.dev/j with the class code. Hosting settings stay in one place (lib/hosting/app.ts, vercel.json) so a move later is contained. No laptop, no tunnels, no downloads.
 - Languages: English and French. A lesson's language (guessed from the notes, teacher can change it) is what students explain in and Gloam speaks; a class's language is for the screens around lessons. Every word comes from the age style in that language (lib/age-styles/fr.ts); nothing on a student screen is hard-coded.
-- Teacher sign-up is closed by default: the first account needs the setup code Protégé prints in its terminal; later teachers need a one-use invite from a signed-in teacher.
-- Going public: EACH SCHOOL RUNS ITS OWN COPY (free installer for a teacher laptop + a free public website, protege-edu.pages.dev on Cloudflare Pages, whose account a parent owns because Cloudflare requires 18+). Code lives in the free GitHub organization protege-edu. No shared paid server. The code is open source under AGPL-3.0. Ask before creating the public repo or publishing anything.
+- Teacher sign-up is closed: the first account needs the setup code Protégé prints in its logs and becomes the OWNER, who adds schools on the owner page. Every other teacher signs up with their school's STAFF CODE (teachers and students share school email domains, so email proves nothing). Teachers at a school can see who signed up, remove someone, and make a new code. Daily AI limits per student, class and teacher; when one runs out, Gloam falls asleep in character.
+- Going public: one hosted Protégé (protege-edu.vercel.app) for every school, with the public website at protege-edu.pages.dev. Accounts on services with 18+ terms (Cloudflare, Vercel, Turso, Anthropic) belong to a parent. Code lives in the free GitHub organization protege-edu, open source under AGPL-3.0, so a board can also run its own copy. Ask before publishing anything new.
 - Laws: built for Ontario first (MFIPPA, Education Act, Bill 194, AODA), but designed to meet the strictest rules worldwide (GDPR, UK Children's Code, COPPA, FERPA, EU AI Act) because Protégé may go global later.
 - Accessibility: every student can pick "Ways to play" (voice typing, read-aloud, bigger text, high contrast, easier reading, less motion), saved on their account; teachers can switch them on for a student. Aim for WCAG 2.2 AA everywhere.
-- Voice: a student's voice is only ever heard by their own device (browser speech recognition ONLY when it guarantees on-device processing) or the teacher's laptop (local whisper.cpp). Never a cloud speech service. Clips are never stored.
+- Voice: a student's voice is only ever heard by their own device (browser speech recognition ONLY when it guarantees on-device processing). Read-aloud uses only the device's own voices. Never a cloud speech service. Clips are never stored.
 
 ## AGE STYLES (Protégé is for every grade, K–12)
 
@@ -158,11 +158,11 @@ Phase 1: build the age style system, but only fully polish ONE profile: high sch
 - **Its own celebrations, sounds and motion.**
 Every phase must keep raising the bar for ALL age styles, never just one. When a phase adds something (teacher tools, chapters, classroom mode), it has to feel native in every age style.
 
-**How the art is made** (so any session can continue it): local FLUX.1-schnell through ComfyUI in `~/ProtegeArt` (in the user folder) (free, Apache 2.0), then the scripts in `art/` (paint → erase → grade into dark/lit → depth layers; `gloam_rig.py` cuts a painted Gloam into an animatable rig with a code-drawn face). A human artist can replace any image 1:1. Before painting, stop other heavy Ollama models: they share the GPU.
+**How the art is made** (so any session can continue it): local FLUX.1-schnell through ComfyUI in `~/ProtegeArt` (in the user folder) (free, Apache 2.0), then the scripts in `art/` (paint → erase → grade into dark/lit → depth layers; `gloam_rig.py` cuts a painted Gloam into an animatable rig with a code-drawn face). A human artist can replace any image 1:1.
 
 ## TEACHER MATERIAL (Phase 2)
 
-Teachers bring their OWN lessons. Support uploading PDF, PowerPoint (.pptx), Word (.docx), and pasted text, using free libraries that run locally. Material can be any length: Protégé splits it into a unit of lessons at its headings, each a part the local model can read at once (the teacher can move the breaks), and drafts them one at a time, in order. After the AI generates the blueprint, the teacher reviews and edits it (concepts, misconceptions, questions). STUDENTS ONLY EVER SEE A BLUEPRINT THE TEACHER APPROVED.
+Teachers bring their OWN lessons. Support uploading PDF, PowerPoint (.pptx), Word (.docx), and pasted text, read in the teacher's own browser with free libraries (the file is never uploaded). Material can be any length: Protégé splits it into a unit of lessons at its headings, about one topic each (the teacher can move the breaks), and drafts them one at a time, in order. After the AI generates the blueprint, the teacher reviews and edits it (concepts, misconceptions, questions). STUDENTS ONLY EVER SEE A BLUEPRINT THE TEACHER APPROVED.
 
 ## THE BIG VISION (where this is going, NOT for now)
 
@@ -177,4 +177,4 @@ DO NOT BUILD THESE YET. But design the architecture and data model so they're po
 - **Creator mode.** Students build their own challenges and characters for classmates.
 - **School system connections.** Google Classroom or the board's systems, only once the board approves.
 
-PRIVACY STILL RULES EVERYTHING: remembering students over time and aggregating insight means extra care. Nicknames only, data stays local, nothing that could identify a student leaves the machine.
+PRIVACY STILL RULES EVERYTHING: remembering students over time and aggregating insight means extra care. Nicknames only, data stays in Protégé's own database, nothing that could identify a student is ever sent to the AI or anyone else.

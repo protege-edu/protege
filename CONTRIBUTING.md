@@ -4,8 +4,8 @@ Thanks for wanting to help. Protégé is used by real students, so a few rules m
 
 ## The rules every change follows
 
-1. **Nothing paid, nothing in the cloud.** Every library, font, model and service must be free and open
-   source (or free forever) and run on the school's own computer. All AI goes through `lib/ai/`.
+1. **Nothing paid except Gloam's brain.** Every library, font and service must be free (and libraries open
+   source). The one paid service is the Claude API, and all AI goes through `lib/ai/`: keep its use small.
 2. **No real student data, ever.** Not in code, tests, screenshots, issues or pull requests. Use made-up
    nicknames. No analytics, trackers or third-party scripts.
 3. **Kid-safe.** Gloam stays on topic, never mocks a student, and never gives away the answer.

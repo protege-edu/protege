@@ -73,22 +73,12 @@ ${Object.entries(ALLOWED)
 - Shantell Sans, by Shantell Martin and Arrow Type
 - OpenDyslexic, by Abbie Gonzalez
 
-## The installers
+## Services Protégé uses (not part of the code)
 
-- The Windows installer is made with **Inno Setup**, by Jordan Russell and Martijn Laan (free, Inno Setup
-  License). The Mac app and disk image are made with Apple's own tools.
-
-## Downloaded on the teacher's laptop, never shipped inside Protégé
-
-- **Ollama** (MIT) runs the AI model. Protégé's first-run setup downloads its official installer from
-  ollama.com if it isn't installed yet.
-- **Qwen3 4B Instruct** (Apache 2.0) is Gloam's default model.
-- **whisper.cpp** (MIT), by the ggml authors, runs voice typing.
-- **Whisper speech models** (MIT), by OpenAI, converted by the whisper.cpp project.
-- **sherpa-onnx** (Apache 2.0), by the k2-fsa project, runs Gloam's read-aloud voice. It includes
-  **ONNX Runtime** (MIT, Microsoft) and **espeak-ng** (GPL 3.0) with its language data, which turns French
-  text and new English words into sounds.
-- **Kokoro-82M** (Apache 2.0), by hexgrad, is Gloam's read-aloud voice, packed for sherpa-onnx.
+- **Claude** (Claude Haiku 5.5), by Anthropic, is Gloam's brain, reached through Anthropic's API under its
+  commercial terms.
+- **Vercel** runs the app, **Turso** keeps its database, and **Cloudflare Pages** hosts the public website.
+- Gloam's recorded website lines (\`site/audio\`) were made with **Kokoro-82M** (Apache 2.0, by hexgrad).
 
 ## Art
 
