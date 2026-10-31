@@ -1,11 +1,12 @@
 /**
- * Builds Protégé's public website (Cloudflare Pages, see the README) into site-dist/: the home page, the setup
- * guide, privacy, and the whole school board pack, from the same documents as the code (so they never drift
- * apart). No trackers, no cookies, no third-party scripts or fonts: everything is served from the site itself,
+ * Builds Protégé's public website (Cloudflare Pages, see the README) into site-dist/: the home page, the guide,
+ * privacy, the join page, and the whole school board pack, from the same documents as the code (so they never
+ * drift apart). No trackers, no cookies, no third-party scripts or fonts: everything is served from the site itself,
  * and its headers (_headers) tell browsers to refuse anything else.
  *
  *   npm run site                     → site-dist/ (open site-dist/index.html)
- *   PROTEGE_REPO=owner/name npm run site    links the downloads to that repository's releases
+ *   PROTEGE_APP_URL=https://… npm run site   points "Open Protégé" and the join page at another copy of the app
+ *   PROTEGE_REPO=owner/name npm run site      links "Code" to that repository
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -19,14 +20,12 @@ import { lostCopy } from "../lib/age-styles/lost-copy";
 
 const root = process.cwd();
 const out = path.join(root, "site-dist");
-// where the Protégé app lives (the join page sends students there; a school's own copy sets PROTEGE_APP_URL)
+// where the Protégé app lives ("Open Protégé" goes to its teacher page; the join page sends students there)
 const APP_URL = (process.env.PROTEGE_APP_URL ?? "https://protege-edu.vercel.app").replace(/\/$/, "");
 const repo = process.env.PROTEGE_REPO ?? (pkg as { repository?: string }).repository?.replace(/^github:/, "");
 const repoUrl = repo ? `https://github.com/${repo}` : "#";
-const download = repo ? `${repoUrl}/releases/latest` : "#download";
-// straight to the newest installer (fixed names, see scripts/release.ts): teachers never see GitHub
-const file = (name: string) => (repo ? `${repoUrl}/releases/latest/download/${name}` : "#download");
-const links: Links = { windows: file("Protege-Setup.exe"), mac: file("Protege.dmg"), windowsZip: file("Protege-windows.zip"), macZip: file("Protege-mac.zip"), repo: repoUrl };
+// (the join page is j/ next to each home page: /j in English, /fr/j in French)
+const links: Links = { teacher: `${APP_URL}/teacher`, join: "j/", repo: repoUrl };
 
 /** The security policy, in the page and in Cloudflare's headers: only this site, nothing else, ever */
 const CSP = "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; media-src 'self'; base-uri 'none'; form-action 'none'";
@@ -97,7 +96,7 @@ function page({
 <link rel="stylesheet" href="${up}style.css">
 <script type="module" src="${up}js/main.js"></script>
 </head>
-<body data-page="${kind}" data-root="${up}" data-windows="${links.windows}" data-mac="${links.mac}">
+<body data-page="${kind}" data-root="${up}">
 <a class="skip" href="#main">${t.skip}</a>
 ${body.includes("<!--BAR-->") ? body.replace("<!--BAR-->", bar) : `${bar}\n${body}`}
 ${bare ? "" : `<footer class="night-foot">
@@ -123,13 +122,7 @@ const PEEK: Record<string, { mood: string; key: keyof SiteCopy["peeks"] }> = {
 /** A markdown document as a page (links to other .md files become .html) */
 function doc(file: string, at: string, lang: Lang) {
   const t = COPY[lang];
-  const md = fs
-    .readFileSync(file, "utf8")
-    .replaceAll("](DOWNLOAD)", `](${download})`)
-    .replaceAll("DOWNLOAD_WINDOWS_ZIP", links.windowsZip)
-    .replaceAll("DOWNLOAD_MAC_ZIP", links.macZip)
-    .replaceAll("DOWNLOAD_WINDOWS", links.windows)
-    .replaceAll("DOWNLOAD_MAC", links.mac);
+  const md = fs.readFileSync(file, "utf8");
   const up = "../".repeat(at.split("/").length - 1);
   const html = (marked.parse(md, { async: false }) as string)
     .replace(/href="([^"]+?)\.md(#[^"]*)?"/g, (_, p: string, h = "") => `href="${p}.html${h}"`)
@@ -301,7 +294,7 @@ async function main() {
       "",
     ].join("\n"),
   );
-  console.log(`Site built in site-dist/ (${repo ? `downloads: ${download}` : "set PROTEGE_REPO to link the downloads"}).`);
+  console.log(`Site built in site-dist/ (the app: ${APP_URL}).`);
 }
 
 main().catch((e) => {

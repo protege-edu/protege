@@ -371,14 +371,6 @@ function story(stage: Stage, speak: Speak, setScene: (s: Scene) => void): Scroll
     });
   }
 
-  // "Watch Gloam learn" goes to the first beat after the hero
-  let st: ScrollTrigger | null = null;
-  $<HTMLAnchorElement>('.beat[data-beat="hero"] a[href="#story-wrong"]').addEventListener("click", (e) => {
-    if (!st) return;
-    e.preventDefault();
-    window.scrollTo({ top: st.start + (st.end - st.start) * 0.13, behavior: calm ? "auto" : "smooth" });
-  });
-
   show("hero");
   if (calm) {
     typeTo(explain, text, 1);
@@ -394,7 +386,7 @@ function story(stage: Stage, speak: Speak, setScene: (s: Scene) => void): Scroll
   }
   typeTo(explain, text, 0);
   measure();
-  st = ScrollTrigger.create({
+  const st = ScrollTrigger.create({
     trigger: ".story",
     start: "top top",
     end: "+=650%",
@@ -563,15 +555,16 @@ function worlds() {
 }
 
 /**
- * Act IV. Nothing leaves the laptop. Messages travel only between the Chromebooks and the laptop; one keeps
- * trying to leave for the internet, and Gloam (standing guard, very nosy) bonks it back with its lantern.
+ * Act IV. Words go in, names don't. Messages travel between the Chromebooks and Protégé; a student's words fly
+ * on to Claude (Gloam's brain), and when their nickname tries to follow, Gloam (standing guard, very nosy)
+ * bonks it back with its lantern.
  */
 function privacy(stage: Stage, speak: Speak, setScene: (s: Scene) => void) {
   const section = $(".private");
   const net = $<SVGSVGElement>(".net", section);
   const words = $(".words", section);
-  const leak = $<SVGPathElement>("#leak", net);
-  // where along the leak path Gloam's lantern waits (and the stray message gets bonked)
+  const out = $<SVGPathElement>("#out", net);
+  // where along the way to Claude Gloam's lantern waits (and the nickname gets bonked)
   const HIT = 0.68;
   ScrollTrigger.create({ trigger: net, start: "top 75%", once: true, onEnter: () => net.classList.add("is-on") });
   const NS = "http://www.w3.org/2000/svg";
@@ -588,19 +581,19 @@ function privacy(stage: Stage, speak: Speak, setScene: (s: Scene) => void) {
     pill.setAttribute("rx", "8");
     label.before(pill);
   }
-  // where on the screen a point along the leak path is
+  // where on the screen a point along the way to Claude is
   const onScreen = (share: number) => {
-    const pt = leak.getPointAtLength(leak.getTotalLength() * share);
+    const pt = out.getPointAtLength(out.getTotalLength() * share);
     const m = net.getScreenCTM();
     return m ? new DOMPoint(pt.x, pt.y).matrixTransform(m) : new DOMPoint(0, 0);
   };
-  // sized to the diagram (which stops growing), so on a big screen Gloam doesn't swallow the internet
+  // sized to the diagram (which stops growing), so on a big screen Gloam doesn't swallow Claude
   const size = () => Math.min(0.27, (net.getBoundingClientRect().height * 0.36) / innerHeight);
   const guard = () => {
     const p = onScreen(HIT);
     stage.placeLantern(p.x, p.y, size());
   };
-  // out of sight, below the screen (until it pops up to guard the laptop)
+  // out of sight, below the screen (until it pops up to stand guard)
   const away = () => {
     stage.jump();
     // already at its guarding size, so not even the lantern peeks over the bottom edge
@@ -666,33 +659,45 @@ function privacy(stage: Stage, speak: Speak, setScene: (s: Scene) => void) {
     mp.setAttribute("href", `#${th.id}`);
     m.append(mp);
     c.append(m);
-    net.insertBefore(c, net.querySelector(".laptop-icon"));
+    net.insertBefore(c, net.querySelector(".hub"));
   });
-  // the one that tries to leave: driven from here, so Gloam knows exactly when to swing
+  // a student's words, on their way to Claude, and the nickname that tries to tag along: driven from here, so
+  // Gloam knows exactly when to swing
+  const word = document.createElementNS(NS, "circle");
+  word.setAttribute("r", "3.6");
+  word.setAttribute("class", "packet");
   const escape = document.createElementNS(NS, "circle");
   escape.setAttribute("r", "4");
   escape.setAttribute("class", "escape");
   const flash = document.createElementNS(NS, "circle");
   flash.setAttribute("r", "14");
   flash.setAttribute("class", "bonk");
-  net.append(escape, flash);
+  net.append(word, escape, flash);
   let visibleNow = false;
   new IntersectionObserver(([e]) => (visibleNow = e.isIntersecting)).observe(net);
   let t0 = performance.now();
-  const len = leak.getTotalLength();
+  const len = out.getTotalLength();
   const tick = (now: number) => {
     requestAnimationFrame(tick);
     if (!visibleNow) return;
-    // 2.6s a round: out toward the internet (1.5s), bonked, bounced back (0.6s), a rest
-    const k = ((now - t0) % 2600) / 2600;
+    // 3.8s a round: the words fly past Gloam to Claude (1.1s); then the nickname heads out (1.5s), is bonked,
+    // bounces back (0.6s), and a rest
+    const r = ((now - t0) % 3800) / 3800;
+    const w = Math.min(1, r / 0.3);
+    const wp = out.getPointAtLength(len * w * w * (3 - 2 * w));
+    word.setAttribute("cx", String(wp.x));
+    word.setAttribute("cy", String(wp.y));
+    word.style.opacity = w < 1 ? "1" : "0";
+    const k = (r - 0.32) / 0.68;
     let share: number;
-    if (k < 0.58) share = HIT * (k / 0.58) * (k / 0.58);
+    if (k < 0) share = 0;
+    else if (k < 0.58) share = HIT * (k / 0.58) * (k / 0.58);
     else if (k < 0.81) share = HIT * (1 - (k - 0.58) / 0.23);
     else share = 0;
-    const pt = leak.getPointAtLength(len * share);
+    const pt = out.getPointAtLength(len * share);
     escape.setAttribute("cx", String(pt.x));
     escape.setAttribute("cy", String(pt.y));
-    escape.style.opacity = k < 0.81 ? "1" : "0";
+    escape.style.opacity = k >= 0 && k < 0.81 ? "1" : "0";
     const hitNow = k >= 0.58 && k < 0.6;
     if (hitNow && !escape.dataset.hit) {
       escape.dataset.hit = "1";
@@ -735,7 +740,7 @@ function ways(voice: Voice, setReading: (r: boolean) => void, reading: () => boo
   }
 }
 
-/** The finale: dawn comes up as you arrive, a Gloam that knows something now, and the download */
+/** The finale: dawn comes up as you arrive, a Gloam that knows something now, and the way in */
 function finale(stage: Stage, speak: Speak, setScene: (s: Scene) => void) {
   const words = $(".get-wrap");
   ScrollTrigger.create({

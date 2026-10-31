@@ -1,5 +1,5 @@
 /**
- * Every page of the website: the right download for this computer, and the reading pages' contents rail.
+ * Every page of the website: the reading pages' contents rail, and the footer's sleeping Gloam.
  * The homepage's chapters load on top (site/js/home.ts). No trackers, cookies or third-party anything:
  * this file and its pieces are all that runs.
  */
@@ -7,47 +7,8 @@
 import { COPY } from "../i18n";
 import { footer } from "./footer";
 
-type OS = "windows" | "mac" | "chromeos" | "mobile" | "other";
 // the page's language (the French pages say lang="fr-CA")
 const t = COPY[document.documentElement.lang.startsWith("fr") ? "fr" : "en"];
-
-function detectOS(): OS {
-  const ua = navigator.userAgent;
-  const platform = (navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData?.platform ?? navigator.platform ?? "";
-  if (/CrOS/.test(ua) || /chrome os/i.test(platform)) return "chromeos";
-  if (/Android|iPhone|iPod/.test(ua) || (/iPad|Macintosh/.test(ua) && navigator.maxTouchPoints > 1)) return "mobile";
-  if (/Win/i.test(platform)) return "windows";
-  if (/Mac/i.test(platform)) return "mac";
-  return "other";
-}
-
-/** Download buttons say (and get) the right thing for this computer */
-function downloads(os: OS) {
-  document.documentElement.dataset.os = os;
-  const links = document.body.dataset;
-  for (const a of document.querySelectorAll<HTMLAnchorElement>("[data-download]")) {
-    if (os === "windows") {
-      a.href = links.windows!;
-      a.textContent = t.download.windows;
-    } else if (os === "mac") {
-      a.href = links.mac!;
-      a.textContent = t.download.mac;
-    } else {
-      // a Chromebook or phone can't run Protégé (the teacher's laptop does): say so, kindly
-      a.href = `${links.root ?? ""}guide.html#get-it`;
-      a.textContent = t.download.other;
-    }
-  }
-  for (const p of document.querySelectorAll<HTMLElement>("[data-download-note]")) {
-    if (os === "chromeos" || os === "mobile") {
-      p.textContent = t.download.otherNote;
-    }
-  }
-  for (const el of document.querySelectorAll<HTMLElement>("[data-os-only]")) {
-    const only = el.dataset.osOnly;
-    el.hidden = os === "mac" ? only !== "mac" : only === "mac";
-  }
-}
 
 /** Long documents: a contents rail that follows where you are */
 function contents() {
@@ -91,8 +52,6 @@ function contents() {
 }
 
 document.documentElement.classList.add("js");
-const os = detectOS();
-downloads(os);
 contents();
 footer();
 if (document.body.dataset.page === "home") void import("./home").then((m) => m.home());

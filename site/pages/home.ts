@@ -7,18 +7,18 @@
  *            and gets it (the lantern ignites and its light rolls across the valley). Then it's your turn.
  *   Act II   the teacher's desk: a laptop whose screen follows the steps, with Gloam peeking over it
  *   Act III  every grade: walk through the four painted worlds, each with its own Gloam
- *   Act IV   nothing leaves the laptop (Gloam guards it)
+ *   Act IV   words go in, names don't (Gloam lets students' words through to Claude and bonks the nickname)
  *   Act V    ways to play, live
- *   Finale   dawn, and the download
+ *   Finale   dawn, and the way in: open Protégé (teachers) or join a class (students)
  */
 import type { SiteCopy } from "../i18n";
 import { linesFor } from "../js/lines";
 
 export interface Links {
-  windows: string;
-  mac: string;
-  windowsZip: string;
-  macZip: string;
+  /** the app's teacher page (sign in, or sign up with a staff code) */
+  teacher: string;
+  /** where students type the class code (this site's /j, relative to the page) */
+  join: string;
   repo: string;
 }
 
@@ -66,7 +66,7 @@ export function homeBody(l: Links, bar: string, t: SiteCopy, up: string): string
     ["teachers", t.trail.desk],
     ["worlds", t.trail.grades],
     ["private", t.trail.privacy],
-    ["download", t.trail.get],
+    ["start", t.trail.get],
   ];
   return `
 <div class="stage" id="stage" aria-hidden="true">
@@ -98,13 +98,13 @@ ${bar}
         <h1 class="voice">${inked(s.h1)}</h1>
         <p class="lede">${s.lede}</p>
         <div class="buttons">
-          <a class="btn primary" data-download href="${l.windows}">${t.download.generic}</a>
-          <a class="btn quiet" href="#story-wrong">${s.watch}</a>
+          <a class="btn primary" href="${l.teacher}">${t.cta.teacher}</a>
+          <a class="btn quiet" href="${l.join}">${t.cta.student}</a>
         </div>
-        <p class="small" data-download-note>${s.note}</p>
+        <p class="small">${s.note}</p>
         <p class="say-static voice" aria-hidden="true">${lines.theory}</p>
       </div>
-      <div class="beat" data-beat="wrong" id="story-wrong">
+      <div class="beat" data-beat="wrong">
         <h2 class="voice">${s.wrongH}</h2>
         <p class="lede">${s.wrongP}</p>
       </div>
@@ -148,7 +148,7 @@ ${bar}
         <img class="peeker" src="${up}img/gloam-curious.webp" alt="" width="220" height="276" loading="lazy">
         <div class="lid">
           <div class="lap-screen">
-            <div class="chrome" aria-hidden="true"><i></i><i></i><i></i><span>protégé · localhost:3000/teacher</span></div>
+            <div class="chrome" aria-hidden="true"><i></i><i></i><i></i><span>protege-edu.vercel.app/teacher</span></div>
             <div class="views">
               <div class="d-screen is-on" data-step="0">
                 <div class="notes"><p class="nhead">${t.desk.notesHead}</p><p class="typed" data-type="${t.desk.notes}">${t.desk.notes}</p></div>
@@ -195,8 +195,8 @@ ${bar}
       <a class="btn quiet" href="privacy.html">${t.private.more}</a>
     </div>
     <svg class="net" viewBox="0 0 520 420" role="img" aria-label="${t.private.diagram}">
-      <g class="cloud"><path d="M396 64a28 28 0 0 1 54-8 22 22 0 0 1 28 30h-96a20 20 0 0 1 14-22z"/><text x="437" y="112">${t.private.internet}</text></g>
-      <path class="leak" id="leak" d="M262 190 Q 330 120 420 92"/>
+      <g class="cloud"><path d="M396 64a28 28 0 0 1 54-8 22 22 0 0 1 28 30h-96a20 20 0 0 1 14-22z"/><text x="437" y="112">${t.private.brain}</text></g>
+      <path class="out" id="out" d="M262 190 Q 330 120 420 92"/>
       ${[
         [90, 110],
         [70, 250],
@@ -206,8 +206,8 @@ ${bar}
       ]
         .map(([x, y]) => `<path class="thread" d="M${x} ${y} Q ${(x + 260) / 2} ${(y + 220) / 2 - 30} 260 220"/><g class="book" transform="translate(${x - 26} ${y - 18})"><rect width="52" height="34" rx="4"/><rect class="screen" x="5" y="5" width="42" height="22" rx="2"/></g>`)
         .join("")}
-      <g class="laptop-icon" transform="translate(212 186)"><rect width="96" height="62" rx="6"/><rect class="screen" x="8" y="8" width="80" height="46" rx="3"/><path d="M-12 66h120l-8 10H-4z"/></g>
-      <text class="lbl" x="260" y="290">${t.private.laptop}</text>
+      <g class="hub" transform="translate(212 184)"><rect width="96" height="70" rx="8"/><rect class="screen" x="8" y="16" width="80" height="46" rx="3"/><circle cx="14" cy="9" r="2.5"/><circle cx="22" cy="9" r="2.5"/><circle cx="30" cy="9" r="2.5"/></g>
+      <text class="lbl" x="260" y="290">${t.private.hub}</text>
     </svg>
     <figure class="guard-still" aria-hidden="true"><img src="${up}img/gloam-proud.webp" alt="" width="220" height="276" loading="lazy"><figcaption class="voice">${lines.nosy}</figcaption></figure>
   </div>
@@ -232,19 +232,17 @@ ${bar}
   </div>
 </section>
 
-<section class="get" id="download" aria-labelledby="get-title">
+<section class="get" id="start" aria-labelledby="get-title">
   <div class="wrap get-wrap">
     <h2 id="get-title" class="voice">${t.get.title}</h2>
     <img class="get-gloam" src="${up}img/gloam-proud.webp" alt="" width="220" height="276" loading="lazy">
     <p class="lede">${t.get.lede}</p>
     <div class="buttons">
-      <a class="btn primary big" data-download href="${l.windows}">${t.download.generic}</a>
+      <a class="btn primary big" href="${l.teacher}">${t.cta.teacher}</a>
+      <a class="btn quiet big" href="${l.join}">${t.cta.student}</a>
     </div>
-    <p class="small" data-download-note>${t.get.note}</p>
-    <ol class="how">${t.get.steps
-      .map(([b, rest]) => `<li><b>${b}</b> ${typeof rest === "string" ? rest : `<span data-os-only="windows">${rest.windows}</span><span data-os-only="mac">${rest.mac}</span>`}</li>`)
-      .join("")}</ol>
-    <p class="others">${t.get.others({ ...l, guide: "guide.html" })}</p>
+    <ol class="how">${t.get.steps.map(([b, rest]) => `<li><b>${b}</b> ${rest}</li>`).join("")}</ol>
+    <p class="others">${t.get.others("guide.html")}</p>
   </div>
 </section>
 

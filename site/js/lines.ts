@@ -1,7 +1,7 @@
 /**
  * Everything Gloam says on the website, in its high school voice (dry, a little dramatic, smugly wrong).
- * The same lines are recorded ahead of time in Gloam's real voice (scripts/site-voice.ts makes
- * site/audio/<id>.mp3 with Kokoro, on this laptop), so the bubble and the sound always match.
+ * The same lines are recorded ahead of time in Gloam's real voice (site/audio/<id>.mp3, made with Kokoro,
+ * Apache 2.0), so the bubble and the sound always match: a changed line needs a new recording.
  */
 export const LINES = {
   theory: "ok so i figured out seasons by myself. summer is when earth gets closer to the sun. not complicated.",
@@ -13,7 +13,7 @@ export const LINES = {
   half: "faster where? into the spoon? out of my hand? i need more.",
   right: "ohhh. the spoon is stealing my heat. rude. but i get it.",
   finale: "you taught me seasons. now teach me everything else.",
-  nosy: "nothing leaves the laptop. i checked. i'm very nosy.",
+  nosy: "claude gets the words. never the nickname. i checked. i'm very nosy.",
   bonk: "nope. stays here.",
   mini: "wait. so the spoon is stealing my heat?",
   soundOn: "oh. you turned my voice on. bold choice.",
@@ -38,7 +38,7 @@ export const LINES_FR: Record<LineId, string> = {
   half: "plus vite où? dans la cuillère? hors de ma main? il m'en faut plus.",
   right: "ohhh. la cuillère me vole ma chaleur. impoli. mais je comprends.",
   finale: "tu m'as appris les saisons. maintenant, apprends-moi tout le reste.",
-  nosy: "rien ne quitte le portable. j'ai vérifié. je suis très fouineux.",
+  nosy: "claude reçoit les mots. jamais le surnom. j'ai vérifié. je suis très fouineux.",
   bonk: "non. ça reste ici.",
   mini: "attends. donc la cuillère me vole ma chaleur?",
   soundOn: "oh. t'as allumé ma voix. choix audacieux.",

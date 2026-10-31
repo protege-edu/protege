@@ -2,10 +2,8 @@
  * Makes the website's pictures of Gloam from the real animated rig, so the site and the app always match:
  *   site/img/gloam-<mood>.webp   Gloam cut out (transparent), for computers that can't animate it and for the
  *                                reading pages' margins
- *   site/img/setup.webp          the first-run setup page (needs the dev server started with a setup demo: see
- *                                the README, "The website")
  *
- *   npx tsx scripts/site-art.ts [http://localhost:3000] [--setup]
+ *   npx tsx scripts/site-art.ts [http://localhost:3000]
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -73,12 +71,6 @@ async function main() {
     });
     const png = await page.screenshot({ omitBackground: true, clip: { x: box.cx - box.gh * 0.7, y: box.feet - box.gh * 1.45, width: box.gh * 1.4, height: box.gh * 1.55 } });
     fs.writeFileSync(path.join(img, `gloam-${name}.webp`), await webp(page, png, 0.86, true));
-  }
-  if (process.argv.includes("--setup")) {
-    await page.setViewportSize({ width: 1366, height: 768 });
-    await page.goto(`${dev}/setup#demokey`, { waitUntil: "networkidle" });
-    await page.waitForTimeout(5000);
-    fs.writeFileSync(path.join(img, "setup.webp"), await webp(page, await page.screenshot(), 0.82));
   }
   await browser.close();
   console.log("Website pictures written to site/img/.");

@@ -1,137 +1,93 @@
-# Setting up Protégé
+# Getting started with Protégé
 
-About 15 minutes the first time, mostly waiting for Gloam's brain to download. You need a Windows or Mac
-laptop the school lets you use for student work (ideally one your board manages, see
-[running Protégé for a school](board/hosting-for-boards.html)). Students don't install anything.
+Protégé is a website, so there's nothing to download or install. Teachers use it at
+[protege-edu.vercel.app/teacher](https://protege-edu.vercel.app/teacher). Students join at
+**protege-edu.pages.dev/j** on any Chromebook, computer or tablet.
 
-<h2 id="get-it">1. Download it</h2>
+<h2 id="sign-up">1. Sign up with your school's staff code</h2>
 
-<p class="guide-get"><a class="btn primary" data-download href="DOWNLOAD_WINDOWS">Download Protégé</a> <span>Or: <a href="DOWNLOAD_WINDOWS">Windows</a>, <a href="DOWNLOAD_MAC">Mac</a></span></p>
+Go to [protege-edu.vercel.app/teacher](https://protege-edu.vercel.app/teacher) and make your account. You'll
+need your school's **staff code**. Ask your principal for it, or a teacher at your school who already uses
+Protégé: they can see it under **Your school** on their teacher page.
 
-Protégé runs on the **teacher's laptop**, Windows 10 or 11, or a Mac. Chromebooks are for students: they join
-from the browser with a class code.
+Why a code? Students and teachers share the same school email addresses, so an email can't prove who's a
+teacher. The staff code does.
 
-<h2 id="install">2. Install it</h2>
+No code yet? Then your school hasn't been added. Whoever runs Protégé adds it (see
+[for whoever runs Protégé](#owner)).
 
-<div class="os-steps" data-os-only="windows">
+**Save your recovery code.** It's how you get back in if you forget your password.
 
-**On Windows**, open **Protege-Setup.exe** from your downloads and press **Install**. It installs for you only,
-so you don't need admin rights.
+## 2. Make a class
 
-Protégé is free, so it isn't paid-signed by Microsoft. The first time, Windows may stop it with a blue box.
-Choose **More info**, then **Run anyway**:
+Make a class and pick its grade. The grade picks how Gloam looks and talks: four different worlds, from a sunny
+storybook meadow for kindergarten to a moody night valley for high school.
 
-<figure class="howto" aria-label="What the Windows warning looks like">
-  <div class="mock win">
-    <p class="mock-title">Windows protected your PC</p>
-    <p>Microsoft Defender SmartScreen prevented an unrecognized app from starting.</p>
-    <p class="mock-link is-hint">More info</p>
-    <div class="mock-buttons"><span class="mock-btn is-hint">Run anyway</span><span class="mock-btn">Don't run</span></div>
-  </div>
-  <figcaption>Press <b>More info</b>, then <b>Run anyway</b>. You only do this once.</figcaption>
-</figure>
+## 3. Add a lesson and approve it
 
-</div>
+- **Add your notes:** a PDF, PowerPoint or Word file, or paste them in. Your file is read in your own browser
+  and never uploaded: only the text you pick goes to Gloam. Long notes are split into lessons at your headings,
+  and you can move the breaks.
+- **Gloam drafts each lesson:** the key ideas, the wrong ideas students often have, the questions it will ask,
+  and its story.
+- **Read it, change anything, and approve it.** Students only ever see lessons you approved.
+- **Give it to your class,** right on the approved lesson, or from the class page (**Add a lesson**, or a
+  whole unit at once).
 
-<div class="os-steps" data-os-only="mac">
+Or start with the built-in lesson, "Why do we have seasons?"
 
-**On a Mac**, open **Protege.dmg** and drag **Protégé** into **Applications**. Then open it from
-Applications.
+<h2 id="in-class">4. In class</h2>
 
-Protégé is free, so it isn't paid-signed by Apple. The first time, your Mac says it can't check it. Press
-**Done**, then open **System Settings → Privacy & Security**, scroll down, and press **Open Anyway**:
-
-<figure class="howto" aria-label="What the Mac setting looks like">
-  <div class="mock mac">
-    <p class="mock-title">Security</p>
-    <p>"Protégé" was blocked to protect your Mac.</p>
-    <div class="mock-buttons"><span class="mock-btn is-hint">Open Anyway</span></div>
-  </div>
-  <figcaption>In <b>System Settings → Privacy &amp; Security</b>, press <b>Open Anyway</b>. You only do this once.</figcaption>
-</figure>
-
-</div>
-
-<h2 id="wake">3. Gloam wakes up</h2>
-
-Protégé opens in your browser and sets itself up: it installs **Ollama** (the free program that runs Gloam's
-AI on your laptop) and downloads **Gloam's brain** (a few GB, once). It tells you how long is left. You can
-make your teacher account while it downloads, and do other things meanwhile.
-
-<figure class="shot-in-guide"><img src="img/setup.webp" width="1366" height="768" alt="Protégé setting itself up: Gloam asleep in the night valley while its brain downloads, beside a card to make your teacher account." loading="lazy"></figure>
-
-- **Save your recovery code.** It's how you get back in if you forget your password (Protégé doesn't send
-  emails).
-- **Voices** (optional, about 850 MB): Protégé asks if you want them. Students can then talk to Gloam instead
-  of typing (their voice is turned into words on your laptop and never saved), and read-aloud uses Gloam's
-  natural voice instead of each device's robotic one.
-
-> Windows may ask whether Node.js can use the network. Allow it on **private** networks, so students on the
-> school Wi-Fi can reach your laptop.
-
-## 4. Make a class and a lesson
-
-- **Make a class**, and pick its grade. The grade picks how Gloam looks and talks: four different worlds,
-  from a sunny storybook meadow for kindergarten to a moody night valley for high school.
-- **Add lessons:** upload your notes (PDF, PowerPoint, Word) or paste them, as long as you like: one topic or a
-  whole unit. Protégé splits long notes into lessons at your headings (each one a part Gloam can read at once),
-  and you can move the breaks. Gloam drafts them one at a time, a few minutes each: the key ideas, the wrong
-  ideas students often have, and its story. **Read each one, change anything, and approve it.** Students only
-  ever see lessons you approved.
-- **Give lessons to your class:** right on an approved lesson, or from the class page (**Add a lesson**, or a
-  whole unit at once). Students see them in the order you set.
-- Or start with the built-in lesson, "Why do we have seasons?"
-
-Other teachers at your school: press **Make an invite code** on your teacher page and give it to them.
-
-## 5. In class
-
-1. Open **Protégé** from your desktop or Start menu (keep the laptop plugged in and awake).
-2. On your class page, press **Show the code** and put it on the projector.
-3. Students go to **protege-edu.pages.dev/j** (the same link every class: bookmark it or pin it in Google
-   Classroom) and type the code on the screen, like GLOW-42-25RM. It sends them to your laptop, so they need to
-   be on the same Wi-Fi. They pick a nickname and their secret pictures; next time, they tap their nickname
-   and their pictures, on any Chromebook. (Phones and tablets can scan the QR code instead.)
-4. Watch the class page: each student's candles, who's stuck, and what the class thinks. Open a student to
+1. On your class page, press **Show the code** and put it on the projector.
+2. Students go to **protege-edu.pages.dev/j** and type the code, like GLOW-42. It's the same link every class,
+   so bookmark it or pin it in Google Classroom. (Phones and tablets can scan the QR code instead.)
+3. They pick a nickname and their secret pictures. Next time, they tap their nickname and their pictures, on
+   any Chromebook.
+4. **Ask each student to tell you their nickname** the first time, so you know who's who. Protégé never
+   stores real names.
+5. Watch your class page: each student's candles, who's stuck, and what the class thinks. Open a student to
    read their conversation with Gloam, and correct any candle Gloam got wrong.
 
-**Pause the class** puts every Gloam to sleep when you want everyone's attention. When you're done, close the
-Protégé window (or press **Stop Protégé** on **Ready for class?**).
+**Pause the class** puts every Gloam to sleep when you want everyone's attention.
 
-## When students can't reach your laptop (school Wi-Fi that keeps devices apart)
+<h2 id="owner">For whoever runs Protégé</h2>
 
-Many school networks stop devices from reaching each other, so students' Chromebooks can't open your laptop's
-address. Then open **Protégé online** from the Start menu instead of **Protégé**. It opens a free Cloudflare
-quick tunnel: your laptop and the students both connect out to the internet, so it works on any network, even
-from home. No account is needed, and Protégé gets Cloudflare's small tunnel program by itself the first time.
+The first account made on Protégé is its **owner**: the person who runs it. The owner has an **Owner page**
+([protege-edu.vercel.app/teacher/owner](https://protege-edu.vercel.app/teacher/owner)).
 
-- Students go to **protege-edu.pages.dev/j** and type the code on **Show the code**, like GLOW-42-K7Q2. Or
-  press **Copy link for students** and post the link in Google Classroom once: it's the same link every class
-  (your laptop keeps its "room" on the website), and it says "your class isn't open right now" when Protégé
-  isn't running online.
-- Your laptop still does all the work, so keep it on and awake during class.
-- Plainly: Cloudflare's servers can see what students type through a quick tunnel. It's fine for trying
-  Protégé out; for real classes, check your school is okay with it, or ask IT to let student devices reach
-  your laptop on the school network (then no tunnel is needed).
+- **Add a school:** type its name and press **Add school**. Protégé gives it a staff code. Tick **I teach here
+  too** if it's your school.
+- **Share the staff code by school email,** for example with the principal, who passes it on to staff. Never
+  post it anywhere students can see it.
+- **If a code reaches a student,** press **Make a new code** (any teacher at that school can do it too, under
+  **Your school**). The old code stops working right away, and teachers who already signed up keep their
+  accounts. Under **Your school**, teachers also see who signed up with the code, and can remove anyone who
+  isn't a teacher there.
+- **A teacher is locked out** (forgot their password and lost their recovery code): make them a new recovery
+  code on the Owner page, and give it to them in person.
 
-## Checking everything works
+<h2 id="limits">Daily limits and cost</h2>
 
-On the teacher page, **Ready for class?** checks Gloam's AI, voice typing, the student address, disk space and
-backups, and says what to do about anything that isn't ready.
+Gloam's brain is Claude (Claude Haiku 5.5), an AI made by Anthropic. Hosting Protégé is free (Vercel, Turso and
+Cloudflare Pages). The only thing that costs money is Claude: about 11 cents for a class of 30 students sending
+40 messages each.
 
-<h2 id="update">Backups and updates</h2>
+- **Daily limits** cap how many messages each student and each class can send Gloam in a day, how many lessons
+  each teacher can draft, and the total for the whole Protégé. When one is reached, Gloam falls asleep in character until tomorrow, and nothing more is sent to Claude. The Owner page
+  shows today's use and its rough cost.
+- **Set a monthly spending limit** on the Anthropic account that pays for Claude, so the bill can never go past
+  what you chose.
 
-- Protégé backs itself up every day it runs (the last 7 days are kept). **Restore a backup** in the Start
-  menu goes back to an earlier day.
-- **Check for updates** (on Ready for class?) tells you when there's a new version. Download the installer
-  again from this page and run it: your classes and students stay.
-- **For school IT:** `Protege-Setup.exe /VERYSILENT` installs without questions, and the portable zips
-  ([Windows](DOWNLOAD_WINDOWS_ZIP), [Mac](DOWNLOAD_MAC_ZIP)) need no installer at all.
+<h2 id="trouble">If something's wrong</h2>
 
-## If something's wrong
-
-- **"Gloam's brain isn't running":** open the Ollama app. Students press Try again; nothing is lost.
-- **Students can't reach the address:** check they're on the same network, and that Windows allowed Node.js
-  on private networks. Some school networks keep devices apart: ask your IT department.
-- **A student forgot their pictures:** open them on your class page and press **Reset their pictures**.
-- **You forgot your password:** use your recovery code with **Forgot your password?**
+- **Gloam's brain can't be reached:** the student's device lost its internet, or Claude is busy for a
+  moment. They press **Try again**. Nothing they typed is lost.
+- **Gloam fell asleep for the rest of the day:** a daily limit was reached. Gloam wakes up tomorrow.
+- **Students can't open the address:** check they typed it exactly, or post the link from **Show the code** in
+  Google Classroom. Some school networks block new websites: your school's IT can allow them.
+- **Your staff code doesn't work:** it may have been replaced with a new one. Ask your principal or a teacher at
+  your school for the new code.
+- **A student forgot their pictures:** open them on your class page and press **Reset their pictures**. They
+  pick new ones next time.
+- **You forgot your password:** use your recovery code with **Forgot your password?** on the sign-in page. Lost
+  that too? Whoever runs Protégé can make you a new one.

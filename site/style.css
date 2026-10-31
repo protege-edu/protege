@@ -1657,7 +1657,7 @@ html:not(.js) .world figcaption,
   opacity: 1;
 }
 
-/* ---------- Act IV: nothing leaves the laptop (Gloam stands guard in the valley) ---------- */
+/* ---------- Act IV: words go in, names don't (Gloam stands guard in the valley) ---------- */
 .private {
   position: relative;
   z-index: 1;
@@ -1726,16 +1726,18 @@ html:not(.js) .nosy {
   overflow: visible;
 }
 .net .book rect,
-.net .laptop-icon rect,
-.net .laptop-icon path {
+.net .hub rect {
   fill: #1a2b26;
   stroke: #5b827b;
   stroke-width: 1.5;
 }
+.net .hub circle {
+  fill: #5b827b;
+}
 .net .screen {
   fill: #2b4a44 !important;
 }
-.net .laptop-icon .screen {
+.net .hub .screen {
   fill: #3d6a62 !important;
 }
 .net .thread {
@@ -1800,7 +1802,7 @@ html:not(.js) .nosy {
   stroke: #2f4d48;
   stroke-width: 1.2;
 }
-.net .leak {
+.net .out {
   fill: none;
   stroke: #6d8b85;
   stroke-width: 1.5;
@@ -1981,7 +1983,7 @@ html:not(.js) .guard-still {
   }
 }
 
-/* ---------- the finale: dawn, and the download ---------- */
+/* ---------- the finale: dawn, and the way in (open Protégé, or join a class) ---------- */
 .get {
   position: relative;
   z-index: 1;
@@ -2071,6 +2073,10 @@ html:not(.js) .guard-still {
 .how b {
   color: #eef3ef;
 }
+/* an address never breaks at its hyphen */
+.how .url {
+  white-space: nowrap;
+}
 .others {
   margin-top: min(22px, 2.8vh);
   font-size: clamp(0.85rem, 2.4vh, 0.95rem);
@@ -2082,6 +2088,10 @@ html:not(.js) .guard-still {
 @media (max-width: 899px) {
   .get-wrap > * {
     max-width: none;
+  }
+  /* the two ways in share the row, or each takes a whole one */
+  .get .buttons .btn {
+    flex: 1 1 auto;
   }
 }
 
@@ -2493,82 +2503,6 @@ html:not(.js) .guard-still {
   font-weight: 700;
   padding-block: 10px;
 }
-/* the setup guide: the download, and pictures of the one-time warnings with what to press */
-.guide-get {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 16px;
-  margin: 18px 0 8px;
-}
-.guide-get span {
-  color: var(--ink-dim);
-  font-size: 0.98rem;
-}
-.howto {
-  margin: 22px 0 28px;
-}
-.howto figcaption {
-  margin-top: 10px;
-  color: var(--ink-dim);
-  font-size: 0.98rem;
-}
-.mock {
-  max-width: 440px;
-  padding: 22px 24px;
-  font-size: 0.95rem;
-  line-height: 1.45;
-  box-shadow: 0 12px 34px rgb(22 48 42 / 0.2);
-}
-.mock p {
-  margin: 0 0 10px;
-}
-.mock .mock-title {
-  font-size: 1.3rem;
-  font-weight: 700;
-}
-.mock.win {
-  background: #1f5fa8;
-  color: #fff;
-  border-radius: 4px;
-}
-.mock.mac {
-  background: #f6f6f6;
-  color: #222;
-  border-radius: 12px;
-  border: 1px solid #ddd;
-}
-.mock-link {
-  text-decoration: underline;
-}
-.mock-buttons {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 14px;
-}
-.mock-btn {
-  padding: 6px 16px;
-  border: 1.5px solid currentColor;
-  border-radius: 4px;
-}
-.mock.mac .mock-btn {
-  border-radius: 7px;
-  background: #fff;
-}
-/* what to press: a moonlight ring (gold is only for understanding) */
-.is-hint {
-  outline: 3px solid var(--moon);
-  outline-offset: 3px;
-  border-radius: 4px;
-}
-.shot-in-guide {
-  margin: 22px 0;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 18px 50px rgb(22 48 42 / 0.22), 0 0 0 1px var(--line);
-}
-
 @media (max-width: 960px) {
   .doc-grid {
     grid-template-columns: minmax(0, 1fr);
