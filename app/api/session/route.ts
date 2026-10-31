@@ -10,7 +10,7 @@ import { currentStudent, maySeeStudent } from "@/lib/student/auth";
 /** Resume a session */
 export async function GET(request: Request) {
   const id = new URL(request.url).searchParams.get("id");
-  const session = id ? getSession(id) : null;
+  const session = id ? await getSession(id) : null;
   // someone else's session (e.g. the last student on this Chromebook): the browser then asks for its own
   if (!session || !(await maySeeStudent(session.studentId))) return Response.json({ error: "We couldn't find that session. Starting a fresh one is fine!" }, { status: 404 });
   return Response.json(session);
@@ -29,13 +29,13 @@ export async function POST(request: Request) {
   const lessonId = body.success ? (body.data.lessonId ?? DEFAULT_LESSON_ID) : DEFAULT_LESSON_ID;
   try {
     const student = await currentStudent();
-    const assigned = student && db.select().from(classLessons).where(and(eq(classLessons.classId, student.classId), eq(classLessons.lessonId, lessonId))).get();
+    const assigned = student && await db.select().from(classLessons).where(and(eq(classLessons.classId, student.classId), eq(classLessons.lessonId, lessonId))).get();
     if (student && assigned) {
-      const existing = body.success && body.data.fresh ? null : findSession(student.id, lessonId);
-      return Response.json(existing ?? createSession(lessonId, student.id, student.classId));
+      const existing = body.success && body.data.fresh ? null : await findSession(student.id, lessonId);
+      return Response.json(existing ?? await createSession(lessonId, student.id, student.classId));
     }
     // the browser's practice student, so their Gloam keeps growing across lessons
-    return Response.json(createSession(lessonId, body.success ? body.data.studentId : undefined));
+    return Response.json(await createSession(lessonId, body.success ? body.data.studentId : undefined));
   } catch {
     // Not approved (or doesn't exist): students never see drafts
     return Response.json({ error: "This lesson isn't ready yet. Ask your teacher to approve it." }, { status: 404 });

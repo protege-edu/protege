@@ -8,8 +8,8 @@ export async function GET(request: Request, ctx: RouteContext<"/api/teacher/unit
   if (me instanceof Response) return me;
   const { id } = await ctx.params;
   // (after a restart, waiting lessons carry on)
-  draftNext();
-  const unit = getUnit(id, me.id);
+  await draftNext();
+  const unit = await getUnit(id, me.id);
   return unit ? Response.json(unit) : notYours();
 }
 
@@ -18,10 +18,10 @@ export async function PUT(request: Request, ctx: RouteContext<"/api/teacher/unit
   const me = await requireTeacher(request);
   if (me instanceof Response) return me;
   const { id } = await ctx.params;
-  if (!getUnit(id, me.id)) return notYours();
+  if (!await getUnit(id, me.id)) return notYours();
   const body = z.object({ title: z.string().trim().min(1).max(120) }).safeParse(await request.json().catch(() => null));
   if (!body.success) return bad("Give the unit a name (up to 120 characters).");
-  renameUnit(id, body.data.title);
+  await renameUnit(id, body.data.title);
   return Response.json({ ok: true });
 }
 
@@ -30,7 +30,7 @@ export async function DELETE(request: Request, ctx: RouteContext<"/api/teacher/u
   const me = await requireTeacher(request);
   if (me instanceof Response) return me;
   const { id } = await ctx.params;
-  if (!getUnit(id, me.id)) return notYours();
-  deleteUnit(id);
+  if (!await getUnit(id, me.id)) return notYours();
+  await deleteUnit(id);
   return Response.json({ ok: true });
 }

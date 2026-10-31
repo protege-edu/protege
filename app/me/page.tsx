@@ -18,7 +18,7 @@ async function Me() {
   // always per student, never built ahead of time
   await connection();
   const me = await currentStudent();
-  const home = me && studentHome(me.id);
+  const home = me && await studentHome(me.id);
   if (!home) redirect("/join");
   return <StudentHome home={home} />;
 }

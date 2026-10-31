@@ -35,12 +35,12 @@ export async function POST(request: Request) {
     // a whole class shares one school address, and little kids mistype codes: 60 wrong codes per 10 minutes before
     // anyone is asked to wait (guessing codes gets nowhere at that pace, and a code only shows a class's nicknames)
     if (struckOut(`join-wrong:${ip}`, 60)) return tooMany();
-    const c = classByCode(b.code);
+    const c = await classByCode(b.code);
     if (!c) strike(`join-wrong:${ip}`, 10 * 60 * 1000);
     if (!c) return bad("That code isn't a class. Check it with your teacher (it looks like GLOW-42).", 404, "code_wrong");
-    return Response.json(classPreview(c.id));
+    return Response.json(await classPreview(c.id));
   }
-  if (b.action === "suggest") return Response.json({ nicknames: suggestNicknames(b.classId) });
+  if (b.action === "suggest") return Response.json({ nicknames: await suggestNicknames(b.classId) });
 
   if (b.action === "new") {
     let googleIdHash: string | undefined;
@@ -52,14 +52,14 @@ export async function POST(request: Request) {
       googleIdHash = idHash;
       await clear("protege_google_pending");
     }
-    const r = createStudent(b.classId, b.nickname, b.key, googleIdHash);
+    const r = await createStudent(b.classId, b.nickname, b.key, googleIdHash);
     if (!r.ok) return bad(r.error, 400, r.code);
     await signInStudent(r.student.id, request);
     return Response.json({ student: r.student });
   }
 
   if (!limit(`join-key:${b.studentId}`, 12, 5 * 60 * 1000)) return tooMany();
-  const r = checkKey(b.classId, b.studentId, b.key);
+  const r = await checkKey(b.classId, b.studentId, b.key);
   if (!r.ok) return bad(r.error, 401, r.code);
   await signInStudent(r.student.id, request);
   return Response.json({ student: r.student });

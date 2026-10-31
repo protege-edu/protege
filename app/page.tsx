@@ -21,5 +21,5 @@ export default function Home() {
 async function Front({ lesson }: { lesson: ReturnType<typeof toClientLesson> }) {
   await connection();
   const me = await currentStudent();
-  return <GameScreen lesson={lesson} account={me ? "student" : "guest"} access={me ? studentAccessParts(me.id) : null} />;
+  return <GameScreen lesson={lesson} account={me ? "student" : "guest"} access={me ? await studentAccessParts(me.id) : null} />;
 }

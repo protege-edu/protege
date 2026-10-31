@@ -30,17 +30,17 @@ export async function POST(request: Request) {
   if (!parsed.success) {
     return Response.json({ error: "That message didn't come through right. Try sending it again." }, { status: 400 });
   }
-  const session = getSession(parsed.data.sessionId);
+  const session = await getSession(parsed.data.sessionId);
   if (session && !limit(`turn-session:${session.id}`, 12, 60 * 1000)) return tooMany();
   if (!session || !(await maySeeStudent(session.studentId))) {
     return Response.json({ error: "This session ended. Refresh the page to start a new one." }, { status: 404 });
   }
 
   // the teacher paused the class: Gloam sleeps (the message isn't lost; the student sends it again later)
-  if (classPaused(session.studentId)) return Response.json({ error: "Your teacher paused the class." }, { status: 423 });
+  if (await classPaused(session.studentId)) return Response.json({ error: "Your teacher paused the class." }, { status: 423 });
 
-  const approved = getApprovedLesson(session.lessonId);
-  const lesson = approved && playedBy(approved, session.studentId);
+  const approved = await getApprovedLesson(session.lessonId);
+  const lesson = approved && await playedBy(approved, session.studentId);
   if (!lesson) {
     return Response.json({ error: "This lesson isn't available right now. Ask your teacher to check it's approved." }, { status: 404 });
   }
@@ -68,7 +68,7 @@ export async function POST(request: Request) {
         if (out.source === "offline") {
           send({ type: "offline" });
         } else {
-          const saved = recordTurn({
+          const saved = await recordTurn({
             sessionId: session.id,
             studentText: parsed.data.message,
             reply: out.reply,

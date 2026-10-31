@@ -7,9 +7,9 @@ export async function POST(request: Request, ctx: RouteContext<"/api/teacher/les
   const me = await requireTeacher(request);
   if (me instanceof Response) return me;
   const { id } = await ctx.params;
-  const row = getLessonRow(id);
+  const row = await getLessonRow(id);
   if (!row || !canSee(row, me.id)) return notYours();
   if (row.status !== "queued") return bad("That lesson isn't waiting to be drafted.");
-  draftSooner(id);
+  await draftSooner(id);
   return Response.json({ ok: true });
 }

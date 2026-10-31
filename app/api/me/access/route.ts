@@ -11,5 +11,5 @@ export async function PUT(request: Request) {
   if (!limit(`access:${me.id}`, 60, 60 * 1000)) return tooMany();
   const body = AccessPatch.safeParse(await request.json().catch(() => null));
   if (!body.success) return Response.json({ error: "That setting didn't make sense. Reload the page and try again." }, { status: 400 });
-  return Response.json({ access: updateStudentAccess(me.id, body.data) });
+  return Response.json({ access: await updateStudentAccess(me.id, body.data) });
 }

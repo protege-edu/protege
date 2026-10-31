@@ -198,7 +198,7 @@ async function prepare() {
   const { eq } = await import("drizzle-orm");
   const C = await import("@/lib/teacher/classes");
   const { BUILT_IN } = await import("@/lib/lesson");
-  const teacher = db.select().from(schema.teachers).where(eq(schema.teachers.email, TEACHER.email)).get();
+  const teacher = await db.select().from(schema.teachers).where(eq(schema.teachers.email, TEACHER.email)).get();
   if (!teacher) throw new Error(`The audit needs the test teacher ${TEACHER.email} in this database.`);
   const grades: Record<string, number> = { little: 1, junior: 4, middle: 7, senior: 10 };
   const classes: Record<string, { id: string; code: string; lesson: string }> = {};
@@ -207,17 +207,17 @@ async function prepare() {
       // the lesson: the seasons lesson, in this age and language (French screens for French classes)
       const lessonId = `audit-seasons-${age}-${lang}`;
       const now = new Date();
-      db.insert(schema.lessons)
+      await db.insert(schema.lessons)
         .values({ id: lessonId, teacherId: teacher.id, title: lang === "fr" ? "Pourquoi avons-nous des saisons?" : "Why do we have seasons?", grade: grades[age], status: "approved", blueprint: { ...BUILT_IN.seasons, id: lessonId, ageStyle: age as "senior", grade: grades[age], language: lang, ...(lang === "fr" ? { title: "Pourquoi avons-nous des saisons?", topic: "les saisons" } : {}) }, sourceName: "Audit", createdAt: now, updatedAt: now, approvedAt: now })
         .onConflictDoNothing()
         .run();
       // names like a real teacher's classes (they show up in screenshots and on the website)
       const name = `${lang === "fr" ? "Sciences" : "Science"} ${grades[age]}${lang === "fr" ? " (fr)" : ""}, ${lang === "fr" ? "groupe" : "period"} ${["little", "junior", "middle", "senior"].indexOf(age) + 1}`;
-      let c = db.select().from(schema.classes).where(eq(schema.classes.name, name)).get();
+      let c = await db.select().from(schema.classes).where(eq(schema.classes.name, name)).get();
       if (!c) {
-        const id = C.createClass(name, grades[age], teacher.id, lang);
-        C.assignLesson(id, lessonId);
-        c = db.select().from(schema.classes).where(eq(schema.classes.id, id)).get()!;
+        const id = await C.createClass(name, grades[age], teacher.id, lang);
+        await C.assignLesson(id, lessonId);
+        c = (await db.select().from(schema.classes).where(eq(schema.classes.id, id)).get())!;
       }
       classes[`${age}-${lang}`] = { id: c.id, code: c.code!, lesson: lessonId };
     }

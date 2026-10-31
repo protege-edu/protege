@@ -14,6 +14,6 @@ export type LoggedAction =
   | "deleted-class"
   | "downloaded-class-progress";
 
-export function logAccess(teacherId: string, action: LoggedAction, ids: { classId?: string; studentId?: string } = {}) {
-  db.insert(accessLog).values({ at: new Date(), teacherId, action, classId: ids.classId ?? null, studentId: ids.studentId ?? null }).run();
+export async function logAccess(teacherId: string, action: LoggedAction, ids: { classId?: string; studentId?: string } = {}) {
+  await db.insert(accessLog).values({ at: new Date(), teacherId, action, classId: ids.classId ?? null, studentId: ids.studentId ?? null }).run();
 }

@@ -8,7 +8,7 @@ export async function GET(request: Request) {
   if (!googleEnabled()) return Response.json({ error: "Google sign-in isn't set up on this Protégé." }, { status: 404 });
   const q = new URL(request.url).searchParams;
   if (q.get("who") === "student") {
-    const c = db.select().from(classes).where(eq(classes.id, q.get("class") ?? "")).get();
+    const c = await db.select().from(classes).where(eq(classes.id, q.get("class") ?? "")).get();
     if (!c?.googleSignIn) return Response.json({ error: "This class uses secret pictures, not Google." }, { status: 403 });
     return Response.redirect(await googleStartUrl({ who: "student", classId: c.id }));
   }

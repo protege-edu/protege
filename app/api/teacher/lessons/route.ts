@@ -7,7 +7,7 @@ import { MAX_SOURCE_CHARS } from "@/lib/teacher/read";
 export async function GET(request: Request) {
   const me = await requireTeacher(request);
   if (me instanceof Response) return me;
-  return Response.json(listLessons(me.id));
+  return Response.json(await listLessons(me.id));
 }
 
 const Body = z.object({
@@ -28,5 +28,5 @@ export async function POST(request: Request) {
   if (body.data.source.length > MAX_SOURCE_CHARS) {
     return bad(`That's a lot of text for Gloam to read at once. Pick fewer sections (under ${MAX_SOURCE_CHARS.toLocaleString()} characters).`);
   }
-  return Response.json({ id: startDraft({ ...body.data, teacherId: me.id }) });
+  return Response.json({ id: await startDraft({ ...body.data, teacherId: me.id }) });
 }

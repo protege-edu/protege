@@ -15,7 +15,7 @@ export async function lostFor(): Promise<{ style: AgeStyleId; language: Language
   try {
     const [{ currentStudent }, { db }, { classes }] = await Promise.all([import("@/lib/student/auth"), import("@/lib/db/client"), import("@/lib/db/schema")]);
     const me = await currentStudent();
-    const c = me ? db.select({ grade: classes.grade, language: classes.language }).from(classes).where(eq(classes.id, me.classId)).get() : null;
+    const c = me ? await db.select({ grade: classes.grade, language: classes.language }).from(classes).where(eq(classes.id, me.classId)).get() : null;
     if (c) return { style: styleForGrade(c.grade).id, language: c.language === "fr" ? "fr" : "en", student: true };
   } catch {
     // (no database or no cookie: fall through to the browser's language)

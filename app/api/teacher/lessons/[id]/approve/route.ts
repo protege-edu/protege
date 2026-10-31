@@ -6,9 +6,9 @@ export async function POST(request: Request, ctx: RouteContext<"/api/teacher/les
   const me = await requireTeacher(request);
   if (me instanceof Response) return me;
   const { id } = await ctx.params;
-  const row = getLessonRow(id);
+  const row = await getLessonRow(id);
   if (!row || !canSee(row, me.id)) return notYours();
-  const result = approveLesson(id);
+  const result = await approveLesson(id);
   if (!result.ok) return Response.json({ error: "Fix these first:", problems: result.problems }, { status: 400 });
   return Response.json({ ok: true });
 }

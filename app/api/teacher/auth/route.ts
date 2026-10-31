@@ -7,7 +7,7 @@ import { anyTeachers, currentTeacher, markOnboarded, recover, signIn, signInAs, 
 /** Who's signed in, and what sign-in options exist */
 export async function GET() {
   const teacher = await currentTeacher();
-  return Response.json({ teacher, firstTeacher: !anyTeachers(), signUp: signUpGate(), google: googleEnabled() });
+  return Response.json({ teacher, firstTeacher: !await anyTeachers(), signUp: await signUpGate(), google: googleEnabled() });
 }
 
 const email = z.string().trim().email("That doesn't look like an email address.").max(120);
@@ -34,22 +34,22 @@ export async function POST(request: Request) {
   if (b.action === "onboarded") {
     const me = await currentTeacher();
     if (!me) return bad("Sign in first.", 401);
-    markOnboarded(me.id);
+    await markOnboarded(me.id);
     return Response.json({ ok: true });
   }
   if (b.action === "signup") {
-    const r = signUp(b);
+    const r = await signUp(b);
     if (!r.ok) return bad(r.error);
     await signInAs(r.teacher.id, request);
     return Response.json({ teacher: r.teacher, recoveryCode: r.recoveryCode });
   }
   if (b.action === "signin") {
-    const r = signIn(b.email, b.password);
+    const r = await signIn(b.email, b.password);
     if (!r.ok) return bad(r.error, 401);
     await signInAs(r.teacher.id, request);
     return Response.json({ teacher: r.teacher });
   }
-  const r = recover(b.email, b.code, b.password);
+  const r = await recover(b.email, b.code, b.password);
   if (!r.ok) return bad(r.error, 401);
   await signInAs(r.teacher.id, request);
   return Response.json({ teacher: r.teacher, recoveryCode: r.recoveryCode });

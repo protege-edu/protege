@@ -1,8 +1,5 @@
 import "server-only";
-import fs from "node:fs";
 import { checkBrain } from "@/lib/ai/client";
-import { listBackups } from "@/lib/db/backup";
-import { dataDir } from "@/lib/db/location";
 import { voiceReady } from "@/lib/voice/server";
 import { speakReady } from "@/lib/voice/speak";
 import pkg from "../../package.json";
@@ -12,7 +9,7 @@ import pkg from "../../package.json";
  * what to do about it, in plain words.
  */
 export interface StatusCheck {
-  id: "ai" | "voice" | "reading" | "address" | "disk" | "backup";
+  id: "ai" | "voice" | "reading" | "address";
   ok: boolean | "optional";
   title: string;
   detail: string;
@@ -27,27 +24,6 @@ async function aiCheck(): Promise<StatusCheck> {
   return online
     ? { id: "ai", ok: true, title: "Gloam's brain is ready", detail: `Claude (${model}) is answering.` }
     : { id: "ai", ok: false, title: "Gloam's brain can't be reached", detail: "Check the internet connection and the Claude API key. Students' messages wait safely until it's back." };
-}
-
-function diskCheck(): StatusCheck {
-  try {
-    const s = fs.statfsSync(dataDir());
-    const gb = (s.bavail * s.bsize) / 1e9;
-    return gb < 2
-      ? { id: "disk", ok: false, title: "This laptop is almost full", detail: `Only ${gb.toFixed(1)} GB free. Free up some space so Protégé can keep saving students' work.` }
-      : { id: "disk", ok: true, title: "Plenty of space", detail: `${gb.toFixed(0)} GB free.` };
-  } catch {
-    return { id: "disk", ok: true, title: "Space", detail: "Couldn't check the free space on this laptop." };
-  }
-}
-
-function backupCheck(): StatusCheck {
-  const last = listBackups()[0];
-  if (!last) return { id: "backup", ok: "optional", title: "No backup yet", detail: "Protégé makes one each day it runs (the first a minute after it starts). They stay on this laptop." };
-  const days = Math.floor((Date.now() - last.at.getTime()) / 86_400_000);
-  return days > 2
-    ? { id: "backup", ok: false, title: `Last backup was ${days} days ago`, detail: "Backups happen while Protégé runs. Start it and leave it on for a minute." }
-    : { id: "backup", ok: true, title: "Backed up", detail: `The last 7 days are kept, on this laptop only. Newest: ${last.at.toLocaleString("en-CA", { dateStyle: "medium", timeStyle: "short" })}` };
 }
 
 export async function laptopStatus(address: { url: string; local: boolean; locator: string | null; site: string }): Promise<StatusCheck[]> {
@@ -69,8 +45,6 @@ export async function laptopStatus(address: { url: string; local: boolean; locat
       : /trycloudflare\.com/.test(address.url)
         ? { id: "address", ok: true, title: `Students go to ${address.url}`, detail: "Online through a Cloudflare quick tunnel: it works on any network, even school Wi-Fi that keeps devices apart. The address is new each time you start Protégé online. Cloudflare's servers can see what students type through it, so it's fine for trying Protégé out; for a real class, check your school is okay with it." }
         : { id: "address", ok: true, title: `Students go to ${address.url}`, detail: "Reachable from anywhere, over https, encrypted all the way to this laptop." },
-    diskCheck(),
-    backupCheck(),
   ];
 }
 

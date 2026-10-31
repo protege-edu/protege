@@ -2,7 +2,7 @@ import { integer, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core"
 import type { LessonBlueprint } from "@/lib/lesson/types";
 
 /**
- * Everything is stored on this machine, in the app-data folder (lib/db/location.ts).
+ * Everything is stored in Protégé's online database (Cloudflare D1, lib/db/client.ts).
  * No real names, emails or birthdays, ever. Students are nicknames only.
  *
  * Designed so later ideas need no rewrite:
@@ -123,6 +123,10 @@ export const lessons = sqliteTable("lessons", {
   sourceText: text("source_text"),
   /** Plain-language note if drafting failed, for the teacher */
   problem: text("problem"),
+  /** While drafting: the step it's on, for the teacher ("Writing Gloam's lines for idea 2 of 4") */
+  progress: text("progress"),
+  /** The teacher asked for this one sooner: queued lessons are drafted newest-asked first */
+  soonerAt: integer("sooner_at", { mode: "timestamp_ms" }),
   createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
   approvedAt: integer("approved_at", { mode: "timestamp_ms" }),

@@ -7,6 +7,6 @@ export async function POST(request: Request) {
   const me = await requireTeacher(request);
   if (me instanceof Response) return me;
   if (!limit(`invite:${me.id}`, 10, 60 * 60 * 1000)) return tooMany();
-  const { code, expires } = makeInvite();
+  const { code, expires } = await makeInvite();
   return Response.json({ code, expires });
 }

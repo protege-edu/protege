@@ -17,9 +17,9 @@ export async function POST(request: Request) {
   if (process.env.NODE_ENV === "production") return new Response("Not found", { status: 404 });
   const parsed = Body.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return Response.json({ error: "Bad request" }, { status: 400 });
-  const found = getSession(parsed.data.sessionId);
+  const found = await getSession(parsed.data.sessionId);
   const session = found && (await maySeeStudent(found.studentId)) ? found : null;
-  const lesson = session && getApprovedLesson(session.lessonId);
+  const lesson = session && await getApprovedLesson(session.lessonId);
   if (!session || !lesson) return Response.json({ error: "No such session" }, { status: 404 });
 
   const before = session.understanding;
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
   const style = getAgeStyle(lesson.ageStyle, lesson.language);
   // Gloam says the idea it just got, in its own words (its "gets it" line from the lesson)
   const reply = voice(finished ? lesson.finale : teach[0].beliefs[3], style);
-  const saved = recordTurn({
+  const saved = await recordTurn({
     sessionId: session.id,
     studentText: parsed.data.all ? "(test mode: taught everything)" : `(test mode: taught "${teach[0].name}")`,
     reply,

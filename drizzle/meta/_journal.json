@@ -78,6 +78,20 @@
       "when": 1793219735727,
       "tag": "0010_own_title",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1793408324450,
+      "tag": "0011_built_in_lessons",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1793408595696,
+      "tag": "0012_drafting_state",
+      "breakpoints": true
     }
   ]
 }

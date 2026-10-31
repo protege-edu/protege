@@ -9,12 +9,12 @@ export async function GET(request: Request, ctx: RouteContext<"/api/teacher/less
   const me = await requireTeacher(request);
   if (me instanceof Response) return me;
   const { id } = await ctx.params;
-  const row = getLessonRow(id);
+  const row = await getLessonRow(id);
   if (!row || !canSee(row, me.id)) return notYours();
   const { sourceText, ...rest } = row;
   // its unit (for "lesson 2 of 5" and the way to the next one), and which of this teacher's classes have it
-  const unit = row.unitId ? getUnit(row.unitId, me.id) : null;
-  const classes = listClasses(me.id).map((c) => ({ id: c.id, name: c.name, has: c.lessons.some((l) => l.id === id) }));
+  const unit = row.unitId ? await getUnit(row.unitId, me.id) : null;
+  const classes = (await listClasses(me.id)).map((c) => ({ id: c.id, name: c.name, has: c.lessons.some((l) => l.id === id) }));
   return Response.json({
     ...rest,
     hasSource: !!sourceText,
@@ -32,11 +32,11 @@ export async function PUT(request: Request, ctx: RouteContext<"/api/teacher/less
   if (me instanceof Response) return me;
   const { id } = await ctx.params;
   if (id in BUILT_IN) return bad("Built-in lessons can't be edited.");
-  const row = getLessonRow(id);
+  const row = await getLessonRow(id);
   if (!row || !canSee(row, me.id)) return notYours();
   const body = BlueprintInput.safeParse(await request.json().catch(() => null));
   if (!body.success) return bad("Some of the lesson details are missing or too long. Check each idea and try again.");
-  saveBlueprint(id, body.data);
+  await saveBlueprint(id, body.data);
   return Response.json({ ok: true, problems: checkBlueprint(body.data), warnings: blueprintWarnings(body.data) });
 }
 
@@ -45,8 +45,8 @@ export async function DELETE(request: Request, ctx: RouteContext<"/api/teacher/l
   if (me instanceof Response) return me;
   const { id } = await ctx.params;
   if (id in BUILT_IN) return bad("Built-in lessons can't be deleted.");
-  const row = getLessonRow(id);
+  const row = await getLessonRow(id);
   if (!row || !canSee(row, me.id)) return notYours();
-  deleteLesson(id);
+  await deleteLesson(id);
   return Response.json({ ok: true });
 }

@@ -9,9 +9,9 @@ import { createUnit, listUnits } from "@/lib/teacher/units";
 export async function GET(request: Request) {
   const me = await requireTeacher(request);
   if (me instanceof Response) return me;
-  const all = listLessons(me.id);
+  const all = await listLessons(me.id);
   return Response.json(
-    listUnits(me.id).map((u) => {
+    (await listUnits(me.id)).map((u) => {
       const mine = all.filter((l) => l.unitId === u.id);
       const count = (s: string) => mine.filter((l) => l.status === s).length;
       return { id: u.id, title: u.title, sourceName: u.sourceName, grade: u.grade, lessons: mine.length, approved: count("approved"), toReview: count("draft"), waiting: count("queued") + count("drafting"), failed: count("failed") };
@@ -49,8 +49,8 @@ export async function POST(request: Request) {
   if (!body.success) return bad(body.error.issues[0]?.message ?? "Something's missing.");
   const { title, sourceName, grade, lessons } = body.data;
   if (lessons.length === 1) {
-    return Response.json({ lessonId: startDraft({ source: lessons[0].source, sourceName, grade, titleHint: lessons[0].title || title, ownTitle: lessons[0].ownTitle, teacherId: me.id }) });
+    return Response.json({ lessonId: await startDraft({ source: lessons[0].source, sourceName, grade, titleHint: lessons[0].title || title, ownTitle: lessons[0].ownTitle, teacherId: me.id }) });
   }
-  const unit = createUnit({ teacherId: me.id, title, sourceName, grade, lessons });
+  const unit = await createUnit({ teacherId: me.id, title, sourceName, grade, lessons });
   return Response.json({ unitId: unit.id, lessonId: unit.lessonIds[0] });
 }

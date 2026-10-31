@@ -1,7 +1,7 @@
 import "server-only";
 import { randomInt, randomUUID } from "node:crypto";
 import { and, asc, eq, inArray, isNotNull, sql } from "drizzle-orm";
-import { db } from "@/lib/db/client";
+import { db, together } from "@/lib/db/client";
 import { classLessons, classes, conceptEvents, gloams, messages, students, teachSessions } from "@/lib/db/schema";
 import type { Level, LessonBlueprint } from "@/lib/lesson/types";
 import { keySize } from "@/lib/student/pictures";
@@ -17,10 +17,10 @@ const WORDS = [
   "OAK", "BAY", "SKY", "DEW", "FOX", "ELM", "BRIM", "CLAY", "DUNE", "FAWN", "GALE", "HAZE", "KITE", "LARK", "MAPLE", "NEST", "PEAK", "ROOK", "TIDE", "WREN",
 ];
 
-export function newClassCode(): string {
+export async function newClassCode(): Promise<string> {
   for (;;) {
     const code = `${WORDS[randomInt(WORDS.length)]}-${randomInt(10, 100)}`;
-    if (!db.select({ id: classes.id }).from(classes).where(eq(classes.code, code)).get()) return code;
+    if (!await db.select({ id: classes.id }).from(classes).where(eq(classes.code, code)).get()) return code;
   }
 }
 
@@ -30,33 +30,35 @@ export function normalizeCode(raw: string): string {
   return m ? `${m[1]}-${m[2]}` : raw.toUpperCase().trim();
 }
 
-export function classByCode(raw: string) {
-  return db.select().from(classes).where(eq(classes.code, normalizeCode(raw))).get() ?? null;
+export async function classByCode(raw: string) {
+  return await db.select().from(classes).where(eq(classes.code, normalizeCode(raw))).get() ?? null;
 }
 
-export function listClasses(teacherId: string) {
-  const rows = db.select().from(classes).where(eq(classes.teacherId, teacherId)).orderBy(asc(classes.createdAt)).all();
+export async function listClasses(teacherId: string) {
+  const rows = await db.select().from(classes).where(eq(classes.teacherId, teacherId)).orderBy(asc(classes.createdAt)).all();
   // classes made before codes existed get one now
-  for (const c of rows) if (!c.code) db.update(classes).set({ code: (c.code = newClassCode()) }).where(eq(classes.id, c.id)).run();
-  return rows.map((c) => ({
-    ...c,
-    students: db.select({ id: students.id }).from(students).where(eq(students.classId, c.id)).all().length,
-    lessons: classLessonList(c.id),
-  }));
+  for (const c of rows) if (!c.code) await db.update(classes).set({ code: (c.code = await newClassCode()) }).where(eq(classes.id, c.id)).run();
+  return Promise.all(
+    rows.map(async (c) => ({
+      ...c,
+      students: (await db.select({ id: students.id }).from(students).where(eq(students.classId, c.id)).all()).length,
+      lessons: await classLessonList(c.id),
+    })),
+  );
 }
 
 /** A class, only if it belongs to this teacher */
-export function getClass(id: string, teacherId: string) {
-  const c = db.select().from(classes).where(eq(classes.id, id)).get();
+export async function getClass(id: string, teacherId: string) {
+  const c = await db.select().from(classes).where(eq(classes.id, id)).get();
   if (!c || c.teacherId !== teacherId) return null;
-  if (!c.code) db.update(classes).set({ code: (c.code = newClassCode()) }).where(eq(classes.id, c.id)).run();
+  if (!c.code) await db.update(classes).set({ code: (c.code = await newClassCode()) }).where(eq(classes.id, c.id)).run();
   return c;
 }
 
-export function createClass(name: string, grade: number, teacherId: string, language: "en" | "fr" = "en") {
+export async function createClass(name: string, grade: number, teacherId: string, language: "en" | "fr" = "en") {
   const id = randomUUID();
   // the board's retention rule decides when it's cleared out (lib/privacy/retention.ts); the teacher can set a date
-  db.insert(classes).values({ id, name, grade, teacherId, language, code: newClassCode(), createdAt: new Date(), deleteOn: newClassDeleteOn() }).run();
+  await db.insert(classes).values({ id, name, grade, teacherId, language, code: await newClassCode(), createdAt: new Date(), deleteOn: newClassDeleteOn() }).run();
   return id;
 }
 
@@ -64,8 +66,8 @@ export function createClass(name: string, grade: number, teacherId: string, lang
  * A class's lessons, in the order its students see them (the teacher can move them), approved ones only.
  * `latest` is the one given most recently: what the class is probably on right now.
  */
-export function classLessonList(classId: string): { id: string; title: string; latest: boolean }[] {
-  const rows = db
+export async function classLessonList(classId: string): Promise<{ id: string; title: string; latest: boolean }[]> {
+  const rows = await db
     .select()
     .from(classLessons)
     .where(eq(classLessons.classId, classId))
@@ -73,39 +75,38 @@ export function classLessonList(classId: string): { id: string; title: string; l
     .orderBy(sql`coalesce(${classLessons.position}, 1e9)`, asc(classLessons.assignedAt))
     .all();
   const newest = Math.max(0, ...rows.map((r) => r.assignedAt.getTime()));
-  return rows.flatMap((r) => {
-    const l = getApprovedLesson(r.lessonId);
+  const found = await Promise.all(rows.map((r) => getApprovedLesson(r.lessonId)));
+  return rows.flatMap((r, i) => {
+    const l = found[i];
     return l ? [{ id: l.id, title: l.title, latest: r.assignedAt.getTime() === newest }] : [];
   });
 }
 
 /** Give a class a lesson: it goes at the end of the class's list (giving it again changes nothing) */
-export function assignLesson(classId: string, lessonId: string) {
-  const end = db.select({ n: sql<number>`coalesce(max(${classLessons.position}), -1) + 1` }).from(classLessons).where(eq(classLessons.classId, classId)).get()?.n ?? 0;
-  db.insert(classLessons).values({ classId, lessonId, assignedAt: new Date(), position: end }).onConflictDoNothing().run();
+export async function assignLesson(classId: string, lessonId: string) {
+  const end = (await db.select({ n: sql<number>`coalesce(max(${classLessons.position}), -1) + 1` }).from(classLessons).where(eq(classLessons.classId, classId)).get())?.n ?? 0;
+  await db.insert(classLessons).values({ classId, lessonId, assignedAt: new Date(), position: end }).onConflictDoNothing().run();
 }
 
 /** Take a lesson away from a class. What students taught Gloam in it stays (giving it back brings it back). */
-export function unassignLesson(classId: string, lessonId: string) {
-  db.delete(classLessons).where(and(eq(classLessons.classId, classId), eq(classLessons.lessonId, lessonId))).run();
+export async function unassignLesson(classId: string, lessonId: string) {
+  await db.delete(classLessons).where(and(eq(classLessons.classId, classId), eq(classLessons.lessonId, lessonId))).run();
 }
 
 /** Move a lesson one place earlier (-1) or later (+1) in the class's list */
-export function moveLesson(classId: string, lessonId: string, by: -1 | 1) {
-  const ids = db
+export async function moveLesson(classId: string, lessonId: string, by: -1 | 1) {
+  const ids = (await db
     .select({ id: classLessons.lessonId })
     .from(classLessons)
     .where(eq(classLessons.classId, classId))
     .orderBy(sql`coalesce(${classLessons.position}, 1e9)`, asc(classLessons.assignedAt))
-    .all()
+    .all())
     .map((r) => r.id);
   const at = ids.indexOf(lessonId);
   const to = at + by;
   if (at < 0 || to < 0 || to >= ids.length) return;
   [ids[at], ids[to]] = [ids[to], ids[at]];
-  db.transaction((tx) => {
-    ids.forEach((id, position) => tx.update(classLessons).set({ position }).where(and(eq(classLessons.classId, classId), eq(classLessons.lessonId, id))).run());
-  });
+  await together(ids.map((id, position) => db.update(classLessons).set({ position }).where(and(eq(classLessons.classId, classId), eq(classLessons.lessonId, id)))));
 }
 
 export interface StudentRow {
@@ -133,10 +134,10 @@ export interface Dashboard {
  * Everything the teacher's live dashboard shows for one class and one lesson.
  * No grades, no percentages: candles, who's stuck, and what the class thinks.
  */
-export function dashboard(classId: string, lesson: LessonBlueprint): Dashboard {
-  const kids = db.select().from(students).where(eq(students.classId, classId)).orderBy(asc(students.nickname)).all();
+export async function dashboard(classId: string, lesson: LessonBlueprint): Promise<Dashboard> {
+  const kids = await db.select().from(students).where(eq(students.classId, classId)).orderBy(asc(students.nickname)).all();
   const sessions = kids.length
-    ? db
+    ? await db
         .select()
         .from(teachSessions)
         .where(and(eq(teachSessions.lessonId, lesson.id), inArray(teachSessions.studentId, kids.map((k) => k.id))))
@@ -144,7 +145,7 @@ export function dashboard(classId: string, lesson: LessonBlueprint): Dashboard {
     : [];
   const sessionByStudent = new Map(sessions.map((s) => [s.studentId, s]));
   const events = sessions.length
-    ? db.select().from(conceptEvents).where(inArray(conceptEvents.sessionId, sessions.map((s) => s.id))).all()
+    ? await db.select().from(conceptEvents).where(inArray(conceptEvents.sessionId, sessions.map((s) => s.id))).all()
     : [];
 
   const rows: StudentRow[] = kids.map((k) => {
@@ -184,59 +185,58 @@ export function dashboard(classId: string, lesson: LessonBlueprint): Dashboard {
 }
 
 /** One student's conversation, for the teacher to read */
-export function studentSessionId(classId: string, studentId: string, lessonId: string) {
+export async function studentSessionId(classId: string, studentId: string, lessonId: string) {
   return (
-    db
+    (await db
       .select({ id: teachSessions.id })
       .from(teachSessions)
       .where(and(eq(teachSessions.studentId, studentId), eq(teachSessions.lessonId, lessonId), eq(teachSessions.classId, classId)))
-      .get()?.id ?? null
+      .get())?.id ?? null
   );
 }
 
 /** Remove a student from a class, with everything they did (sessions, messages, candle history, their Gloam) */
-export function removeStudent(classId: string, studentId: string) {
-  const kid = db.select().from(students).where(and(eq(students.id, studentId), eq(students.classId, classId))).get();
-  if (kid) eraseStudent(studentId);
+export async function removeStudent(classId: string, studentId: string) {
+  const kid = await db.select().from(students).where(and(eq(students.id, studentId), eq(students.classId, classId))).get();
+  if (kid) await eraseStudent(studentId);
 }
 
 /** Delete one student and everything they did: their sessions, messages, candle history and Gloam */
-export function eraseStudent(studentId: string) {
-  db.transaction((tx) => {
-    const sessions = tx.select({ id: teachSessions.id }).from(teachSessions).where(eq(teachSessions.studentId, studentId)).all().map((s) => s.id);
-    if (sessions.length) {
-      tx.delete(conceptEvents).where(inArray(conceptEvents.sessionId, sessions)).run();
-      tx.delete(messages).where(inArray(messages.sessionId, sessions)).run();
-      tx.delete(teachSessions).where(inArray(teachSessions.id, sessions)).run();
-    }
-    tx.delete(gloams).where(eq(gloams.studentId, studentId)).run();
-    tx.delete(students).where(eq(students.id, studentId)).run();
-  });
+export async function eraseStudent(studentId: string) {
+  const sessions = (await db.select({ id: teachSessions.id }).from(teachSessions).where(eq(teachSessions.studentId, studentId)).all()).map((s) => s.id);
+  await together([
+    ...(sessions.length
+      ? [
+          db.delete(conceptEvents).where(inArray(conceptEvents.sessionId, sessions)),
+          db.delete(messages).where(inArray(messages.sessionId, sessions)),
+          db.delete(teachSessions).where(inArray(teachSessions.id, sessions)),
+        ]
+      : []),
+    db.delete(gloams).where(eq(gloams.studentId, studentId)),
+    db.delete(students).where(eq(students.id, studentId)),
+  ]);
 }
 
 /**
  * The teacher corrects one of Gloam's candles for a student (Gloam's AI judged it wrong). The teacher has
  * the last word: the student's journey and the dashboard follow. False if they haven't started the lesson.
  */
-export function correctCandle(classId: string, studentId: string, lessonId: string, conceptId: string, level: Level): boolean {
-  const id = studentSessionId(classId, studentId, lessonId);
+export async function correctCandle(classId: string, studentId: string, lessonId: string, conceptId: string, level: Level): Promise<boolean> {
+  const id = await studentSessionId(classId, studentId, lessonId);
   if (!id) return false;
-  const s = db.select().from(teachSessions).where(eq(teachSessions.id, id)).get();
+  const s = await db.select().from(teachSessions).where(eq(teachSessions.id, id)).get();
   if (!s) return false;
   const understanding = { ...s.understanding, [conceptId]: level };
   // a lit candle is a checkpoint on the journey; an unlit one isn't
   const checkpoints = level === 3 ? (s.checkpoints.includes(conceptId) ? s.checkpoints : [...s.checkpoints, conceptId]) : s.checkpoints.filter((c) => c !== conceptId);
-  db.update(teachSessions).set({ understanding, checkpoints, updatedAt: new Date() }).where(eq(teachSessions.id, id)).run();
+  await db.update(teachSessions).set({ understanding, checkpoints, updatedAt: new Date() }).where(eq(teachSessions.id, id)).run();
   return true;
 }
 
 /** Delete a class and everything in it: its students, what they taught Gloam, their Gloams, and the class itself */
-export function deleteClass(classId: string) {
-  for (const k of db.select({ id: students.id }).from(students).where(eq(students.classId, classId)).all()) removeStudent(classId, k.id);
-  db.transaction((tx) => {
-    tx.delete(classLessons).where(eq(classLessons.classId, classId)).run();
-    tx.delete(classes).where(eq(classes.id, classId)).run();
-  });
+export async function deleteClass(classId: string) {
+  for (const k of await db.select({ id: students.id }).from(students).where(eq(students.classId, classId)).all()) await removeStudent(classId, k.id);
+  await together([db.delete(classLessons).where(eq(classLessons.classId, classId)), db.delete(classes).where(eq(classes.id, classId))]);
 }
 
 /**
@@ -245,32 +245,34 @@ export function deleteClass(classId: string) {
  * any more, so those students pick a new key the next time they join, like a teacher's key reset.
  * Returns how many students will pick a new key.
  */
-export function setClassGrade(classId: string, grade: number): number {
-  return db.transaction((tx) => {
-    const c = tx.select({ grade: classes.grade }).from(classes).where(eq(classes.id, classId)).get();
-    if (!c) return 0;
-    tx.update(classes).set({ grade }).where(eq(classes.id, classId)).run();
-    if (keySize(c.grade) === keySize(grade)) return 0;
-    return tx
-      .update(students)
-      .set({ keyHash: null, failedKeys: 0, lockedUntil: null })
-      .where(and(eq(students.classId, classId), isNotNull(students.keyHash)))
-      .run().changes;
-  });
+export async function setClassGrade(classId: string, grade: number): Promise<number> {
+  const c = await db.select({ grade: classes.grade }).from(classes).where(eq(classes.id, classId)).get();
+  if (!c) return 0;
+  const setGrade = db.update(classes).set({ grade }).where(eq(classes.id, classId));
+  if (keySize(c.grade) === keySize(grade)) {
+    await setGrade.run();
+    return 0;
+  }
+  const resetKeys = db
+    .update(students)
+    .set({ keyHash: null, failedKeys: 0, lockedUntil: null })
+    .where(and(eq(students.classId, classId), isNotNull(students.keyHash)));
+  const [, reset] = await db.batch([setGrade, resetKeys]);
+  return reset.meta.changes;
 }
 
 /**
  * A class's progress in one lesson, as a spreadsheet (CSV): nickname, then each idea's candle.
  * Nicknames only, nothing else about anyone (it's for the teacher's own records).
  */
-export function progressCsv(classId: string, lesson: LessonBlueprint): string {
+export async function progressCsv(classId: string, lesson: LessonBlueprint): Promise<string> {
   const words = ["not yet", "a spark", "flickering", "lit"];
   // a nickname like `Moss, Otter` mustn't split a column; spreadsheets can also run cells starting with = + - @
   const cell = (v: string) => {
     const safe = /^[=+\-@]/.test(v) ? `'${v}` : v;
     return /[",\r\n]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
   };
-  const d = dashboard(classId, lesson);
+  const d = await dashboard(classId, lesson);
   const head = ["Nickname", ...lesson.concepts.map((c) => c.name), "Stuck on", "Messages", "Finished"];
   const rows = d.students.map((s) => [
     s.nickname,

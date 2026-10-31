@@ -10,7 +10,7 @@ import { isHttps } from "./request";
  */
 export async function setSigned(name: string, value: string, days: number, request?: Request) {
   const expires = String(Date.now() + days * 864e5);
-  (await cookies()).set(name, `${value}.${expires}.${sign(`${name}:${value}.${expires}`)}`, {
+  (await cookies()).set(name, `${value}.${expires}.${await sign(`${name}:${value}.${expires}`)}`, {
     httpOnly: true,
     sameSite: "lax",
     secure: isHttps(request),
@@ -26,7 +26,7 @@ export async function readSigned(name: string): Promise<string | null> {
   if (parts.length !== 3) return null;
   const [value, expires, sig] = parts;
   if (Number(expires) < Date.now()) return null;
-  return signedEquals(`${name}:${value}.${expires}`, sig) ? value : null;
+  return (await signedEquals(`${name}:${value}.${expires}`, sig)) ? value : null;
 }
 
 export async function clear(name: string) {

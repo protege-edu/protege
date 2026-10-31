@@ -8,16 +8,16 @@ export async function GET(request: Request, ctx: RouteContext<"/api/teacher/clas
   const me = await requireTeacher(request);
   if (me instanceof Response) return me;
   const { id } = await ctx.params;
-  const cls = getClass(id, me.id);
+  const cls = await getClass(id, me.id);
   if (!cls) return notYours();
   const lessonId = new URL(request.url).searchParams.get("lesson") ?? "";
-  const row = getLessonRow(lessonId);
-  const lesson = row && canSee(row, me.id) ? getApprovedLesson(lessonId) : null;
+  const row = await getLessonRow(lessonId);
+  const lesson = row && canSee(row, me.id) ? await getApprovedLesson(lessonId) : null;
   if (!lesson) return bad("Pick a lesson first.", 404);
   const name = `${cls.name} - ${lesson.title}`.replace(/[^\p{L}\p{N} ._-]+/gu, "").slice(0, 80) || "class";
-  logAccess(me.id, "downloaded-class-progress", { classId: id });
+  await logAccess(me.id, "downloaded-class-progress", { classId: id });
   // the byte-order mark tells Excel it's UTF-8 (so accents in names and ideas come through)
-  return new Response("\uFEFF" + progressCsv(id, lesson), {
+  return new Response("\uFEFF" + await progressCsv(id, lesson), {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
       "Content-Disposition": `attachment; filename="progress.csv"; filename*=UTF-8''${encodeURIComponent(name)}.csv`,

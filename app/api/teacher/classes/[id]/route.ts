@@ -17,30 +17,30 @@ export async function GET(request: Request, ctx: RouteContext<"/api/teacher/clas
   const me = await requireTeacher(request);
   if (me instanceof Response) return me;
   const { id } = await ctx.params;
-  const cls = getClass(id, me.id);
+  const cls = await getClass(id, me.id);
   if (!cls) return notYours();
   const lessonId = new URL(request.url).searchParams.get("lesson");
   // the class itself: its lessons (in the order students see them), its code and where students go
   if (!lessonId) {
-    const lessons = classLessonList(id);
+    const lessons = await classLessonList(id);
     // who's in the class, in the order they joined (the code screen shows them arriving)
-    const roster = db
+    const roster = (await db
       .select({ id: students.id, nickname: students.nickname, google: students.googleIdHash, key: students.keyHash })
       .from(students)
       .where(eq(students.classId, id))
       .orderBy(students.createdAt)
-      .all()
+      .all())
       .map((r) => ({ id: r.id, nickname: r.nickname, google: !!r.google, hasKey: !!r.key }));
     return Response.json({ class: cls, lessons, roster, google: googleEnabled(), address: studentAddress(request), retention: retentionRule() });
   }
-  const row = getLessonRow(lessonId);
-  const lesson = row && canSee(row, me.id) ? getApprovedLesson(lessonId) : null;
+  const row = await getLessonRow(lessonId);
+  const lesson = row && canSee(row, me.id) ? await getApprovedLesson(lessonId) : null;
   if (!lesson) return bad("Pick an approved lesson to see the dashboard.", 404);
   return Response.json({
     line: queueStats(),
     class: cls,
     lesson: { id: lesson.id, title: lesson.title, concepts: lesson.concepts.map((c) => ({ id: c.id, name: c.name, misconception: c.misconception })) },
-    ...dashboard(id, lesson),
+    ...await dashboard(id, lesson),
   });
 }
 
@@ -64,43 +64,43 @@ export async function POST(request: Request, ctx: RouteContext<"/api/teacher/cla
   const me = await requireTeacher(request);
   if (me instanceof Response) return me;
   const { id } = await ctx.params;
-  if (!getClass(id, me.id)) return notYours();
+  if (!await getClass(id, me.id)) return notYours();
   const body = Change.safeParse(await request.json().catch(() => null));
   if (!body.success) return bad("That change didn't make sense. Reload the page and try again.");
   const c = body.data;
   if ("lessonId" in c) {
-    const row = getLessonRow(c.lessonId);
-    if (!row || !canSee(row, me.id) || !getApprovedLesson(c.lessonId)) return bad("Only your approved lessons can be given to a class.");
-    assignLesson(id, c.lessonId);
+    const row = await getLessonRow(c.lessonId);
+    if (!row || !canSee(row, me.id) || !await getApprovedLesson(c.lessonId)) return bad("Only your approved lessons can be given to a class.");
+    await assignLesson(id, c.lessonId);
   } else if ("unitId" in c) {
-    if (!getUnit(c.unitId, me.id)) return notYours();
-    const ready = db
+    if (!await getUnit(c.unitId, me.id)) return notYours();
+    const ready = await db
       .select({ id: lessonRows.id })
       .from(lessonRows)
       .where(and(eq(lessonRows.unitId, c.unitId), eq(lessonRows.status, "approved")))
       .orderBy(asc(lessonRows.position))
       .all();
     if (!ready.length) return bad("None of this unit's lessons are approved yet. Review and approve one first.");
-    for (const r of ready) assignLesson(id, r.id);
+    for (const r of ready) await assignLesson(id, r.id);
     return Response.json({ ok: true, given: ready.length });
   } else if ("removeLessonId" in c) {
-    unassignLesson(id, c.removeLessonId);
+    await unassignLesson(id, c.removeLessonId);
   } else if ("moveLessonId" in c) {
-    moveLesson(id, c.moveLessonId, c.by);
+    await moveLesson(id, c.moveLessonId, c.by);
   } else if ("googleSignIn" in c) {
-    db.update(classes).set({ googleSignIn: c.googleSignIn }).where(eq(classes.id, id)).run();
+    await db.update(classes).set({ googleSignIn: c.googleSignIn }).where(eq(classes.id, id)).run();
   } else if ("paused" in c) {
-    db.update(classes).set({ pausedAt: c.paused ? new Date() : null }).where(eq(classes.id, id)).run();
+    await db.update(classes).set({ pausedAt: c.paused ? new Date() : null }).where(eq(classes.id, id)).run();
   } else if ("language" in c) {
-    db.update(classes).set({ language: c.language }).where(eq(classes.id, id)).run();
+    await db.update(classes).set({ language: c.language }).where(eq(classes.id, id)).run();
   } else if ("deleteOn" in c) {
     const when = c.deleteOn === null ? null : new Date(c.deleteOn);
     if (when && (when.getTime() < Date.now() || when.getTime() > Date.now() + 3 * 366 * 86_400_000)) return bad("Pick a date between tomorrow and three years from now.");
-    db.update(classes).set({ deleteOn: when }).where(eq(classes.id, id)).run();
+    await db.update(classes).set({ deleteOn: when }).where(eq(classes.id, id)).run();
   } else if ("grade" in c) {
-    return Response.json({ ok: true, newKeys: setClassGrade(id, c.grade) });
+    return Response.json({ ok: true, newKeys: await setClassGrade(id, c.grade) });
   } else {
-    db.update(classes).set({ name: c.name }).where(eq(classes.id, id)).run();
+    await db.update(classes).set({ name: c.name }).where(eq(classes.id, id)).run();
   }
   return Response.json({ ok: true });
 }
@@ -110,8 +110,8 @@ export async function DELETE(request: Request, ctx: RouteContext<"/api/teacher/c
   const me = await requireTeacher(request);
   if (me instanceof Response) return me;
   const { id } = await ctx.params;
-  if (!getClass(id, me.id)) return notYours();
-  deleteClass(id);
-  logAccess(me.id, "deleted-class", { classId: id });
+  if (!await getClass(id, me.id)) return notYours();
+  await deleteClass(id);
+  await logAccess(me.id, "deleted-class", { classId: id });
   return Response.json({ ok: true });
 }

@@ -10,24 +10,24 @@ import { students } from "@/lib/db/schema";
  *   accommodations: what their teacher switched on for them (the teacher sees only this part)
  * In force: their age's defaults, then the accommodations, then their own choices on top.
  */
-export function studentAccessParts(studentId: string): { own: AccessPatch | null; accommodations: AccessPatch | null } {
-  const s = db.select({ access: students.access, acc: students.accommodations }).from(students).where(eq(students.id, studentId)).get();
+export async function studentAccessParts(studentId: string): Promise<{ own: AccessPatch | null; accommodations: AccessPatch | null }> {
+  const s = await db.select({ access: students.access, acc: students.accommodations }).from(students).where(eq(students.id, studentId)).get();
   return { own: s?.access ? cleanAccess(s.access) : null, accommodations: s?.acc ? cleanAccess(s.acc) : null };
 }
 
 /** What the student chose themselves, or null for none */
-export const studentAccess = (studentId: string) => studentAccessParts(studentId).own;
+export const studentAccess = async (studentId: string) => (await studentAccessParts(studentId)).own;
 
 /** The student changed some of their own Ways to play (the rest stay as they were) */
-export function updateStudentAccess(studentId: string, patch: AccessPatch): AccessPatch {
-  const next = cleanAccess({ ...(studentAccess(studentId) ?? {}), ...patch });
-  db.update(students).set({ access: next }).where(eq(students.id, studentId)).run();
+export async function updateStudentAccess(studentId: string, patch: AccessPatch): Promise<AccessPatch> {
+  const next = cleanAccess({ ...(await studentAccess(studentId) ?? {}), ...patch });
+  await db.update(students).set({ access: next }).where(eq(students.id, studentId)).run();
   return next;
 }
 
 /** Their teacher switched some Ways to play on or off for them (an accommodation) */
-export function updateAccommodations(studentId: string, patch: AccessPatch): AccessPatch {
-  const next = cleanAccess({ ...(studentAccessParts(studentId).accommodations ?? {}), ...patch });
-  db.update(students).set({ accommodations: next }).where(eq(students.id, studentId)).run();
+export async function updateAccommodations(studentId: string, patch: AccessPatch): Promise<AccessPatch> {
+  const next = cleanAccess({ ...((await studentAccessParts(studentId)).accommodations ?? {}), ...patch });
+  await db.update(students).set({ accommodations: next }).where(eq(students.id, studentId)).run();
   return next;
 }

@@ -28,7 +28,7 @@ async function Join({ searchParams }: { searchParams: PageProps<"/join">["search
   if (one(q.google) === "1") {
     const pending = await readSigned("protege_google_pending");
     const classId = pending?.split("~")[0];
-    if (classId && classId === one(q.class)) googleFor = classPreview(classId) ?? undefined;
+    if (classId && classId === one(q.class)) googleFor = await classPreview(classId) ?? undefined;
   }
   // before a class is found: the browser's language, if it's one Gloam speaks
   const guess = (await headers()).get("accept-language")?.toLowerCase().startsWith("fr") ? "fr" : "en";

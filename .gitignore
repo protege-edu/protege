@@ -56,3 +56,8 @@ art/__pycache__/
 
 # throwaway helper scripts
 /scripts/_*
+
+# Cloudflare: the local copy of the database and other dev state, and the built worker
+.wrangler/
+.open-next/
+.dev.vars*

@@ -23,14 +23,14 @@ export default function Page({ params }: PageProps<"/play/[id]">) {
 
 async function Lesson({ params }: { params: PageProps<"/play/[id]">["params"] }) {
   const { id } = await params;
-  const approved = getApprovedLesson(decodeURIComponent(id));
+  const approved = await getApprovedLesson(decodeURIComponent(id));
   await connection();
   if (!approved) return <LostScreen kind="gone" {...await lostFor()} />;
   const me = await currentStudent();
-  const lesson = playedBy(approved, me?.id);
+  const lesson = await playedBy(approved, me?.id);
   return (
     <div data-age-style={lesson.ageStyle} lang={lesson.language ?? "en"}>
-      <GameScreen lesson={toClientLesson(lesson)} account={me ? "student" : "preview"} access={me ? studentAccessParts(me.id) : null} />
+      <GameScreen lesson={toClientLesson(lesson)} account={me ? "student" : "preview"} access={me ? await studentAccessParts(me.id) : null} />
     </div>
   );
 }

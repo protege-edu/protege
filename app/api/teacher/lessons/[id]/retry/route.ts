@@ -8,7 +8,7 @@ export async function POST(request: Request, ctx: RouteContext<"/api/teacher/les
   if (me instanceof Response) return me;
   if (!limit(`draft:${me.id}`, 12, 60 * 60 * 1000)) return tooMany();
   const { id } = await ctx.params;
-  const row = getLessonRow(id);
+  const row = await getLessonRow(id);
   if (!row || !canSee(row, me.id)) return notYours();
-  return retryDraft(id) ? Response.json({ ok: true }) : bad("We don't have the original notes for this lesson anymore. Start a new one.");
+  return await retryDraft(id) ? Response.json({ ok: true }) : bad("We don't have the original notes for this lesson anymore. Start a new one.");
 }
