@@ -55,13 +55,13 @@ then keeps only a scrambled account number: no name, email or photo.
 
 ## This website
 
-This website is information, and the page where students type their class code (/j). That page only sends
-them on to Protégé, and doesn't keep anything they type. Protégé itself doesn't run here. The website has no
+This website is information, and the page where students type their class code (/j). That page finds
+their class and doesn't keep anything they type. The website has no
 cookies, sign-ins, analytics, ads or trackers, and loads nothing from other websites. It remembers one thing,
 on your own device only: whether you switched Gloam's voice on.
 
-It's hosted by Cloudflare Pages. Like any website host, Cloudflare sees the internet address of whoever visits,
-so it can deliver the pages and block attacks.
+It's part of Protégé, hosted by Vercel. Like any website host, Vercel sees the internet address of whoever
+visits, so it can deliver the pages and block attacks.
 
 ## Questions
 

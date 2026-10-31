@@ -17,9 +17,12 @@ import { linesFor } from "../js/lines";
 export interface Links {
   /** the app's teacher page (sign in, or sign up with a staff code) */
   teacher: string;
-  /** where students type the class code (this site's /j, relative to the page) */
+  /** where students type the class code (/j, or /fr/j) */
   join: string;
   repo: string;
+  /** the guide and privacy pages, in the page's language */
+  guide: string;
+  privacy: string;
 }
 
 /** A candle, as in the app: unlit, smoldering, flickering or steady (steady is gold: understood) */
@@ -192,7 +195,7 @@ ${bar}
       <h2 id="private-title" class="voice">${t.private.title}</h2>
       <p class="nosy voice">“${lines.nosy}” <span>Gloam</span></p>
       <ul class="plain">${t.private.points.map(([b, rest]) => `<li><b>${b}</b> ${rest}</li>`).join("")}</ul>
-      <a class="btn quiet" href="privacy.html">${t.private.more}</a>
+      <a class="btn quiet" href="${l.privacy}">${t.private.more}</a>
     </div>
     <svg class="net" viewBox="0 0 520 420" role="img" aria-label="${t.private.diagram}">
       <g class="cloud"><path d="M396 64a28 28 0 0 1 54-8 22 22 0 0 1 28 30h-96a20 20 0 0 1 14-22z"/><text x="437" y="112">${t.private.brain}</text></g>
@@ -242,7 +245,7 @@ ${bar}
       <a class="btn quiet big" href="${l.join}">${t.cta.student}</a>
     </div>
     <ol class="how">${t.get.steps.map(([b, rest]) => `<li><b>${b}</b> ${rest}</li>`).join("")}</ol>
-    <p class="others">${t.get.others("guide.html")}</p>
+    <p class="others">${t.get.others(l.guide)}</p>
   </div>
 </section>
 

@@ -24,7 +24,7 @@ It is not legal advice. The board's privacy officer and legal counsel decide whe
 | Who uses it | Students in grades K–12, and their teachers |
 | Who makes it | Open-source software (GNU AGPL v3) |
 | Who runs it | **[Board to complete]**: the shared service at https://protege-edu.vercel.app, operated by **[Operator to complete: legal name and contact]**, or the board's own copy (see [hosting](hosting-for-boards.md)) |
-| Service providers | **Vercel** (app hosting, USA), **Turso** (database, USA), **Anthropic** (Claude AI, USA); optionally **Google** (sign-in); **Cloudflare** (public website only, stores nothing) |
+| Service providers | **Vercel** (app hosting, USA), **Turso** (database, USA), **Anthropic** (Claude AI, USA); optionally **Google** (sign-in) |
 | Program owner / contact | **[Board to complete]** |
 | Legal authority to collect | **[Board to complete]**: typically the *Education Act* (duties of teachers and boards to deliver the curriculum and assess learning) and MFIPPA s. 28(2) (collection necessary to the proper administration of a lawfully authorized activity) |
 
@@ -55,7 +55,7 @@ any account information are never sent. Many turns use hand-written lines and se
 
 ## 3. How information flows
 
-1. A student opens the Protégé address (or the website's `/j` page, which forwards the class code) on a school
+1. A student opens the Protégé address (its `/j` page, where they type the class code) on a school
    Chromebook, types the class code, picks a nickname and a picture key.
 2. What they type goes over https to the app on **Vercel** (Washington, D.C., USA).
 3. On the server, a code safety filter checks it. Messages that fail never reach the AI. If the AI is needed,

@@ -13,7 +13,7 @@ const BASE = process.env.APP_URL ?? "http://localhost:3000";
 const i = process.argv.indexOf("--rate");
 const rate = i >= 0 ? Number(process.argv[i + 1]) : 4;
 const j = process.argv.indexOf("--path");
-const path = j >= 0 ? process.argv[j + 1] : "/";
+const path = j >= 0 ? process.argv[j + 1] : "/practice";
 
 async function main() {
   // use the real graphics card (headless browsers otherwise draw WebGL in software, which no Chromebook does)

@@ -156,6 +156,3 @@ Also:
 - **Vercel, Turso and Anthropic**, as described under "Where it lives".
 - **Google**, only if a teacher allows "Continue with Google" for a class. Google then knows that account
   signed in to this Protégé. Protégé gets no name, email or photo.
-- **Cloudflare**, which hosts Protégé's public website (protege-edu.pages.dev). Its `/j` page only forwards a
-  typed class code to the app, and stores nothing. Like any web host, Cloudflare receives the visitor's
-  network address when the page loads.

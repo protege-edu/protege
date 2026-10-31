@@ -11,8 +11,8 @@ candle lights up, and when it gets everything, the whole valley glows.
 - **For every grade, K–12**, in English and French, with ways to play for every student.
 
 **Teachers:** [protege-edu.vercel.app/teacher](https://protege-edu.vercel.app/teacher).
-**Students:** [protege-edu.pages.dev/j](https://protege-edu.pages.dev/j) and type the class code.
-The [guide on the website](https://protege-edu.pages.dev/guide) explains it all.
+**Students:** [protege-edu.vercel.app/j](https://protege-edu.vercel.app/j) and type the class code.
+The [guide](https://protege-edu.vercel.app/guide.html) explains it all.
 
 ![Gloam, holding its unlit lantern, explains its wrong theory of the seasons. A text box below says "Explain it to Gloam…"](site/img/teach.webp)
 
@@ -26,7 +26,7 @@ The [guide on the website](https://protege-edu.pages.dev/guide) explains it all.
 2. **Make a class** and give it lessons: upload your notes (PDF, PowerPoint, Word or pasted text, one topic
    or a whole unit) or use the built-in one. Your file is read in your own browser and never uploaded. Review
    each lesson Gloam drafts, approve it, and give it to the class.
-3. **Press Show the code.** Students go to **protege-edu.pages.dev/j** and type the class code (like
+3. **Press Show the code.** Students go to **protege-edu.vercel.app/j** and type the class code (like
    GLOW-42), or scan the QR code. Or post the link from **Copy link for students** in Google Classroom once.
 4. **Ask each student to tell you their nickname** the first time. Protégé never stores real names.
 
@@ -170,13 +170,12 @@ swears too). Another language is one more file like `lib/age-styles/fr.ts`.
 
 ## Putting your own Protégé online
 
-Protégé is three free services and one paid one. Accounts on all of them must belong to an adult.
+Protégé is two free services and one paid one. Accounts on all of them must belong to an adult.
 
 | What | Where | Cost |
 |---|---|---|
-| The app | [Vercel](https://vercel.com) (Hobby plan: free, for non-commercial use) | free |
+| The app and its website | [Vercel](https://vercel.com) (Hobby plan: free, for non-commercial use) | free |
 | The database | [Turso](https://turso.tech) | free (5 GB) |
-| The public website | [Cloudflare Pages](https://pages.cloudflare.com) | free |
 | Gloam's brain | [Claude API](https://console.anthropic.com) | about 11 cents per class |
 
 1. **Turso:** create a database named `protege` near your schools (e.g. AWS US East). Copy its URL
@@ -198,8 +197,6 @@ Protégé is three free services and one paid one. Accounts on all of them must 
    project's data for AI training.
 4. **Your account:** open `/teacher` on your app. It asks for a **setup code**: find it in Vercel's **Logs**
    (search for `setup code`). That first account is the owner. Then add your school on the Owner page.
-5. **The website** (optional): see [The website](#the-website). Point its join page at your app with
-   `PROTEGE_APP_URL`.
 
 Never put a key or token in a file in the repository, or in a chat. If one leaks, make a new one and replace
 it in Vercel.
@@ -259,20 +256,11 @@ sign-up becomes the owner. Never run `next build` beside `next dev` (they share 
 
 ### The website
 
-https://protege-edu.pages.dev is built by `npm run site` from `site/` and `docs/board/`, and hosted for free on
-Cloudflare Pages, which rebuilds it on every push to `main`. The Cloudflare project's settings:
-
-| Setting | Value |
-|---|---|
-| Production branch | `main` |
-| Build command | `npm run site` |
-| Build output directory | `site-dist` |
-| Node version | from `.node-version` |
-| Web Analytics | **off** (the site has no trackers, and its privacy page says so) |
-
-The site sets strict headers (`site-dist/_headers`): nothing from other websites can load, and no cookies are
-used. Any static host works too: upload `site-dist/`. Its join page (`/j`) sends students on to the app
-(`PROTEGE_APP_URL`, default `https://protege-edu.vercel.app`).
+The website lives at the same address as the app: https://protege-edu.vercel.app is its home page, `/j` is
+where students type the class code, and `/teacher`, `/join` and `/practice` are the app. `npm run site` builds
+it from `site/` and `docs/board/` into `public/` (git ignores those files), and `npm run dev` and the Vercel
+build run it first, so it's rebuilt on every push. `next.config.ts` gives `/`, `/fr`, `/j` and `/fr/j` their
+pages. Every page has a strict security policy: nothing from other websites can load, and no cookies are used.
 
 How it's made:
 - `site/pages/home.ts` is the homepage's HTML (complete without JavaScript).
@@ -334,8 +322,7 @@ version.
   key is wrong (check Vercel's Logs for `[ai]`). Students press Try again; nothing is lost.
 - **Gloam says it's closed for the day:** a daily limit was reached. It resets at midnight (Toronto time), or
   the owner can raise it.
-- **A school network blocks the app:** ask the school's IT to allow `protege-edu.vercel.app` and
-  `protege-edu.pages.dev`.
+- **A school network blocks the app:** ask the school's IT to allow `protege-edu.vercel.app`.
 - **Forgot the setup code:** it's in Vercel's Logs, printed until the first account exists.
 - **A teacher lost their password and recovery code:** the owner makes them a new recovery code on the Owner
   page.

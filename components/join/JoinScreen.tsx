@@ -305,7 +305,7 @@ export function JoinScreen({ initialCode, googleFor, guess = "en" }: { initialCo
                   {t.codeButton}
                 </InkButton>
                 {/* on a phone it sits here, under the button (in the corner it would collide with it) */}
-                <Link href="/" className="mt-3 block w-fit min-h-11 content-center rounded-md text-xs font-bold text-ink-dim underline-offset-4 hover:text-ink hover:underline min-[56rem]:hidden">
+                <Link href="/practice" className="mt-3 block w-fit min-h-11 content-center rounded-md text-xs font-bold text-ink-dim underline-offset-4 hover:text-ink hover:underline min-[56rem]:hidden">
                   {style.copy.titlePractice}
                 </Link>
               </form>
@@ -468,7 +468,7 @@ export function JoinScreen({ initialCode, googleFor, guess = "en" }: { initialCo
       <WaysToPlayButton style={style} className="!absolute top-3 right-4 z-10" />
 
       {step.k === "code" && (
-        <Link href="/" className="absolute right-4 bottom-4 min-h-11 content-center rounded-md px-3 text-xs font-bold text-ink-dim underline-offset-4 hover:text-ink hover:underline max-[56rem]:hidden">
+        <Link href="/practice" className="absolute right-4 bottom-4 min-h-11 content-center rounded-md px-3 text-xs font-bold text-ink-dim underline-offset-4 hover:text-ink hover:underline max-[56rem]:hidden">
           {style.copy.titlePractice}
         </Link>
       )}

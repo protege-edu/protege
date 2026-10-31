@@ -16,13 +16,12 @@ teacher computers. There are two ways a board can use it.
 
 | Part | Company | Location | What it handles |
 |---|---|---|---|
-| The app (pages and server code) | **Vercel**, Hobby plan | Functions in Washington, D.C., USA (region `iad1`) | Every request from students and teachers passes through it, over https |
+| The app and its public website (pages and server code) | **Vercel**, Hobby plan | Functions in Washington, D.C., USA (region `iad1`) | Every request from students and teachers passes through it, over https |
 | The database | **Turso** (hosted libSQL/SQLite) | AWS US East (Virginia, USA) | Everything Protégé keeps: see [data inventory](data-inventory.md) |
 | Gloam's AI | **Anthropic** (Claude Haiku 5.5, through Anthropic's API, under its commercial terms) | United States | Lesson notes when a teacher drafts a lesson; a student's message, the last few messages and the lesson's ideas when Gloam answers. Never a nickname or account information. See [AI transparency](ai-transparency.md). |
-| The public website | **Cloudflare Pages** (protege-edu.pages.dev) | Cloudflare's network | Information pages. Its `/j` page only forwards a typed class code to the app, and stores nothing. |
 | "Continue with Google" (optional) | **Google** | Google's | Only if a teacher allows it for a class. Protégé asks only for `openid` (students) and keeps a keyed hash of the account number. |
 
-Student devices only ever connect to the app and the website. They never connect to Turso or Anthropic
+Student devices only ever connect to the app. They never connect to Turso or Anthropic
 directly: the app's server does that.
 
 **What this means for a board.** Students' information is stored and processed in the United States by three
@@ -78,7 +77,7 @@ Settings, all in the host's environment variables (never in the code or the brow
 | `SCHOOL_YEAR_END` | For example `06-30` |
 | `AI_DAILY_PER_STUDENT`, `AI_DAILY_PER_CLASS`, `AI_DAILY_DRAFTS_PER_TEACHER`, `AI_DAILY_TOTAL` | Daily limits on AI use (they cap cost and abuse) |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Optional Google sign-in |
-| `PROTEGE_APP_URL`, `PROTEGE_SITE_URL` | The app's address when it isn't on Vercel; the board's own copy of the website, if any |
+| `PROTEGE_APP_URL` | The app's address when it isn't on Vercel |
 
 **The first account.** When the app first starts, it prints a one-time **setup code** in the server logs.
 Whoever can read those logs makes the first account with it. That account is the **owner**. The owner adds
@@ -94,10 +93,9 @@ sent to Claude.
 
 ## Students reaching it
 
-- Students go to the app's address, or to protege-edu.pages.dev/j and type the class code (or scan the QR
-  code the teacher shows).
-- The school network must allow **protege-edu.vercel.app** and **protege-edu.pages.dev** (or the board's own
-  addresses), and **accounts.google.com** only if Google sign-in is used.
+- Students go to protege-edu.vercel.app/j and type the class code (or scan the QR code the teacher shows).
+- The school network must allow **protege-edu.vercel.app** (or the board's own address), and
+  **accounts.google.com** only if Google sign-in is used.
 - Nothing else is needed on the network: no ports to open, no tunnels, no devices that must see each other.
 
 ## Restoring after a mistake

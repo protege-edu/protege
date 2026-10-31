@@ -9,9 +9,9 @@ can be checked in the public code; the file to look at is named.
   https://protege-edu.vercel.app. The **database** is **Turso** (hosted libSQL/SQLite, AWS US East). **Gloam's
   AI** is **Claude Haiku 5.5**, called from the server through **Anthropic's API**. All three are in the United
   States. See [hosting](hosting-for-boards.md).
-- **The public website** (protege-edu.pages.dev, Cloudflare Pages) is static. Its `/j` page forwards a typed
-  class code to the app and stores nothing.
-- **Browsers only talk to the app** (and the website). They never connect to Turso or Anthropic. The
+- **The public website** is static pages served by the app itself, at the same address. Its `/j` page
+  takes a typed class code to the class's join page and stores nothing.
+- **Browsers only talk to the app.** They never connect to Turso or Anthropic. The
   content-security policy allows connections to the app's own origin only.
 - **Voice typing and read-aloud run on the student's device** (`lib/voice/client.ts`, `lib/speech.ts`): the
   browser's speech recognition only with `processLocally`, and only voices marked `localService`. If the device

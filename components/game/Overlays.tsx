@@ -20,7 +20,7 @@ import type { Entry } from "./useTeachSession";
 
 /**
  * Who's looking at the title screen:
- *   guest:   the practice lesson at "/", not in a class. The main way in is joining your class.
+ *   guest:   the practice lesson at /practice, not in a class. The main way in is joining your class.
  *   student: signed in to a class. Their Gloam's home is one tap away.
  *   preview: a teacher trying a lesson
  */

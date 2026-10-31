@@ -5,7 +5,7 @@ Phase 1 isn't done until real people have played it. This is a short plan for on
 ## Before they arrive
 
 1. Open https://protege-edu.vercel.app/teacher, sign in, and make a class called "Play-test" for your grade. Give it the seasons lesson (or your own).
-2. On the class page, press **Show the code**. Friends go to protege-edu.pages.dev/j or scan the QR code, type the code, and pick a **made-up nickname** (no real names) and their secret pictures. Joining is part of the test: watch whether it's easy.
+2. On the class page, press **Show the code**. Friends go to protege-edu.vercel.app/j or scan the QR code, type the code, and pick a **made-up nickname** (no real names) and their secret pictures. Joining is part of the test: watch whether it's easy.
 3. Don't use `?test`: test mode lets pasted answers work, and you want to see what friends do without it (it only exists while developing anyway).
 4. Have a piece of paper ready for notes. Write notes about what happened, not about who they are.
 

@@ -20,8 +20,8 @@ interface Info {
   lessons: { id: string; title: string; latest: boolean }[];
   roster: { id: string; nickname: string; google: boolean; hasKey: boolean }[];
   google: boolean;
-  /** where students go: the website's join page, which sends them on to the app (lib/hosting/app.ts) */
-  join: { site: string; app: string };
+  /** where Protégé lives: students type the class code at its /j (lib/hosting/app.ts) */
+  join: { app: string };
   /** the school board's rule for how long classes are kept (lib/privacy/retention.ts) */
   retention: "after-a-year" | "end-of-school-year" | "never";
 }
@@ -252,7 +252,6 @@ export function ClassDashboard() {
           <ShowCode
             key="code"
             code={info.class.code}
-            site={info.join.site}
             app={info.join.app}
             french={info.class.language === "fr"}
             roster={info.roster}

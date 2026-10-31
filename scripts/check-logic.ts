@@ -413,7 +413,7 @@ test("the teacher's unticked parts are left out, and a lesson left empty disappe
   assert.equal(lessonSource(lessons[0]), parts[0].text);
 });
 
-console.log("\njoining from the website (protege-edu.pages.dev/j)");
+console.log("\njoining at /j (protege-edu.vercel.app/j)");
 test("a class code is read however it's typed", () => {
   for (const typed of ["GLOW-42", "glow 42", "Glow42", " glow - 42 ", "glow-42-K7Q2"]) assert.equal(classCode(typed), "GLOW-42", typed);
   for (const typed of ["hello", "42", "GLOW-4", ""]) assert.equal(classCode(typed), null, typed);

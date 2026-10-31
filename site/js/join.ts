@@ -1,6 +1,6 @@
 /**
- * The join page (/j): a student types the class code on the projector (like GLOW-42), and it sends them to
- * Protégé (the app, data-app on the form), which finds their class. Nothing a student types is kept.
+ * The join page (/j): a student types the class code on the projector (like GLOW-42), and it takes them to
+ * /join, which finds their class. Nothing a student types is kept.
  * A link with the code in it (/j?c=GLOW-42) goes straight there.
  */
 type Words = Record<"unreadable" | "going" | "stuck", string>;
@@ -20,7 +20,6 @@ export function join() {
   const said = document.querySelector<HTMLElement>("#join-said");
   if (!form || !input || !said) return;
   const words = JSON.parse(input.dataset.problems ?? "{}") as Words;
-  const app = (form.dataset.app ?? "").replace(/\/$/, "");
 
   const tell = (text: string, problem = false) => {
     said.textContent = text;
@@ -35,9 +34,9 @@ export function join() {
     const code = classCode(typed);
     if (!code) return tell(words.unreadable, true);
     tell(words.going);
-    // (if Protégé can't be reached, the browser shows its own page; while it tries, say what to check)
+    // (if the connection is slow, say what to check while it tries)
     setTimeout(() => (said.textContent = words.stuck), 6000);
-    window.location.assign(`${app}/join?code=${encodeURIComponent(code)}`);
+    window.location.assign(`/join?code=${encodeURIComponent(code)}`);
   };
 
   form.addEventListener("submit", (e) => {

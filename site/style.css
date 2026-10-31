@@ -123,7 +123,6 @@ a {
   z-index: 4;
 }
 body[data-page="home"] .bar,
-body[data-page="lost"] .bar,
 body[data-page="join"] .bar {
   position: absolute;
   inset: 0 0 auto;
@@ -138,15 +137,7 @@ body[data-page="join"] .bar {
     width: auto;
     align-items: center;
   }
-  body[data-page="home"] .bar nav a:not([href="guide.html"]):not(.lang) {
-    display: none;
-  }
-  /* the lost page on a phone: just the other language (its own buttons lead home and to the guide) */
-  body[data-page="lost"] .bar nav {
-    width: auto;
-    align-items: center;
-  }
-  body[data-page="lost"] .bar nav a:not(.lang) {
+  body[data-page="home"] .bar nav a:not([href$="guide.html"]):not(.lang) {
     display: none;
   }
 }

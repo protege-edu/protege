@@ -48,6 +48,15 @@ const nextConfig: NextConfig = {
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
+  // the website (built into public/ by scripts/site.ts) at the short addresses: the home page and /j, in both languages
+  async rewrites() {
+    return [
+      { source: "/", destination: "/index.html" },
+      { source: "/fr", destination: "/fr/index.html" },
+      { source: "/j", destination: "/j/index.html" },
+      { source: "/fr/j", destination: "/fr/j/index.html" },
+    ];
+  },
   turbopack: {
     rules: {
       "*.css": {

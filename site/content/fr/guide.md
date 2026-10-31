@@ -2,7 +2,7 @@
 
 Protégé est un site Web : rien à télécharger ni à installer. Le personnel enseignant l'utilise à
 [protege-edu.vercel.app/teacher](https://protege-edu.vercel.app/teacher). Les élèves se joignent à
-**protege-edu.pages.dev/fr/j**, sur n'importe quel Chromebook, ordinateur ou tablette.
+**protege-edu.vercel.app/fr/j**, sur n'importe quel Chromebook, ordinateur ou tablette.
 
 > Les écrans des élèves sont en français et en anglais. Les pages de l'enseignant sont en anglais pour l'instant :
 > ce guide nomme donc leurs boutons en anglais, en **gras**.
@@ -44,7 +44,7 @@ Ou commencez avec la leçon intégrée, « Pourquoi y a-t-il des saisons? »
 <h2 id="in-class">4. En classe</h2>
 
 1. Sur la page de votre classe, appuyez sur **Show the code** et projetez-le.
-2. Les élèves vont sur **protege-edu.pages.dev/fr/j** et tapent le code, comme GLOW-42. C'est le même lien à
+2. Les élèves vont sur **protege-edu.vercel.app/fr/j** et tapent le code, comme GLOW-42. C'est le même lien à
    chaque cours : ajoutez-le aux favoris ou épinglez-le dans Google Classroom. (Les téléphones et tablettes
    peuvent balayer le code QR.)
 3. Ils choisissent un surnom et leurs images secrètes. La fois suivante, ils touchent leur surnom et leurs
@@ -76,7 +76,7 @@ une **page du propriétaire** (**Owner page**,
 <h2 id="limits">Limites quotidiennes et coût</h2>
 
 Le cerveau de Gloam, c'est Claude (Claude Haiku 5.5), une IA créée par Anthropic. L'hébergement de Protégé est
-gratuit (Vercel, Turso et Cloudflare Pages). La seule chose qui coûte de l'argent, c'est Claude : environ
+gratuit (Vercel et Turso). La seule chose qui coûte de l'argent, c'est Claude : environ
 11 cents pour une classe de 30 élèves qui envoient 40 messages chacun.
 
 - **Les limites quotidiennes** plafonnent le nombre de messages que chaque élève et chaque classe peuvent

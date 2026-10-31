@@ -67,7 +67,7 @@ export function LostScreen({ kind, style, language = "en", student = false, onRe
               {age.copy.toMyGloam}
             </a>
           ) : kind === "broke" ? (
-            <a href="/" className="lost-btn quiet">
+            <a href="/practice" className="lost-btn quiet">
               {copy.start}
             </a>
           ) : (

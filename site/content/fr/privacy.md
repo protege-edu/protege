@@ -61,14 +61,13 @@ l'école. Protégé garde alors seulement un numéro de compte brouillé : aucun
 
 ## Ce site Web
 
-Ce site offre de l'information, et la page où les élèves tapent le code de leur classe (/fr/j). Cette page les
-envoie seulement vers Protégé, et ne garde rien de ce qu'ils tapent. Protégé lui-même ne fonctionne pas ici.
-Le site n'a ni témoins (cookies), ni connexion, ni outil d'analyse, ni publicité, ni traceur, et il ne charge
+Ce site offre de l'information, et la page où les élèves tapent le code de leur classe (/fr/j). Cette page trouve
+leur classe et ne garde rien de ce qu'ils tapent. Le site n'a ni témoins (cookies), ni connexion, ni outil d'analyse, ni publicité, ni traceur, et il ne charge
 rien depuis d'autres sites. Il retient une seule chose, sur votre propre appareil seulement : si vous avez
 activé la voix de Gloam.
 
-Il est hébergé par Cloudflare Pages. Comme tout hébergeur, Cloudflare voit l'adresse Internet des visiteurs,
-pour pouvoir livrer les pages et bloquer les attaques.
+Il fait partie de Protégé, hébergé par Vercel. Comme tout hébergeur, Vercel voit l'adresse Internet des
+visiteurs, pour pouvoir livrer les pages et bloquer les attaques.
 
 ## Des questions?
 

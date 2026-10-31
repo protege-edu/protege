@@ -17,7 +17,7 @@ import http from "node:http";
 import path from "node:path";
 import { chromium, type Page } from "playwright";
 
-const root = path.join(process.cwd(), "site-dist");
+const root = path.join(process.cwd(), "public");
 const out = path.join(process.cwd(), "screenshots", "site-check");
 const args = process.argv.slice(2);
 const quick = args.includes("--quick");
@@ -38,34 +38,18 @@ const sizes = only ? SIZES.filter(([w, h]) => `${w}x${h}` === only) : quick ? SI
 if (!sizes.length) throw new Error(`No screen size matches ${only}.`);
 const langs = quick ? ["en"] : ["en", "fr"];
 const motions = quick ? [false] : [false, true];
-// (the last is an address that doesn't exist: the lost page, 404.html)
-const LOST = "no/such/page";
-const pages = ["index.html", "guide.html", "privacy.html", "board/README.html", "board/data-inventory.html", "j/index.html", LOST];
+const pages = ["index.html", "guide.html", "privacy.html", "board/README.html", "board/data-inventory.html", "j/index.html"];
+// (pages are visited at their real addresses: / for index.html, /fr/j for fr/j/index.html, as next.config.ts serves them)
+const address = (at: string) => at.replace(/(^|\/)index\.html$/, "");
 
-// ---- a tiny server that sends the same headers as the real site (so the security policy is tested too) ----
-const headers = Object.fromEntries(
-  fs
-    .readFileSync(path.join(root, "_headers"), "utf8")
-    .split("\n")
-    .filter((l) => l.startsWith("  "))
-    .map((l) => {
-      const i = l.indexOf(":");
-      return [l.slice(0, i).trim(), l.slice(i + 1).trim()];
-    }),
-);
+// ---- a tiny server for the website in public/ (each page's own security policy is tested too) ----
 const TYPES: Record<string, string> = { ".html": "text/html", ".css": "text/css", ".js": "text/javascript", ".svg": "image/svg+xml", ".webp": "image/webp", ".woff2": "font/woff2", ".mp3": "audio/mpeg", ".png": "image/png", ".txt": "text/plain" };
 const server = http.createServer((req, res) => {
   let p = decodeURIComponent((req.url ?? "/").split("?")[0].split("#")[0]);
-  if (p.endsWith("/")) p += "index.html";
+  if (!path.extname(p)) p = path.join(p, "index.html");
   const f = path.join(root, p);
-  if (!f.startsWith(root)) return void res.writeHead(404).end();
-  // like Cloudflare Pages: an address that doesn't exist gets the nearest 404.html (fr/404.html under fr/)
-  if (!fs.existsSync(f) || fs.statSync(f).isDirectory()) {
-    const lost = path.join(root, p.startsWith("/fr/") ? "fr/404.html" : "404.html");
-    if (!fs.existsSync(lost)) return void res.writeHead(404).end();
-    return void res.writeHead(404, { ...headers, "content-type": "text/html" }).end(fs.readFileSync(lost));
-  }
-  res.writeHead(200, { ...headers, "content-type": TYPES[path.extname(f)] ?? "application/octet-stream" }).end(fs.readFileSync(f));
+  if (!f.startsWith(root) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) return void res.writeHead(404).end();
+  res.writeHead(200, { "content-type": TYPES[path.extname(f)] ?? "application/octet-stream" }).end(fs.readFileSync(f));
 });
 
 interface Problem {
@@ -293,14 +277,13 @@ async function main() {
         // (a missing file is caught below with its address; the browser's own "failed to load" line would repeat it)
         page.on("console", (m) => (m.type() === "error" || /Content Security Policy|Refused/i.test(m.text())) && !/^Failed to load resource/.test(m.text()) && errors.push(m.text()));
         page.on("pageerror", (e) => errors.push(e.message));
-        // (the lost page itself is meant to answer 404)
-        page.on("response", (r) => r.status() >= 400 && !r.url().endsWith(LOST) && errors.push(`${r.status()} ${r.url()}`));
+        page.on("response", (r) => r.status() >= 400 && errors.push(`${r.status()} ${r.url()}`));
         for (const p of pages) {
-          const url = lang === "fr" && ["index.html", "guide.html", "privacy.html", "j/index.html", LOST].includes(p) ? `fr/${p}` : p;
-          if (lang === "fr" && url === p && p !== "index.html") continue; // the board pack is English only: checked once
+          const url = address(lang === "fr" && ["index.html", "guide.html", "privacy.html", "j/index.html"].includes(p) ? `fr/${p}` : p);
+          if (lang === "fr" && !url.startsWith("fr")) continue; // the board pack is English only: checked once
           const where = `${w}x${h} ${lang}${calm ? " calm" : ""} ${url}`;
           await page.goto(`http://localhost:8790/${url}`, { waitUntil: "networkidle" });
-          await page.waitForTimeout(p === "index.html" ? 2500 : p === LOST ? 1800 : 400);
+          await page.waitForTimeout(p === "index.html" ? 2500 : 400);
           const total = await page.evaluate(() => document.documentElement.scrollHeight - innerHeight);
           const seenHere = new Set<string>();
           for (let y = 0, i = 0; y <= total + 99; y += 100, i++) {

@@ -15,23 +15,20 @@ export interface RosterEntry {
 
 /**
  * "Show the code": made for the classroom projector, readable from the back row.
- * Students go to Protégé's website (SITE_URL/j: short, and the same every class) and type the class code;
- * it sends them on to the app. The QR code and the copied link open the app's join page directly.
+ * Students go to Protégé's /j (short, and the same every class) and type the class code.
+ * The QR code and the copied link open the class's join page directly.
  * Nicknames pop in as students join, so the class watches itself arrive (ask them to tell you theirs).
  * The QR is drawn right here (the qrcode package), nothing is sent anywhere.
  */
 export function ShowCode({
   code,
-  site,
   app,
   french,
   roster,
   onClose,
 }: {
   code: string;
-  /** Protégé's website, where students type the class code */
-  site: string;
-  /** the app itself (the QR code and the copied link go straight there) */
+  /** where Protégé lives (students type the code at /j; the QR code and the copied link go straight in) */
   app: string;
   /** a French class goes to the French page */
   french: boolean;
@@ -60,7 +57,7 @@ export function ShowCode({
     };
   }, [onClose]);
 
-  const go = `${site.replace(/^https?:\/\//, "")}${french ? "/fr" : ""}/j`;
+  const go = `${app.replace(/^https?:\/\//, "")}${french ? "/fr" : ""}/j`;
 
   return (
     <motion.div
@@ -149,7 +146,7 @@ function QrCard({ svg }: { svg: string }) {
 
 /**
  * A long address wraps only after a dash or its first dot, and keeps the rest together
- * ("protege-edu." then "pages.dev/j", never "pages.d" then "ev/j")
+ * ("protege-edu." then "vercel.app/j", never "vercel.a" then "pp/j")
  */
 function breakable(text: string) {
   const dot = text.indexOf(".");

@@ -4,5 +4,5 @@ contact_links:
     url: https://github.com/protege-edu/protege/security/advisories/new
     about: Report it privately, so it can be fixed before anyone else knows about it.
   - name: Setting up Protégé
-    url: https://protege-edu.pages.dev/guide
+    url: https://protege-edu.vercel.app/guide.html
     about: The setup guide answers most questions about installing and running a class.

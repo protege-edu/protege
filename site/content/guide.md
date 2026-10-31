@@ -2,7 +2,7 @@
 
 Protégé is a website, so there's nothing to download or install. Teachers use it at
 [protege-edu.vercel.app/teacher](https://protege-edu.vercel.app/teacher). Students join at
-**protege-edu.pages.dev/j** on any Chromebook, computer or tablet.
+**protege-edu.vercel.app/j** on any Chromebook, computer or tablet.
 
 <h2 id="sign-up">1. Sign up with your school's staff code</h2>
 
@@ -39,7 +39,7 @@ Or start with the built-in lesson, "Why do we have seasons?"
 <h2 id="in-class">4. In class</h2>
 
 1. On your class page, press **Show the code** and put it on the projector.
-2. Students go to **protege-edu.pages.dev/j** and type the code, like GLOW-42. It's the same link every class,
+2. Students go to **protege-edu.vercel.app/j** and type the code, like GLOW-42. It's the same link every class,
    so bookmark it or pin it in Google Classroom. (Phones and tablets can scan the QR code instead.)
 3. They pick a nickname and their secret pictures. Next time, they tap their nickname and their pictures, on
    any Chromebook.
@@ -68,8 +68,8 @@ The first account made on Protégé is its **owner**: the person who runs it. Th
 
 <h2 id="limits">Daily limits and cost</h2>
 
-Gloam's brain is Claude (Claude Haiku 5.5), an AI made by Anthropic. Hosting Protégé is free (Vercel, Turso and
-Cloudflare Pages). The only thing that costs money is Claude: about 11 cents for a class of 30 students sending
+Gloam's brain is Claude (Claude Haiku 5.5), an AI made by Anthropic. Hosting Protégé is free (Vercel and
+Turso). The only thing that costs money is Claude: about 11 cents for a class of 30 students sending
 40 messages each.
 
 - **Daily limits** cap how many messages each student and each class can send Gloam in a day, how many lessons

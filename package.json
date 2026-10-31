@@ -4,11 +4,11 @@
   "private": true,
   "license": "AGPL-3.0-or-later",
   "description": "Students teach Gloam, a confused, funny companion, and learn by explaining. Online, for every grade.",
-  "homepage": "https://protege-edu.pages.dev",
+  "homepage": "https://protege-edu.vercel.app",
   "repository": "github:protege-edu/protege",
   "bugs": "https://github.com/protege-edu/protege/issues",
   "scripts": {
-    "dev": "tsx scripts/migrate.ts && next dev",
+    "dev": "tsx scripts/migrate.ts && tsx scripts/site.ts && next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",

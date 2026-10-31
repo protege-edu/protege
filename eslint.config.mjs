@@ -15,7 +15,7 @@ const eslintConfig = defineConfig([
     // Built output and scratch files (all git-ignored): the release build, the zipped app, the website
     ".next-release/**",
     "release/**",
-    "site-dist/**",
+    "public/js/**",
     "scripts/_*",
   ]),
 ]);

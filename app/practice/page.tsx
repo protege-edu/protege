@@ -5,8 +5,8 @@ import { BUILT_IN, DEFAULT_LESSON_ID, toClientLesson } from "@/lib/lesson";
 import { studentAccessParts } from "@/lib/student/access";
 import { currentStudent } from "@/lib/student/auth";
 
-/** The front door: the practice lesson, and the way into a class */
-export default function Home() {
+/** The practice lesson (anyone can try Gloam here; students in a class join at /j) */
+export default function Practice() {
   const lesson = toClientLesson(BUILT_IN[DEFAULT_LESSON_ID]);
   return (
     // The age style is on the page from the very first paint, so there's no flash of the wrong theme
