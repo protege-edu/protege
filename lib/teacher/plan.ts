@@ -4,9 +4,8 @@ import { MAX_SOURCE_CHARS } from "./limits";
  * Turning a teacher's notes (any length) into lessons. Plain code, no AI, so it's instant and works the
  * same on the server and in the browser (the teacher moves the breaks around before anything is drafted).
  *
- * Why lessons and not one long one: Gloam's brain reads about 4,000 tokens at a time on a laptop (Ollama's
- * context), and one lesson works best with a handful of ideas. So each lesson gets a part of the notes that
- * fits (MAX_SOURCE_CHARS, measured to fit in English and French with room for Gloam's instructions), and a
+ * Why lessons and not one long one: a lesson works best with a handful of ideas (students teach Gloam
+ * one topic at a time). So each lesson gets about one topic's worth of the notes (MAX_SOURCE_CHARS), and a
  * unit can have as many lessons as the notes need.
  */
 export interface Part {

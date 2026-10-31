@@ -19,6 +19,8 @@ import { lostCopy } from "../lib/age-styles/lost-copy";
 
 const root = process.cwd();
 const out = path.join(root, "site-dist");
+// where the Protégé app lives (the join page sends students there; a school's own copy sets PROTEGE_APP_URL)
+const APP_URL = (process.env.PROTEGE_APP_URL ?? "https://protege-edu.vercel.app").replace(/\/$/, "");
 const repo = process.env.PROTEGE_REPO ?? (pkg as { repository?: string }).repository?.replace(/^github:/, "");
 const repoUrl = repo ? `https://github.com/${repo}` : "#";
 const download = repo ? `${repoUrl}/releases/latest` : "#download";
@@ -190,9 +192,8 @@ function lost(lang: Lang) {
 }
 
 /**
- * Where students join (/j, or /fr/j): the same link every class, every year. They type the code on the
- * projector, which holds their teacher's laptop's address on the school network, and the page sends them
- * there (lib/hosting/locator.ts, site/js/join.ts). Nothing is stored or sent anywhere.
+ * Where students join (/j, or /fr/j): the same link every class, every year. They type the class code on the
+ * projector and the page sends them on to the app (APP_URL, site/js/join.ts). Nothing is stored or sent anywhere.
  */
 function joinPage(lang: Lang) {
   const t = COPY[lang].join;
@@ -203,11 +204,11 @@ function joinPage(lang: Lang) {
   <img class="join-sky" src="${up}art/senior/valley-0-dark.webp" alt="">
   <img class="join-hills" src="${up}art/senior/valley-2-dark.webp" alt="">
   <div class="wrap join-grid">
-    <form class="join-card" novalidate>
+    <form class="join-card" novalidate data-app="${esc(APP_URL)}">
       <h1>${esc(t.title)}</h1>
       <p class="join-lede">${esc(t.lede)}</p>
       <label for="join-code">${esc(t.label)}</label>
-      <input id="join-code" name="code" autocomplete="off" autocapitalize="characters" spellcheck="false" inputmode="text" maxlength="40" aria-describedby="join-hint join-said" data-problems="${esc(JSON.stringify({ unreadable: t.unreadable, short: t.short, typo: t.typo, going: t.going, stuck: t.stuck, checking: t.checking, closed: t.closed, offline: t.offline }))}">
+      <input id="join-code" name="code" autocomplete="off" autocapitalize="characters" spellcheck="false" inputmode="text" maxlength="40" aria-describedby="join-hint join-said" data-problems="${esc(JSON.stringify({ unreadable: t.unreadable, going: t.going, stuck: t.stuck }))}">
       <p id="join-hint" class="join-hint">${esc(t.hint)}</p>
       <button class="btn primary big" type="submit">${esc(t.button)}</button>
       <p id="join-said" class="join-said" role="status" aria-live="polite"></p>

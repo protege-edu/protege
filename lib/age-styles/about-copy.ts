@@ -8,34 +8,34 @@ import type { AccessVoice } from "./access-copy";
  */
 const en: Record<AccessVoice, AboutCopy> = {
   senior: {
-    aiNote: "Gloam is an AI running on your teacher's computer. It gets things wrong (that's the point). Your teacher can read what you teach it.",
+    aiNote: "Gloam is an AI. It gets things wrong (that's the point). Your teacher can read what you teach it.",
     title: "About Gloam",
     lines: [
-      "Gloam is an AI: a computer program, not a person. It runs on your teacher's computer, not on some company's servers.",
+      "Gloam is an AI: a computer program, not a person. Its brain is Claude, an AI made by a company called Anthropic. What you write goes to Claude so Gloam can answer, but never your nickname, and Anthropic doesn't use it to train its AI.",
       "Its candles are its guess at how well you explained each idea. They're not marks. Your teacher sees them and can fix them if Gloam got it wrong.",
-      "Protégé keeps your nickname and what you write to Gloam, so your teacher can see your thinking and you can pick up where you left off. Nothing is sold, shared or used to train anything.",
+      "Protégé keeps your nickname and what you write to Gloam, so your teacher can see your thinking and you can pick up where you left off. Nothing is sold or used for ads.",
       "Don't type your real name, where you live, or anything private. If something's bothering you, talk to a teacher or an adult you trust.",
       "Want to see what's kept about you, or have it deleted? Ask your teacher.",
     ],
   },
   big: {
-    aiNote: "Gloam is a computer helper on your teacher's computer. Your teacher can see what you teach it.",
+    aiNote: "Gloam is a computer helper. Your teacher can see what you teach it.",
     title: "About Gloam",
     lines: [
       "Gloam is a computer program. It's not a real creature. (Shh. Don't tell it.)",
-      "It lives on your teacher's computer.",
+      "A computer far away helps Gloam think of what to say. It never learns your name.",
       "Your teacher can see what you tell Gloam. That's how they know what you learned!",
       "Don't type your real name or where you live.",
       "If something is bothering you, tell a grown-up you trust.",
     ],
   },
   small: {
-    aiNote: "Gloam is an AI on your teacher's computer. It's wrong a LOT (on purpose). Your teacher can read what you teach it.",
+    aiNote: "Gloam is an AI. It's wrong a LOT (on purpose). Your teacher can read what you teach it.",
     title: "About Gloam",
     lines: [
-      "Gloam is an AI: a computer program, not a person. It runs on your teacher's computer, not on the internet.",
+      "Gloam is an AI: a computer program, not a person. Its brain is Claude, an AI made by a company called Anthropic. What you write goes to Claude so Gloam can answer, but never your nickname.",
       "Its candles are its guess at how well you explained each idea. Not marks. Your teacher can fix them if Gloam messed up.",
-      "Protégé keeps your nickname and what you write to Gloam, so your teacher can see your thinking and you can come back to it. Nothing goes to any company.",
+      "Protégé keeps your nickname and what you write to Gloam, so your teacher can see your thinking and you can come back to it. Nothing is sold or used for ads.",
       "Don't type your real name, where you live, or anything private. If something's bothering you, talk to an adult you trust.",
       "Want to see what's kept about you, or have it deleted? Ask your teacher.",
     ],
@@ -44,34 +44,34 @@ const en: Record<AccessVoice, AboutCopy> = {
 
 const fr: Record<AccessVoice, AboutCopy> = {
   senior: {
-    aiNote: "Gloam est une IA qui tourne sur l'ordinateur de ton prof. Elle se trompe (c'est le but). Ton prof peut lire ce que tu lui enseignes.",
+    aiNote: "Gloam est une IA. Elle se trompe (c'est le but). Ton prof peut lire ce que tu lui enseignes.",
     title: "À propos de Gloam",
     lines: [
-      "Gloam est une IA : un programme informatique, pas une personne. Elle tourne sur l'ordinateur de ton prof, pas sur les serveurs d'une entreprise.",
+      "Gloam est une IA : un programme informatique, pas une personne. Son cerveau, c'est Claude, une IA faite par une entreprise qui s'appelle Anthropic. Ce que tu écris va à Claude pour que Gloam puisse répondre, mais jamais ton surnom, et Anthropic ne s'en sert pas pour entraîner son IA.",
       "Ses chandelles, c'est son estimation de comment tu as expliqué chaque idée. Ce ne sont pas des notes. Ton prof les voit et peut les corriger si Gloam s'est trompée.",
-      "Protégé garde ton surnom et ce que tu écris à Gloam, pour que ton prof voie ta façon de penser et que tu puisses reprendre où tu étais. Rien n'est vendu, partagé ou utilisé pour entraîner quoi que ce soit.",
+      "Protégé garde ton surnom et ce que tu écris à Gloam, pour que ton prof voie ta façon de penser et que tu puisses reprendre où tu étais. Rien n'est vendu ni utilisé pour de la publicité.",
       "N'écris pas ton vrai nom, où tu habites, ni rien de privé. Si quelque chose te dérange, parles-en à un prof ou à un adulte de confiance.",
       "Tu veux voir ce qu'on garde sur toi, ou le faire effacer ? Demande à ton prof.",
     ],
   },
   big: {
-    aiNote: "Gloam est un programme sur l'ordinateur de ton prof. Ton prof peut voir ce que tu lui enseignes.",
+    aiNote: "Gloam est un programme d'ordinateur. Ton prof peut voir ce que tu lui enseignes.",
     title: "À propos de Gloam",
     lines: [
       "Gloam est un programme d'ordinateur. Ce n'est pas une vraie créature. (Chut. Ne lui dis pas.)",
-      "Gloam vit sur l'ordinateur de ton prof.",
+      "Un ordinateur très loin aide Gloam à trouver quoi dire. Il ne connaît jamais ton nom.",
       "Ton prof peut voir ce que tu dis à Gloam. C'est comme ça qu'il sait ce que tu as appris !",
       "N'écris pas ton vrai nom ni où tu habites.",
       "Si quelque chose te dérange, dis-le à un adulte de confiance.",
     ],
   },
   small: {
-    aiNote: "Gloam est une IA sur l'ordinateur de ton prof. Elle se trompe BEAUCOUP (exprès). Ton prof peut lire ce que tu lui enseignes.",
+    aiNote: "Gloam est une IA. Elle se trompe BEAUCOUP (exprès). Ton prof peut lire ce que tu lui enseignes.",
     title: "À propos de Gloam",
     lines: [
-      "Gloam est une IA : un programme, pas une personne. Elle tourne sur l'ordinateur de ton prof, pas sur Internet.",
+      "Gloam est une IA : un programme, pas une personne. Son cerveau, c'est Claude, une IA faite par une entreprise qui s'appelle Anthropic. Ce que tu écris va à Claude pour que Gloam puisse répondre, mais jamais ton surnom.",
       "Ses chandelles, c'est son estimation de comment tu as expliqué chaque idée. Pas des notes. Ton prof peut les corriger si Gloam s'est trompée.",
-      "Protégé garde ton surnom et ce que tu écris à Gloam, pour que ton prof voie ta façon de penser et que tu puisses y revenir. Rien ne part vers une entreprise.",
+      "Protégé garde ton surnom et ce que tu écris à Gloam, pour que ton prof voie ta façon de penser et que tu puisses y revenir. Rien n'est vendu ni utilisé pour de la publicité.",
       "N'écris pas ton vrai nom, où tu habites, ni rien de privé. Si quelque chose te dérange, parles-en à un adulte de confiance.",
       "Tu veux voir ce qu'on garde sur toi, ou le faire effacer ? Demande à ton prof.",
     ],

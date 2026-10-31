@@ -1,12 +1,13 @@
 import "server-only";
 import { randomBytes } from "node:crypto";
+import { appUrl } from "@/lib/hosting/app";
 import { clear, readSigned, setSigned } from "./cookies";
 
 /**
  * "Continue with Google", the standard OAuth sign-in, built by hand (no extra library, nothing paid).
  * Hidden unless all three are set (see README, "Google sign-in"):
  *   GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET  from a free Google Cloud project
- *   PUBLIC_URL                              Protégé's fixed https address (the tunnel), e.g. https://protege.example.ts.net
+ *   the app's https address                 known on Vercel by itself (lib/hosting/app.ts), or PROTEGE_APP_URL
  *
  * Teachers: we ask Google for their email (it's their login name).
  * Students: we ask ONLY for "openid", so Google doesn't even tell us their name or email.
@@ -17,10 +18,10 @@ export type GoogleFor = { who: "teacher"; invite?: string } | { who: "student"; 
 const STATE = "protege_oauth";
 
 export function googleEnabled(): boolean {
-  return !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET && process.env.PUBLIC_URL?.startsWith("https://"));
+  return !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET && appUrl()?.startsWith("https://"));
 }
 
-const redirectUri = () => `${process.env.PUBLIC_URL!.replace(/\/$/, "")}/api/auth/google/callback`;
+const redirectUri = () => `${appUrl()}/api/auth/google/callback`;
 
 /** Where to send the browser to start. Remembers who it's for in a signed cookie (also stops forged callbacks). */
 export async function googleStartUrl(forWho: GoogleFor): Promise<string> {

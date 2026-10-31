@@ -14,7 +14,7 @@ const voiceRules = (style: AgeStyle) =>
     .join(" ");
 
 /**
- * Prompts that turn a teacher's material into a lesson blueprint, in small steps a laptop model can do well.
+ * Prompts that turn a teacher's material into a lesson blueprint, in small, focused steps.
  * The teacher reviews and edits everything before students see it.
  */
 

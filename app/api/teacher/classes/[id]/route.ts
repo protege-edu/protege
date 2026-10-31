@@ -5,7 +5,7 @@ import { classes, lessons as lessonRows, students } from "@/lib/db/schema";
 import { googleEnabled } from "@/lib/auth/google";
 import { logAccess } from "@/lib/privacy/log";
 import { retentionRule } from "@/lib/privacy/retention";
-import { studentAddress } from "@/lib/hosting/address";
+import { joinPlaces } from "@/lib/hosting/app";
 import { queueStats } from "@/lib/ai/queue";
 import { bad, notYours, requireTeacher } from "@/lib/teacher/api";
 import { assignLesson, classLessonList, dashboard, deleteClass, getClass, moveLesson, setClassGrade, unassignLesson } from "@/lib/teacher/classes";
@@ -31,7 +31,7 @@ export async function GET(request: Request, ctx: RouteContext<"/api/teacher/clas
       .orderBy(students.createdAt)
       .all())
       .map((r) => ({ id: r.id, nickname: r.nickname, google: !!r.google, hasKey: !!r.key }));
-    return Response.json({ class: cls, lessons, roster, google: googleEnabled(), address: studentAddress(request), retention: retentionRule() });
+    return Response.json({ class: cls, lessons, roster, google: googleEnabled(), join: joinPlaces(request), retention: retentionRule() });
   }
   const row = await getLessonRow(lessonId);
   const lesson = row && canSee(row, me.id) ? await getApprovedLesson(lessonId) : null;

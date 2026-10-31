@@ -24,7 +24,7 @@ const Body = z.object({
  */
 export async function POST(request: Request) {
   if (!sameOrigin(request)) return forbidden();
-  // a real student types maybe 3 messages a minute; this only stops floods (one laptop runs the AI for a whole class)
+  // a real student types maybe 3 messages a minute; this only stops floods (every message costs Claude tokens)
   if (!limit(`turn:${clientIp(request)}`, 240, 60 * 1000)) return tooMany();
   const parsed = Body.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {

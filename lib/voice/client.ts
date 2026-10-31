@@ -3,15 +3,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 /**
- * Voice typing in the browser. Two ways, both private, tried in this order:
- *   "laptop": a short clip goes to Protégé on the teacher's laptop, where whisper.cpp turns it into words
- *             (app/api/voice). Recorded in the browser, converted to 16 kHz WAV, never saved anywhere.
- *   "device": the browser's own speech recognition, ONLY when it promises to run on this device
- *             (processLocally). Chrome's usual speech recognition sends audio to Google: never used.
- * Neither available? The mic button doesn't show.
+ * Voice typing in the browser: the browser's own speech recognition, ONLY when it promises to run on this
+ * device (processLocally). A student's voice is never sent anywhere: not to Protégé, not to a cloud service.
+ * (Chrome's usual speech recognition sends audio to Google: never used.)
+ * This device can't do it? The mic button doesn't show.
  */
 type Lang = "en" | "fr";
-type Way = "device" | "laptop";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Recognition = any;
@@ -38,26 +35,14 @@ async function onDeviceLocale(lang: Lang): Promise<{ locale: string; install: bo
   return null;
 }
 
-const ways = new Map<Lang, Promise<Way | null>>();
-/** Which way voice typing works here (asked once per language) */
-function findWay(lang: Lang): Promise<Way | null> {
+const ways = new Map<Lang, Promise<boolean>>();
+/** Can this device recognise speech on its own (asked once per language)? */
+function canListen(lang: Lang): Promise<boolean> {
   let p = ways.get(lang);
   if (!p) {
-    p = (async () => {
-      // the teacher's laptop first: the same voice typing for everyone in the class
-      try {
-        const res = await fetch("/api/voice", { cache: "no-store" });
-        if ((await res.json()).ready) return "laptop" as const;
-      } catch {
-        // not there: maybe this device can do it alone
-      }
-      // (asking a browser that has no on-device speech can crash its tab: skipped in automated test browsers)
-      if (!navigator.webdriver && (await onDeviceLocale(lang))) return "device" as const;
-      return null;
-    })();
+    // (asking a browser that has no on-device speech can crash its tab: skipped in automated test browsers)
+    p = navigator.webdriver ? Promise.resolve(false) : onDeviceLocale(lang).then((found) => !!found);
     ways.set(lang, p);
-    // the laptop might start voice later: ask again next time if it wasn't there
-    void p.then((w) => w || setTimeout(() => ways.delete(lang), 15_000));
   }
   return p;
 }
@@ -68,7 +53,7 @@ export function useVoiceReady(lang: string): boolean | null {
   const [ready, setReady] = useState<boolean | null>(null);
   useEffect(() => {
     let live = true;
-    void findWay(l).then((w) => live && setReady(!!w));
+    void canListen(l).then((ok) => live && setReady(ok));
     return () => {
       live = false;
     };
@@ -102,8 +87,7 @@ export function useVoiceTyping({ lang, onText, onProblem }: { lang: string; onTe
 
   const start = useCallback(async () => {
     if (state !== "idle") return;
-    const way = await findWay(l);
-    if (!way) return cbs.current.onProblem("failed");
+    if (!(await canListen(l))) return cbs.current.onProblem("failed");
     let stream: MediaStream;
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true } });
@@ -112,78 +96,46 @@ export function useVoiceTyping({ lang, onText, onProblem }: { lang: string; onTe
     }
     const meter = loudness(stream, setLevel);
     setState("listening");
-    if (way === "device") {
-      const found = await onDeviceLocale(l);
-      const SR = recognitionClass();
-      if (!found || !SR) {
-        meter.stop();
-        stream.getTracks().forEach((t) => t.stop());
-        setState("idle");
-        return cbs.current.onProblem("failed");
-      }
-      if (found.install) {
-        try {
-          await SR.install({ langs: [found.locale], processLocally: true });
-        } catch {
-          // couldn't add the language: fall through, start() will refuse and we report it
-        }
-      }
-      const rec = new SR();
-      rec.processLocally = true; // on this device, or not at all
-      rec.lang = found.locale;
-      rec.continuous = true;
-      rec.interimResults = false;
-      let said = "";
-      rec.onresult = (e: { results: ArrayLike<ArrayLike<{ transcript: string }> & { isFinal: boolean }> }) => {
-        said = Array.from(e.results)
-          .map((r) => r[0].transcript)
-          .join(" ");
-      };
-      rec.onerror = (e: { error: string }) => {
-        if (e.error === "not-allowed") cbs.current.onProblem("denied");
-        else if (e.error !== "no-speech" && e.error !== "aborted") ways.delete(l); // try the laptop next time
-      };
-      rec.onend = () => {
-        meter.stop();
-        stream.getTracks().forEach((t) => t.stop());
-        finish(said);
-      };
-      stopRef.current = () => {
-        setState("working");
-        rec.stop();
-      };
-      rec.start();
-      return;
-    }
-    // the laptop: record, then send one short clip
-    const recorder = new MediaRecorder(stream);
-    const chunks: Blob[] = [];
-    recorder.ondataavailable = (e) => e.data.size && chunks.push(e.data);
-    const limit = setTimeout(() => stopRef.current(), 60_000);
-    recorder.onstop = async () => {
-      clearTimeout(limit);
+    const found = await onDeviceLocale(l);
+    const SR = recognitionClass();
+    if (!found || !SR) {
       meter.stop();
       stream.getTracks().forEach((t) => t.stop());
+      setState("idle");
+      return cbs.current.onProblem("failed");
+    }
+    if (found.install) {
       try {
-        const wav = await toWav16k(new Blob(chunks, { type: recorder.mimeType }));
-        const res = await fetch(`/api/voice?lang=${l}`, { method: "POST", headers: { "content-type": "audio/wav" }, body: wav });
-        if (!res.ok) {
-          setState("idle");
-          setLevel(0);
-          return cbs.current.onProblem("failed");
-        }
-        finish(((await res.json()) as { text?: string }).text ?? "");
+        await SR.install({ langs: [found.locale], processLocally: true });
       } catch {
-        setState("idle");
-        setLevel(0);
-        cbs.current.onProblem("failed");
+        // couldn't add the language: fall through, start() will refuse and we report it
       }
+    }
+    const rec = new SR();
+    rec.processLocally = true; // on this device, or not at all
+    rec.lang = found.locale;
+    rec.continuous = true;
+    rec.interimResults = false;
+    let said = "";
+    rec.onresult = (e: { results: ArrayLike<ArrayLike<{ transcript: string }> & { isFinal: boolean }> }) => {
+      said = Array.from(e.results)
+        .map((r) => r[0].transcript)
+        .join(" ");
+    };
+    rec.onerror = (e: { error: string }) => {
+      if (e.error === "not-allowed") cbs.current.onProblem("denied");
+      else if (e.error !== "no-speech" && e.error !== "aborted") ways.delete(l); // ask again next time
+    };
+    rec.onend = () => {
+      meter.stop();
+      stream.getTracks().forEach((t) => t.stop());
+      finish(said);
     };
     stopRef.current = () => {
       setState("working");
-      if (recorder.state !== "inactive") recorder.stop();
+      rec.stop();
     };
-    recorder.start();
+    rec.start();
   }, [state, l, finish]);
 
   // leaving the screen mid-sentence: stop listening
@@ -212,34 +164,4 @@ function loudness(stream: MediaStream, onLevel: (n: number) => void) {
       void ctx.close();
     },
   };
-}
-
-/** Any recording the browser made → 16 kHz mono 16-bit WAV (what whisper.cpp reads) */
-async function toWav16k(blob: Blob): Promise<Blob> {
-  const ctx = new AudioContext();
-  const decoded = await ctx.decodeAudioData(await blob.arrayBuffer());
-  void ctx.close();
-  const off = new OfflineAudioContext(1, Math.max(1, Math.ceil(decoded.duration * 16000)), 16000);
-  const src = off.createBufferSource();
-  src.buffer = decoded;
-  src.connect(off.destination);
-  src.start();
-  const pcm = (await off.startRendering()).getChannelData(0);
-  const out = new DataView(new ArrayBuffer(44 + pcm.length * 2));
-  const tag = (o: number, s: string) => [...s].forEach((c, i) => out.setUint8(o + i, c.charCodeAt(0)));
-  tag(0, "RIFF");
-  out.setUint32(4, 36 + pcm.length * 2, true);
-  tag(8, "WAVE");
-  tag(12, "fmt ");
-  out.setUint32(16, 16, true);
-  out.setUint16(20, 1, true); // PCM
-  out.setUint16(22, 1, true); // mono
-  out.setUint32(24, 16000, true);
-  out.setUint32(28, 32000, true);
-  out.setUint16(32, 2, true);
-  out.setUint16(34, 16, true);
-  tag(36, "data");
-  out.setUint32(40, pcm.length * 2, true);
-  for (let i = 0; i < pcm.length; i++) out.setInt16(44 + i * 2, Math.max(-1, Math.min(1, pcm[i])) * 0x7fff, true);
-  return new Blob([out.buffer], { type: "audio/wav" });
 }

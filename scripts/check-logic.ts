@@ -19,17 +19,11 @@ import { seasons } from "@/lib/lesson/seasons";
 import { blueprintWarnings, checkBlueprint } from "@/lib/teacher/checks";
 import { dropRunningLines, pdfLinesToText } from "@/lib/teacher/pdf-text";
 import { MAX_SOURCE_CHARS } from "@/lib/teacher/limits";
-import { decodeLocator, encodeLocator, joinTarget } from "@/lib/hosting/locator";
-import { findRoom, openRoom } from "@/site/room";
+import { classCode } from "../site/js/join";
 import { lessonSource, lessonsFrom, planBreaks, splitLong, splitPlainText } from "@/lib/teacher/plan";
 
 import { AccessPatch, cleanAccess, defaultAccess } from "@/lib/access/settings";
-import { checkWav, cleanTranscript } from "@/lib/voice/wav";
-import { isSpokenVoice, SPOKEN_MAX_CHARS, SPOKEN_VOICES, speakingPieces } from "@/lib/voice/voices";
-import { tidyForSpeech } from "./speak";
 import { fitGloam } from "@/components/game/Stage";
-import { SETUP_LINES } from "@/lib/setup/lines";
-import { size, timeLeft } from "@/lib/setup/types";
 
 let passed = 0;
 function test(name: string, fn: () => void) {
@@ -313,64 +307,6 @@ test("a settings change can't carry anything extra", () => {
   assert.ok(!AccessPatch.safeParse({ text: 7 }).success);
 });
 
-console.log("voice typing");
-const wavOf = (seconds: number, rate = 16000, channels = 1) => {
-  const bytes = Math.round(seconds * rate) * 2 * channels;
-  const v = new DataView(new ArrayBuffer(44 + bytes));
-  const tag = (o: number, t: string) => [...t].forEach((c, i) => v.setUint8(o + i, c.charCodeAt(0)));
-  tag(0, "RIFF");
-  tag(8, "WAVE");
-  tag(12, "fmt ");
-  v.setUint16(20, 1, true);
-  v.setUint16(22, channels, true);
-  v.setUint32(24, rate, true);
-  v.setUint16(34, 16, true);
-  tag(36, "data");
-  return v.buffer;
-};
-test("only real 16 kHz mono clips up to a minute reach whisper.cpp", () => {
-  assert.equal(checkWav(wavOf(5)), "ok");
-  assert.equal(checkWav(wavOf(90)), "long");
-  assert.equal(checkWav(wavOf(5, 44100)), "bad");
-  assert.equal(checkWav(wavOf(5, 16000, 2)), "bad");
-  assert.equal(checkWav(new TextEncoder().encode("not a wav at all, just some text pretending").buffer), "bad");
-});
-test("whisper's sound tags aren't words a student said", () => {
-  assert.equal(cleanTranscript(" [BLANK_AUDIO] "), "");
-  assert.equal(cleanTranscript("(music) I think it's the tilt [ Silence ]"), "I think it's the tilt");
-  assert.equal(cleanTranscript(" *coughs* the earth is   tilted  "), "the earth is tilted");
-});
-test("what was said goes through the same safety checks as typing", () => {
-  assert.notEqual(checkSafety(cleanTranscript("you're a f*cking idiot"), hs), "ok");
-});
-
-console.log("read-aloud");
-test("every age style has a real voice for each language, in that language", () => {
-  for (const id of Object.keys(AGE_STYLES)) {
-    for (const lang of ["en", "fr"] as const) {
-      const v = getAgeStyle(id, lang).input.spoken[lang];
-      assert.ok(isSpokenVoice(v.name), `${id} ${lang}`);
-      assert.equal(SPOKEN_VOICES[v.name].lang, lang, `${id} ${lang}`);
-      assert.ok(v.speed >= 0.7 && v.speed <= 1.3);
-    }
-  }
-  assert.ok(!isSpokenVoice("toString") && !isSpokenVoice("__proto__"));
-});
-test("lines are read in pieces: whole words, nothing lost, short first piece", () => {
-  const line = "Okay. Fine. FINE. So plants eat sunlight? That sounds made up, but go on, I'm listening. " + "Really long bit, ".repeat(30) + "the end.";
-  const pieces = speakingPieces(line);
-  assert.equal(pieces.join(" ").replace(/\s+/g, " "), line.replace(/\s+/g, " ").trim());
-  assert.ok(pieces.every((p) => p.length <= SPOKEN_MAX_CHARS && p.length > 0));
-  assert.ok(pieces[0].length < 80, pieces[0]);
-  assert.deepEqual(speakingPieces("   "), []);
-  assert.deepEqual(speakingPieces("no full stop at all"), ["no full stop at all"]);
-});
-test("text is tidied for the voice: no markdown, emoji or joined words it trips on", () => {
-  assert.equal(tidyForSpeech("**wait** — the *tilt*?! 🌍"), "wait, the tilt?!");
-  assert.equal(tidyForSpeech("vas-y, explique"), "vas y, explique");
-  assert.equal(tidyForSpeech("hmm..."), "hmm…");
-});
-
 console.log("Gloam's place on screen");
 test("Gloam stands above the words, under the top bar, and never vanishes", () => {
   const feet = 0.94;
@@ -389,24 +325,6 @@ test("Gloam stands above the words, under the top bar, and never vanishes", () =
   // stacked layouts: it stands right on the words, even when they start lower than its usual ground
   const stood = fitGloam({ vh: 1000, groundAt: 0.4, gloamScale: 0.55, feet, floor: 620, ceiling: 100, stand: true });
   assert.ok(Math.abs(stood.groundY + stood.gloamH * (1 - feet) - (620 - 12)) < 1, JSON.stringify(stood));
-});
-
-console.log("first-run setup");
-test("download progress reads like a person: sizes and time left", () => {
-  assert.equal(size(2.5e9), "2.5 GB");
-  assert.equal(size(520e6), "520 MB");
-  assert.equal(timeLeft(0, 2.5e9, 0), null, "no speed yet: no guess");
-  assert.equal(timeLeft(2.4e9, 2.5e9, 50e6), "less than a minute left");
-  assert.equal(timeLeft(1e9, 2.5e9, 5e6), "about 5 minutes left");
-  assert.equal(timeLeft(0, 2.5e9, 0.5e6), "about 1 hour 25 minutes left");
-  assert.equal(timeLeft(2.5e9, 2.5e9, 5e6), null, "done");
-});
-test("every setup line Gloam says is in its voice: lowercase, short, no answers", () => {
-  const all = Object.values(SETUP_LINES).flat();
-  for (const l of all) {
-    assert.equal(l, l.toLowerCase().replace("gloam", "Gloam"), l);
-    assert.ok(l.length <= 110, l);
-  }
 });
 
 console.log("français");
@@ -495,44 +413,10 @@ test("the teacher's unticked parts are left out, and a lesson left empty disappe
   assert.equal(lessonSource(lessons[0]), parts[0].text);
 });
 
-console.log("\njoining from the website (the laptop's address in the code)");
-test("every private address comes back exactly, on the usual port and others", () => {
-  for (const ip of ["192.168.1.23", "192.168.0.1", "192.168.255.254", "10.0.0.1", "10.12.34.56", "10.255.255.254", "172.16.0.5", "172.31.200.9"]) {
-    for (const port of [3000, 3100, 8080, 65535]) {
-      const loc = encodeLocator(ip, port)!;
-      assert.deepEqual(decodeLocator(loc), { host: ip, port }, `${ip}:${port} -> ${loc}`);
-    }
-  }
-});
-test("a home or school network's code is short", () => {
-  assert.ok(encodeLocator("192.168.1.23")!.length <= 4, encodeLocator("192.168.1.23")!);
-  assert.ok(encodeLocator("10.12.34.56")!.length <= 6, encodeLocator("10.12.34.56")!);
-});
-test("only addresses on a private network can be in a code", () => {
-  for (const ip of ["8.8.8.8", "172.32.0.1", "127.0.0.1", "192.169.1.1", "not an address"]) assert.equal(encodeLocator(ip), null, ip);
-});
-test("students can type it any way they like", () => {
-  const loc = encodeLocator("10.20.30.40")!;
-  const url = `http://10.20.30.40:3000/join?code=GLOW-42`;
-  for (const typed of [`GLOW-42-${loc}`, `glow 42 ${loc.toLowerCase()}`, `Glow42${loc}`, ` glow - 42 - ${loc} `]) assert.deepEqual(joinTarget(typed), { url }, typed);
-  // letters that look like numbers are read as the numbers
-  const fuzzy = loc.replace(/0/g, "O").replace(/1/g, "l");
-  assert.deepEqual(joinTarget(`GLOW-42-${fuzzy}`), { url });
-});
-test("a typo is caught instead of sending a student to the wrong place", () => {
-  const loc = encodeLocator("10.12.34.56")!;
-  let caught = 0;
-  let tries = 0;
-  for (let i = 0; i < loc.length; i++) {
-    for (const c of "0123456789ABCDEFGHJKMNPQRSTVWXYZ") {
-      if (c === loc[i]) continue;
-      tries++;
-      if (decodeLocator(loc.slice(0, i) + c + loc.slice(i + 1)) === null) caught++;
-    }
-  }
-  assert.ok(caught / tries > 0.9, `${caught} of ${tries} one-letter typos caught`);
-  assert.deepEqual(joinTarget("GLOW-42"), { problem: "short" }, "just the class code: ask for the rest");
-  assert.deepEqual(joinTarget("hello"), { problem: "unreadable" });
+console.log("\njoining from the website (protege-edu.pages.dev/j)");
+test("a class code is read however it's typed", () => {
+  for (const typed of ["GLOW-42", "glow 42", "Glow42", " glow - 42 ", "glow-42-K7Q2"]) assert.equal(classCode(typed), "GLOW-42", typed);
+  for (const typed of ["hello", "42", "GLOW-4", ""]) assert.equal(classCode(typed), null, typed);
 });
 
 // ---- the AI line (async, so it runs last) ----
@@ -595,41 +479,5 @@ void (async () => {
     assert.equal(heard[0], 2);
   });
 
-  console.log("\nrooms (the website's lookup for classes online)");
-  const memory = () => {
-    const m = new Map<string, string>();
-    return { get: async (k: string) => m.get(k) ?? null, put: async (k: string, v: string) => void m.set(k, v), m };
-  };
-  const tunnelA = "https://brave-otter-lamp-sky.trycloudflare.com";
-  const tunnelB = "https://seven-green-ferns-wave.trycloudflare.com";
-  const laptop = (up: boolean) => (async () => new Response("", { status: up ? 200 : 502 })) as unknown as typeof fetch;
-  await at("a laptop keeps its room (and its link) every time it goes online", async () => {
-    const store = memory();
-    const first = await openRoom(store, { url: tunnelA });
-    assert.ok("room" in first, JSON.stringify(first));
-    assert.equal(decodeLocator(first.room), null, "a room never reads as a school-network code");
-    const again = await openRoom(store, { url: tunnelB, room: first.room, secret: first.secret });
-    assert.ok("room" in again && again.room === first.room, "same room, new tunnel");
-    assert.deepEqual(await findRoom(store, first.room.toLowerCase(), laptop(true)), { url: tunnelB });
-  });
-  await at("nobody can take over someone else's room, or point one anywhere but a tunnel", async () => {
-    const store = memory();
-    const mine = await openRoom(store, { url: tunnelA });
-    assert.ok("room" in mine);
-    const theirs = await openRoom(store, { url: tunnelB, room: mine.room, secret: "x".repeat(32) });
-    assert.ok("room" in theirs && theirs.room !== mine.room, "a wrong secret gets a different room");
-    assert.deepEqual(await findRoom(store, mine.room, laptop(true)), { url: tunnelA }, "the first room is untouched");
-    for (const url of ["https://evil.example.com", "http://brave-otter.trycloudflare.com", "https://a.trycloudflare.com.evil.com", 42]) {
-      assert.ok("error" in (await openRoom(store, { url })), String(url));
-    }
-  });
-  await at("a room whose laptop isn't answering says the class is closed; a made-up room isn't found", async () => {
-    const store = memory();
-    const r = await openRoom(store, { url: tunnelA });
-    assert.ok("room" in r);
-    assert.deepEqual(await findRoom(store, r.room, laptop(false)), { closed: true });
-    assert.equal(await findRoom(store, "ZZZZ", laptop(true)), null);
-    assert.equal(await findRoom(store, "nope!", laptop(true)), null);
-  });
   console.log(`\n${passed} passed${process.exitCode ? ", some FAILED" : ""}`);
 })();

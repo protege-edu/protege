@@ -20,8 +20,8 @@ interface Info {
   lessons: { id: string; title: string; latest: boolean }[];
   roster: { id: string; nickname: string; google: boolean; hasKey: boolean }[];
   google: boolean;
-  /** where students go: the address, and (on a school network) the laptop's part of the join code */
-  address: { url: string; local: boolean; locator: string | null; site: string };
+  /** where students go: the website's join page, which sends them on to the app (lib/hosting/app.ts) */
+  join: { site: string; app: string };
   /** the school board's rule for how long classes are kept (lib/privacy/retention.ts) */
   retention: "after-a-year" | "end-of-school-year" | "never";
 }
@@ -252,10 +252,8 @@ export function ClassDashboard() {
           <ShowCode
             key="code"
             code={info.class.code}
-            address={info.address.url}
-            local={info.address.local}
-            locator={info.address.locator}
-            site={info.address.site}
+            site={info.join.site}
+            app={info.join.app}
             french={info.class.language === "fr"}
             roster={info.roster}
             onClose={() => setShowCode(false)}

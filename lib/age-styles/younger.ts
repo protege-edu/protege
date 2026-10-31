@@ -75,8 +75,8 @@ const storybookCopy = (big: boolean): AgeStyle["copy"] => ({
   teachAgain: "Teach Gloam again",
   backToTitle: "Back to the start",
   offlineTitle: "Gloam fell asleep.",
-  offlineBody: "Gloam's brain (the AI) isn't running. Ask your teacher to start Ollama, then press Try again.",
-  offlineRetryBody: (tries) => `Still asleep (tried ${tries} ${tries === 1 ? "time" : "times"}). Ask your teacher to check Ollama.`,
+  offlineBody: "Gloam's brain (the AI) can't be reached right now. Press Try again in a moment.",
+  offlineRetryBody: (tries) => `Still asleep (tried ${tries} ${tries === 1 ? "time" : "times"}). Ask your teacher to check the internet.`,
   retry: "Try again",
   titleJoin: big ? "Find my class" : "Join your class",
   valleyLabel: "Gloam's valley",
@@ -231,7 +231,7 @@ export const little: AgeStyle = {
   look: { theme: "little", tone: "light", gloamSkin: "rig", rig: littleGloam, world: littleWorld, motion: 1, voiceAxis: "bounce", candleLabels: true },
   celebrate: { style: "big", particles: 60 },
   safety: { level: "strict" },
-  input: { modes: ["type", "choices", "voice"], targetScale: 1.4, readAloud: true, spoken: { en: { name: "af_bella", speed: 0.9 }, fr: { name: "ff_siwis", speed: 0.9 } } },
+  input: { modes: ["type", "choices", "voice"], targetScale: 1.4, readAloud: true },
 };
 
 export const junior: AgeStyle = {
@@ -248,7 +248,7 @@ export const junior: AgeStyle = {
     lowercase: false,
   },
   look: { theme: "junior", tone: "light", gloamSkin: "rig", rig: juniorGloam, world: juniorWorld, motion: 1, voiceAxis: "bounce", candleLabels: true },
-  input: { modes: ["type", "choices"], targetScale: 1.2, readAloud: true, spoken: { en: { name: "af_heart", speed: 0.95 }, fr: { name: "ff_siwis", speed: 0.95 } } },
+  input: { modes: ["type", "choices"], targetScale: 1.2, readAloud: true },
 };
 
 export const middle: AgeStyle = {
@@ -269,5 +269,5 @@ export const middle: AgeStyle = {
   look: { theme: "middle", tone: "dark", gloamSkin: "rig", rig: middleGloam, world: middleWorld, motion: 1, voiceAxis: "bounce", candleLabels: true },
   celebrate: { style: "big", particles: 40 },
   safety: { level: "standard" },
-  input: { modes: ["type"], targetScale: 1, readAloud: false, spoken: { en: { name: "am_puck", speed: 1 }, fr: { name: "ff_siwis", speed: 1 } } },
+  input: { modes: ["type"], targetScale: 1, readAloud: false },
 };

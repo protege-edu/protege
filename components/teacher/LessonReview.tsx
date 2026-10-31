@@ -161,7 +161,7 @@ export function LessonReview({ id }: { id: string }) {
       {row?.status === "queued" && (
         <section className="mt-10 max-w-[56ch]" aria-live="polite">
           <h1 className="text-xl font-bold text-ink">{row.title}</h1>
-          <p className="mt-3 text-md text-ink">This lesson is waiting its turn. Gloam drafts a unit&apos;s lessons one at a time, in order, so the laptop stays quick for students.</p>
+          <p className="mt-3 text-md text-ink">This lesson is waiting its turn. Gloam drafts a unit&apos;s lessons one at a time, in order.</p>
           <div className="mt-5 flex gap-3">
             <Button onClick={() => void sooner()}>Draft this one next</Button>
           </div>
@@ -172,7 +172,7 @@ export function LessonReview({ id }: { id: string }) {
         <section className="mt-10 max-w-[56ch]" aria-live="polite">
           <h1 className="text-xl font-bold text-ink">Gloam is reading your notes</h1>
           <p className="mt-3 text-md text-ink">{row.progress ?? "Working on it"}…</p>
-          <p className="mt-2 text-sm text-ink-dim">This usually takes a few minutes on a laptop. You can leave this page; it keeps going, and the lesson shows up under &ldquo;Needs your review&rdquo;.</p>
+          <p className="mt-2 text-sm text-ink-dim">This usually takes about a minute. You can leave this page; it keeps going, and the lesson shows up under &ldquo;Needs your review&rdquo;.</p>
         </section>
       )}
 

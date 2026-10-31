@@ -1,9 +1,10 @@
 import "server-only";
+import { appUrl } from "@/lib/hosting/app";
 
 /**
  * Small checks every changing request goes through, so Protégé is safe on the open internet:
  *   sameOrigin: the request came from Protégé's own pages (not another website pretending to be you)
- *   clientIp:   who's asking (for rate limits), through the tunnel's forwarding headers
+ *   clientIp:   who's asking (for rate limits), from the host's forwarding headers
  *   limit:      too many tries from one place in a short time get a friendly "slow down"
  */
 
@@ -24,13 +25,13 @@ export function sameOrigin(request: Request): boolean {
   }
 }
 
-/** Is this request coming over https (through the tunnel)? Then cookies are marked Secure. */
+/** Is this request coming over https? Then cookies are marked Secure. */
 export function isHttps(request?: Request): boolean {
-  if (!request) return process.env.PUBLIC_URL?.startsWith("https://") ?? false;
+  if (!request) return appUrl()?.startsWith("https://") ?? false;
   return request.headers.get("x-forwarded-proto") === "https" || request.url.startsWith("https://");
 }
 
-// ---- rate limits: a few buckets kept in memory (one Protégé server per classroom laptop) ----
+// ---- rate limits: a few buckets kept in memory (per server copy: a quick guard against floods, not an exact count) ----
 const store = globalThis as unknown as { protegeLimits?: Map<string, { count: number; reset: number }> };
 const buckets = (store.protegeLimits ??= new Map());
 // expired counters are forgotten every few minutes (they hold network addresses: never kept longer than needed)

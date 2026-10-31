@@ -5,14 +5,14 @@ import { useAccess } from "@/lib/access/store";
 import type { AgeStyle } from "@/lib/age-styles";
 import { canReadAloud, readAloud, watchReadAloud } from "@/lib/speech";
 
-/** Can this student hear this language read aloud: Gloam's voice from the teacher's laptop, or a voice on this device? */
+/** Can this student hear this language read aloud, with a voice on this device? */
 export function useCanReadAloud(lang: string) {
   return useSyncExternalStore(watchReadAloud, () => canReadAloud(lang), () => false);
 }
 
 /**
- * "Read it to me": reads `text` aloud in Gloam's voice (made on the teacher's laptop) or a voice on this
- * device. Only shows when the student wants read-aloud (Ways to play) and one of those can.
+ * "Read it to me": reads `text` aloud with a voice on this device. Only shows when the student wants
+ * read-aloud (Ways to play) and the device has a private voice for the language.
  */
 export function ReadAloudButton({ style, text, className = "" }: { style: AgeStyle; text: string; className?: string }) {
   const lang = style.language ?? "en";

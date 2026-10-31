@@ -15,29 +15,24 @@ export interface RosterEntry {
 
 /**
  * "Show the code": made for the classroom projector, readable from the back row.
- * On the school network: Protégé's website (SITE_URL/j, the same link every class) and one join code, the
- * class code plus the laptop's letters (lib/hosting/locator.ts), with the laptop's own address as a backup.
- * Online (a tunnel): the address and the class code. Either way, a QR code that opens the join page directly.
- * Nicknames pop in as students join, so the class watches itself arrive.
+ * Students go to Protégé's website (SITE_URL/j: short, and the same every class) and type the class code;
+ * it sends them on to the app. The QR code and the copied link open the app's join page directly.
+ * Nicknames pop in as students join, so the class watches itself arrive (ask them to tell you theirs).
  * The QR is drawn right here (the qrcode package), nothing is sent anywhere.
  */
 export function ShowCode({
   code,
-  address,
-  local,
-  locator,
   site,
+  app,
   french,
   roster,
   onClose,
 }: {
   code: string;
-  address: string;
-  local: boolean;
-  /** the laptop's part of the join code (null: not on a school network, students use the address) */
-  locator: string | null;
-  /** Protégé's website, where students type the join code */
+  /** Protégé's website, where students type the class code */
   site: string;
+  /** the app itself (the QR code and the copied link go straight there) */
+  app: string;
   /** a French class goes to the French page */
   french: boolean;
   roster: RosterEntry[];
@@ -46,7 +41,7 @@ export function ShowCode({
   const calm = useCalmMotion();
   const [svg, setSvg] = useState<string>("");
   const close = useRef<HTMLButtonElement>(null);
-  const joinUrl = `${address}/join?code=${encodeURIComponent(code)}`;
+  const joinUrl = `${app}/join?code=${encodeURIComponent(code)}`;
   // nicknames already here when the screen opened don't pop; new ones do
   const [firstSeen] = useState(() => new Set(roster.map((r) => r.id)));
 
@@ -65,9 +60,7 @@ export function ShowCode({
     };
   }, [onClose]);
 
-  const shownAddress = address.replace(/^https?:\/\//, "");
-  const joinCode = locator ? `${code}-${locator}` : code;
-  const go = locator ? `${site.replace(/^https?:\/\//, "")}${french ? "/fr" : ""}/j` : shownAddress;
+  const go = `${site.replace(/^https?:\/\//, "")}${french ? "/fr" : ""}/j`;
 
   return (
     <motion.div
@@ -99,30 +92,15 @@ export function ShowCode({
             <p className="text-[clamp(1rem,min(2vw,3.4vh),1.8rem)] text-[#9fb2a8]">Go to</p>
             <p className={`${go.length > 32 ? "text-[clamp(1.1rem,min(2.3vw,4.4vh),2.2rem)]" : "text-[clamp(1.4rem,min(3.4vw,6vh),3.2rem)]"} font-bold break-words`}>{breakable(go)}</p>
             <p id="show-code-title" className="mt-[3vh] text-[clamp(1rem,min(2vw,3.4vh),1.8rem)] text-[#9fb2a8]">
-              {locator ? "and type the code" : "and type the class code"}
+              and type the class code
             </p>
             <p
-              className={`${locator ? "text-[clamp(2.4rem,min(6.2vw,14vh),7.5rem)]" : "text-[clamp(3rem,min(8.5vw,17vh),10rem)]"} leading-[1] font-bold tracking-[0.05em] whitespace-nowrap text-[#f4f1e8]`}
-              aria-label={`Code ${joinCode.split("").join(" ")}`}
+              className="text-[clamp(3rem,min(8.5vw,17vh),10rem)] leading-[1] font-bold tracking-[0.05em] whitespace-nowrap text-[#f4f1e8]"
+              aria-label={`Code ${code.split("").join(" ")}`}
             >
-              {joinCode}
+              {code}
             </p>
-            {locator && (
-              <p className="mt-[2vh] text-[clamp(0.9rem,min(1.4vw,2.6vh),1.2rem)] text-[#9fb2a8]">
-                Or go straight to <span className="font-bold text-[#d3ddd6]">{breakable(shownAddress)}</span> and type <span className="font-bold text-[#d3ddd6]">{code}</span>
-              </p>
-            )}
-            {!local && (
-              <CopyLink
-                link={locator ? `${site}${french ? "/fr" : ""}/j?c=${encodeURIComponent(joinCode)}` : joinUrl}
-                kind={locator ? "room" : /trycloudflare\.com/.test(address) ? "changes" : "fixed"}
-              />
-            )}
-            {local && !locator && (
-              <p className="mt-[2vh] max-w-[52ch] text-sm text-[#9fb2a8]">
-                This address only works on the school network. To let students join from anywhere, see &ldquo;Students outside the school network&rdquo; in the setup guide.
-              </p>
-            )}
+            <CopyLink link={joinUrl} />
           </div>
 
           <QrCard svg={svg} />
@@ -171,7 +149,7 @@ function QrCard({ svg }: { svg: string }) {
 
 /**
  * A long address wraps only after a dash or its first dot, and keeps the rest together
- * ("concern-kathy-connections-perl." then "trycloudflare.com", never "trycloudflare.c" then "om")
+ * ("protege-edu." then "pages.dev/j", never "pages.d" then "ev/j")
  */
 function breakable(text: string) {
   const dot = text.indexOf(".");
@@ -182,10 +160,10 @@ function breakable(text: string) {
 }
 
 /**
- * Online, the address is long (and a quick tunnel's is new every time): the teacher copies the link, with the
- * class code in it, and posts it where students already are (Google Classroom), so nobody types it.
+ * The teacher copies the link, with the class code in it, and posts it where students already are
+ * (Google Classroom), so nobody types anything.
  */
-function CopyLink({ link, kind }: { link: string; kind: "room" | "changes" | "fixed" }) {
+function CopyLink({ link }: { link: string }) {
   const [copied, setCopied] = useState(false);
   const copy = async () => {
     await navigator.clipboard.writeText(link).catch(() => undefined);
@@ -197,13 +175,7 @@ function CopyLink({ link, kind }: { link: string; kind: "room" | "changes" | "fi
         {copied ? "Copied" : "Copy link for students"}
       </InkButton>
       <p className="max-w-[46ch] text-sm text-[#9fb2a8]" aria-live="polite">
-        {copied
-          ? "Paste it in Google Classroom (or anywhere students click). It opens with the class code already in."
-          : kind === "room"
-            ? "Post it once: it's the same link every class, and it works whenever Protégé online is running."
-            : kind === "changes"
-              ? "This address is new each time Protégé starts online, so share the link each class."
-              : "Share it once: it stays the same."}
+        {copied ? "Paste it in Google Classroom (or anywhere students click). It opens with the class code already in." : "Post it once: it's the same link all year."}
       </p>
     </div>
   );

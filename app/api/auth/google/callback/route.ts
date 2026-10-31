@@ -1,4 +1,5 @@
 import { setSigned } from "@/lib/auth/cookies";
+import { appUrl } from "@/lib/hosting/app";
 import { keyedHash } from "@/lib/auth/crypto";
 import { googleFinish } from "@/lib/auth/google";
 import { signInStudent, studentByGoogle } from "@/lib/student/auth";
@@ -6,7 +7,7 @@ import { signInAs, teacherFromGoogle } from "@/lib/teacher/auth";
 
 /** Google sends the browser back here. Sign in, or (new students) go pick a nickname. */
 export async function GET(request: Request) {
-  const base = process.env.PUBLIC_URL ?? new URL(request.url).origin;
+  const base = appUrl() ?? new URL(request.url).origin;
   const result = await googleFinish(new URL(request.url));
   if (!result) return Response.redirect(`${base}/?signin=failed`);
   if (result.forWho.who === "teacher") {

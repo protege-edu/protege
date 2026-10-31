@@ -1,12 +1,18 @@
 /**
- * The join page (/j): a student types the code on the projector, and it sends them to their class.
- *   - On the school network, the code's last letters hold the teacher's laptop's address (lib/hosting/locator.ts).
- *   - Online (Protégé online), they're the laptop's room on this website, looked up here (functions/api/room).
- * Nothing a student types is kept. A link with the code in it (/j?c=GLOW-42-K7Q2) goes straight there.
+ * The join page (/j): a student types the class code on the projector (like GLOW-42), and it sends them to
+ * Protégé (the app, data-app on the form), which finds their class. Nothing a student types is kept.
+ * A link with the code in it (/j?c=GLOW-42) goes straight there.
  */
-import { joinTarget, normalizeLetters, readJoinCode } from "@/lib/hosting/locator";
+type Words = Record<"unreadable" | "going" | "stuck", string>;
 
-type Words = Record<"unreadable" | "short" | "typo" | "going" | "stuck" | "checking" | "closed" | "offline", string>;
+/** "glow 42", "Glow-42 ", "GLOW42" -> "GLOW-42" (and an old code with letters after it keeps just its class part) */
+export function classCode(typed: string): string | null {
+  const m = typed
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "")
+    .match(/^([A-Z]{2,8})(\d{2})/);
+  return m ? `${m[1]}-${m[2]}` : null;
+}
 
 export function join() {
   const form = document.querySelector<HTMLFormElement>(".join-card");
@@ -14,6 +20,7 @@ export function join() {
   const said = document.querySelector<HTMLElement>("#join-said");
   if (!form || !input || !said) return;
   const words = JSON.parse(input.dataset.problems ?? "{}") as Words;
+  const app = (form.dataset.app ?? "").replace(/\/$/, "");
 
   const tell = (text: string, problem = false) => {
     said.textContent = text;
@@ -23,45 +30,26 @@ export function join() {
       input.focus();
     } else input.removeAttribute("aria-invalid");
   };
-  const send = (url: string) => {
-    tell(words.going);
-    // (if the class can't be reached, the browser shows its own page; while it tries, say what to check)
-    setTimeout(() => (said.textContent = words.stuck), 6000);
-    window.location.assign(url);
-  };
 
-  const go = async (typed: string) => {
-    const read = readJoinCode(typed);
-    if (!read) return tell(words.unreadable, true);
-    if (!read.locator) return tell(words.short, true);
-    // the school network: the laptop's address is in the code itself
-    const here = joinTarget(typed);
-    if ("url" in here) return send(here.url);
-    // online: the laptop's room on this website
-    const room = normalizeLetters(read.locator);
-    if (room.length !== 4) return tell(words.typo, true);
-    tell(words.checking);
-    try {
-      const res = await fetch(`/api/room/${encodeURIComponent(room)}`, { cache: "no-store" });
-      if (res.status === 404) return tell(words.typo, true);
-      const found = (await res.json()) as { url?: string; closed?: boolean };
-      if (found.url) return send(`${found.url}/join?code=${encodeURIComponent(read.classCode)}`);
-      tell(found.closed ? words.closed : words.offline, true);
-    } catch {
-      tell(words.offline, true);
-    }
+  const go = (typed: string) => {
+    const code = classCode(typed);
+    if (!code) return tell(words.unreadable, true);
+    tell(words.going);
+    // (if Protégé can't be reached, the browser shows its own page; while it tries, say what to check)
+    setTimeout(() => (said.textContent = words.stuck), 6000);
+    window.location.assign(`${app}/join?code=${encodeURIComponent(code)}`);
   };
 
   form.addEventListener("submit", (e) => {
     e.preventDefault();
-    void go(input.value);
+    go(input.value);
   });
   input.addEventListener("input", () => tell(""));
 
   const given = new URLSearchParams(location.search).get("c");
   if (given) {
     input.value = given;
-    void go(given);
+    go(given);
   } else {
     input.focus();
   }

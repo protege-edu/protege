@@ -62,25 +62,24 @@ export function NewLesson() {
     setUnitTitle(name === "Pasted text" ? "" : name.replace(/\.[a-z0-9]+$/i, "").replace(/[_-]+/g, " ").trim());
   };
 
-  const readFile = async (file: File) => {
+  // the file is read right here in the browser (lib/teacher/read.ts): it never leaves this computer
+  const read = async (name: string, data: Uint8Array | string) => {
     setError(null);
     setReading(true);
-    const form = new FormData();
-    form.append("file", file);
-    const res = await api<{ name: string; sections: Part[] }>("/api/teacher/read", { method: "POST", body: form });
-    setReading(false);
-    if (!res.ok) return setError(res.error);
-    gotParts(res.data.name, res.data.sections);
+    try {
+      const { readMaterial } = await import("@/lib/teacher/read");
+      const res = await readMaterial(name, data);
+      gotParts(typeof data === "string" ? "Pasted text" : name, res.sections);
+    } catch (err) {
+      setError(err instanceof Error && err.message ? err.message : "We couldn't read that. Try another file, or paste the text.");
+    } finally {
+      setReading(false);
+    }
   };
-
-  const readPasted = async () => {
-    setError(null);
-    setReading(true);
-    const res = await api<{ name: string; sections: Part[] }>("/api/teacher/read", json("POST", { text: pasted }));
-    setReading(false);
-    if (!res.ok) return setError(res.error);
-    gotParts(res.data.name, res.data.sections);
-  };
+  const readFile = async (file: File) =>
+    // (a Chromebook only has so much memory)
+    file.size > 100 * 1024 * 1024 ? setError("That file is over 100 MB. Try a smaller file, or paste the part you need.") : read(file.name, new Uint8Array(await file.arrayBuffer()));
+  const readPasted = () => (pasted.trim() ? read("pasted.txt", pasted) : setError("Paste some lesson text first."));
 
   const splitAt = (index: number) => setBreaks((b) => [...b, index]);
   const join = (start: number) => setBreaks((b) => b.filter((x) => x !== start));
@@ -291,8 +290,8 @@ export function NewLesson() {
           </Button>
           <p className="mt-2 max-w-[62ch] text-xs text-ink-dim">
             {many
-              ? "Gloam drafts them one at a time, in order, a few minutes each on a laptop. Lesson 1 is ready first, so you can review it while the rest are drafted. You can leave this page; it keeps going."
-              : "This takes a few minutes on a laptop. You can leave this page; it keeps going."}
+              ? "Gloam drafts them one at a time, in order, about a minute each. Lesson 1 is ready first, so you can review it while the rest are drafted. You can leave this page; it keeps going."
+              : "This takes about a minute. You can leave this page; it keeps going."}
           </p>
         </section>
       )}

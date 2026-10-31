@@ -1,4 +1,3 @@
-import "server-only";
 import JSZip from "jszip";
 import mammoth from "mammoth";
 import { getDocumentProxy } from "unpdf";
@@ -7,7 +6,9 @@ import { firstLine, splitPlainText } from "./plan";
 
 /**
  * Reads a teacher's material into plain text, split into sections they can pick from.
- * Everything runs on this computer with free libraries. Nothing is uploaded anywhere.
+ * It runs IN THE TEACHER'S BROWSER (components/teacher/NewLesson.tsx loads it when it's needed), with free
+ * libraries: the file itself never leaves their computer, only the text they choose to make lessons from.
+ * (So there's no upload size limit either.)
  *
  *   PDF          → one section per page        (unpdf)
  *   PowerPoint   → one section per slide       (it's a zip of slide XML; JSZip)
@@ -87,7 +88,7 @@ async function readPptx(data: Uint8Array): Promise<Section[]> {
 }
 
 async function readDocx(data: Uint8Array): Promise<Section[]> {
-  const { value: html } = await mammoth.convertToHtml({ buffer: Buffer.from(data) });
+  const { value: html } = await mammoth.convertToHtml({ arrayBuffer: data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer });
   const parts = html.split(/(?=<h[1-3][^>]*>)/);
   return parts.map((part, i) => {
     const head = part.match(/^<h([1-3])[^>]*>([\s\S]*?)<\/h[1-3]>/);

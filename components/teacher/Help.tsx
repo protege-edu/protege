@@ -35,8 +35,8 @@ export function Help() {
 
         <Part title="Your lessons">
           <p>
-            Upload your notes (PDF, PowerPoint, Word, or pasted text). Gloam reads them on this laptop and drafts a lesson: the key ideas, the wrong ideas students often have, the questions Gloam will ask
-            and its story. You review it and change anything. <span className="font-bold">Students only ever see lessons you approved.</span>
+            Upload your notes (PDF, PowerPoint, Word, or pasted text). Your file is read in your own browser and never uploaded; only the text you pick goes to Gloam, which drafts a lesson: the key
+            ideas, the wrong ideas students often have, the questions Gloam will ask and its story. You review it and change anything. <span className="font-bold">Students only ever see lessons you approved.</span>
           </p>
         </Part>
 
@@ -44,6 +44,7 @@ export function Help() {
           <ul className="list-disc space-y-2 pl-5">
             <li>
               <span className="font-bold">Show the code:</span> put it on the projector. Students go to the address (or scan the QR code), type the class code, pick a nickname and secret pictures.
+              Ask each student to tell you their nickname the first time, so you know who&apos;s who: Protégé never stores real names.
             </li>
             <li>
               <span className="font-bold">Pause the class:</span> Gloam falls asleep for everyone until you wake the class up. Handy when you want their eyes on you.
@@ -62,8 +63,8 @@ export function Help() {
           </p>
           <ul className="list-disc space-y-2 pl-5">
             <li>
-              <span className="font-bold">Talk instead of typing.</span> They press the mic, talk, and their words appear in the box to check before sending. Their voice is turned into words on this laptop
-              and never saved. It&apos;s never sent to an online speech service. (Run <code className="rounded bg-chip px-1">npm run voice:setup</code> once to turn it on.)
+              <span className="font-bold">Talk instead of typing.</span> They press the mic, talk, and their words appear in the box to check before sending. Their voice is turned into words by their own
+              device and never saved or sent anywhere. (It needs a browser that can do that on the device, like a recent Chrome. If it can&apos;t, the mic doesn&apos;t show.)
             </li>
             <li>
               <span className="font-bold">Read aloud:</span> Gloam&apos;s words, the join steps and the recap, by a button or every line. It uses the voices on the student&apos;s device.
@@ -84,8 +85,12 @@ export function Help() {
             <li>Students only have a nickname. No real names, emails, birthdays or photos.</li>
             <li>Their secret pictures are stored scrambled, like a password.</li>
             <li>If you let a class use Google, Protégé only learns that it&apos;s the same account as last time. Never a name, email or photo.</li>
-            <li>Everything stays on the laptop running Protégé, including the AI. Nothing is sent to an outside company. No ads, no tracking.</li>
-            <li>Voice typing happens on this laptop too. Recordings are never saved.</li>
+            <li>
+              Gloam&apos;s brain is Claude, an AI made by Anthropic. What a student writes to Gloam is sent to Claude to write Gloam&apos;s answer, without their nickname. Anthropic doesn&apos;t use it to
+              train its AI.
+            </li>
+            <li>Classes, lessons and what students taught Gloam are stored in Protégé&apos;s online database. No ads, no tracking.</li>
+            <li>Voice typing happens on the student&apos;s own device. Recordings are never saved or sent anywhere.</li>
             <li>
               Classes are cleared out by your school board&apos;s rule (by default, a year after a class was last used). You can set a date for any class, or delete a class or a student
               yourself.
@@ -116,10 +121,12 @@ export function Help() {
         <Part title="If something goes wrong">
           <ul className="list-disc space-y-2 pl-5">
             <li>
-              <span className="font-bold">&ldquo;Gloam&apos;s brain isn&apos;t running&rdquo;:</span> the Ollama app is closed on the laptop. Open it, then students press Try again. Nothing they typed is lost.
+              <span className="font-bold">&ldquo;Gloam&apos;s brain can&apos;t be reached&rdquo;:</span> the student&apos;s device lost its internet, or Claude is busy for a moment. They press Try again.
+              Nothing they typed is lost.
             </li>
             <li>
-              <span className="font-bold">Students can&apos;t reach the address:</span> the laptop went to sleep, or it&apos;s on a different network. Keep it awake and plugged in during class.
+              <span className="font-bold">Students can&apos;t open the address:</span> check they typed it exactly, or post the link from Show the code in Google Classroom. Some school networks block new
+              websites: your school&apos;s IT can allow it.
             </li>
             <li>
               <span className="font-bold">You forgot your password:</span> use your recovery code on the sign-in page. Lost that too? Whoever runs this Protégé can make a new one for you.

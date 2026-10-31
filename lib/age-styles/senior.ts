@@ -189,9 +189,9 @@ export const senior: AgeStyle = {
     teachAgain: "Teach it again",
     backToTitle: "Back to title",
     offlineTitle: "Gloam's brain isn't running.",
-    offlineBody: "The AI (Ollama) isn't on. Ask your teacher to open Ollama on the computer running Protégé, then try again. Your message is saved.",
+    offlineBody: "Gloam's brain (Claude) can't be reached right now. Check you're online, then try again. Your message is saved.",
     offlineRetryBody: (tries) =>
-      `Still off (tried ${tries} ${tries === 1 ? "time" : "times"}). Check that the Ollama app is open on the computer running Protégé.`,
+      `Still can't reach it (tried ${tries} ${tries === 1 ? "time" : "times"}). Check your internet, or tell your teacher.`,
     retry: "Try again",
     titleJoin: "Join your class",
     valleyLabel: "Gloam's valley",
@@ -335,5 +335,5 @@ export const senior: AgeStyle = {
   },
   celebrate: { style: "understated", particles: 28 },
   safety: { level: "standard" },
-  input: { modes: ["type"], targetScale: 1, readAloud: false, spoken: { en: { name: "af_heart", speed: 1 }, fr: { name: "ff_siwis", speed: 1 } } },
+  input: { modes: ["type"], targetScale: 1, readAloud: false },
 };

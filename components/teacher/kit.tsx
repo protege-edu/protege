@@ -15,7 +15,7 @@ export async function api<T>(url: string, init?: RequestInit): Promise<{ ok: tru
     if (!res.ok) return { ok: false, error: body.error ?? "Something went wrong. Try again.", problems: body.problems, status: res.status };
     return { ok: true, data: body as T };
   } catch {
-    return { ok: false, error: "Can't reach Protégé. Is it still running on this computer?", status: 0 };
+    return { ok: false, error: "Can't reach Protégé. Check your internet connection, then try again.", status: 0 };
   }
 }
 

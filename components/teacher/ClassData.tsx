@@ -26,7 +26,7 @@ export function ClassData({ classId, className, lessonId }: { classId: string; c
       </h2>
       <p className="mt-2 max-w-[68ch] text-sm text-ink-dim">
         For each student, Protégé keeps their nickname, their secret pictures (scrambled, like a password), what they said to Gloam and what Gloam said back, and which ideas they taught it. No real names,
-        emails or photos. It all stays on the laptop running Protégé.
+        emails or photos. Only you can see your class.
       </p>
       <div className="mt-4 flex flex-wrap items-center gap-3">
         {lessonId && (

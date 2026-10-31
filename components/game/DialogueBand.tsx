@@ -101,7 +101,7 @@ function SpeechPanel({ gloam, wide, children, seed, floorAt }: { gloam: GloamBox
 }
 
 function GloamName({ style, line }: { style: AgeStyle; line?: string }) {
-  // read-aloud, when the student wants it (Ways to play), and only with a private voice (the laptop's or this device's)
+  // read-aloud, when the student wants it (Ways to play), and only with a private voice (one on this device)
   const wanted = useAccess(style).readAloud !== "off";
   const voiced = useCanReadAloud(style.language ?? "en");
   // leaving the screen stops reading

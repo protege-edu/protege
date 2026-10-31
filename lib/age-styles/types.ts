@@ -1,5 +1,4 @@
 import type { RigSpec } from "@/lib/gloam-rig/spec";
-import type { SpokenVoice } from "@/lib/voice/voices";
 import type { Emotion } from "@/lib/ai/schemas";
 
 /**
@@ -80,7 +79,7 @@ export interface AccessCopy {
   intro: string;
   voice: string;
   voiceHint: string;
-  /** neither this device nor the teacher's laptop can turn speech into words */
+  /** this device can't turn speech into words on its own (Protégé never sends a voice anywhere) */
   voiceMissing: string;
   voicePrivate: string;
   readAloud: string;
@@ -388,7 +387,5 @@ export interface AgeStyle {
     /** Touch target scale. Little kids get bigger buttons. */
     targetScale: number;
     readAloud: boolean;
-    /** Gloam's voice when it reads aloud on the teacher's laptop, per language (lib/voice/voices.ts) */
-    spoken: Record<Language, SpokenVoice>;
   };
 }

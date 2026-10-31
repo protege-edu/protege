@@ -2,7 +2,7 @@ import { z } from "zod";
 import { limit, tooMany } from "@/lib/auth/request";
 import { bad, requireTeacher } from "@/lib/teacher/api";
 import { listLessons, startDraft } from "@/lib/teacher/lessons";
-import { MAX_SOURCE_CHARS } from "@/lib/teacher/read";
+import { MAX_SOURCE_CHARS } from "@/lib/teacher/limits";
 
 export async function GET(request: Request) {
   const me = await requireTeacher(request);
