@@ -23,7 +23,11 @@ if (process.argv[1] && /migrate/.test(path.basename(process.argv[1]))) {
   migrateDatabase().then(
     () => console.log(`Database ready (${process.env.TURSO_DATABASE_URL ? "Turso" : "this computer"}).`),
     (e) => {
-      console.error("Couldn't set up the database:", e instanceof Error ? e.message : e);
+      // (the reason is usually in the cause: a wrong address or token, or no internet)
+      const cause = (e as { cause?: { message?: string; code?: string } })?.cause;
+      console.error(`Couldn't set up the database (${process.env.TURSO_DATABASE_URL ? `Turso: ${process.env.TURSO_DATABASE_URL}` : "this computer"}).`);
+      console.error(cause ? `${cause.code ?? ""} ${cause.message ?? cause}`.trim() : e instanceof Error ? e.message.split("\n")[0] : e);
+      if (process.env.TURSO_DATABASE_URL && !process.env.TURSO_AUTH_TOKEN) console.error("TURSO_AUTH_TOKEN is missing.");
       process.exit(1);
     },
   );
