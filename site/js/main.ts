@@ -15,8 +15,9 @@ function contents() {
   const article = document.querySelector<HTMLElement>(".doc article");
   const rail = document.querySelector<HTMLElement>(".doc .rail");
   if (!article || !rail) return;
-  const heads = [...article.querySelectorAll<HTMLHeadingElement>("h2")];
-  if (heads.length < 3) return rail.remove();
+  // (the board pack's list of documents isn't part of the page's own contents)
+  const heads = [...article.querySelectorAll<HTMLHeadingElement>("h2:not(.pack-name)")];
+  if (heads.length < 3) return;
   const list = document.createElement("ol");
   const items = heads.map((h, i) => {
     if (!h.id) h.id = h.textContent!.toLowerCase().replace(/[^a-z0-9à-ÿ]+/gi, "-").replace(/^-|-$/g, "") || `part-${i + 1}`;

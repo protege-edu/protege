@@ -2378,7 +2378,7 @@ html:not(.js) .guard-still {
 }
 .doc-grid {
   display: grid;
-  grid-template-columns: 230px minmax(0, 72ch);
+  grid-template-columns: 230px minmax(0, 1fr);
   gap: 64px;
   align-items: start;
 }
@@ -2428,7 +2428,8 @@ html:not(.js) .guard-still {
   color: var(--ink);
   max-width: 220px;
 }
-.doc article {
+/* words keep a comfortable reading width; tables and the board pack's contents use the whole page */
+.doc article > :not(.table-scroll):not(.pack) {
   max-width: 72ch;
 }
 .doc h1 {
@@ -2445,13 +2446,25 @@ html:not(.js) .guard-still {
 .doc h3 {
   margin-top: 32px;
 }
+.table-scroll {
+  margin-block: 24px;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper-2);
+}
 .doc table {
   width: 100%;
+  min-width: 34rem;
   border-collapse: collapse;
   font-size: 0.98rem;
-  margin-block: 20px;
-  display: block;
-  overflow-x: auto;
+  line-height: 1.45;
+}
+.doc tr:last-child td {
+  border-bottom: 0;
+}
+.doc td:first-child {
+  font-weight: 700;
 }
 .doc th,
 .doc td {
@@ -2461,7 +2474,60 @@ html:not(.js) .guard-still {
   border-bottom: 1px solid var(--line);
 }
 .doc th {
-  background: var(--paper-2);
+  background: var(--paper);
+  font-size: 0.9rem;
+  color: var(--ink-dim);
+  white-space: nowrap;
+}
+/* the board pack's contents: each document on its own line, like the opening of a printed report */
+.pack {
+  list-style: none;
+  margin: 36px 0 48px;
+  padding: 0;
+  border-top: 2px solid var(--ink);
+}
+.pack li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(9rem, 13rem);
+  column-gap: 20px;
+  padding: 18px 0 20px;
+  border-bottom: 1px solid var(--line);
+}
+.doc .pack-name {
+  margin: 0;
+  font: 800 1.3rem / 1.25 var(--voice);
+  font-variation-settings: "CASL" 1, "slnt" -4;
+}
+.pack-name a {
+  color: var(--ink);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+.pack-who {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  margin: 2px 0 0;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--ink-dim);
+  text-align: right;
+}
+.pack-what {
+  grid-column: 1;
+  margin: 6px 0 0;
+  color: var(--ink-dim);
+  max-width: 56ch;
+}
+@media (max-width: 640px) {
+  .pack li {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .pack-who {
+    grid-column: 1;
+    grid-row: auto;
+    text-align: left;
+    margin-top: 8px;
+  }
 }
 .doc code {
   background: var(--paper-2);

@@ -130,17 +130,29 @@ function doc(file: string, at: string, lang: Lang) {
     .replace(/href="([^"]+?)\.md(#[^"]*)?"/g, (_, p: string, h = "") => `href="${p}.html${h}"`)
     // the board pack and the pictures are at the root, for both languages
     .replace(/(href|src)="(board\/|img\/)/g, "$1=\"/$2")
-    // wide tables scroll sideways on small screens: the keyboard can reach them too
-    .replaceAll("<table>", '<table tabindex="0">');
+    // wide tables scroll sideways on small screens (the table itself stays full width): the keyboard can reach them too
+    .replaceAll("<table>", `<div class="table-scroll" tabindex="0" role="region" aria-label="${esc(t.docs.table)}"><table>`)
+    .replaceAll("</table>", "</table></div>");
   const title = md.match(/^# (.+)$/m)?.[1] ?? "Protégé";
-  const back = at.startsWith("board/") ? `<a class="back" href="README.html">${t.docs.pack}</a>` : "";
+  const back = at.startsWith("board/") && at !== "board/README.html" ? `<a class="back" href="README.html">${t.docs.pack}</a>` : "";
   fs.mkdirSync(path.dirname(path.join(out, at)), { recursive: true });
   const peek = PEEK[path.basename(file)] ?? { mood: "curious", key: "other" as const };
   const rail = `<aside class="rail" data-contents="${t.docs.onThisPage}"><figure class="peek"><img src="${up}img/gloam-${peek.mood}.webp" alt="" width="220" height="276"><figcaption class="voice">${t.peeks[peek.key]}</figcaption></figure></aside>`;
   fs.writeFileSync(
     path.join(out, at),
-    page({ at, lang, title: `${title} · Protégé`, description: title, body: `<main id="main" class="doc paper"><div class="wrap doc-grid">${rail}<article>${back}${html}</article></div></main>` }),
+    page({ at, lang, title: `${title} · Protégé`, description: title, body: `<main id="main" class="doc paper"><div class="wrap doc-grid">${rail}<article>${back}${at === "board/README.html" ? packIndex(html) : html}</article></div></main>` }),
   );
+}
+
+/**
+ * The board pack's first page: its table of documents becomes a contents page (each document, who it's for,
+ * and what's in it), like the opening of a printed report. Everything else on the page stays as written.
+ */
+function packIndex(html: string): string {
+  const rows = [...html.matchAll(/<tr>\s*<td>(<a href="[^"]+">[^<]+<\/a>)<\/td>\s*<td>([^<]+)<\/td>\s*<td>([^<]+)<\/td>\s*<\/tr>/g)];
+  if (!rows.length) return html;
+  const list = `<ol class="pack">${rows.map(([, link, who, what]) => `<li><h2 class="pack-name">${link}</h2><p class="pack-who">${who}</p><p class="pack-what">${what}</p></li>`).join("")}</ol>`;
+  return html.replace(/<div class="table-scroll"[^>]*><table>[\s\S]*?<\/table><\/div>/, list);
 }
 
 function home(lang: Lang) {

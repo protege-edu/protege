@@ -30,7 +30,7 @@ const en = {
   foot: { wake: "Wake Gloam up", sleeping: "Gloam is asleep. Shh." , mumbles: ["mm. five more minutes.", "i was dreaming about the tilt. it was beautiful.", "is it morning. it's not morning.", "teach me something tomorrow. i'll be confused. promise."] },
   footer: { license: "Free software under the", noTrackers: "No trackers anywhere in Protégé.", security: "Security", source: "Source code" },
   cta: { teacher: "Open Protégé", student: "Join a class" },
-  docs: { onThisPage: "On this page", pack: "The school board pack", inEnglish: "" },
+  docs: { onThisPage: "On this page", pack: "The school board pack", inEnglish: "", table: "Table (scrolls sideways)" },
   story: {
     label: "How Protégé works: a student teaches Gloam",
     h1: "The student is the teacher.",
@@ -174,7 +174,7 @@ const fr: SiteCopy = {
   foot: { wake: "Réveiller Gloam", sleeping: "Gloam dort. Chut.", mumbles: ["mm. cinq minutes encore.", "je rêvais à l'inclinaison. c'était beau.", "c'est le matin? c'est pas le matin.", "apprends-moi quelque chose demain. je vais être mêlé. promis."] },
   footer: { license: "Logiciel libre sous la", noTrackers: "Aucun traceur, nulle part dans Protégé.", security: "Sécurité", source: "Code source" },
   cta: { teacher: "Ouvrir Protégé", student: "Rejoindre une classe" },
-  docs: { onThisPage: "Sur cette page", pack: "La trousse pour les conseils scolaires", inEnglish: "Ce document est en anglais." },
+  docs: { onThisPage: "Sur cette page", pack: "La trousse pour les conseils scolaires", inEnglish: "Ce document est en anglais.", table: "Tableau (défile de côté)" },
   story: {
     label: "Comment fonctionne Protégé : une élève enseigne à Gloam",
     h1: "L'élève devient le prof.",
