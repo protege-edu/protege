@@ -13,7 +13,7 @@ import path from "node:path";
 // (LGPL is too: it's the image tool Next.js uses, and LGPL code can live inside AGPL software)
 const OK = /^(MIT|ISC|BSD|BSD-2-Clause|BSD-3-Clause|0BSD|Apache-2\.0|BlueOak-1\.0\.0|CC0-1\.0|CC-BY-4\.0|Unlicense|OFL-1\.1|MPL-2\.0|Python-2\.0|Zlib|WTFPL|LGPL-3\.0-or-later)$/;
 
-/** Checked by hand, with the reason (free forever, but not an open-source licence) */
+/** Checked by hand, with the reason (free to use, but not an open-source licence) */
 const ALLOWED: Record<string, string> = {
   gsap: "free for everyone forever under GSAP's Standard \"No Charge\" License (not open source); used for Gloam's eureka moment",
 };

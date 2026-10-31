@@ -1,6 +1,6 @@
 """
 Make a younger age's painted journey world from its file in art/worlds/<age>.json, in stages
-(ComfyUI must be running; stop other heavy Ollama models first, they share the GPU):
+(ComfyUI must be running; close other programs that use the GPU first):
 
   venv\\Scripts\\python art\\world.py start  <age> [count]      paint candidates for where the journey starts
   venv\\Scripts\\python art\\world.py grow   <age> <seed>       grow the chosen start into the journey, one landmark per stretch
