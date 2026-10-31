@@ -30,8 +30,8 @@ async function accessLog(all: boolean) {
 /** A teacher lost their password AND their recovery code: a new recovery code, from this computer only */
 async function resetTeacher(email?: string) {
   if (!email) return say("Which teacher? Add their email, for example: reset-teacher their@school.ca");
-  const { resetFromLaptop } = await import("@/lib/teacher/auth");
-  const code = await resetFromLaptop(email);
+  const { resetByOwner } = await import("@/lib/teacher/auth");
+  const code = await resetByOwner(email);
   if (!code) return say(`No teacher account uses ${email}. Check the spelling.`);
   say(`\nNew recovery code for ${email}:  ${code}\nOn the sign-in page, they press "Forgot your password?" and use it to pick a new password.\n`);
 }

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { mayDraft } from "@/lib/ai/allowance";
 import { limit, tooMany } from "@/lib/auth/request";
 import { bad, requireTeacher } from "@/lib/teacher/api";
 import { listLessons, startDraft } from "@/lib/teacher/lessons";
@@ -43,11 +44,12 @@ const Body = z.object({
 export async function POST(request: Request) {
   const me = await requireTeacher(request);
   if (me instanceof Response) return me;
-  // drafting keeps the AI busy for minutes: a few uploads per hour per teacher is plenty
+  // a few uploads per hour per teacher is plenty (and lib/ai/allowance.ts limits the day)
   if (!limit(`draft:${me.id}`, 12, 60 * 60 * 1000)) return tooMany();
   const body = Body.safeParse(await request.json().catch(() => null));
   if (!body.success) return bad(body.error.issues[0]?.message ?? "Something's missing.");
   const { title, sourceName, grade, lessons } = body.data;
+  if (!(await mayDraft(me.id, lessons.length))) return bad("You've drafted a lot of lessons today, and Gloam's brain needs a rest. Try again tomorrow.", 429);
   if (lessons.length === 1) {
     return Response.json({ lessonId: await startDraft({ source: lessons[0].source, sourceName, grade, titleHint: lessons[0].title || title, ownTitle: lessons[0].ownTitle, teacherId: me.id }) });
   }

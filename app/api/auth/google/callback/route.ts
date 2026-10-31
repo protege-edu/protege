@@ -11,7 +11,7 @@ export async function GET(request: Request) {
   const result = await googleFinish(new URL(request.url));
   if (!result) return Response.redirect(`${base}/?signin=failed`);
   if (result.forWho.who === "teacher") {
-    const t = await teacherFromGoogle(result.sub, result.email!, result.forWho.invite);
+    const t = await teacherFromGoogle(result.sub, result.email!, result.forWho.code);
     if (!t) return Response.redirect(`${base}/teacher?google=noaccount`);
     await signInAs(t.id, request);
     return Response.redirect(`${base}/teacher`);

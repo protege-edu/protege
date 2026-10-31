@@ -88,6 +88,11 @@ export const frSenior: FrenchStyle = {
       "c'est non pour moi. retour à {topic}. {question}",
       "ma lanterne vient de refuser de traiter ça. {question}",
     ],
+    tired: [
+      "ma lanterne n'a plus d'huile pour aujourd'hui. tu m'as appris plein de choses. reviens demain, je serai mêlé de nouveau, tout frais.",
+      "gloam est fermé pour la journée. trop d'apprentissage. ma tige tombe. demain?",
+      "j'ai atteint ma limite de réflexion pour aujourd'hui. franchement impressionnant. même heure demain?",
+    ],
     care: "hé. je mets la leçon de côté une seconde. ça a l'air vraiment lourd, et toi, tu comptes beaucoup plus que n'importe quelle leçon. parles-en à un prof, à la personne-ressource de ton école ou à un adulte en qui tu as confiance. au canada, tu peux appeler ou texter le 988, ou joindre jeunesse, j'écoute au 1-800-668-6868 (texto : 686868), jour et nuit.",
     victoryLap: [
       "regarde cette lanterne. c'est toi, ça. c'est toi qui as fait ça.",
@@ -307,6 +312,9 @@ export function frStorybook(big: boolean): FrenchStyle {
       offTopic: ["Ha! On revient à {topic}? {question}", "Ça a l'air amusant! Mais je bloque encore sur {topic}. {question}"],
       insulted: ["Hé, c'est pas gentil! Mais j'ai encore besoin de ton aide. {question}", "Aïe! Je te pardonne. {question}"],
       blocked: ["On garde ça gentil pour l'école! {question}", "Hmm, parlons plutôt de {topic}. {question}"],
+      tired: big
+        ? ["J'ai TELLEMENT sommeil! Ma lanterne a besoin d'une sieste. Reviens demain!", "Bâille! Gloam doit dormir maintenant. À demain!"]
+        : ["ma lanterne n'a plus de lumière pour aujourd'hui! on continue demain.", "j'ai appris TELLEMENT de choses aujourd'hui, j'ai besoin d'une sieste. reviens demain!"],
       care: "Ça a l'air vraiment difficile. S'il te plaît, dis à ton prof ou à un adulte en qui tu as confiance comment tu te sens. Ils veulent t'aider. Tu peux aussi appeler Jeunesse, J'écoute au 1-800-668-6868, jour et nuit.",
       victoryLap: ["Regarde comme ma lanterne brille! C'est grâce à toi!", "Je comprends maintenant, grâce à toi!"],
       welcomeBack: big ? ["Tu es revenu! Je t'ai attendu près de la bougie!"] : ["t'es revenu! je t'ai gardé ta place près de la bougie."],

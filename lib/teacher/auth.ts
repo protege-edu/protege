@@ -6,6 +6,7 @@ import { hash, keyedHash, randomCode, verify } from "@/lib/auth/crypto";
 import { db } from "@/lib/db/client";
 import { classes, lessons, settings, teachers } from "@/lib/db/schema";
 import { BUILT_IN } from "@/lib/lesson";
+import { schoolByStaffCode } from "./schools";
 
 /**
  * Teacher accounts. No paid login service: an email + password (hashed with scrypt) stored on this
@@ -17,9 +18,9 @@ const DAYS = 14;
 const MAX_TRIES = 5;
 const LOCK_MINUTES = 10;
 
-export type Teacher = Pick<typeof teachers.$inferSelect, "id" | "email" | "name" | "onboardedAt">;
+export type Teacher = Pick<typeof teachers.$inferSelect, "id" | "email" | "name" | "onboardedAt" | "schoolId" | "owner">;
 
-const pick = (t: typeof teachers.$inferSelect): Teacher => ({ id: t.id, email: t.email, name: t.name, onboardedAt: t.onboardedAt });
+const pick = (t: typeof teachers.$inferSelect): Teacher => ({ id: t.id, email: t.email, name: t.name, onboardedAt: t.onboardedAt, schoolId: t.schoolId, owner: t.owner });
 
 export const anyTeachers = async () => !!await db.select({ id: teachers.id }).from(teachers).limit(1).get();
 
@@ -54,24 +55,21 @@ async function claimUnowned(teacherId: string) {
 
 export type SignUpResult = { ok: true; teacher: Teacher; recoveryCode: string } | { ok: false; error: string };
 
-/** Make an account. `code` is the setup code (first account) or an invite (everyone after). */
+/** Make an account. `code` is the setup code (the first account: the owner) or a school's staff code (everyone after). */
 export async function signUp(input: { email: string; password: string; name: string; code?: string }): Promise<SignUpResult> {
   const email = input.email.trim().toLowerCase();
-  const first = !await anyTeachers();
-  if (!await joinCodeValid(input.code)) {
-    return {
-      ok: false,
-      error: first ? "That setup code isn't right. It's in the window where Protégé is running." : "That invite code doesn't work. Ask a teacher who uses Protégé to make you a new one.",
-    };
-  }
+  const joining = await whoIsJoining(input.code);
+  if (!joining) return { ok: false, error: await wrongCode() };
   if (await db.select({ id: teachers.id }).from(teachers).where(eq(teachers.email, email)).get()) {
     return { ok: false, error: "There's already an account with that email. Sign in instead." };
   }
   const recoveryCode = randomCode(3, 4);
   const id = randomUUID();
-  await db.insert(teachers).values({ id, email, name: input.name.trim(), passwordHash: hash(input.password), recoveryHash: hash(recoveryCode), createdAt: new Date() }).run();
-  if (first) await claimUnowned(id);
-  else await spendInvite(input.code!);
+  await db
+    .insert(teachers)
+    .values({ id, email, name: input.name.trim(), passwordHash: hash(input.password), recoveryHash: hash(recoveryCode), schoolId: joining.schoolId, owner: joining.owner, createdAt: new Date() })
+    .run();
+  if (joining.owner) await claimUnowned(id);
   return { ok: true, teacher: pick((await db.select().from(teachers).where(eq(teachers.id, id)).get())!), recoveryCode };
 }
 
@@ -111,10 +109,10 @@ export async function recover(emailRaw: string, code: string, newPassword: strin
 }
 
 /**
- * Lost the password AND the recovery code: whoever runs Protégé resets it from the laptop's terminal
- * (npm run reset-teacher -- <email>). Gives a new recovery code, which signs them in like the usual "forgot password".
+ * Lost the password AND the recovery code: whoever runs Protégé resets it (the owner page, or
+ * npm run reset-teacher -- <email>). Gives a new recovery code, which signs them in like the usual "forgot password".
  */
-export async function resetFromLaptop(emailRaw: string): Promise<string | null> {
+export async function resetByOwner(emailRaw: string): Promise<string | null> {
   const t = await db.select().from(teachers).where(eq(teachers.email, emailRaw.trim().toLowerCase())).get();
   if (!t) return null;
   const recoveryCode = randomCode(3, 4);
@@ -124,9 +122,9 @@ export async function resetFromLaptop(emailRaw: string): Promise<string | null> 
 
 /**
  * Continue with Google: find the teacher by their Google account, or by email, or make a new account.
- * A NEW account needs the setup code or an invite, like signing up with email.
+ * A NEW account needs the setup code or a staff code, like signing up with email.
  */
-export async function teacherFromGoogle(sub: string, email: string, invite?: string): Promise<Teacher | null> {
+export async function teacherFromGoogle(sub: string, email: string, code?: string): Promise<Teacher | null> {
   const idHash = await keyedHash(sub);
   const byGoogle = await db.select().from(teachers).where(eq(teachers.googleIdHash, idHash)).get();
   if (byGoogle) return pick(byGoogle);
@@ -135,31 +133,29 @@ export async function teacherFromGoogle(sub: string, email: string, invite?: str
     await db.update(teachers).set({ googleIdHash: idHash }).where(eq(teachers.id, byEmail.id)).run();
     return pick(byEmail);
   }
-  if (!await joinCodeValid(invite)) return null;
-  const first = !await anyTeachers();
+  const joining = await whoIsJoining(code);
+  if (!joining) return null;
   const id = randomUUID();
-  await db.insert(teachers).values({ id, email, name: email.split("@")[0], googleIdHash: idHash, createdAt: new Date() }).run();
-  if (first) await claimUnowned(id);
-  else await spendInvite(invite!);
+  await db.insert(teachers).values({ id, email, name: email.split("@")[0], googleIdHash: idHash, schoolId: joining.schoolId, owner: joining.owner, createdAt: new Date() }).run();
+  if (joining.owner) await claimUnowned(id);
   return pick((await db.select().from(teachers).where(eq(teachers.id, id)).get())!);
 }
 
 /*
- * Who may make a teacher account (Protégé is reachable from the internet, so not just anyone):
- *   - the FIRST account needs the setup code, which Protégé prints in the window it runs in.
- *     Only whoever runs Protégé can see it.
- *   - after that, a one-use invite code that a signed-in teacher made (lasts 7 days).
- * (Not "is this the laptop?": request headers can be faked by anyone on the school network.)
- * Invites live in settings as "teacher_invite:<keyed hash>" → expiry time, so the code itself is never stored.
+ * Who may make a teacher account (Protégé is on the open internet, and students have school accounts too,
+ * so an email address proves nothing):
+ *   - the FIRST account needs the setup code, which Protégé prints in its logs (only whoever runs it can see
+ *     them). That account is the OWNER: it adds schools, and each school gets a staff code.
+ *   - after that, a school's STAFF CODE (lib/teacher/schools.ts). The teacher becomes part of that school.
  */
 const SETUP = "setup_code";
 const store = globalThis as unknown as { protegeSetupShown?: boolean };
 
-/** The setup code (made once, kept until the first account exists). Printed in the terminal once per start. */
+/** The setup code (made once, kept until the first account exists). Printed in the logs once per start. */
 export async function setupCode(): Promise<string> {
   let row = await db.select().from(settings).where(eq(settings.key, SETUP)).get();
   if (!row) {
-    await db.insert(settings).values({ key: SETUP, value: randomCode(2, 4) }).run();
+    await db.insert(settings).values({ key: SETUP, value: randomCode(2, 4) }).onConflictDoNothing().run();
     row = (await db.select().from(settings).where(eq(settings.key, SETUP)).get())!;
   }
   if (!store.protegeSetupShown) {
@@ -173,39 +169,26 @@ async function setupDone() {
   await db.delete(settings).where(eq(settings.key, SETUP)).run();
 }
 
-export type SignUpGate = "setup" | "invite";
-/** What a new teacher needs: the setup code (no accounts yet) or an invite */
+export type SignUpGate = "setup" | "staff";
+/** What a new teacher needs: the setup code (no accounts yet) or their school's staff code */
 export async function signUpGate(): Promise<SignUpGate> {
-  if (await anyTeachers()) return "invite";
+  if (await anyTeachers()) return "staff";
   await setupCode();
   return "setup";
 }
 
-/** Is this the right code to make an account right now (setup code first, invites after)? */
-export async function joinCodeValid(code: string | undefined): Promise<boolean> {
-  if (!code?.trim()) return false;
-  if (!await anyTeachers()) return code.trim().toUpperCase() === await setupCode();
-  return await inviteValid(code);
+/** Who this code lets in: the owner (the setup code, before any account exists) or a teacher at a school. Null: nobody. */
+async function whoIsJoining(code: string | undefined): Promise<{ owner: boolean; schoolId: string | null } | null> {
+  if (!code?.trim()) return null;
+  if (!(await anyTeachers())) return code.trim().toUpperCase() === (await setupCode()) ? { owner: true, schoolId: null } : null;
+  const school = await schoolByStaffCode(code);
+  return school ? { owner: false, schoolId: school.id } : null;
 }
 
-const INVITE_DAYS = 7;
-const inviteKey = async (code: string) => `teacher_invite:${await keyedHash(code.trim().toUpperCase())}`;
-
-export async function makeInvite(): Promise<{ code: string; expires: Date }> {
-  const code = randomCode(2, 4);
-  const expires = new Date(Date.now() + INVITE_DAYS * 86400000);
-  await db.insert(settings).values({ key: await inviteKey(code), value: expires.toISOString() }).run();
-  return { code, expires };
-}
-
-export async function inviteValid(code: string | undefined): Promise<boolean> {
-  if (!code?.trim()) return false;
-  const row = await db.select().from(settings).where(eq(settings.key, await inviteKey(code))).get();
-  return !!row && new Date(row.value).getTime() > Date.now();
-}
-
-export async function spendInvite(code: string) {
-  await db.delete(settings).where(eq(settings.key, await inviteKey(code))).run();
+async function wrongCode() {
+  return (await anyTeachers())
+    ? "That staff code doesn't work. Ask your principal, or a teacher at your school who uses Protégé, for your school's code."
+    : "That setup code isn't right. It's in Protégé's logs (see the README, \"Your account\")."
 }
 
 export async function markOnboarded(teacherId: string) {

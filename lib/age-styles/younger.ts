@@ -200,6 +200,9 @@ const storybookLines = (simple: boolean): AgeStyle["lines"] => ({
   offTopic: ["Ha! Back to {topic}? {question}", "That sounds fun! But I'm still stuck on {topic}. {question}"],
   insulted: ["Hey, that's not nice! But I still need your help. {question}", "Ouch! I forgive you. {question}"],
   blocked: ["Let's keep it school-friendly! {question}", "Hmm, let's talk about {topic} instead. {question}"],
+  tired: simple
+    ? ["I'm SO sleepy! My lantern needs a nap. Come back tomorrow!", "Yawn! Gloam needs to sleep now. See you tomorrow!"]
+    : ["my lantern is all out of glow for today! let's keep going tomorrow.", "i learned SO much today i need a nap. come back tomorrow!"],
   care: "That sounds really hard. Please tell your teacher or a grown-up you trust how you're feeling. They want to help.",
   victoryLap: ["Look how bright my lantern is! You did that!", "I understand it now, because of you!"],
   welcomeBack: simple ? ["You came back! I waited by the candle!"] : ["you're back! i saved your spot by the candle."],

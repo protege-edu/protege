@@ -91,6 +91,11 @@ export const senior: AgeStyle = {
       "that's a no from me. back to {topic}. {question}",
       "my lantern just refused to process that. {question}",
     ],
+    tired: [
+      "my lantern's out of oil for today. you taught me a lot. come back tomorrow and i'll be confused again, fresh.",
+      "gloam is closed for the day. too much learning. my stalk is drooping. tomorrow?",
+      "i've hit my thinking limit for today. honestly impressive. same time tomorrow?",
+    ],
     care: "hey. i'm putting the lesson down for a second. that sounds really heavy, and you matter way more than any lesson. please talk to a teacher, a school counsellor, or an adult you trust. in canada or the us you can call or text 988, any time, day or night.",
     victoryLap: [
       "look at this lantern. that's you. you did that.",

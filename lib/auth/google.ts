@@ -13,7 +13,7 @@ import { clear, readSigned, setSigned } from "./cookies";
  * Students: we ask ONLY for "openid", so Google doesn't even tell us their name or email.
  *           We keep just a keyed hash of Google's account id, to recognise them next time.
  */
-export type GoogleFor = { who: "teacher"; invite?: string } | { who: "student"; classId: string };
+export type GoogleFor = { who: "teacher"; code?: string } | { who: "student"; classId: string };
 
 const STATE = "protege_oauth";
 
@@ -26,7 +26,7 @@ const redirectUri = () => `${appUrl()}/api/auth/google/callback`;
 /** Where to send the browser to start. Remembers who it's for in a signed cookie (also stops forged callbacks). */
 export async function googleStartUrl(forWho: GoogleFor): Promise<string> {
   const nonce = randomBytes(16).toString("hex");
-  const purpose = forWho.who === "teacher" ? `teacher~${forWho.invite ?? ""}` : `student~${forWho.classId}`;
+  const purpose = forWho.who === "teacher" ? `teacher~${forWho.code ?? ""}` : `student~${forWho.classId}`;
   await setSigned(STATE, `${nonce}~${purpose}`, 0.01);
   const q = new URLSearchParams({
     client_id: process.env.GOOGLE_CLIENT_ID!,
@@ -75,7 +75,7 @@ export async function googleFinish(url: URL): Promise<GoogleResult | null> {
     if (info.aud !== process.env.GOOGLE_CLIENT_ID || !info.sub || !["accounts.google.com", "https://accounts.google.com"].includes(info.iss ?? "")) return null;
     if (kind === "teacher") {
       if (!info.email || info.email_verified !== "true") return null;
-      return { forWho: { who: "teacher", invite: extra || undefined }, sub: info.sub, email: info.email.toLowerCase() };
+      return { forWho: { who: "teacher", code: extra || undefined }, sub: info.sub, email: info.email.toLowerCase() };
     }
     return { forWho: { who: "student", classId: extra }, sub: info.sub };
   } catch {

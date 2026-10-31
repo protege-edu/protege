@@ -8,10 +8,10 @@ import { Sheet } from "@/components/ui/Sheet";
 type Mode = "signin" | "signup" | "recover";
 
 export interface AuthStatus {
-  teacher: { id: string; email: string; name: string; onboardedAt: string | null } | null;
+  teacher: { id: string; email: string; name: string; onboardedAt: string | null; schoolId: string | null; owner: boolean } | null;
   firstTeacher: boolean;
-  /** setup: no accounts yet, the first needs the setup code Protégé printed. invite: needs a teacher's invite code. */
-  signUp: "setup" | "invite";
+  /** setup: no accounts yet, the first (the owner) needs the setup code Protégé printed. staff: needs their school's staff code. */
+  signUp: "setup" | "staff";
   google: boolean;
 }
 
@@ -21,7 +21,7 @@ async function post<T>(body: unknown): Promise<{ ok: true; data: T } | { ok: fal
     const data = await res.json().catch(() => ({}));
     return res.ok ? { ok: true, data } : { ok: false, error: data.error ?? "Something went wrong. Try again." };
   } catch {
-    return { ok: false, error: "Can't reach Protégé. Is it still running?" };
+    return { ok: false, error: "Can't reach Protégé. Check your internet connection, then try again." };
   }
 }
 
@@ -45,14 +45,14 @@ export function SignIn({ status, onSignedIn }: { status: AuthStatus; onSignedIn:
     const q = new URLSearchParams(window.location.search);
     if (q.get("google") !== "noaccount") return;
     void Promise.resolve().then(() => {
-      setError("No teacher account uses that Google account yet. To make one, you need an invite code from a teacher who uses Protégé.");
+      setError("No teacher account uses that Google account yet. To make one, type your school's staff code first.");
       setMode("signup");
     });
     window.history.replaceState(null, "", window.location.pathname);
   }, []);
 
   const needsCode = mode === "signup";
-  const googleHref = `/api/auth/google/start?who=teacher${needsCode && invite.trim() ? `&invite=${encodeURIComponent(invite.trim())}` : ""}`;
+  const googleHref = `/api/auth/google/start?who=teacher${needsCode && invite.trim() ? `&code=${encodeURIComponent(invite.trim())}` : ""}`;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,8 +71,8 @@ export function SignIn({ status, onSignedIn }: { status: AuthStatus; onSignedIn:
   const sub =
     mode === "signup"
       ? status.signUp === "setup"
-        ? "You're the first teacher on this Protégé, so everything already here becomes yours."
-        : "You'll need an invite code from a teacher who already uses this Protégé. Your classes and lessons stay private to you."
+        ? "You're the first teacher on this Protégé, so you're its owner: you'll add schools and give them their staff codes."
+        : "You'll need your school's staff code. Your classes and lessons stay private to you."
       : mode === "signin"
         ? "Sign in to your classes, lessons and dashboards."
         : "Use the recovery code you saved when you made your account.";
@@ -95,13 +95,20 @@ export function SignIn({ status, onSignedIn }: { status: AuthStatus; onSignedIn:
               <Field
                 id="invite"
                 label="Setup code"
-                hint="Protégé shows it in the window where it's running. It's also saved in SETUP-CODE.txt, next to Protégé's data."
+                hint="It's in Protégé's logs: on Vercel, open Logs and search for setup code."
                 value={invite}
                 onChange={setInvite}
                 autoComplete="off"
               />
             ) : (
-              <Field id="invite" label="Invite code" hint="It looks like ABCD-EFGH. Type it first, then pick how to sign up." value={invite} onChange={setInvite} autoComplete="off" />
+              <Field
+                id="invite"
+                label="Staff code"
+                hint="Your school's code, like ABCD-EFGH-JKLM. Ask your principal, or a teacher at your school who uses Protégé. Type it first, then pick how to sign up."
+                value={invite}
+                onChange={setInvite}
+                autoComplete="off"
+              />
             )}
           </div>
         )}

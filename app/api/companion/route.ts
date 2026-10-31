@@ -1,5 +1,7 @@
 import { z } from "zod";
-import { runTurn } from "@/lib/ai/companion";
+import { mayTeach } from "@/lib/ai/allowance";
+import { runTurn, voice } from "@/lib/ai/companion";
+import { getAgeStyle, pickLine } from "@/lib/age-styles";
 import { hearingLine } from "@/lib/ai/queue";
 import { clientIp, forbidden, limit, sameOrigin, tooMany } from "@/lib/auth/request";
 import { getSession, recordTurn } from "@/lib/companion/session";
@@ -45,6 +47,15 @@ export async function POST(request: Request) {
     return Response.json({ error: "This lesson isn't available right now. Ask your teacher to check it's approved." }, { status: 404 });
   }
   const encoder = new TextEncoder();
+
+  // today's use of Gloam's brain is used up (lib/ai/allowance.ts): Gloam falls asleep, in character, and nothing goes to Claude
+  if (!(await mayTeach(session.studentId))) {
+    const style = getAgeStyle(lesson.ageStyle, lesson.language);
+    const said = session.messages.filter((m) => m.from === "gloam").map((m) => m.text);
+    const reply = voice(pickLine(style.lines.tired, { topic: lesson.topic, question: "" }, said.slice(-6)), style);
+    const event = { type: "reply", reply, source: "tired", emotion: "sheepish", understanding: session.understanding, improved: [], clicked: [], finished: false, checkpoints: session.checkpoints, gloam: session.gloam, levelUp: false };
+    return new Response(`${JSON.stringify(event)}\n`, { headers: { "Content-Type": "application/x-ndjson; charset=utf-8", "Cache-Control": "no-store" } });
+  }
 
   const stream = new ReadableStream({
     async start(controller) {

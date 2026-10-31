@@ -2,6 +2,7 @@ import "server-only";
 import { and, eq, isNotNull, isNull, lt, lte, max } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { accessLog, classes, students, teachSessions } from "@/lib/db/schema";
+import { forgetOldUsage } from "@/lib/ai/allowance";
 import { deleteClass, eraseStudent } from "@/lib/teacher/classes";
 import { PRACTICE_DAYS, UNUSED_DAYS, retentionRule } from "./retention";
 
@@ -36,5 +37,7 @@ export async function sweep(now = new Date()): Promise<{ classes: number; practi
   for (const s of stale) await eraseStudent(s.id);
   // the access log is kept two years (long enough to look into a problem, no longer)
   await db.delete(accessLog).where(lt(accessLog.at, new Date(now.getTime() - 730 * 86_400_000))).run();
+  // yesterday's counts of Gloam's brain use (lib/ai/allowance.ts) aren't needed any more
+  await forgetOldUsage();
   return { classes: due.length, practice: stale.length };
 }

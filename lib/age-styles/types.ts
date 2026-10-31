@@ -251,6 +251,8 @@ export interface AgeStyle {
     blocked: Line[];
     /** Student is in distress. Never a joke. */
     care: string;
+    /** Gloam's brain has been used up for today (lib/ai/allowance.ts): it falls asleep until tomorrow */
+    tired: Line[];
     victoryLap: Line[];
     /** The message was pasted from somewhere (a search result, an AI). Ask for their own words, kindly. */
     copied: Line[];

@@ -15,6 +15,17 @@ import type { LessonBlueprint } from "@/lib/lesson/types";
  * A teacher. Their own email is their login name (it's the teacher's information, not a student's).
  * Passwords and recovery codes are stored only as scrypt hashes; a Google account only as a keyed hash.
  */
+/**
+ * A school using Protégé. Its staff code is how a new teacher proves they work there: the owner gives it to
+ * the school, and any teacher there can make a new one (the old one stops working at once).
+ */
+export const schools = sqliteTable("schools", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  staffCode: text("staff_code").notNull().unique(),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+});
+
 export const teachers = sqliteTable("teachers", {
   id: text("id").primaryKey(),
   email: text("email").notNull().unique(),
@@ -26,6 +37,10 @@ export const teachers = sqliteTable("teachers", {
   lockedUntil: integer("locked_until", { mode: "timestamp_ms" }),
   /** the teacher finished the first-run setup */
   onboardedAt: integer("onboarded_at", { mode: "timestamp_ms" }),
+  /** the school they signed up with (its staff code). Null: the owner, before they add their own school */
+  schoolId: text("school_id").references(() => schools.id),
+  /** whoever runs this Protégé (the first account): adds schools and gives them their staff codes */
+  owner: integer("owner", { mode: "boolean" }).notNull().default(false),
   createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
 });
 
@@ -227,3 +242,19 @@ export const settings = sqliteTable("settings", {
   key: text("key").primaryKey(),
   value: text("value").notNull(),
 });
+
+/**
+ * How much Gloam's brain (Claude) was used today, per class, student and teacher, so one class (or a stranger)
+ * can't run up the bill (lib/ai/allowance.ts). Counts only: never what anyone wrote. Old days are cleared daily.
+ */
+export const aiUsage = sqliteTable(
+  "ai_usage",
+  {
+    /** "class:<id>", "student:<id>", "drafts:<teacher id>", or "all" */
+    key: text("key").notNull(),
+    /** the day, like 2026-10-31 (Toronto time) */
+    day: text("day").notNull(),
+    count: integer("count").notNull().default(0),
+  },
+  (t) => [primaryKey({ columns: [t.key, t.day] })],
+);

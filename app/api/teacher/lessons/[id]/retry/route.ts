@@ -1,3 +1,4 @@
+import { mayDraft } from "@/lib/ai/allowance";
 import { limit, tooMany } from "@/lib/auth/request";
 import { bad, notYours, requireTeacher } from "@/lib/teacher/api";
 import { canSee, getLessonRow, retryDraft } from "@/lib/teacher/lessons";
@@ -10,5 +11,6 @@ export async function POST(request: Request, ctx: RouteContext<"/api/teacher/les
   const { id } = await ctx.params;
   const row = await getLessonRow(id);
   if (!row || !canSee(row, me.id)) return notYours();
+  if (!(await mayDraft(me.id))) return bad("You've drafted a lot of lessons today, and Gloam's brain needs a rest. Try again tomorrow.", 429);
   return await retryDraft(id) ? Response.json({ ok: true }) : bad("We don't have the original notes for this lesson anymore. Start a new one.");
 }

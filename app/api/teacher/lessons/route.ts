@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { mayDraft } from "@/lib/ai/allowance";
 import { limit, tooMany } from "@/lib/auth/request";
 import { bad, requireTeacher } from "@/lib/teacher/api";
 import { listLessons, startDraft } from "@/lib/teacher/lessons";
@@ -28,5 +29,6 @@ export async function POST(request: Request) {
   if (body.data.source.length > MAX_SOURCE_CHARS) {
     return bad(`That's a lot of text for Gloam to read at once. Pick fewer sections (under ${MAX_SOURCE_CHARS.toLocaleString()} characters).`);
   }
+  if (!(await mayDraft(me.id))) return bad("You've drafted a lot of lessons today, and Gloam's brain needs a rest. Try again tomorrow.", 429);
   return Response.json({ id: await startDraft({ ...body.data, teacherId: me.id }) });
 }

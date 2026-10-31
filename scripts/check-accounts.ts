@@ -33,6 +33,7 @@ async function main() {
   const { db } = await import("@/lib/db/client");
   const { classes, lessons, teachers } = await import("@/lib/db/schema");
   const T = await import("@/lib/teacher/auth");
+  const Sch = await import("@/lib/teacher/schools");
   const C = await import("@/lib/teacher/classes");
   const S = await import("@/lib/student/auth");
   const { canSee, getApprovedLesson, listLessons, playedBy } = await import("@/lib/teacher/lessons");
@@ -90,25 +91,45 @@ async function main() {
     assert.ok((await T.signIn("MS.RIVERA@school.example", "lanterns-are-cool")).ok);
   });
   await test("the same email can't make two accounts", async () => assert.ok(!(await T.signUp({ email: "ms.rivera@school.example", password: "whatever123", name: "X" })).ok));
-  await test("after that, the setup code is gone and other teachers need an invite", async () => {
-    assert.equal(await T.signUpGate(), "invite");
-    assert.ok(!fs.existsSync(path.join(tmp, "SETUP-CODE.txt")));
+  await test("the first account is the owner, in no school yet", async () => {
+    assert.ok(a.owner);
+    assert.equal(a.schoolId, null);
+  });
+  await test("after that, the setup code is gone and other teachers need a staff code", async () => {
+    assert.equal(await T.signUpGate(), "staff");
     assert.ok(!(await T.signUp({ email: "late@school.example", password: "late-pass-1", name: "Late", code: setup })).ok, "the setup code no longer works");
+    assert.ok(!(await T.signUp({ email: "late@school.example", password: "late-pass-1", name: "Late", code: "NOPE-NOPE-NOPE" })).ok, "a made-up code doesn't");
   });
 
-  await test("an invite makes one account, then it's used up", async () => {
-    const { code } = await T.makeInvite();
-    assert.ok((await T.signUp({ email: "ms.ng@school.example", password: "invited-pass", name: "Ms Ng", code })).ok);
-    assert.ok(!(await T.signUp({ email: "mr.ng@school.example", password: "invited-pass", name: "Mr Ng", code })).ok);
+  const oak = await Sch.createSchool("Oak Ridge Secondary");
+  const elm = await Sch.createSchool("Elm Street Public School");
+  await test("a staff code makes accounts at its school, as many as it needs", async () => {
+    assert.match(oak.staffCode, /^[A-HJKMNP-Z2-9]{4}-[A-HJKMNP-Z2-9]{4}-[A-HJKMNP-Z2-9]{4}$/);
+    const ng = await T.signUp({ email: "ms.ng@school.example", password: "staff-pass-1", name: "Ms Ng", code: oak.staffCode });
+    assert.ok(ng.ok && ng.teacher.schoolId === oak.id && !ng.teacher.owner);
+    const ngToo = await T.signUp({ email: "mr.ng@school.example", password: "staff-pass-1", name: "Mr Ng", code: ` ${oak.staffCode.toLowerCase()} ` });
+    assert.ok(ngToo.ok && ngToo.teacher.schoolId === oak.id, "typed in lowercase, with spaces, is fine");
   });
-  await test("invites work once, then never again", async () => {
-    const { code } = await T.makeInvite();
-    assert.ok(await T.inviteValid(code));
-    assert.ok(await T.inviteValid(code.toLowerCase()), "typed in lowercase is fine");
-    await T.spendInvite(code);
-    assert.ok(!await T.inviteValid(code));
-    assert.ok(!await T.inviteValid("NOPE-NOPE"));
-    assert.ok(!await T.inviteValid(""));
+  await test("a new staff code works at once, and the old one stops", async () => {
+    const fresh = await Sch.newStaffCode(oak.id);
+    assert.ok(!(await T.signUp({ email: "old@school.example", password: "staff-pass-1", name: "Old", code: oak.staffCode })).ok);
+    assert.ok((await T.signUp({ email: "new@school.example", password: "staff-pass-1", name: "New", code: fresh })).ok);
+    oak.staffCode = fresh;
+  });
+  await test("teachers see who's at their school; anyone there can remove someone who shouldn't be", async () => {
+    const sneaky = await T.signUp({ email: "kid@school.example", password: "i-am-a-teacher", name: "Totally a teacher", code: oak.staffCode });
+    assert.ok(sneaky.ok);
+    const ng = (await T.signIn("ms.ng@school.example", "staff-pass-1")) as { ok: true; teacher: { id: string; schoolId: string | null; owner: boolean } };
+    const school = await Sch.schoolFor(ng.teacher.schoolId);
+    assert.ok(school?.staff.some((t) => t.email === "kid@school.example"));
+    const kidsClass = await C.createClass("Fake class", 9, sneaky.teacher.id);
+    assert.ok((await Sch.removeTeacher(ng.teacher, sneaky.teacher.id)).ok);
+    assert.ok(!(await T.signIn("kid@school.example", "i-am-a-teacher")).ok, "their account is gone");
+    assert.equal((await db.select().from(classes).where(eq(classes.id, kidsClass)).get()) ?? null, null, "and what they made");
+    assert.ok(!(await Sch.removeTeacher(ng.teacher, ng.teacher.id)).ok, "not yourself");
+    assert.ok(!(await Sch.removeTeacher(ng.teacher, a.id)).ok, "never the owner");
+    const elmTeacher = await T.signUp({ email: "elm@school.example", password: "staff-pass-1", name: "Elm", code: elm.staffCode });
+    assert.ok(elmTeacher.ok && !(await Sch.removeTeacher(ng.teacher, elmTeacher.teacher.id)).ok, "never someone at another school");
   });
 
   await test("5 wrong passwords lock the account, even against the right one", async () => {
@@ -132,24 +153,22 @@ async function main() {
     assert.ok((await T.recover(a.email, r.recoveryCode, "newer-password")).ok, "the new one works");
   });
 
-  await test("lost everything: a reset from the laptop gives a working recovery code", async () => {
-    const code = await T.resetFromLaptop("MS.RIVERA@school.example");
+  await test("lost everything: a reset by the owner gives a working recovery code", async () => {
+    const code = await T.resetByOwner("MS.RIVERA@school.example");
     assert.ok(code);
     assert.ok((await T.recover(a.email, code!, "back-in-again")).ok);
-    assert.equal(await T.resetFromLaptop("nobody@school.example"), null);
+    assert.equal(await T.resetByOwner("nobody@school.example"), null);
   });
 
-  const second = await T.signUp({ email: "mr.chen@school.example", password: "photosynthesis", name: "Mr Chen", code: (await T.makeInvite()).code });
+  const second = await T.signUp({ email: "mr.chen@school.example", password: "photosynthesis", name: "Mr Chen", code: elm.staffCode });
   assert.ok(second.ok);
   const b = second.teacher;
 
-  await test("Google: a known email links; a stranger without an invite gets nothing", async () => {
+  await test("Google: a known email links; a stranger without a staff code gets nothing", async () => {
     assert.equal((await T.teacherFromGoogle("g-chen", "mr.chen@school.example"))?.id, b.id);
     assert.equal((await T.teacherFromGoogle("g-chen", "changed@school.example"))?.id, b.id, "found by Google account after linking");
     assert.equal(await T.teacherFromGoogle("g-stranger", "stranger@else.example"), null);
-    const { code } = await T.makeInvite();
-    assert.ok(await T.teacherFromGoogle("g-new", "new@school.example", code));
-    assert.ok(!await T.inviteValid(code), "the invite is used up");
+    assert.equal((await T.teacherFromGoogle("g-new", "newgoogle@school.example", elm.staffCode))?.schoolId, elm.id);
   });
 
   console.log("each teacher sees only their own things");
