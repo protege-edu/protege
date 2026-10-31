@@ -132,12 +132,12 @@ body[data-page="join"] .bar {
   .bar nav {
     width: 100%;
   }
-  /* the homepage on a phone: one row (the guide and Gloam's voice); every other link is in the footer */
+  /* the homepage on a phone: one row (the guide in English, the other language and Gloam's voice); every other link is in the footer */
   body[data-page="home"] .bar nav {
     width: auto;
     align-items: center;
   }
-  body[data-page="home"] .bar nav a:not([href$="guide.html"]):not(.lang) {
+  body[data-page="home"] .bar nav a:not([href="/guide.html"]):not(.lang) {
     display: none;
   }
 }
