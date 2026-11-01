@@ -133,6 +133,8 @@ export interface Dashboard {
   litCount: Record<string, number>;
   /** fireflies the whole class has caught (one number for everyone: no names, no ranking) */
   fireflies: number;
+  /** the class's latest challenge wins, newest first, WITHOUT names (for the projector's class jar) */
+  moments: { id: number; kind: string; at: number }[];
 }
 
 /**
@@ -190,7 +192,13 @@ export async function dashboard(classId: string, lesson: LessonBlueprint): Promi
     .sort((a, b) => b.count - a.count);
 
   const litCount = Object.fromEntries(lesson.concepts.map((c) => [c.id, rows.filter((r) => (r.understanding[c.id] ?? 0) === 3).length]));
-  return { students: rows, insights, litCount, fireflies: Number(jar?.n ?? 0) };
+  // (anonymous on purpose: the class jar on the projector celebrates the class, never one student)
+  const moments = played
+    .filter((e) => e.outcome === "won")
+    .sort((a, b) => b.id - a.id)
+    .slice(0, 12)
+    .map((e) => ({ id: e.id, kind: e.kind, at: e.createdAt.getTime() }));
+  return { students: rows, insights, litCount, fireflies: Number(jar?.n ?? 0), moments };
 }
 
 /** One student's conversation, for the teacher to read */

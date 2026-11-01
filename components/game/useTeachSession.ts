@@ -9,10 +9,12 @@ import { levelFor, type GloamLevel } from "@/lib/companion/level";
 import { brightness, type Understanding } from "@/lib/companion/progress";
 import type { ClientSession as SessionState } from "@/lib/companion/session";
 import type { ClientLesson, RecapItem } from "@/lib/lesson/types";
+import * as sfx from "@/lib/sound";
 import { chime, pip } from "@/lib/sound";
 import { setAccess, useAccess } from "@/lib/access/store";
 import type { GameEvent } from "@/lib/game/engine";
 import type { Said } from "@/lib/game/say";
+import type { Feat } from "@/lib/game/feats";
 import type { Action, EncounterView } from "@/lib/game/types";
 
 export type Phase = "loading" | "title" | "intro" | "teach" | "ending";
@@ -88,6 +90,42 @@ interface ReplyEvent {
   /** the game layer: the challenge or boss fight now (null: none), who said what, and what comes after the big moment */
   game?: { event?: GameEvent; view: EncounterView | null; said: Said[]; after?: Said[] };
   fireflies?: number;
+  /** the lesson's feats, once it's finished */
+  feats?: Feat[];
+}
+
+/** The game layer's sounds (only with Gloam's sound on): what just happened, and what was open when it did */
+function playGame(game: NonNullable<ReplyEvent["game"]>, was: EncounterView["kind"] | null) {
+  // the boss arrives after a challenge's big moment (in "after"): its drone plays when it shows up
+  if (game.after?.some((l) => l.who === "muddle")) setTimeout(sfx.bossArrive, 2600);
+  const now = game.view?.kind ?? null;
+  if (now && now !== was && !game.after) {
+    if (now === "boss") return sfx.bossArrive();
+    if (now === "rival") return sfx.rivalArrives();
+  }
+  switch (game.event) {
+    case "hit":
+      return sfx.bossHit(game.view?.kind === "boss" ? game.view.combo : 1);
+    case "defeated":
+      sfx.bossHit(4);
+      return sfx.bossDefeated();
+    case "miss":
+      return was === "boss" ? sfx.bossMiss() : sfx.glance();
+    case "glance":
+      return sfx.glance();
+    case "spotted":
+      return sfx.scribble();
+    case "wrongPick":
+    case "misordered":
+      return sfx.tap();
+    case "ordered":
+      return sfx.cards();
+    case "stopped":
+      return sfx.stopped();
+    case "won":
+      if (was === "rival" || was === "recital") sfx.rivalLeaves();
+      return;
+  }
 }
 
 export function useTeachSession(lesson: ClientLesson, style: AgeStyle, test = false) {
@@ -107,6 +145,7 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle, test = fa
   const sound = useAccess(style).sound;
   const [finished, setFinished] = useState(false);
   const [recap, setRecap] = useState<RecapItem[] | null>(null);
+  const [feats, setFeats] = useState<Feat[]>([]);
   const [typingTick, setTypingTick] = useState(0);
   const [listening, setListening] = useState(false);
   const [checkpoints, setCheckpoints] = useState<string[]>([]);
@@ -117,6 +156,8 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle, test = fa
   const pending = useRef<{ reply: string; emotion: Emotion; understanding: Understanding; checkpoints?: string[]; followUp?: string; after?: Said[] } | null>(null);
   // the game layer: the open challenge (or boss fight), the jar, and the last thing that happened (for its animation)
   const [encounter, setEncounter] = useState<EncounterView | null>(null);
+  // (the encounter a reply happened in, for its sound: state would be a render behind)
+  const encounterRef = useRef<EncounterView | null>(null);
   const [fireflies, setFireflies] = useState(0);
   const [caught, setCaught] = useState<{ n: number; key: number } | null>(null);
   const [gameEvent, setGameEvent] = useState<{ event: GameEvent; key: number } | null>(null);
@@ -156,11 +197,13 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle, test = fa
       safeStorage(() => localStorage.setItem(STUDENT_KEY, session.studentId), undefined);
       setCheckpoints(session.checkpoints ?? []);
       setEncounter(session.encounter ?? null);
+      encounterRef.current = session.encounter ?? null;
       setFireflies(session.fireflies ?? 0);
       if (session.gloam) setGloam(session.gloam);
       setSessionId(session.id);
       setFinished(session.finished);
       setRecap(session.recap ?? null);
+      setFeats(session.feats ?? []);
       setShown(session.understanding);
       beatShown.current = BEAT_AT.filter((t) => brightness(session.understanding) >= t - 1e-9).length - 1;
       const restored: Entry[] = [{ id: nextId(), kind: "story", text: lesson.storyBeats[0] }];
@@ -256,12 +299,15 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle, test = fa
   const onReply = useCallback(
     (ev: ReplyEvent) => {
       if (ev.game) {
+        if (sound) playGame(ev.game, encounterRef.current?.kind ?? null);
+        encounterRef.current = ev.game.view;
         setEncounter(ev.game.view);
         if (ev.game.event) setGameEvent({ event: ev.game.event, key: Date.now() });
         const hit = ev.game.event === "hit" || ev.game.event === "defeated";
         if (hit || ev.game.event === "miss") setBossTicks((b) => (hit ? { ...b, hit: Date.now() } : { ...b, miss: Date.now() }));
       }
       if (ev.fireflies) {
+        if (sound) sfx.caughtFireflies(ev.fireflies);
         setFireflies((n) => n + ev.fireflies!);
         setCaught({ n: ev.fireflies, key: Date.now() });
       }
@@ -288,6 +334,7 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle, test = fa
       setThinking(ev.clicked.length ? pickLine(style.lines.clicking, fill, []) : null);
       setFinished(ev.finished);
       if (ev.recap) setRecap(ev.recap);
+      if (ev.feats) setFeats(ev.feats);
       if (ev.gloam) setGloam(ev.gloam);
       if (ev.levelUp && ev.gloam) setLevelUp(ev.gloam);
       if (ev.clicked.length) {
@@ -529,6 +576,7 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle, test = fa
     sound,
     finished,
     recap,
+    feats,
     resumable,
     typingTick,
     gloamSaid,

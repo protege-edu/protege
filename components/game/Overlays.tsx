@@ -2,6 +2,8 @@
 
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { gameUi } from "@/lib/age-styles/game-ui";
+import type { Feat } from "@/lib/game/feats";
 import { ReadAloudButton } from "@/components/access/ReadAloud";
 import { WaysToPlayButton } from "@/components/access/WaysToPlay";
 import { InkButton } from "@/components/ui/InkButton";
@@ -299,6 +301,7 @@ function FlameMark() {
 export function EndingPanel({
   style,
   recap,
+  feats = [],
   gloam,
   onTeachAgain,
   onTitle,
@@ -308,6 +311,8 @@ export function EndingPanel({
 }: {
   style: AgeStyle;
   recap: RecapItem[];
+  /** the game layer: the feats earned in this lesson */
+  feats?: Feat[];
   gloam: GloamLevel;
   onTeachAgain: () => void;
   onTitle: () => void;
@@ -370,6 +375,7 @@ export function EndingPanel({
               </p>
               <p className="mt-1 text-sm text-ink-dim">{style.copy.journalTaught(gloam.light, toGo)}</p>
             </motion.div>
+            {feats.length > 0 && <Feats style={style} feats={feats} delay={calm ? 0 : 1.2 + recap.length * 0.22} />}
           </div>
           <div className="flex flex-wrap gap-2 border-t border-dashed border-line px-6 py-4 md:px-8">
             <InkButton ref={first} onClick={onKeepTalking}>
@@ -423,4 +429,35 @@ function useWideScreen() {
     return () => mq.removeEventListener("change", update);
   }, []);
   return wide;
+}
+
+/**
+ * The feats earned this lesson, stamped into the journal one by one like ink stamps (moonlight ink, never
+ * gold: gold only means understanding). Only good things, never a score.
+ */
+function Feats({ style, feats, delay }: { style: AgeStyle; feats: Feat[]; delay: number }) {
+  const calm = useCalmMotion();
+  const ui = gameUi(style.id, style.language);
+  return (
+    <section aria-label={ui.featsTitle} className="mt-6 border-t border-dashed border-line pt-4">
+      <h3 className="voice text-md text-ink">{ui.featsTitle}</h3>
+      <ul className="mt-3 flex flex-wrap gap-3">
+        {feats.map((f, i) => (
+          <motion.li
+            key={f}
+            className="max-w-[15rem] rounded-xl border-2 border-dashed px-3 py-2"
+            style={{ borderColor: "#8ec5dc", rotate: `${((i * 37) % 7) - 3}deg` }}
+            initial={calm ? false : { scale: 1.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: delay + i * 0.35, type: "spring", stiffness: 380, damping: 16 }}
+          >
+            <span className="voice block text-sm font-bold" style={{ color: "#8ec5dc" }}>
+              {ui.feats[f].name}
+            </span>
+            <span className="block text-xs text-ink-dim">{ui.feats[f].why}</span>
+          </motion.li>
+        ))}
+      </ul>
+    </section>
+  );
 }

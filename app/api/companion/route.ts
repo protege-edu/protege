@@ -6,7 +6,7 @@ import { gameOn } from "@/lib/game/config";
 import { getAgeStyle, pickLine } from "@/lib/age-styles";
 import { hearingLine } from "@/lib/ai/queue";
 import { clientIp, forbidden, limit, sameOrigin, tooMany } from "@/lib/auth/request";
-import { getSession, recordTurn } from "@/lib/companion/session";
+import { featsOf, getSession, recordTurn } from "@/lib/companion/session";
 import { classPaused, maySeeStudent } from "@/lib/student/auth";
 import { lessonRecap } from "@/lib/lesson";
 import { getApprovedLesson, playedBy } from "@/lib/teacher/lessons";
@@ -131,7 +131,7 @@ export async function POST(request: Request) {
             checkpoints: saved.checkpoints,
             gloam: saved.after,
             levelUp: saved.after.level > saved.before.level,
-            ...(out.finished ? { recap: lessonRecap(lesson) } : {}),
+            ...(out.finished ? { recap: lessonRecap(lesson), feats: await featsOf(session.id) } : {}),
           });
         }
       } catch (err) {

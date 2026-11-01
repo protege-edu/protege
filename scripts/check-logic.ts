@@ -18,6 +18,8 @@ import { inLine, queueStats } from "@/lib/ai/queue";
 import { seasons } from "@/lib/lesson/seasons";
 import { act, FIREFLIES, firefliesForTeaching, openBoss, openChallenge, ORDER_ID, planChallenges, targetsOf, view, whatIfId } from "@/lib/game/engine";
 import { gameLines } from "@/lib/age-styles/game-lines";
+import { gameUi } from "@/lib/age-styles/game-ui";
+import { FEATS, featsFor } from "@/lib/game/feats";
 import { judgePrompt } from "@/lib/ai/prompts/judge";
 import { blueprintWarnings, checkBlueprint } from "@/lib/teacher/checks";
 import { dropRunningLines, pdfLinesToText } from "@/lib/teacher/pdf-text";
@@ -346,6 +348,19 @@ test("the boss: one round per idea plus a mash-up, clean hits charge the combo, 
   }
   assert.equal(last, "defeated");
   assert.equal(act(e, { type: "skip" }, null).event, "skipped");
+});
+test("feats are only ever good things, worked out from what was played", () => {
+  assert.deepEqual(featsFor([]), []);
+  const f = featsFor([
+    { kind: "rival", outcome: "won", tries: 0 },
+    { kind: "notebook", outcome: "won", tries: 2 },
+    { kind: "boss", outcome: "won", tries: 0 },
+  ]);
+  assert.ok(f.includes("untouchable") && f.includes("rivalFirstTry") && f.includes("noShortcuts"));
+  assert.ok(!f.includes("sharpEye") && !f.includes("bossBeaten"));
+  assert.ok(!featsFor([{ kind: "rival", outcome: "won", tries: 0 }, { kind: "whatif", outcome: "skipped", tries: 0 }]).includes("noShortcuts"));
+  for (const id of Object.keys(AGE_STYLES) as (keyof typeof AGE_STYLES)[])
+    for (const lang of ["en", "fr"] as const) for (const k of FEATS) assert.ok(gameUi(id, lang).feats[k].name && gameUi(id, lang).feats[k].why, `${id} ${lang} ${k}`);
 });
 test("a mash-up round counts for either of its two ideas", () => {
   const e = openBoss(seasons) as Extract<ReturnType<typeof openBoss>, { kind: "boss" }>;

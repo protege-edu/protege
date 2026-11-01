@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { BossMoments } from "@/components/encounters/BossMoments";
 import { Jar } from "@/components/encounters/Jar";
 import { Rival } from "@/components/encounters/Rival";
 import { EurekaMoment } from "@/components/scene/EurekaMoment";
@@ -251,6 +252,7 @@ export function GameScreen({ lesson, account = "preview", access = null }: { les
             <EndingPanel
               style={style}
               recap={s.recap}
+              feats={s.feats}
               gloam={s.gloam}
               onKeepTalking={() => s.setPhase("teach")}
               onTeachAgain={s.startOver}
@@ -264,6 +266,8 @@ export function GameScreen({ lesson, account = "preview", access = null }: { les
 
       {s.phase === "intro" && <IntroBand s={s} style={style} steps={steps} gloam={gloamBox} wide={wide} wordsRef={wordsRef} />}
       {s.phase === "teach" && <DialogueBand s={s} style={style} gloam={gloamBox} wide={wide} onOpenLog={() => setOverlay("log")} wordsRef={wordsRef} dockTop={wordsTop} />}
+      {/* the boss fight's title and hit flashes, over everything (Gloam's speech panel too) */}
+      {s.phase === "teach" && <BossMoments s={s} style={style} />}
       {test && s.phase === "teach" && (
         <TestPanel onNext={() => void s.skipAhead(false)} onAll={() => void s.skipAhead(true)} onDoze={() => setDozeTick((t) => t + 1)} disabled={s.status !== "ready" || !!s.moment || s.finished} />
       )}

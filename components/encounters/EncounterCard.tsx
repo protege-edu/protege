@@ -104,6 +104,11 @@ function Body({ e, s, style, busy, title, skip }: { e: EncounterView; s: TeachSe
       return (
         <div aria-live="polite">
           <Header title={title} skip={null}>
+            {e.combo >= 2 && (
+              <motion.span key={e.combo} className="voice text-sm font-bold text-[#8ec5dc]" initial={{ scale: 1.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 420, damping: 14 }}>
+                {ui.combo(e.combo)}
+              </motion.span>
+            )}
             <Fog e={e} style={style} />
           </Header>
           {/* the wrong idea it's throwing right now always stays in view; its last reaction sits under it */}

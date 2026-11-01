@@ -1,5 +1,6 @@
 "use client";
 
+import { ClassJar } from "./ClassJar";
 import { AnimatePresence } from "motion/react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
@@ -48,6 +49,8 @@ interface Data {
   litCount: Record<string, number>;
   /** fireflies the whole class has caught (one number: no names, no ranking) */
   fireflies?: number;
+  /** the class's latest challenge wins, without names (for the class jar) */
+  moments?: { id: number; kind: string; at: number }[];
 }
 
 /** A student's challenges in words (never a score): "Won 3 challenges, skipped 1" */
@@ -75,6 +78,7 @@ export function ClassDashboard() {
   const [updated, setUpdated] = useState<Date | null>(null);
   const [open, setOpen] = useState<Data["students"][number] | null>(null);
   const [showCode, setShowCode] = useState(false);
+  const [showJar, setShowJar] = useState(false);
 
   const loadInfo = useCallback(async () => {
     const res = await api<Info>(`/api/teacher/classes/${id}`);
@@ -166,8 +170,13 @@ export function ClassDashboard() {
           </p>
           <p className="mt-1 text-xs text-ink-dim">Candles are Gloam&apos;s AI estimate of each explanation, not marks. Open a student to read their conversation and correct any candle.</p>
           {!!data.fireflies && (
-            <p className="mt-1 text-sm text-ink">
-              Your class has caught <span className="font-bold">{data.fireflies.toLocaleString()} fireflies</span> by teaching Gloam. (Students only see their own jar and this total, never anyone else&apos;s.)
+            <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-ink">
+              <span>
+                Your class has caught <span className="font-bold">{data.fireflies.toLocaleString()} fireflies</span> by teaching Gloam. (Students only see their own jar and this total, never anyone else&apos;s.)
+              </span>
+              <Button variant="quiet" onClick={() => setShowJar(true)}>
+                Show the class jar
+              </Button>
             </p>
           )}
 
@@ -280,6 +289,7 @@ export function ClassDashboard() {
       )}
       {info && <ClassData classId={id} className={info.class.name} lessonId={lessonId} />}
       <AnimatePresence>
+        {showJar && data && info && <ClassJar key="jar" total={data.fireflies ?? 0} moments={data.moments ?? []} className={info.class.name} onClose={() => setShowJar(false)} />}
         {showCode && info && (
           <ShowCode
             key="code"

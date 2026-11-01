@@ -4,6 +4,7 @@ import { and, asc, desc, eq, sql } from "drizzle-orm";
 import { db, together } from "@/lib/db/client";
 import { conceptEvents, encounters, gloams, messages, students, teachSessions } from "@/lib/db/schema";
 import { view } from "@/lib/game/engine";
+import { featsFor, type Feat } from "@/lib/game/feats";
 import type { ChallengeKind, EncounterView, Play } from "@/lib/game/types";
 import { lessonRecap } from "@/lib/lesson";
 import { getApprovedLesson } from "@/lib/teacher/lessons";
@@ -36,6 +37,8 @@ export interface SessionState {
   encounter: EncounterView | null;
   /** fireflies in this student's jar (all lessons) */
   fireflies: number;
+  /** once the lesson is finished: the feats earned in it */
+  feats?: Feat[];
 }
 
 /**
@@ -101,7 +104,14 @@ export async function getSession(id: string): Promise<SessionState | null> {
     play: row.s.play ?? null,
     encounter: row.s.play?.open ? view(row.s.play.open) : null,
     fireflies: await firefliesOf(row.s.studentId),
+    ...(row.s.finishedAt !== null ? { feats: await featsOf(row.s.id) } : {}),
   };
+}
+
+/** The feats earned in a session (worked out from its ended challenges and boss fight) */
+export async function featsOf(sessionId: string): Promise<Feat[]> {
+  const rows = await db.select({ kind: encounters.kind, outcome: encounters.outcome, tries: encounters.tries }).from(encounters).where(eq(encounters.sessionId, sessionId)).all();
+  return featsFor(rows);
 }
 
 /** What the browser gets: everything but the game's answer key (which notebook line is wrong, the cards' order) */
