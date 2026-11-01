@@ -408,6 +408,30 @@ async function main() {
     assert.equal(await gameOn(null), true);
     await C.deleteClass(k);
   });
+  await test("Gloam's stash: fireflies buy things once, never more than the jar holds", async () => {
+    const { buy, place, stashOf } = await import("@/lib/student/stash");
+    const { gloams } = await import("@/lib/db/schema");
+    const k = await C.createClass("Stash", 9, a.id);
+    const kid = await S.createStudent(k, "Mossy Wren", ["moon", "owl", "fern"]);
+    assert.ok(kid.ok);
+    await db.insert(gloams).values({ studentId: kid.student.id, fireflies: 100, updatedAt: new Date() }).onConflictDoUpdate({ target: gloams.studentId, set: { fireflies: 100 } }).run();
+    const r = await buy(kid.student.id, "books");
+    assert.ok(r.ok);
+    assert.equal(r.ok && r.stash.jar, 75);
+    assert.deepEqual(r.ok && r.stash.placed, ["books"]);
+    assert.equal((await buy(kid.student.id, "books")).ok, false, "bought twice");
+    assert.equal((await buy(kid.student.id, "tent")).ok, false, "more than the jar holds");
+    assert.equal((await buy(kid.student.id, "nonsense")).ok, false);
+    assert.deepEqual((await place(kid.student.id, "books", false)).placed, []);
+    assert.deepEqual((await place(kid.student.id, "tent", true)).placed, [], "can't put out what they don't own");
+    // two buys at once can't spend the same fireflies twice
+    await db.update(gloams).set({ fireflies: 25 + 40 + 75 }).where(eq(gloams.studentId, kid.student.id)).run();
+    const both = await Promise.all([buy(kid.student.id, "stool"), buy(kid.student.id, "kite")]);
+    const after = await stashOf(kid.student.id);
+    assert.ok(after.jar >= 0, "the jar went below zero");
+    assert.equal(after.owned.length, 1 + both.filter((x) => x.ok).length);
+    await C.deleteClass(k);
+  });
   await test("a teacher saving a lesson keeps its challenges (notebook, what ifs, cards)", async () => {
     const { BlueprintInput } = await import("@/lib/teacher/api");
     const { seasons } = await import("@/lib/lesson/seasons");

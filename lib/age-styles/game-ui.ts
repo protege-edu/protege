@@ -1,4 +1,5 @@
 import type { Feat } from "@/lib/game/feats";
+import type { StashId } from "@/lib/game/stash";
 import { gameLines } from "./game-lines";
 import type { AgeStyleId, Language } from "./types";
 
@@ -42,6 +43,17 @@ export interface GameUi {
   /** the end of a lesson: the feats this student earned, and what each one means */
   featsTitle: string;
   feats: Record<Feat, { name: string; why: string }>;
+  /** Gloam's stash: things to buy with fireflies for Gloam's home */
+  stashTitle: string;
+  stashIntro: string;
+  stash: Record<StashId, string>;
+  buy: (price: number) => string;
+  putOut: string;
+  putAway: string;
+  need: (n: number) => string;
+  youHave: (n: number) => string;
+  /** all the spots beside Gloam are taken */
+  full: string;
 }
 
 const en = (age: AgeStyleId): GameUi => {
@@ -76,6 +88,15 @@ const en = (age: AgeStyleId): GameUi => {
     caught: (n) => `+${n}`,
     featsTitle: little ? "Your stickers" : "Feats",
     feats: featsEn(age),
+    stashTitle: "Gloam's stash",
+    stashIntro: age === "senior" ? "Fireflies you caught by teaching. Spend them on things for Gloam's place. It pretends not to care." : little ? "You caught these fireflies by teaching! Get Gloam a present!" : "You caught these by teaching. Get Gloam something for its spot!",
+    stash: age === "senior" ? { books: "A stack of books", stool: "A mushroom stool", kite: "A patchwork kite", telescope: "A telescope", tent: "A little tent" } : { books: "A pile of books", stool: "A mushroom seat", kite: "A kite", telescope: "A telescope", tent: "A tent" },
+    buy: (price) => `Get it for ${price}`,
+    putOut: "Put it out",
+    putAway: "Put it away",
+    need: (n) => `${n} more ${n === 1 ? "firefly" : "fireflies"}`,
+    youHave: (n) => `You have ${n} ${n === 1 ? "firefly" : "fireflies"}`,
+    full: little ? "Gloam's spot is full! Put something away first." : "Three things fit beside Gloam. Put one away to put this out.",
   };
 };
 
@@ -149,6 +170,15 @@ const fr = (age: AgeStyleId): GameUi => {
     caught: (n) => `+${n}`,
     featsTitle: little ? "Tes autocollants" : "Exploits",
     feats: featsFr(age),
+    stashTitle: "La réserve de Gloam",
+    stashIntro: age === "senior" ? "Les lucioles que t'as attrapées en enseignant. Dépense-les pour le coin de Gloam. Il fait semblant de s'en ficher." : little ? "Tu as attrapé ces lucioles en enseignant! Offre un cadeau à Gloam!" : "Tu les as attrapées en enseignant. Offre quelque chose à Gloam pour son coin!",
+    stash: { books: "Une pile de livres", stool: "Un tabouret champignon", kite: "Un cerf-volant", telescope: "Un télescope", tent: "Une petite tente" },
+    buy: (price) => `L'avoir pour ${price}`,
+    putOut: "Le sortir",
+    putAway: "Le ranger",
+    need: (n) => `encore ${n} ${n <= 1 ? "luciole" : "lucioles"}`,
+    youHave: (n) => `Tu as ${n} ${n <= 1 ? "luciole" : "lucioles"}`,
+    full: little ? "Le coin de Gloam est plein! Range quelque chose d'abord." : "Trois choses tiennent à côté de Gloam. Ranges-en une pour sortir celle-ci.",
   };
 };
 

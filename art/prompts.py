@@ -162,3 +162,17 @@ RIVALS = {
     "cheerful children's picture book illustration, soft watercolour and gouache, bright warm sunny daylight colours, "
     "isolated on a plain flat soft pale sky-blue background, no text, no watermark",
 }
+
+
+# ---- Gloam's stash (Phase 5): props students buy with fireflies to put around Gloam's home ----
+# Painted like the worlds; one night set (high school valley) and one daylight set (the younger worlds).
+_NIGHT = ", a single small object on its own, full view, centered, hand-painted, gouache and oil brushwork, Spiritfarer and Hollow Knight style, moody blue moonlight, isolated on a plain flat very dark green background, no text, no watermark"
+_DAY = ", a single small object on its own, full view, centered, cheerful children's storybook illustration, soft watercolour and gouache, bright warm daylight colours, isolated on a plain flat soft pale sky-blue background, no text, no watermark"
+_PROPS = {
+    "books": "a small wobbly stack of old hardcover books with a bookmark ribbon",
+    "stool": "a chunky red-capped mushroom with white spots, the size of a little stool",
+    "telescope": "a small dark wood and black iron telescope on a three-legged wooden tripod, pointing up at the sky",
+    "tent": "a small triangular canvas camping tent with a patched flap, pegged into grass",
+    "kite": "a diamond-shaped patchwork kite with a long ribbon tail, stuck upright in the grass on a stick",
+}
+STASH = {**{f"stash_night_{k}": v + _NIGHT for k, v in _PROPS.items()}, **{f"stash_day_{k}": v + _DAY for k, v in _PROPS.items()}}

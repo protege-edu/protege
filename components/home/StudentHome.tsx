@@ -1,5 +1,7 @@
 "use client";
 
+import { gameUi } from "@/lib/age-styles/game-ui";
+import { Props, StashDrawer } from "./Stash";
 import { useRem, useWordsTop } from "@/lib/useWordsTop";
 import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
@@ -30,6 +32,10 @@ export function StudentHome({ home }: { home: Home }) {
   const [wordsRef, wordsTop] = useWordsTop();
   const rem = useRem();
   const [journal, setJournal] = useState(false);
+  // Gloam's stash: what's bought and placed (it changes here, without a reload), and the newest, which drops in
+  const [stash, setStash] = useState(home.stash);
+  const [stashOpen, setStashOpen] = useState(false);
+  const [fresh, setFresh] = useState<string | null>(null);
   const [line, setLine] = useState<string | null>(null);
   const level = home.gloam.level;
   const taught = home.journal.reduce((n, j) => n + j.ideas.length, 0);
@@ -90,7 +96,8 @@ export function StudentHome({ home }: { home: Home }) {
           focus={wide ? 0.74 : 0.5}
           // on a phone, Gloam stands a little lower, so its hello has room under the header
           groundAt={wide ? 0.8 : 0.42}
-          gloamScale={wide ? 0.9 : 0.5}
+          // (with things from its stash around it, Gloam stands a step back so they all fit)
+          gloamScale={wide ? Math.max(0.66, 0.9 - stash.placed.length * 0.08) : Math.max(0.4, 0.5 - stash.placed.length * 0.02)}
           floor={wide ? null : wordsTop}
           ceiling={headerH + rem * 3.5}
           stand
@@ -99,6 +106,8 @@ export function StudentHome({ home }: { home: Home }) {
           journey={{ talking: !!line, waiting: !home.paused, level, levels: [], stop: 0 }}
         >
           <TravelQuip text={line} gloam={gloamBox} ceiling={headerH + 8} />
+          {/* (on a wide screen the page's words are on the left: the things stay in the valley beside them) */}
+          <Props placed={stash.placed} age={style.id} gloam={gloamBox} fresh={fresh} minX={wide && gloamBox ? Math.min(620, gloamBox.stageW * 0.52) : 0} />
         </Stage>
       </div>
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgb(var(--t-scrim)/calc(0.92_+_var(--scrim-boost)))_0%,rgb(var(--t-scrim)/calc(0.75_+_var(--scrim-boost)))_42%,transparent_66%)] max-[56rem]:bg-[linear-gradient(180deg,transparent_0,transparent_calc(var(--words)-3rem),rgb(var(--t-scrim)/calc(0.85_+_var(--scrim-boost)))_calc(var(--words)-0.5rem),rgb(var(--t-scrim)/calc(0.96_+_var(--scrim-boost)))_100%)]"
@@ -181,15 +190,36 @@ export function StudentHome({ home }: { home: Home }) {
             )}
           </section>
 
-          <div className="mt-6">
+          <div className="mt-6 flex flex-wrap gap-2">
             <InkButton variant="quiet" onClick={() => setJournal(true)}>
               {t.journalTitle}
+            </InkButton>
+            <InkButton variant="quiet" onClick={() => setStashOpen(true)}>
+              {gameUi(style.id, style.language).stashTitle}
             </InkButton>
           </div>
         </motion.div>
       </main>
 
       <AnimatePresence>{journal && <Journal key="journal" home={home} onClose={() => setJournal(false)} />}</AnimatePresence>
+      <AnimatePresence>
+        {stashOpen && (
+          <StashDrawer
+            key="stash"
+            style={style}
+            stash={stash}
+            onChange={(next, bought) => {
+              setStash(next);
+              // a new thing: close the drawer so it can be seen dropping in next to Gloam
+              if (bought && next.placed.includes(bought)) {
+                setFresh(bought);
+                setStashOpen(false);
+              }
+            }}
+            onClose={() => setStashOpen(false)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

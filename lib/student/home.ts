@@ -8,6 +8,7 @@ import type { AccessPatch } from "@/lib/access/settings";
 import { TRICKS, type TrickName } from "@/lib/gloam-rig/brain";
 import { classLessonList } from "@/lib/teacher/classes";
 import { getApprovedLesson } from "@/lib/teacher/lessons";
+import { stashOf, type StashState } from "./stash";
 import { studentAccessParts } from "./access";
 
 export interface StudentHome {
@@ -23,6 +24,8 @@ export interface StudentHome {
   access: { own: AccessPatch | null; accommodations: AccessPatch | null };
   /** every idea this student has taught Gloam, newest lesson first (Gloam's journal across the year) */
   journal: { lesson: string; ideas: { name: string; recap: string }[] }[];
+  /** Gloam's stash: their jar, what they've bought, and what stands around Gloam's home */
+  stash: StashState;
 }
 
 /** Everything on a student's home page ("your Gloam") */
@@ -56,6 +59,7 @@ export async function studentHome(studentId: string): Promise<StudentHome | null
   });
 
   return {
+    stash: await stashOf(studentId),
     nickname: s.nickname,
     className: c.name,
     ageStyle: styleForGrade(c.grade).id,
