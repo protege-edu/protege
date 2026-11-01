@@ -16,6 +16,9 @@ import { lanternFor, levelFor, newlyLit } from "@/lib/companion/level";
 import { aiConfig } from "@/lib/ai/config";
 import { inLine, queueStats } from "@/lib/ai/queue";
 import { seasons } from "@/lib/lesson/seasons";
+import { act, FIREFLIES, firefliesForTeaching, openBoss, openChallenge, ORDER_ID, planChallenges, targetsOf, view, whatIfId } from "@/lib/game/engine";
+import { gameLines } from "@/lib/age-styles/game-lines";
+import { judgePrompt } from "@/lib/ai/prompts/judge";
 import { blueprintWarnings, checkBlueprint } from "@/lib/teacher/checks";
 import { dropRunningLines, pdfLinesToText } from "@/lib/teacher/pdf-text";
 import { MAX_SOURCE_CHARS } from "@/lib/teacher/limits";
@@ -251,6 +254,129 @@ test("every age style has 'skip' and 'next idea' lines with Gloam's question in 
       const st = getAgeStyle(id, lang);
       assert.ok(st.lines.skip.length >= 3 && st.lines.skip.every((l) => l.includes("{question}")), `${id} ${lang} skip`);
       assert.ok(st.lines.nextIdea.length >= 3 && st.lines.nextIdea.every((l) => l.includes("{question}")), `${id} ${lang} nextIdea`);
+    }
+  }
+});
+
+console.log("the game layer (challenges, the rival, the boss)");
+test("every idea gets a challenge, the order challenge goes to its idea, and no two in a row are the same", () => {
+  const plan = planChallenges(seasons);
+  assert.deepEqual(Object.keys(plan), seasons.concepts.map((c) => c.id));
+  assert.equal(plan.angle, "order");
+  const kinds = seasons.concepts.map((c) => plan[c.id]);
+  for (let i = 1; i < kinds.length; i++) assert.notEqual(kinds[i], kinds[i - 1], kinds.join(" "));
+  assert.ok(new Set(kinds).size >= 3, `only ${[...new Set(kinds)].join(", ")}`);
+});
+test("an old lesson with no challenge content still gets the rival and the recital", () => {
+  const old = { ...seasons, sequence: undefined, concepts: seasons.concepts.map(({ notebook, whatIf, ...c }) => c) };
+  for (const k of Object.values(planChallenges(old))) assert.ok(k === "rival" || k === "recital", k);
+});
+test("Gloam's notebook: the browser never sees which line is wrong until it's found", () => {
+  for (const seed of [0.1, 0.5, 0.9]) {
+    const e = openChallenge(seasons, "notebook", "tilt", seed);
+    assert.ok(e.kind === "notebook");
+    assert.equal(e.lines[e.wrong], seasons.concepts[0].notebook!.wrong);
+    const v = view(e);
+    assert.ok(!("wrong" in v) && !("picked" in v));
+  }
+});
+test("notebook: a fine line is just 'that one's right', the wrong one moves on, a clear fix wins", () => {
+  const e = openChallenge(seasons, "notebook", "tilt", 0.3) as Extract<ReturnType<typeof openChallenge>, { kind: "notebook" }>;
+  const fine = [0, 1, 2].find((i) => i !== e.wrong)!;
+  assert.equal(act(e, { type: "pick", value: fine }, null).event, "wrongPick");
+  const spotted = act(e, { type: "pick", value: e.wrong }, null);
+  assert.equal(spotted.event, "spotted");
+  assert.ok(spotted.fireflies > 0);
+  const won = act(spotted.open!, { type: "explain" }, "clear");
+  assert.equal(won.event, "won");
+  assert.equal(won.light, "tilt");
+  assert.equal(won.open, null);
+});
+test("a good start wins on the second go (it's teaching, not a test), and a wrong answer only costs a try", () => {
+  const e = openChallenge(seasons, "rival", "distance");
+  const first = act(e, { type: "explain" }, "partial");
+  assert.equal(first.event, "glance");
+  assert.equal(act(first.open!, { type: "explain" }, "partial").event, "won");
+  const miss = act(e, { type: "explain" }, "wrong");
+  assert.equal(miss.event, "miss");
+  assert.ok(miss.open, "a miss never ends the challenge");
+  assert.equal(act(e, { type: "explain" }, null).event, "nothing");
+});
+test("put it in order: the cards start shuffled, the right order moves on, and after 3 tries it settles anyway", () => {
+  for (const seed of [0.2, 0.7]) {
+    const e = openChallenge(seasons, "order", "angle", seed) as Extract<ReturnType<typeof openChallenge>, { kind: "order" }>;
+    assert.notDeepEqual(e.cards, seasons.sequence!.cards, "not shuffled");
+    assert.equal(act(e, { type: "order", value: e.answer }, null).event, "ordered");
+    let x: typeof e = e;
+    for (let i = 0; i < 2; i++) x = act(x, { type: "order", value: [...e.answer].reverse() }, null).open as typeof e;
+    const settled = act(x, { type: "order", value: [...e.answer].reverse() }, null);
+    assert.equal(settled.event, "ordered");
+    const v = view(settled.open!);
+    assert.ok(v.kind === "order" && v.phase === "link");
+    assert.deepEqual(v.kind === "order" ? v.cards : [], seasons.sequence!.cards);
+  }
+});
+test("skipping a challenge is never a punishment: no candle, no fireflies, back to teaching", () => {
+  const r = act(openChallenge(seasons, "whatif", "tilt"), { type: "skip" }, null);
+  assert.equal(r.event, "skipped");
+  assert.equal(r.open, null);
+  assert.equal(r.fireflies, 0);
+  assert.equal(r.light, undefined);
+});
+test("the boss: one round per idea plus a mash-up, clean hits charge the combo, two glances land a hit", () => {
+  let e = openBoss(seasons) as Extract<ReturnType<typeof openBoss>, { kind: "boss" }>;
+  assert.equal(e.rounds.length, 5);
+  assert.ok(e.rounds[4].mash);
+  assert.equal(targetsOf(e).length, 1);
+  const hit = act(e, { type: "explain" }, "clear");
+  assert.equal(hit.event, "hit");
+  e = hit.open as typeof e;
+  assert.equal(e.combo, 1);
+  const miss = act(e, { type: "explain" }, "wrong");
+  assert.equal((miss.open as typeof e).combo, 0);
+  const glance = act(e, { type: "explain" }, "partial");
+  assert.equal(glance.event, "glance");
+  assert.equal(act(glance.open!, { type: "explain" }, "partial").event, "hit");
+  let left: typeof e | null = e;
+  let last = "";
+  while (left) {
+    const r = act(left, { type: "explain" }, "clear");
+    last = r.event;
+    left = r.open as typeof e | null;
+  }
+  assert.equal(last, "defeated");
+  assert.equal(act(e, { type: "skip" }, null).event, "skipped");
+});
+test("a mash-up round counts for either of its two ideas", () => {
+  const e = openBoss(seasons) as Extract<ReturnType<typeof openBoss>, { kind: "boss" }>;
+  assert.equal(targetsOf({ ...e, round: 4 }).length, 2);
+});
+test("fireflies only come from teaching that moved a candle", () => {
+  assert.equal(firefliesForTeaching([{ id: "tilt", quality: "clear" }], [], []), 0);
+  assert.equal(firefliesForTeaching([{ id: "tilt", quality: "clear" }], ["tilt"], []), FIREFLIES.clear);
+  assert.equal(firefliesForTeaching([{ id: "tilt", quality: "clear" }], ["tilt"], ["tilt"]), FIREFLIES.clear + FIREFLIES.eureka);
+});
+test("a 'what if?' and the cards' 'why' are judged with the same cached prompt as the ideas", () => {
+  const p = judgePrompt(seasons);
+  assert.ok(p.includes(`"${whatIfId("tilt")}"`) && p.includes(`"${ORDER_ID}"`));
+  assert.deepEqual(targetsOf(openChallenge(seasons, "whatif", "tilt")), [whatIfId("tilt")]);
+});
+test("every age style has every game line, in English and French, and they're all school-safe", () => {
+  for (const id of Object.keys(AGE_STYLES) as (keyof typeof AGE_STYLES)[]) {
+    for (const lang of ["en", "fr"] as const) {
+      const g = gameLines(id, lang);
+      const st = getAgeStyle(id, lang);
+      const walk = (x: unknown, path: string): void => {
+        if (typeof x === "string") {
+          assert.ok(x.trim().length > 0, `${id} ${lang} ${path} is empty`);
+          assert.equal(checkSafety(x.replace(/\{\w+\}/g, "x"), st), "ok", `${id} ${lang} ${path}: ${x}`);
+        } else if (Array.isArray(x)) {
+          assert.ok(x.length > 0, `${id} ${lang} ${path} has no lines`);
+          x.forEach((v, i) => walk(v, `${path}[${i}]`));
+        } else if (x && typeof x === "object") for (const [k, v] of Object.entries(x)) walk(v, `${path}.${k}`);
+      };
+      walk(g, "game");
+      assert.ok(g.rivalSays.arrive.every((l) => l.includes("{claim}")) && g.bossSays.round.every((l) => l.includes("{claim}")), `${id} ${lang}: the rival and the Muddle must say the lesson's wrong idea`);
     }
   }
 });

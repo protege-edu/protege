@@ -2,7 +2,7 @@ import "server-only";
 import { randomInt, randomUUID } from "node:crypto";
 import { and, asc, eq, inArray, isNotNull, sql } from "drizzle-orm";
 import { db, together } from "@/lib/db/client";
-import { classLessons, classes, conceptEvents, gloams, messages, students, teachSessions } from "@/lib/db/schema";
+import { classLessons, classes, conceptEvents, encounters, gloams, messages, students, teachSessions } from "@/lib/db/schema";
 import type { Level, LessonBlueprint } from "@/lib/lesson/types";
 import { keySize } from "@/lib/student/pictures";
 import { newClassDeleteOn } from "@/lib/privacy/retention";
@@ -208,6 +208,7 @@ export async function eraseStudent(studentId: string) {
     ...(sessions.length
       ? [
           db.delete(conceptEvents).where(inArray(conceptEvents.sessionId, sessions)),
+          db.delete(encounters).where(inArray(encounters.sessionId, sessions)),
           db.delete(messages).where(inArray(messages.sessionId, sessions)),
           db.delete(teachSessions).where(inArray(teachSessions.id, sessions)),
         ]

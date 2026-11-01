@@ -1,4 +1,5 @@
 import type { LessonBlueprint } from "@/lib/lesson/types";
+import { ORDER_ID, whatIfId } from "@/lib/game/engine";
 
 /**
  * The judge never talks to the student. It labels one message: what it's doing, and which of the
@@ -7,7 +8,12 @@ import type { LessonBlueprint } from "@/lib/lesson/types";
  * so it's cached, and every message after the first reads it at a tenth of the price.
  */
 export function judgePrompt(lesson: LessonBlueprint): string {
-  const ideas = lesson.concepts.map((c) => `- id "${c.id}"\n  TRUE: ${c.truth}\n  WRONG: ${c.misconception}`).join("\n");
+  const ideas = [
+    ...lesson.concepts.map((c) => `- id "${c.id}"\n  TRUE: ${c.truth}\n  WRONG: ${c.misconception}`),
+    // the lesson's challenges ("what if?" twists, and why the cards go in their order) are judged the same way
+    ...lesson.concepts.flatMap((c) => (c.whatIf ? [`- id "${whatIfId(c.id)}" (answers the question "${c.whatIf.scenario}")\n  TRUE: ${c.whatIf.truth}\n  WRONG: ${c.whatIf.misconception}`] : [])),
+    ...(lesson.sequence ? [`- id "${ORDER_ID}" (why these happen in this order: ${lesson.sequence.cards.join(" → ")})\n  TRUE: ${lesson.sequence.why}\n  WRONG: The order doesn't matter, or it happens the other way around.`] : []),
+  ].join("\n");
   return `You read one chat message from a student who is teaching a confused character the lesson "${lesson.title}". You never reply to the student. You only label their message, carefully and fairly.
 
 THE LESSON'S IDEAS (each one has the TRUE version and a common WRONG version)

@@ -31,6 +31,8 @@ interface DirectInput {
   gloamSaid: string[];
   /** The idea Gloam's last question was about */
   asked?: string | null;
+  /** The game layer: the boss fight comes before the finale (the last candle is then a normal "I get it!") */
+  bossPending?: boolean;
   seed?: number;
 }
 
@@ -54,8 +56,8 @@ export function directBeat(opts: DirectInput): Beat {
   const seed = opts.seed ?? Math.random();
   const u = progress.understanding;
   const byId = (id: string) => lesson.concepts.find((c) => c.id === id)!;
-  const finished = lesson.concepts.every((c) => u[c.id] === 3);
-  const wasFinished = lesson.concepts.every((c) => before[c.id] === 3);
+  const finished = lesson.concepts.every((c) => u[c.id] === 3) && !opts.bossPending;
+  const wasFinished = lesson.concepts.every((c) => before[c.id] === 3) && !opts.bossPending;
   // "next": a question about something else (the idea they skipped comes back later)
   const asked = nextQuestion(lesson, u, gloamSaid, seed, intent === "skip" ? opts.asked : null);
   const topic = lesson.topic;

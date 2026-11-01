@@ -1,7 +1,7 @@
 import "server-only";
 import { asc, eq, inArray } from "drizzle-orm";
 import { db } from "@/lib/db/client";
-import { classes, gloams, messages, students, teachSessions } from "@/lib/db/schema";
+import { classes, encounters, gloams, messages, students, teachSessions } from "@/lib/db/schema";
 import { getApprovedLesson } from "@/lib/teacher/lessons";
 import { studentAccessParts } from "@/lib/student/access";
 
@@ -31,6 +31,7 @@ export async function studentExport(studentId: string) {
         .orderBy(asc(messages.id))
         .all()
     : [];
+  const played = sessions.length ? await db.select().from(encounters).where(inArray(encounters.sessionId, sessions.map((x) => x.id))).orderBy(asc(encounters.id)).all() : [];
   const access = await studentAccessParts(studentId);
   return {
     about: "Everything Protégé stores about this student. Made by their teacher on request.",
@@ -42,7 +43,7 @@ export async function studentExport(studentId: string) {
       lastSeen: s.lastSeenAt?.toISOString() ?? null,
       signsInWith: s.googleIdHash ? "Google (only a scrambled account number is stored: no name, email or photo)" : "secret pictures (stored scrambled, can't be read back)",
       waysToPlay: { theirOwnChoices: access.own ?? "none", switchedOnByTheirTeacher: access.accommodations ?? "none" },
-      gloam: { ideasTaught: g?.light ?? 0, lessonsFinished: g?.lessons ?? 0 },
+      gloam: { ideasTaught: g?.light ?? 0, lessonsFinished: g?.lessons ?? 0, firefliesCaught: g?.fireflies ?? 0, firefliesSpent: g?.spent ?? 0, owns: g?.owned ?? [], wearing: g?.wearing ?? [] },
     },
     lessons: await Promise.all(
       sessions.map(async (x) => {
@@ -52,7 +53,8 @@ export async function studentExport(studentId: string) {
           started: x.createdAt.toISOString(),
           finished: x.finishedAt?.toISOString() ?? null,
           ideas: (lesson?.concepts ?? []).map((k) => ({ idea: k.name, howFar: LEVELS[x.understanding[k.id] ?? 0] })),
-          conversation: said.filter((m) => m.sessionId === x.id).map((m) => ({ who: m.from === "student" ? s.nickname : "Gloam", said: m.text, at: m.createdAt.toISOString() })),
+          conversation: said.filter((m) => m.sessionId === x.id).map((m) => ({ who: m.from === "student" ? s.nickname : m.from === "gloam" ? "Gloam" : m.from === "rival" ? "The rival" : "The Muddle", said: m.text, at: m.createdAt.toISOString() })),
+          challenges: played.filter((e) => e.sessionId === x.id).map((e) => ({ challenge: e.kind, idea: (lesson?.concepts ?? []).find((k) => k.id === e.conceptId)?.name ?? null, how: e.outcome, tries: e.tries, at: e.createdAt.toISOString() })),
         };
       }),
     ),

@@ -41,6 +41,15 @@ export const seasons: LessonBlueprint = {
       evidence: ["tilt", "lean", "axis", "23", "angled", "crooked", "tipped", "tip", "point"],
       recap:
         "Earth's axis is tilted about 23.5°, and it keeps pointing the same way all year. So for part of the year your half of Earth leans toward the sun, and later it leans away.",
+      notebook: {
+        right: ["earth goes around the sun once a year.", "the lean is about 23.5 degrees. weirdly specific."],
+        wrong: "the lean flips the other way every six months. that's why the seasons swap.",
+      },
+      whatIf: {
+        scenario: "what if earth had no lean at all? perfectly straight up and down. what happens to seasons?",
+        truth: "With no tilt, neither hemisphere would ever lean toward the sun, so there would be almost no seasons: each place would get about the same sunlight all year.",
+        misconception: "Seasons would still happen the same way, because they come from Earth's distance to the sun.",
+      },
     },
     {
       id: "angle",
@@ -63,6 +72,15 @@ export const seasons: LessonBlueprint = {
       evidence: ["direct", "straight", "angle", "slant", "spread", "concentrat", "focus", "high in the sky", "overhead", "flashlight", "area", "intens", "low in the sky"],
       recap:
         "When the sun is high, its light hits the ground more directly and packs its energy into a smaller area, so it heats more. When it's low, the same light spreads out over a bigger area and heats less.",
+      notebook: {
+        right: ["the sun is higher in the sky in summer.", "noon light comes in steeper than evening light."],
+        wrong: "slanted light is actually stronger, because it travels further and builds up speed.",
+      },
+      whatIf: {
+        scenario: "what if the sun was straight overhead all day, everywhere, forever?",
+        truth: "Sunlight would always hit straight down, packing its energy into small areas, so everywhere would heat a lot more, like the tropics all year.",
+        misconception: "Nothing would change, because the angle of sunlight doesn't change how much it heats.",
+      },
     },
     {
       id: "daylight",
@@ -85,6 +103,15 @@ export const seasons: LessonBlueprint = {
       evidence: ["longer", "shorter", "hours", "day length", "daylight", "night", "dark", "same length", "length", "12 hours", "twelve hours"],
       recap:
         "In summer the days are longer, so the ground gets more hours of sun to warm up and fewer hours of night to cool down. In winter it's the other way around.",
+      notebook: {
+        right: ["summer days are long. like, sunset-at-9pm long.", "winter nights are long and cold."],
+        wrong: "day length doesn't matter. the ground only heats up at noon anyway.",
+      },
+      whatIf: {
+        scenario: "what if every day of the year was exactly 12 hours of sun and 12 of dark?",
+        truth: "Summer would lose its extra hours of heating and winter its extra hours of cooling, so the difference between summer and winter would get smaller (though the sun's angle would still matter).",
+        misconception: "Nothing would change, because how long the sun is up doesn't affect temperature.",
+      },
     },
     {
       id: "distance",
@@ -124,6 +151,15 @@ export const seasons: LessonBlueprint = {
       evidence: ["distance", "closer", "close", "far", "near", "orbit", "oval", "circle", "january", "ellip"],
       recap:
         "Seasons are NOT caused by distance. Earth's orbit is almost a circle, and Earth is actually closest to the sun in early January, during the northern winter.",
+      notebook: {
+        right: ["earth's orbit is almost a circle.", "earth is closest to the sun in january."],
+        wrong: "summer is when earth gets closest to the sun. campfire rules.",
+      },
+      whatIf: {
+        scenario: "what if earth's orbit was a perfect circle, so it was always the exact same distance from the sun?",
+        truth: "Seasons would barely change, because distance isn't what causes them: the tilt would still make each half lean toward and away from the sun.",
+        misconception: "There would be no seasons at all, because seasons come from Earth getting closer and further from the sun.",
+      },
     },
     {
       id: "hemispheres",
@@ -146,8 +182,28 @@ export const seasons: LessonBlueprint = {
       evidence: ["hemisphere", "opposite", "australia", "south", "north", "other half", "other side", "bottom half", "top half", "equator", "everywhere", "same time", "whole planet", "whole world", "everyone"],
       recap:
         "The northern and southern hemispheres have opposite seasons. When one half leans toward the sun, the other half leans away, so it's summer in Australia during our winter.",
+      notebook: {
+        right: ["canada and australia are on opposite halves of earth.", "christmas in australia is at the beach. apparently."],
+        wrong: "when it's summer in canada, it's summer everywhere. it's one planet.",
+      },
+      whatIf: {
+        scenario: "what if you moved to argentina in july? what season would you pack for?",
+        truth: "Winter, because Argentina is in the southern hemisphere, which leans away from the sun in July while the north leans toward it.",
+        misconception: "Summer, because July is summer everywhere on Earth.",
+      },
     },
   ],
+  sequence: {
+    conceptId: "angle",
+    cards: [
+      "your half of earth leans toward the sun",
+      "the sun climbs higher in the sky",
+      "sunlight hits more directly, and the days get longer",
+      "the ground soaks up more energy than it loses",
+      "summer",
+    ],
+    why: "Leaning toward the sun puts it higher in the sky, so its light hits more directly (packed into a smaller area) and the days are longer, so the ground gains more heat than it loses at night.",
+  },
   storyBeats: [
     "the valley is dark. one lantern, barely on.",
     "a little light. somewhere, a cricket decides to care.",

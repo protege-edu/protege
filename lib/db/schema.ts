@@ -1,4 +1,5 @@
 import { integer, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import type { Play } from "@/lib/game/types";
 import type { LessonBlueprint } from "@/lib/lesson/types";
 
 /**
@@ -176,6 +177,8 @@ export const teachSessions = sqliteTable("teach_sessions", {
   understanding: text("understanding", { mode: "json" }).$type<Record<string, 0 | 1 | 2 | 3>>().notNull(),
   /** JSON: the ideas fully understood, in the order they were lit (the journey's checkpoints) */
   checkpoints: text("checkpoints", { mode: "json" }).$type<string[]>().notNull().default([]),
+  /** JSON: the game layer for this lesson (lib/game/types.ts Play): each idea's challenge, how it went, what's open */
+  play: text("play", { mode: "json" }).$type<Play>(),
   createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
   finishedAt: integer("finished_at", { mode: "timestamp_ms" }),
@@ -193,7 +196,29 @@ export const gloams = sqliteTable("gloams", {
   light: integer("light").notNull().default(0),
   /** lessons taught all the way to the end */
   lessons: integer("lessons").notNull().default(0),
+  /** fireflies caught by teaching well (Gloam's jar), and how many were spent in Gloam's stash */
+  fireflies: integer("fireflies").notNull().default(0),
+  spent: integer("spent").notNull().default(0),
+  /** JSON: the stash items this student owns, and the ones Gloam is wearing */
+  owned: text("owned", { mode: "json" }).$type<string[]>().notNull().default([]),
+  wearing: text("wearing", { mode: "json" }).$type<string[]>().notNull().default([]),
   updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
+});
+
+/**
+ * Every challenge and boss fight that ended: which kind, which idea, won or skipped, and how many tries.
+ * The teacher's dashboard reads it ("caught Gloam's mistake", "beat the rival"). Never a score.
+ */
+export const encounters = sqliteTable("encounters", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  sessionId: text("session_id")
+    .notNull()
+    .references(() => teachSessions.id),
+  kind: text("kind", { enum: ["notebook", "rival", "whatif", "order", "recital", "boss"] }).notNull(),
+  conceptId: text("concept_id"),
+  outcome: text("outcome", { enum: ["won", "skipped"] }).notNull(),
+  tries: integer("tries").notNull().default(0),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
 });
 
 export const messages = sqliteTable("messages", {
@@ -201,7 +226,8 @@ export const messages = sqliteTable("messages", {
   sessionId: text("session_id")
     .notNull()
     .references(() => teachSessions.id),
-  from: text("from", { enum: ["student", "gloam"] }).notNull(),
+  /** the rival and the Muddle (the game layer) speak in the conversation too */
+  from: text("from", { enum: ["student", "gloam", "rival", "muddle"] }).notNull(),
   text: text("text").notNull(),
   emotion: text("emotion"),
   /** Gloam's lines only: the idea its question was about (so a short answer to it is judged against that idea) */

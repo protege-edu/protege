@@ -10,7 +10,7 @@ import { db } from "@/lib/db/client";
 import {
   classLessons,
   classes,
-  conceptEvents,
+  conceptEvents, encounters,
   lessons,
   messages,
   students,
@@ -81,6 +81,7 @@ async function main() {
         .where(inArray(conceptEvents.sessionId, sess))
         .run();
       await db.delete(messages).where(inArray(messages.sessionId, sess)).run();
+      await db.delete(encounters).where(inArray(encounters.sessionId, sess)).run();
       await db
         .delete(teachSessions)
         .where(inArray(teachSessions.id, sess))

@@ -5,7 +5,8 @@ import { judgeMessage, judgePrompt } from "./prompts/judge";
 import { checkSafety } from "./safety";
 import { judgeSchema, performSchema, type Emotion, type Intent, type Quality } from "./schemas";
 import { getAgeStyle, pickLine, type AgeStyle } from "@/lib/age-styles";
-import { currentBeliefs, directBeat, nextQuestion } from "@/lib/companion/director";
+import { currentBeliefs, directBeat, nextQuestion, type Beat } from "@/lib/companion/director";
+import { ORDER_ID, whatIfId } from "@/lib/game/engine";
 import { candidateConcepts, gradeCheck } from "@/lib/companion/grade";
 import { looksCopied, quickIntent } from "@/lib/companion/intent";
 import { applyProgress, type Understanding } from "@/lib/companion/progress";
@@ -22,6 +23,10 @@ export interface TurnInput {
   pasted?: boolean;
   /** Test mode while developing: let copied answers teach Gloam */
   allowCopied?: boolean;
+  /** The game layer: of the ideas about to light, which must wait at "almost" for their challenge */
+  hold?: (clicked: string[]) => string[];
+  /** The game layer: the boss fight comes before the finale */
+  bossPending?: boolean;
 }
 
 /** Sent as soon as the judge is done, before Gloam has finished talking */
@@ -45,6 +50,8 @@ export interface TurnOutput extends JudgedEvent {
   about: string | null;
   /** Gloam's next line, said straight after a candle lights (its next question) */
   followUp?: { text: string; about: string };
+  /** The game layer: ideas held at "almost" until their challenge is won (the reply is then empty) */
+  held?: string[];
   ms: number;
 }
 
@@ -106,8 +113,7 @@ export async function runTurn(input: TurnInput, hooks: { onJudged?: (e: JudgedEv
     // "idk", "lol", "just tell me": plain code already knows, so no AI (and no tokens)
     intent = quick;
   } else {
-    const ids = lesson.concepts.map((c) => c.id) as [string, ...string[]];
-    const res = await ask(judgeSchema(ids), "judge", judgePrompt(lesson), judgeMessage(message, lastGloam?.text));
+    const res = await ask(judgeSchema(judgeIds(lesson)), "judge", judgePrompt(lesson), judgeMessage(message, lastGloam?.text));
     if (res === "offline") return done({ ...offline(understanding) });
     const said = new Map((res?.ideas ?? []).map((i) => [i.id, i]));
     // Only ideas whose evidence words the message uses can count, so the judge can't file an answer under the wrong idea
@@ -133,7 +139,15 @@ export async function runTurn(input: TurnInput, hooks: { onJudged?: (e: JudgedEv
 
   // 3. Progress + director
   const progress = applyProgress(understanding, judged);
-  const beat = directBeat({ lesson, style, before: understanding, progress, intent, judged, gloamSaid, asked });
+  // The game layer: a candle that would light first needs its challenge won (it waits at "almost")
+  const held = input.hold?.(progress.clicked) ?? [];
+  if (held.length) {
+    for (const id of held) progress.understanding[id] = 2;
+    progress.clicked = progress.clicked.filter((id) => !held.includes(id));
+    hooks.onJudged?.({ understanding: progress.understanding, improved: progress.improved, clicked: progress.clicked, emotion: "excited" });
+    return done({ understanding: progress.understanding, improved: progress.improved, clicked: progress.clicked, judged, emotion: "excited", intent, onTopic: true, finished: false, about: null, reply: "", source: "line", held });
+  }
+  const beat = directBeat({ lesson, style, before: understanding, progress, intent, judged, gloamSaid, asked, bossPending: input.bossPending });
   hooks.onJudged?.({ understanding: progress.understanding, improved: progress.improved, clicked: progress.clicked, emotion: beat.emotion });
   const result = {
     understanding: progress.understanding,
@@ -148,13 +162,32 @@ export async function runTurn(input: TurnInput, hooks: { onJudged?: (e: JudgedEv
     ...(beat.followUp ? { followUp: { text: voice(beat.followUp.line, style), about: beat.followUp.about } } : {}),
   };
 
-  // 4a. Hand-written line: instant
-  if (beat.kind === "line") return done({ ...result, reply: voice(beat.line, style), source: "line" });
-  // 4a'. A busy class: Gloam answers with its hand-written line for this moment, so everyone gets answered sooner
-  if (busy()) return done({ ...result, reply: voice(beat.line, style), source: "busy" });
+  const spoken = await speak({ lesson, style, history, message, gloamSaid, understanding: progress.understanding, beat });
+  if (spoken === "offline") return done({ ...offline(understanding) });
+  return done({ ...result, ...spoken });
+}
 
-  // 4b. The AI reacts to what the student actually said
-  const beliefs = currentBeliefs(lesson, progress.understanding);
+/**
+ * Step 4 of a turn: Gloam says the director's beat. A hand-written line is instant; otherwise the AI
+ * reacts to what the student actually said, and its reply is checked before anyone sees it
+ * (the hand-written line is the fallback). Also used by the game layer for its big moments.
+ */
+export async function speak(ctx: {
+  lesson: LessonBlueprint;
+  style: AgeStyle;
+  history: TurnInput["history"];
+  message: string;
+  gloamSaid: string[];
+  understanding: Understanding;
+  beat: Beat;
+}): Promise<{ reply: string; source: TurnOutput["source"] } | "offline"> {
+  const { lesson, style, history, message, gloamSaid, beat } = ctx;
+  // Hand-written line: instant
+  if (beat.kind === "line") return { reply: voice(beat.line, style), source: "line" };
+  // A busy class: Gloam answers with its hand-written line for this moment, so everyone gets answered sooner
+  if (busy()) return { reply: voice(beat.line, style), source: "busy" };
+
+  const beliefs = currentBeliefs(lesson, ctx.understanding);
   const allowed = [...history.filter((m) => m.from === "student").map((m) => m.text), message, ...beliefs, beat.line, beat.direction].join(" ");
   const usedComparisons = comparisonsIn(gloamSaid);
   const messages: ChatMessage[] = [
@@ -165,7 +198,7 @@ export async function runTurn(input: TurnInput, hooks: { onJudged?: (e: JudgedEv
         history,
         message,
         beat: beat.direction,
-        learned: lesson.concepts.filter((c) => progress.understanding[c.id] >= 2).map((c) => c.beliefs[progress.understanding[c.id]]),
+        learned: lesson.concepts.filter((c) => ctx.understanding[c.id] >= 2).map((c) => c.beliefs[ctx.understanding[c.id]]),
         usedComparisons,
       }),
     },
@@ -177,12 +210,12 @@ export async function runTurn(input: TurnInput, hooks: { onJudged?: (e: JudgedEv
     // (a reply is about 50 tokens: the cap only stops a runaway answer from costing much)
     const res = await chatJSON({ name: "gloam", schema: performSchema, maxTokens: 200, messages });
     if (!res.ok) {
-      if (res.reason === "unreachable") return done({ ...offline(understanding) });
+      if (res.reason === "unreachable") return "offline";
       // Claude is overloaded, or declined: Gloam's hand-written line for this moment (asking again would cost more for the same answer)
-      if (res.reason === "busy" || res.reason === "refused") return done({ ...result, reply: voice(beat.line, style), source: "busy" });
+      if (res.reason === "busy" || res.reason === "refused") return { reply: voice(beat.line, style), source: "busy" };
       continue;
     }
-    const problem = checkReply(res.data.reply, { lesson, style, understanding: progress.understanding, allowed, gloamSaid, usedComparisons, maxWords });
+    const problem = checkReply(res.data.reply, { lesson, style, understanding: ctx.understanding, allowed, gloamSaid, usedComparisons, maxWords });
     if (problem) {
       messages.push({ role: "assistant", content: JSON.stringify(res.data) }, { role: "user", content: problem });
       continue;
@@ -190,9 +223,34 @@ export async function runTurn(input: TurnInput, hooks: { onJudged?: (e: JudgedEv
     const reply = tidy(res.data.reply, style, maxWords);
     // (cut down to a lone "Oh!", it says nothing: the hand-written line does better)
     if (wordsIn(reply) < MIN_WORDS) break;
-    return done({ ...result, reply: voice(reply, style), source: "ai" });
+    return { reply: voice(reply, style), source: "ai" };
   }
-  return done({ ...result, reply: voice(beat.line, style), source: "fallback" });
+  return { reply: voice(beat.line, style), source: "fallback" };
+}
+
+/**
+ * The judge, for one encounter (a challenge or a boss round): how well the message explains any of
+ * `targets` (ideas, or a challenge's own items). One call, the same cached prompt as every turn.
+ * null: it said nothing about them. "offline": Claude can't be reached.
+ */
+export async function judgeTargets(lesson: LessonBlueprint, targets: string[], message: string, gloamJustSaid?: string): Promise<Quality | null | "offline"> {
+  if (message.trim().split(/\s+/).length < 2) return null;
+  const ids = judgeIds(lesson);
+  const res = await ask(judgeSchema(ids), "judge", judgePrompt(lesson), judgeMessage(message, gloamJustSaid));
+  if (res === "offline") return "offline";
+  const rank: Record<Quality, number> = { clear: 3, partial: 2, wrong: 1, vague: 0 };
+  let best: Quality | null = null;
+  for (const i of res?.ideas ?? []) {
+    if (!targets.includes(i.id)) continue;
+    const q = gradeCheck(message, i);
+    if (q && (best === null || rank[q] > rank[best])) best = q;
+  }
+  return best === "vague" ? null : best;
+}
+
+/** Every id the judge can label: the lesson's ideas, then its challenge items */
+function judgeIds(lesson: LessonBlueprint): [string, ...string[]] {
+  return [...lesson.concepts.map((c) => c.id), ...lesson.concepts.filter((c) => c.whatIf).map((c) => whatIfId(c.id)), ...(lesson.sequence ? [ORDER_ID] : [])] as [string, ...string[]];
 }
 
 /** A reply is never just "Oh!" */

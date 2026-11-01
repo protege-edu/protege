@@ -399,6 +399,23 @@ async function main() {
     assert.ok(row.keyHash && !text.includes(row.keyHash), "no key hash");
     await C.deleteClass(k);
   });
+  await test("the game layer: a student's challenges and fireflies are in their download, and erased with them", async () => {
+    const { studentExport } = await import("@/lib/privacy/export");
+    const { encounters, gloams, teachSessions } = await import("@/lib/db/schema");
+    const k = await C.createClass("Game", 9, a.id);
+    const kid = await S.createStudent(k, "Quiet Lynx", ["moon", "owl", "fern"]);
+    assert.ok(kid.ok);
+    const now = new Date();
+    await db.insert(teachSessions).values({ id: "game-s1", studentId: kid.student.id, lessonId: "seasons", classId: k, understanding: { tilt: 3 }, createdAt: now, updatedAt: now }).run();
+    await db.insert(encounters).values({ sessionId: "game-s1", kind: "rival", conceptId: "tilt", outcome: "won", tries: 1, createdAt: now }).run();
+    await db.insert(gloams).values({ studentId: kid.student.id, fireflies: 42, updatedAt: now }).onConflictDoUpdate({ target: gloams.studentId, set: { fireflies: 42 } }).run();
+    const out = (await studentExport(kid.student.id))!;
+    assert.equal(out.student.gloam.firefliesCaught, 42);
+    assert.equal(out.lessons[0]?.challenges?.[0]?.challenge, "rival");
+    await C.deleteClass(k);
+    assert.equal((await db.select().from(encounters).where(eq(encounters.sessionId, "game-s1")).all()).length, 0, "challenges erased");
+    assert.equal((await db.select().from(gloams).where(eq(gloams.studentId, kid.student.id)).all()).length, 0, "fireflies erased");
+  });
   await test("a teacher can correct a candle (the journey follows), and it's in the access log", async () => {
     const { createSession } = await import("@/lib/companion/session");
     const { logAccess } = await import("@/lib/privacy/log");

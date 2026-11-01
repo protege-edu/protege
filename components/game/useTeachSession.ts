@@ -19,7 +19,9 @@ export type Status = "loading" | "ready" | "thinking" | "offline" | "paused";
 export type Entry =
   | { id: string; kind: "gloam"; text: string; emotion: GloamMood; fresh: boolean }
   | { id: string; kind: "student"; text: string }
-  | { id: string; kind: "story"; text: string };
+  | { id: string; kind: "story"; text: string }
+  /** the game layer: the rival and the Muddle say their own lines */
+  | { id: string; kind: "rival" | "muddle"; text: string };
 
 // Each lesson remembers its own session, so switching lessons never resumes the wrong one
 const sessionKey = (lessonId: string) => `protege.session.${lessonId}`;
@@ -151,7 +153,9 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle, test = fa
         restored.push(
           m.from === "gloam"
             ? { id: nextId(), kind: "gloam", text: m.text, emotion: (m.emotion as Emotion) ?? "curious", fresh: false }
-            : { id: nextId(), kind: "student", text: m.text },
+            : m.from === "student"
+              ? { id: nextId(), kind: "student", text: m.text }
+              : { id: nextId(), kind: m.from, text: m.text },
         );
       }
       setEntries(restored);

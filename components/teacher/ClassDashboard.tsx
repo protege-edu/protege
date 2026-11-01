@@ -402,7 +402,7 @@ function Transcript({
           {msgs?.length === 0 && <li className="text-sm text-ink-dim">No conversation yet.</li>}
           {msgs?.map((m, i) => (
             <li key={i} className={m.from === "student" ? "ml-8 rounded-md bg-chip px-3 py-2" : ""}>
-              <span className="block text-xs font-bold text-ink-dim">{m.from === "student" ? student.nickname : "Gloam"}</span>
+              <span className="block text-xs font-bold text-ink-dim">{m.from === "student" ? student.nickname : m.from === "gloam" ? "Gloam" : m.from === "rival" ? "The rival" : "The Muddle"}</span>
               <p className={`text-sm text-ink ${m.from === "gloam" ? "voice" : ""}`}>{m.text}</p>
             </li>
           ))}

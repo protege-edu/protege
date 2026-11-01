@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { desc, eq, inArray, isNull, or } from "drizzle-orm";
 import { DraftFailed, draftBlueprint } from "@/lib/ai/blueprint";
 import { db, together } from "@/lib/db/client";
-import { classLessons, classes, conceptEvents, lessons, messages, students, teachSessions } from "@/lib/db/schema";
+import { classLessons, classes, conceptEvents, encounters, lessons, messages, students, teachSessions } from "@/lib/db/schema";
 import { styleForGrade } from "@/lib/age-styles";
 import { BUILT_IN } from "@/lib/lesson";
 import type { LessonBlueprint } from "@/lib/lesson/types";
@@ -168,6 +168,7 @@ export async function deleteLesson(id: string) {
     ...(sessions.length
       ? [
           db.delete(conceptEvents).where(inArray(conceptEvents.sessionId, sessions)),
+          db.delete(encounters).where(inArray(encounters.sessionId, sessions)),
           db.delete(messages).where(inArray(messages.sessionId, sessions)),
           db.delete(teachSessions).where(inArray(teachSessions.id, sessions)),
         ]

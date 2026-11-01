@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { mayTeach } from "@/lib/ai/allowance";
-import { runTurn, voice } from "@/lib/ai/companion";
+import { voice } from "@/lib/ai/companion";
+import { playTurn, transcriptOf } from "@/lib/ai/game-turn";
+import { gameOn } from "@/lib/game/config";
 import { getAgeStyle, pickLine } from "@/lib/age-styles";
 import { hearingLine } from "@/lib/ai/queue";
 import { clientIp, forbidden, limit, sameOrigin, tooMany } from "@/lib/auth/request";
@@ -16,6 +18,16 @@ const Body = z.object({
   pasted: z.boolean().optional(),
   /** Test mode (only honoured while developing): pasted answers may teach Gloam */
   test: z.boolean().optional(),
+  /** a move inside a challenge: tap a notebook line, put the cards in order, stop Gloam, or skip it */
+  action: z
+    .discriminatedUnion("type", [
+      z.object({ type: z.literal("explain") }),
+      z.object({ type: z.literal("pick"), value: z.number().int().min(0).max(10) }),
+      z.object({ type: z.literal("order"), value: z.array(z.number().int().min(0).max(10)).max(10) }),
+      z.object({ type: z.literal("stop") }),
+      z.object({ type: z.literal("skip") }),
+    ])
+    .optional(),
 });
 
 /**
@@ -63,14 +75,18 @@ export async function POST(request: Request) {
       try {
         // while other students' Gloams are thinking, this one hears its place in line (and says so, in character)
         const out = await hearingLine((ahead) => send({ type: "queued", ahead }), () =>
-          runTurn(
+          playTurn(
           {
             lesson,
             understanding: session.understanding,
-            history: session.messages.map((m) => ({ from: m.from, text: m.text, about: m.about })),
+            // (Gloam's brain reads the student and Gloam; the rival's and the Muddle's lines are hand-written)
+            history: session.messages.flatMap((m) => (m.from === "student" || m.from === "gloam" ? [{ from: m.from, text: m.text, about: m.about }] : [])),
             message: parsed.data.message,
             pasted: parsed.data.pasted,
             allowCopied: parsed.data.test === true && process.env.NODE_ENV !== "production",
+            play: session.play,
+            action: parsed.data.action,
+            gameOn: gameOn(),
           },
           { onJudged: (e) => send({ type: "judged", ...e }) },
           ),
@@ -86,6 +102,10 @@ export async function POST(request: Request) {
             emotion: out.emotion,
             about: out.about,
             followUp: out.followUp,
+            ...(out.game ? { lines: transcriptOf(out) } : {}),
+            play: out.play,
+            fireflies: out.fireflies,
+            resolved: out.resolved,
             before: session.understanding,
             after: out.understanding,
             judged: out.judged,
@@ -103,6 +123,9 @@ export async function POST(request: Request) {
             finished: out.finished,
             // the next question, straight after a candle lights
             ...(out.followUp ? { followUp: out.followUp.text } : {}),
+            // the game layer: the challenge or boss fight as the browser may see it, and who said what
+            ...(out.game ? { game: out.game } : {}),
+            fireflies: out.fireflies,
             checkpoints: saved.checkpoints,
             gloam: saved.after,
             levelUp: saved.after.level > saved.before.level,

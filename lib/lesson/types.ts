@@ -38,6 +38,22 @@ export interface Concept {
    * so every student leaves with the right idea.
    */
   recap: string;
+  /**
+   * Gloam's notebook (a challenge): two true lines and one confidently wrong one, in Gloam's voice.
+   * The student spots the wrong one and fixes it. Optional: older lessons don't have it.
+   */
+  notebook?: { right: [string, string]; wrong: string };
+  /** "What if?" (a challenge): a twist on the idea, judged against its own true and wrong answers */
+  whatIf?: { scenario: string; truth: string; misconception: string };
+}
+
+/** "Put it in order" (a challenge): steps or causes in the right order, and why one leads to the next */
+export interface Sequence {
+  conceptId: string;
+  /** In the right order (3 to 5). The student gets them shuffled. */
+  cards: string[];
+  /** Why the order is what it is (judged, like an idea's truth) */
+  why: string;
 }
 
 export interface RecapItem {
@@ -84,4 +100,6 @@ export interface LessonBlueprint {
   finale: string;
   /** Things the teacher should double-check before approving (from the AI's own fact check) */
   reviewNotes?: { conceptId?: string; note: string }[];
+  /** "Put it in order", for lessons about a process or a chain of causes (optional) */
+  sequence?: Sequence;
 }
