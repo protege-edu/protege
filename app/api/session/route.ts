@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { forbidden, sameOrigin } from "@/lib/auth/request";
-import { createSession, findSession, getSession } from "@/lib/companion/session";
+import { createSession, findSession, forBrowser, getSession } from "@/lib/companion/session";
 import { db } from "@/lib/db/client";
 import { classLessons } from "@/lib/db/schema";
 import { DEFAULT_LESSON_ID } from "@/lib/lesson";
@@ -13,7 +13,7 @@ export async function GET(request: Request) {
   const session = id ? await getSession(id) : null;
   // someone else's session (e.g. the last student on this Chromebook): the browser then asks for its own
   if (!session || !(await maySeeStudent(session.studentId))) return Response.json({ error: "We couldn't find that session. Starting a fresh one is fine!" }, { status: 404 });
-  return Response.json(session);
+  return Response.json(forBrowser(session));
 }
 
 const Body = z.object({ lessonId: z.string().optional(), studentId: z.string().max(64).optional(), fresh: z.boolean().optional() });
@@ -32,10 +32,10 @@ export async function POST(request: Request) {
     const assigned = student && await db.select().from(classLessons).where(and(eq(classLessons.classId, student.classId), eq(classLessons.lessonId, lessonId))).get();
     if (student && assigned) {
       const existing = body.success && body.data.fresh ? null : await findSession(student.id, lessonId);
-      return Response.json(existing ?? await createSession(lessonId, student.id, student.classId));
+      return Response.json(forBrowser(existing ?? (await createSession(lessonId, student.id, student.classId))));
     }
     // the browser's practice student, so their Gloam keeps growing across lessons
-    return Response.json(await createSession(lessonId, body.success ? body.data.studentId : undefined));
+    return Response.json(forBrowser(await createSession(lessonId, body.success ? body.data.studentId : undefined)));
   } catch {
     // Not approved (or doesn't exist): students never see drafts
     return Response.json({ error: "This lesson isn't ready yet. Ask your teacher to approve it." }, { status: 404 });

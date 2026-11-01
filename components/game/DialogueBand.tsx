@@ -5,10 +5,12 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "re
 import { MicButton } from "@/components/access/MicButton";
 import { ReadAloudButton, useCanReadAloud } from "@/components/access/ReadAloud";
 import { POSES } from "@/components/gloam/poses";
+import { EncounterCard } from "@/components/encounters/EncounterCard";
 import { InkButton } from "@/components/ui/InkButton";
 import { Sheet } from "@/components/ui/Sheet";
 import { useAccess } from "@/lib/access/store";
 import type { AgeStyle } from "@/lib/age-styles";
+import { gameUi } from "@/lib/age-styles/game-ui";
 import { readAloud, stopReading } from "@/lib/speech";
 import { useCalmMotion } from "@/lib/useCalmMotion";
 import { useVoiceReady } from "@/lib/voice/client";
@@ -247,7 +249,10 @@ export function DialogueBand({
         <div ref={wordsRef} className="mx-auto flex max-w-[860px] flex-col gap-4 px-4 pb-4 sm:px-8 md:pb-6">
           {!wide && <SpeechPanel gloam={gloam} wide={false} seed="speech-narrow">{speech}</SpeechPanel>}
 
-          {style.input.modes.includes("choices") && (
+          {/* a challenge or the boss fight: just above where you write (Gloam and the world stay in view) */}
+          <AnimatePresence>{s.encounter && <EncounterCard key={s.encounter.kind} s={s} style={style} />}</AnimatePresence>
+
+          {style.input.modes.includes("choices") && !s.encounter && (
             // one row that scrolls sideways on phones, so the starters never push the speech over Gloam
             <div
               className="-mx-4 mb-2 flex items-center gap-2 overflow-x-auto px-4 py-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0"
@@ -308,7 +313,7 @@ export function DialogueBand({
                       send();
                     }
                   }}
-                  placeholder={style.copy.inputPlaceholder}
+                  placeholder={placeholderFor(s, style)}
                   className="min-h-11 min-w-[min(100%,11rem)] flex-1 resize-none bg-transparent py-2.5 text-sm text-ink caret-[var(--t-moon,var(--t-focus))] placeholder:text-ink-dim focus:outline-none"
                   style={{ outline: "none" }}
                 />
@@ -335,6 +340,27 @@ export function DialogueBand({
 }
 
 /** The intro, in Gloam's speech panel: Gloam explains your job, one line at a time. */
+/** The box's hint says what to write in this challenge ("Fix Gloam's note…", "Win Gloam back…") */
+function placeholderFor(s: TeachSession, style: AgeStyle): string {
+  const e = s.encounter;
+  if (!e) return style.copy.inputPlaceholder;
+  const ui = gameUi(style.id, style.language);
+  switch (e.kind) {
+    case "notebook":
+      return e.phase === "fix" ? ui.notebookFix : style.copy.inputPlaceholder;
+    case "rival":
+      return ui.rivalPlaceholder;
+    case "whatif":
+      return ui.whatifPlaceholder;
+    case "recital":
+      return ui.recitalPlaceholder;
+    case "order":
+      return e.phase === "link" ? ui.orderPlaceholder : style.copy.inputPlaceholder;
+    case "boss":
+      return ui.bossPlaceholder;
+  }
+}
+
 export function IntroBand({
   s,
   style,

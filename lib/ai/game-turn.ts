@@ -150,6 +150,8 @@ export async function playTurn(input: GameTurnInput, hooks: { onJudged?: (e: Jud
       if (spoken === "offline") return { ...offlineOut(understanding, start), play: input.play, fireflies: 0 };
       return {
         ...base,
+        // (the finale is the biggest "I get it!" moment: the browser plays the full cinematic for it)
+        clicked: [lesson.concepts[lesson.concepts.length - 1].id],
         reply: spoken.reply,
         source: spoken.source,
         emotion: "eureka",

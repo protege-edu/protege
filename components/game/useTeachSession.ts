@@ -7,10 +7,13 @@ import { pickLine, type AgeStyle } from "@/lib/age-styles";
 import type { Emotion } from "@/lib/ai/schemas";
 import { levelFor, type GloamLevel } from "@/lib/companion/level";
 import { brightness, type Understanding } from "@/lib/companion/progress";
-import type { SessionState } from "@/lib/companion/session";
+import type { ClientSession as SessionState } from "@/lib/companion/session";
 import type { ClientLesson, RecapItem } from "@/lib/lesson/types";
 import { chime, pip } from "@/lib/sound";
 import { setAccess, useAccess } from "@/lib/access/store";
+import type { GameEvent } from "@/lib/game/engine";
+import type { Said } from "@/lib/game/say";
+import type { Action, EncounterView } from "@/lib/game/types";
 
 export type Phase = "loading" | "title" | "intro" | "teach" | "ending";
 /** paused: the teacher paused the class (Gloam sleeps until they wake it) */
@@ -82,6 +85,9 @@ interface ReplyEvent {
   levelUp?: boolean;
   /** Straight after a candle lights: Gloam's next question (said once the moment is over) */
   followUp?: string;
+  /** the game layer: the challenge or boss fight now (null: none), who said what, and what comes after the big moment */
+  game?: { event?: GameEvent; view: EncounterView | null; said: Said[]; after?: Said[] };
+  fireflies?: number;
 }
 
 export function useTeachSession(lesson: ClientLesson, style: AgeStyle, test = false) {
@@ -108,7 +114,12 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle, test = fa
   const [levelUp, setLevelUp] = useState<GloamLevel | null>(null);
   const [talking, setTalking] = useState(false);
   const talkTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pending = useRef<{ reply: string; emotion: Emotion; understanding: Understanding; checkpoints?: string[]; followUp?: string } | null>(null);
+  const pending = useRef<{ reply: string; emotion: Emotion; understanding: Understanding; checkpoints?: string[]; followUp?: string; after?: Said[] } | null>(null);
+  // the game layer: the open challenge (or boss fight), the jar, and the last thing that happened (for its animation)
+  const [encounter, setEncounter] = useState<EncounterView | null>(null);
+  const [fireflies, setFireflies] = useState(0);
+  const [caught, setCaught] = useState<{ n: number; key: number } | null>(null);
+  const [gameEvent, setGameEvent] = useState<{ event: GameEvent; key: number } | null>(null);
   const followTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastMessage = useRef<{ text: string; pasted: boolean } | null>(null);
   const beatShown = useRef(0);
@@ -142,6 +153,8 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle, test = fa
       safeStorage(() => localStorage.setItem(sessionKey(session.lessonId), session.id), undefined);
       safeStorage(() => localStorage.setItem(STUDENT_KEY, session.studentId), undefined);
       setCheckpoints(session.checkpoints ?? []);
+      setEncounter(session.encounter ?? null);
+      setFireflies(session.fireflies ?? 0);
       if (session.gloam) setGloam(session.gloam);
       setSessionId(session.id);
       setFinished(session.finished);
@@ -231,9 +244,42 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle, test = fa
     [beatsFor],
   );
 
+  /** The game's lines as conversation entries: Gloam's in its mood, the rival's and the Muddle's as themselves */
+  const saidEntries = useCallback(
+    (said: Said[], emo: Emotion): Entry[] => said.map((l) => (l.who === "gloam" ? { id: nextId(), kind: "gloam", text: l.text, emotion: emo, fresh: true } : { id: nextId(), kind: l.who, text: l.text })),
+    [],
+  );
+
   // What happens when Gloam answers (a real turn, or a test-mode shortcut)
   const onReply = useCallback(
     (ev: ReplyEvent) => {
+      if (ev.game) {
+        setEncounter(ev.game.view);
+        if (ev.game.event) setGameEvent({ event: ev.game.event, key: Date.now() });
+      }
+      if (ev.fireflies) {
+        setFireflies((n) => n + ev.fireflies!);
+        setCaught({ n: ev.fireflies, key: Date.now() });
+      }
+      // the rival storming off, the Muddle's hit: said before Gloam's own line (or instead of it)
+      const said = ev.game?.said ?? [];
+      const gloamSaysIt = said.some((l) => l.who === "gloam" && l.text === ev.reply);
+      if (said.length && !ev.clicked.length && (gloamSaysIt || !ev.reply)) {
+        setThinking(null);
+        setFinished(ev.finished);
+        setShown(ev.understanding);
+        setEmotion(ev.emotion);
+        if (ev.checkpoints) setCheckpoints(ev.checkpoints);
+        setTalking(true);
+        if (talkTimer.current) clearTimeout(talkTimer.current);
+        talkTimer.current = setTimeout(() => setTalking(false), Math.min(6000, said.map((l) => l.text).join(" ").length * 24 + 200));
+        setEntries((xs) => [...xs, ...saidEntries(said, ev.emotion), ...beatsFor(ev.understanding)]);
+        if (sound) pip();
+        setStatus("ready");
+        if (ev.finished) setPhase("ending");
+        return;
+      }
+      if (said.length) setEntries((xs) => [...xs, ...saidEntries(said.filter((l) => l.who !== "gloam"), ev.emotion)]);
       // During a big moment, keep Gloam's "oh no." showing until its line lands at the peak
       setThinking(ev.clicked.length ? pickLine(style.lines.clicking, fill, []) : null);
       setFinished(ev.finished);
@@ -243,7 +289,7 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle, test = fa
       if (ev.clicked.length) {
         const concept = lesson.concepts.find((c) => c.id === ev.clicked[0]);
         const firstEver = lesson.concepts.every((c) => (shownRef.current[c.id] ?? 0) < 3);
-        pending.current = { reply: ev.reply, emotion: ev.emotion, understanding: ev.understanding, checkpoints: ev.checkpoints, followUp: ev.followUp };
+        pending.current = { reply: ev.reply, emotion: ev.emotion, understanding: ev.understanding, checkpoints: ev.checkpoints, followUp: ev.followUp, after: ev.game?.after };
         setFlash(ev.clicked[0]);
         setMoment({
           key: Date.now(),
@@ -253,15 +299,16 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle, test = fa
         });
       } else {
         showReply(ev.reply, ev.emotion, ev.understanding, ev.checkpoints);
+        if (ev.game?.after?.length) setEntries((xs) => [...xs, ...saidEntries(ev.game!.after!, "confused")]);
         if (sound) pip();
         setStatus("ready");
       }
     },
-    [lesson.concepts, showReply, sound, style, fill],
+    [lesson.concepts, showReply, sound, style, fill, saidEntries, beatsFor],
   );
 
   const send = useCallback(
-    async (text: string, pasted = false) => {
+    async (text: string, pasted = false, action?: Action) => {
       if (!sessionId) return;
       lastMessage.current = { text, pasted };
       setStatus("thinking");
@@ -273,7 +320,7 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle, test = fa
           method: "POST",
           headers: { "Content-Type": "application/json" },
           // in test mode, pasted answers are allowed to teach Gloam (only works while developing)
-          body: JSON.stringify({ sessionId, message: text, pasted: test ? false : pasted, test }),
+          body: JSON.stringify({ sessionId, message: text, pasted: test ? false : pasted, test, ...(action ? { action } : {}) }),
         });
         if (res.status === 423) {
           setThinking(null);
@@ -350,6 +397,17 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle, test = fa
     [status, send],
   );
 
+  /** A move in a challenge that isn't typing: tap a notebook line, put the cards in order, stop Gloam, skip it. `said` is how it reads in the conversation. */
+  const act = useCallback(
+    (action: Action, said: string) => {
+      if (status !== "ready" || moment) return false;
+      setEntries((xs) => [...xs, { id: nextId(), kind: "student", text: said }]);
+      void send(said, false, action);
+      return true;
+    },
+    [status, moment, send],
+  );
+
   const retry = useCallback(async () => {
     const health = await checkHealth();
     if (!health.online) {
@@ -376,6 +434,20 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle, test = fa
   const onMomentDone = useCallback(() => {
     const wasFinal = moment?.final;
     const followUp = pending.current?.followUp;
+    const after = pending.current?.after;
+    // after the big moment: the Muddle arrives for the boss fight
+    if (after?.length) {
+      pending.current = null;
+      setMoment(null);
+      setFlash(null);
+      setEmotion("confused");
+      if (followTimer.current) clearTimeout(followTimer.current);
+      followTimer.current = setTimeout(() => {
+        setEntries((xs) => [...xs, ...saidEntries(after, "confused")]);
+        setStatus("ready");
+      }, 900);
+      return;
+    }
     pending.current = null;
     setMoment(null);
     setFlash(null);
@@ -392,7 +464,7 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle, test = fa
       setEntries((xs) => [...xs, { id: nextId(), kind: "gloam", text: followUp, emotion: "curious", fresh: true }]);
       setStatus("ready");
     }, 900);
-  }, [moment]);
+  }, [moment, saidEntries]);
 
   const typed = useCallback(() => {
     setTypingTick((t) => t + 1);
@@ -466,6 +538,11 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle, test = fa
     start,
     finishIntro,
     teach,
+    act,
+    encounter,
+    fireflies,
+    caught,
+    gameEvent,
     typed,
     retry,
     onPeak,

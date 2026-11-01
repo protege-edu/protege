@@ -453,3 +453,26 @@ html[data-reading="dyslexic"] [data-theme="teacher"] {
   mix-blend-mode: overlay;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
+
+/*
+  The game layer's paper: Gloam's notebook pages and dropped cards are real paper in the world,
+  lit by the moon in the high school valley (the younger worlds are already daylight paper).
+  Gloam's handwriting is the voice font; the ruled lines are faint, and a wrong line gets crossed out in ember.
+*/
+.paper {
+  --t-panel: #dfe4d8;
+  --t-panel-2: #e7ebe1;
+  --t-ink: #1c2925;
+  --t-ink-dim: #4a5a53;
+  --t-line: rgb(28 41 37 / 0.22);
+  --t-chip: #cfd6c8;
+  --t-focus: #2f6b86;
+  color: var(--t-ink);
+}
+[data-age-style="little"] .paper,
+[data-age-style="junior"] .paper,
+[data-age-style="middle"] .paper {
+  --t-panel: #fffdf6;
+  --t-panel-2: #fffaf0;
+  --t-chip: #f4efe2;
+}

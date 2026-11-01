@@ -409,6 +409,15 @@ async function main() {
     await db.insert(teachSessions).values({ id: "game-s1", studentId: kid.student.id, lessonId: "seasons", classId: k, understanding: { tilt: 3 }, createdAt: now, updatedAt: now }).run();
     await db.insert(encounters).values({ sessionId: "game-s1", kind: "rival", conceptId: "tilt", outcome: "won", tries: 1, createdAt: now }).run();
     await db.insert(gloams).values({ studentId: kid.student.id, fireflies: 42, updatedAt: now }).onConflictDoUpdate({ target: gloams.studentId, set: { fireflies: 42 } }).run();
+    // the browser never gets the game's answer key (which notebook line is wrong)
+    const { getSession, forBrowser } = await import("@/lib/companion/session");
+    const { openChallenge, newPlay } = await import("@/lib/game/engine");
+    const { seasons } = await import("@/lib/lesson/seasons");
+    const play = { ...newPlay(seasons), open: openChallenge(seasons, "notebook", "tilt") };
+    await db.update(teachSessions).set({ play }).where(eq(teachSessions.id, "game-s1")).run();
+    const browser = JSON.stringify(forBrowser((await getSession("game-s1"))!));
+    assert.ok(!browser.includes('"wrong"') && !browser.includes('"plan"'), "answers sent to the browser");
+    assert.ok(browser.includes('"encounter"'), "the open challenge is shown");
     const out = (await studentExport(kid.student.id))!;
     assert.equal(out.student.gloam.firefliesCaught, 42);
     assert.equal(out.lessons[0]?.challenges?.[0]?.challenge, "rival");

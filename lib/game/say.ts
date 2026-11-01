@@ -53,7 +53,8 @@ export function openingLines(e: Encounter, g: GameLines, f: Fill): { said: Said[
     case "order":
       return { said: [{ who: "gloam", text: line(g.order.open, f, e) }], emotion: "sheepish" };
     case "recital":
-      return { said: [{ who: "gloam", text: line(g.recital.open, f, e) }, { who: "gloam", text: e.speech }], emotion: "proud" };
+      // (Gloam's presentation itself is on the challenge card, typed slowly enough to stop)
+      return { said: [{ who: "gloam", text: line(g.recital.open, f, e) }], emotion: "proud" };
     case "boss":
       return { said: [{ who: "muddle", text: line(g.bossSays.arrive, f, e) }], emotion: "confused" };
   }

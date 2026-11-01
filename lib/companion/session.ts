@@ -101,6 +101,14 @@ export async function getSession(id: string): Promise<SessionState | null> {
   };
 }
 
+/** What the browser gets: everything but the game's answer key (which notebook line is wrong, the cards' order) */
+export type ClientSession = Omit<SessionState, "play">;
+export function forBrowser(session: SessionState): ClientSession {
+  const { play: _answers, ...rest } = session;
+  void _answers;
+  return rest;
+}
+
 /** Fireflies in a student's jar (caught minus spent) */
 export async function firefliesOf(studentId: string): Promise<number> {
   const g = await db.select({ fireflies: gloams.fireflies, spent: gloams.spent }).from(gloams).where(eq(gloams.studentId, studentId)).get();
