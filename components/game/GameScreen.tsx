@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { Rival } from "@/components/encounters/Rival";
 import { EurekaMoment } from "@/components/scene/EurekaMoment";
 import { getAgeStyle, pickLine } from "@/lib/age-styles";
 import { step } from "@/lib/sound";
@@ -133,7 +134,10 @@ export function GameScreen({ lesson, account = "preview", access = null }: { les
       ? { focus: wide ? 0.66 : 0.5, groundAt: !opened ? 1.05 : wide ? 0.8 : 0.56, scale: wide ? 0.9 : 0.7 }
       : s.phase === "ending"
         ? { focus: wide ? 0.29 : 0.5, groundAt: wide ? 0.74 : 0.5, scale: 1 }
-        : { focus: 0.5, groundAt: wide ? 0.6 : 0.5, scale: 1 };
+        : // the boss fight: Gloam steps left to face the Muddle across the valley
+          s.encounter?.kind === "boss" && wide
+          ? { focus: 0.3, groundAt: 0.6, scale: 1 }
+          : { focus: 0.5, groundAt: wide ? 0.6 : 0.5, scale: 1 };
   const focus = shot.focus;
   // where the words below Gloam start (the teach box, the intro, the recap; the title on narrow screens):
   // Gloam stands above them, and under the top bar while teaching
@@ -202,6 +206,14 @@ export function GameScreen({ lesson, account = "preview", access = null }: { les
             stop: walkLit,
             onWalking,
             dozeTick,
+            // the boss fight: the Muddle gathers in the valley, and shrinks with every wrong idea cleared
+            boss: {
+              on: s.encounter?.kind === "boss",
+              left: s.encounter?.kind === "boss" ? 1 - s.encounter.round / Math.max(1, s.encounter.rounds) : 0,
+              hitTick: s.bossTicks.hit,
+              missTick: s.bossTicks.miss,
+              combo: s.encounter?.kind === "boss" ? s.encounter.combo : 0,
+            },
           }}
         >
           {(s.phase === "teach" || s.phase === "intro") && <TopBar style={style} lesson={lesson} levels={levels} current={world ? walkLit : litCount} onPause={() => setOverlay("pause")} />}
@@ -209,6 +221,8 @@ export function GameScreen({ lesson, account = "preview", access = null }: { les
           {world && <TravelQuip text={s.phase === "teach" ? quip : null} gloam={gloamBox} />}
           {world && <ChapterCard style={style} chapter={s.phase === "teach" ? chapter : null} total={lesson.concepts.length} beat={beat} />}
           <LevelUpCard style={style} level={s.levelUp && !s.moment ? s.levelUp.level : null} line={levelLine} onDone={s.clearLevelUp} />
+          {/* the game layer: the rival, in the world beside Gloam */}
+          {s.phase === "teach" && <Rival s={s} style={style} gloam={gloamBox} />}
           <EurekaMoment moment={s.moment} style={style} x={focus} onPeak={s.onPeak} onDone={s.onMomentDone} />
           <AnimatePresence>
             {s.phase === "title" && <TitleScreen

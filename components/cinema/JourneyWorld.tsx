@@ -3,13 +3,13 @@
 import { useEffect, useRef } from "react";
 import type { GloamMood } from "@/components/gloam/poses";
 import type { GloamActor } from "@/components/gloam/rig/GloamActor";
-import type { GloamBox } from "@/components/game/Stage";
+import type { BossState, GloamBox } from "@/components/game/Stage";
 import type { JourneyWorld as World } from "@/lib/age-styles/types";
 import { lanternFor } from "@/lib/companion/level";
 import { BORED, TRICKS } from "@/lib/gloam-rig/brain";
 import type { RigSpec } from "@/lib/gloam-rig/spec";
 import { useCalmMotion } from "@/lib/useCalmMotion";
-import { fadeInCanvas, fogCanvas, glowCanvas, grainCanvas, lightSpillCanvas, ringCanvas, vignetteCanvas } from "./textures";
+import { fadeInCanvas, fogCanvas, glowCanvas, grainCanvas, lightSpillCanvas, puffCanvas, ringCanvas, vignetteCanvas } from "./textures";
 
 export interface JourneyProps {
   world: World;
@@ -37,6 +37,8 @@ export interface JourneyProps {
   onWalking?: (walking: boolean) => void;
   /** test mode: goes up by one to make Gloam doze off right away */
   dozeTick?: number;
+  /** the boss fight: the Muddle gathers in the valley */
+  boss?: BossState;
 }
 
 /**
@@ -47,7 +49,9 @@ export interface JourneyProps {
  *     then it hop-walks to the next one and the camera follows.
  *   - Light is the meter: the lit painting shows through around Gloam's lantern, and every shrine
  *     you've lit leaves its own pool of light behind, so the path you taught stays glowing.
- *   - The Muddle: fog over the path ahead, thinning as Gloam understands more.
+ *   - The Muddle: fog over the path ahead, thinning as Gloam understands more. In the boss fight it
+ *     gathers into a body with two pale eyes and dims the valley; every clean hit is a burst of moonlight
+ *     that tears through it (it shrinks), a miss makes it swell, and a combo makes Gloam's lantern blaze.
  * Cheap Chromebooks get a lighter version automatically; reduced motion keeps it still.
  */
 export function JourneyWorld(props: JourneyProps) {
@@ -145,6 +149,44 @@ export function JourneyWorld(props: JourneyProps) {
       const muddleFade = new PIXI.Sprite(tex(fadeInCanvas()));
       muddle.mask = muddleFade;
 
+      // ---- the boss: the Muddle gathered into a body of smoke, with two pale eyes ----
+      const puffTex = tex(puffCanvas());
+      const bossBody = new PIXI.Container();
+      const PUFFS = lite ? 6 : 11;
+      const puffs = Array.from({ length: PUFFS }, (_, i) => {
+        const p = new PIXI.Sprite(puffTex);
+        p.anchor.set(0.5);
+        // moonlit smoke, lighter than the darkened valley so its shape reads
+        // thick pale fog (the Muddle IS the fog), with darker hollows inside for depth
+        p.tint = i % 4 === 3 ? 0x3a4642 : world.fog;
+        bossBody.addChild(p);
+        // a rough mound: wider at the bottom, a head on top
+        const a = (i / PUFFS) * Math.PI * 2;
+        return { p, ox: Math.cos(a) * (0.26 + (i % 2) * 0.07), oy: Math.sin(a) * 0.16 - (i === 0 ? 0.24 : 0), s: 0.34 + ((i * 37) % 10) / 40, phase: i * 1.7, pale: i % 4 !== 3 };
+      });
+      // its moonlit rim: a few pale puffs along the top edge
+      const rim = Array.from({ length: lite ? 3 : 5 }, (_, i) => {
+        const p = new PIXI.Sprite(puffTex);
+        p.anchor.set(0.5);
+        p.tint = 0x8ec5dc;
+        p.blendMode = "add";
+        bossBody.addChild(p);
+        return { p, ox: -0.34 + i * 0.17, phase: i * 2.1 };
+      });
+      // the valley goes dark around it
+      const bossDark = new PIXI.Graphics();
+      const eyes = new PIXI.Graphics();
+      const eyeGlow = new PIXI.Sprite(glowTex);
+      eyeGlow.anchor.set(0.5);
+      eyeGlow.tint = 0xe8e4c9;
+      eyeGlow.blendMode = "add";
+      const burst = new PIXI.Sprite(tex(ringCanvas())); // a hit: moonlight tearing through
+      burst.anchor.set(0.5);
+      burst.tint = 0x8ec5dc;
+      burst.blendMode = "add";
+      burst.visible = false;
+      const boss = { fade: 0, size: 1, swell: 0, recoil: 0, hit: -1, miss: -1, blink: 3, lastHit: 0, lastMiss: 0 };
+
       // ---- shrines: the painted stone shrine, with a candle in its niche, one per idea ----
       const shrineLayer = new PIXI.Container();
       const sh = world.shrine;
@@ -198,7 +240,7 @@ export function JourneyWorld(props: JourneyProps) {
       if (!lite) litWorld.filters = [bloom];
       litWorld.filterArea = app.screen;
 
-      app.stage.addChild(darkWorld, fogBack, litWorld, shrineLayer, actor.container, haze, waveRing, muddle, fogFront, flies, vignette, grain, mask, muddleFade);
+      app.stage.addChild(darkWorld, fogBack, litWorld, bossDark, shrineLayer, actor.container, haze, waveRing, muddle, bossBody, eyeGlow, eyes, burst, fogFront, flies, vignette, grain, mask, muddleFade);
 
       // ---- layout ----
       const W = world.width;
@@ -343,6 +385,30 @@ export function JourneyWorld(props: JourneyProps) {
         }
         push = Math.max(0, push - dt * 0.45);
         const pushCurve = Math.sin(push * Math.PI);
+        // ---- the boss fight: fades in, reacts to hits and misses ----
+        const B = L.boss;
+        boss.fade += ((B?.on ? 1 : 0) - boss.fade) * (still ? 1 : Math.min(1, dt * (B?.on ? 0.8 : 2.2)));
+        if (B && B.hitTick !== boss.lastHit) {
+          boss.lastHit = B.hitTick;
+          if (B.hitTick) {
+            boss.hit = still ? -1 : 0;
+            boss.recoil = 1;
+          }
+        }
+        if (B && B.missTick !== boss.lastMiss) {
+          boss.lastMiss = B.missTick;
+          if (B.missTick) {
+            boss.miss = still ? -1 : 0;
+            boss.swell = 1;
+          }
+        }
+        boss.size += ((0.5 + 0.5 * (B?.left ?? 1)) - boss.size) * Math.min(1, dt * 2);
+        boss.swell = Math.max(0, boss.swell - dt * 1.4);
+        boss.recoil = Math.max(0, boss.recoil - dt * 1.8);
+        if (boss.hit >= 0) boss.hit += dt / 0.9;
+        if (boss.hit > 1) boss.hit = -1;
+        // a hit shakes the camera a little (never with reduced motion)
+        const shake = !still && boss.hit >= 0 ? Math.sin(boss.hit * 60) * 7 * (1 - boss.hit) : 0;
         const zoom = 1 + pushCurve * 0.04;
 
         // ---- the painting, sliding at depth ----
@@ -351,7 +417,7 @@ export function JourneyWorld(props: JourneyProps) {
         const want = L.focus * vw - camX * paintW;
         const left = Math.min(0, Math.max(vw - paintW, want));
         const fx = left + camX * paintW;
-        const driftX = still ? 0 : Math.sin(t * 0.06) * 8;
+        const driftX = (still ? 0 : Math.sin(t * 0.06) * 8) + shake;
         const driftY = still ? 0 : Math.sin(t * 0.045) * 3;
         for (const p of layers) {
           const k = 0.55 + p.depth * 0.45; // far layers travel slower: parallax
@@ -441,7 +507,9 @@ export function JourneyWorld(props: JourneyProps) {
         }
 
         // ---- the light: Gloam's lantern spill + shrine pools, drawn into the mask ----
-        const radius = light <= 0.001 ? 0 : (0.12 + light * 0.9) * Math.max(vw, vh) * (1 + pushCurve * 0.15) * Math.min(1.4, lan.glow);
+        // the Muddle swallows the light; a combo makes the lantern blaze back
+        const dim = 1 - boss.fade * 0.6 + boss.fade * Math.min(4, B?.combo ?? 0) * 0.08;
+        const radius = light <= 0.001 ? 0 : (0.12 + light * 0.9) * Math.max(vw, vh) * (1 + pushCurve * 0.15) * Math.min(1.4, lan.glow) * dim;
         lanternSpill.position.set(lanternScreen.x / 2, (lanternScreen.y + (feet.y - lanternScreen.y) * 0.4) / 2);
         lanternSpill.width = lanternSpill.height = radius;
         mask.position.set(0, 0);
@@ -491,6 +559,59 @@ export function JourneyWorld(props: JourneyProps) {
         muddleFade.position.set(muddle.x, muddle.y);
         muddleFade.width = Math.max(1, muddle.width);
         muddleFade.height = muddle.height;
+
+        // ---- the Muddle, gathered for the boss fight ----
+        const showBoss = boss.fade > 0.01;
+        for (const o of [bossBody, bossDark, eyes, eyeGlow]) o.visible = showBoss;
+        if (showBoss) {
+          // it stands on the ground across from Gloam, below Gloam's speech panel, and fills the right of the screen
+          const bs = gh * 1.9 * boss.size * (1 + boss.swell * 0.16 - boss.recoil * 0.12);
+          const bx = Math.min(vw - bs * 0.32, Math.max(feet.x + gh * 1.2 + bs * 0.45, vw * 0.84)) + boss.recoil * gh * 0.35;
+          const by = groundY - bs * 0.16;
+          bossDark.clear().rect(0, 0, vw, vh).fill({ color: 0x030806, alpha: boss.fade * 0.42 });
+          for (const q of puffs) {
+            const breathe = still ? 1 : 1 + Math.sin(t * 0.9 + q.phase) * 0.06;
+            const sway = still ? 0 : Math.sin(t * 0.5 + q.phase) * bs * 0.025;
+            q.p.position.set(bx + q.ox * bs + sway, by + q.oy * bs);
+            q.p.width = q.p.height = bs * q.s * breathe;
+            q.p.alpha = boss.fade * (q.pale ? 0.84 : 0.5);
+          }
+          for (const q of rim) {
+            const sway = still ? 0 : Math.sin(t * 0.6 + q.phase) * bs * 0.02;
+            q.p.position.set(bx + q.ox * bs + sway, by - bs * (0.33 - Math.abs(q.ox) * 0.4));
+            q.p.width = q.p.height = bs * 0.34;
+            q.p.alpha = boss.fade * 0.26;
+          }
+          // two pale eyes with slit pupils, looking at Gloam: they blink, narrow on a miss, squeeze shut on a hit
+          if (!still) boss.blink -= dt;
+          const blinking = boss.blink < 0.14 && boss.blink > 0;
+          if (boss.blink <= 0) boss.blink = 2.5 + Math.random() * 3;
+          const open = boss.hit >= 0 ? 0.12 : blinking ? 0.08 : boss.swell > 0 ? 0.5 : 1;
+          const ew = bs * 0.05;
+          const eh = ew * 0.72 * open;
+          const ey = by - bs * 0.2;
+          const look = Math.sign(feet.x - bx) * ew * 0.35;
+          eyes.clear();
+          for (const side of [-1, 1]) {
+            const ex = bx + side * bs * 0.1;
+            // a dark hollow in the fog, a pale glowing eye in it, a slit pupil
+            eyes.ellipse(ex, ey, ew * 1.7, ew * 1.25).fill({ color: 0x0b0f0d, alpha: boss.fade * 0.75 });
+            eyes.ellipse(ex, ey, ew, Math.max(0.8, eh)).fill({ color: 0xe8e4c9, alpha: boss.fade });
+            if (open > 0.3) eyes.ellipse(ex + look, ey, ew * 0.18, Math.max(0.8, eh * 0.85)).fill({ color: 0x0b0f0d, alpha: boss.fade });
+          }
+          eyeGlow.position.set(bx, ey);
+          eyeGlow.width = bs * 0.6;
+          eyeGlow.height = bs * 0.22;
+          eyeGlow.alpha = boss.fade * 0.45 * open;
+          // a hit: a ring of moonlight bursts out of it
+          burst.visible = boss.hit >= 0;
+          if (burst.visible) {
+            const e = 1 - Math.pow(1 - boss.hit, 3);
+            burst.position.set(bx, by);
+            burst.width = burst.height = bs * (0.4 + e * 2.4);
+            burst.alpha = Math.sin(boss.hit * Math.PI) * 0.9;
+          }
+        } else burst.visible = false;
 
         // ---- fireflies wake up as the valley does ----
         for (const p of fly) {

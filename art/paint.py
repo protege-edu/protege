@@ -24,6 +24,7 @@ PROMPTS = {
     "shrine": prompts.SHRINE,
     **prompts.KEY_PICTURES,
     **prompts.YOUNG_GLOAMS,
+    **prompts.RIVALS,
 }
 
 OUT = os.environ.get("ART_OUT", os.path.expanduser(os.path.join("~", "ProtegeArt", "out")))

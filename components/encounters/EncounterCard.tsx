@@ -55,7 +55,7 @@ export function EncounterCard({ s, style }: { s: TeachSession; style: AgeStyle }
       transition={{ type: "spring", stiffness: 240, damping: 22 }}
     >
       <Sheet seed={`encounter-${e.kind}`} radius={paper ? 6 : 16} className="px-4 py-3 sm:px-5" style={e.kind === "boss" ? { ["--t-panel" as string]: MUDDLE } : undefined}>
-        {e.kind === "rival" && <span aria-hidden="true" className="absolute inset-y-3 left-0 w-1 rounded-full" style={{ background: CORVIN }} />}
+        {e.kind === "rival" && <span aria-hidden="true" className="absolute inset-y-3 -left-2.5 w-1 rounded-full" style={{ background: CORVIN }} />}
         <Body e={e} s={s} style={style} busy={busy} title={<h2 className="voice text-md font-bold">{title}</h2>} skip={skip} />
       </Sheet>
     </motion.section>
@@ -108,7 +108,7 @@ function Body({ e, s, style, busy, title, skip }: { e: EncounterView; s: TeachSe
           </Header>
           {/* the wrong idea it's throwing right now always stays in view; its last reaction sits under it */}
           <p className="voice mt-1 text-md text-ink">&ldquo;{e.claim}&rdquo;</p>
-          {voiced?.kind === "muddle" && !voiced.text.includes(e.claim.slice(0, 24)) && <p className="voice mt-1 text-sm italic text-ink-dim">{voiced.text}</p>}
+          {voiced?.kind === "muddle" && !voiced.text.toLowerCase().includes(e.claim.slice(0, 24).toLowerCase()) && <p className="voice mt-1 text-sm italic text-ink-dim">{voiced.text}</p>}
         </div>
       );
   }

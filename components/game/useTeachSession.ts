@@ -120,6 +120,8 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle, test = fa
   const [fireflies, setFireflies] = useState(0);
   const [caught, setCaught] = useState<{ n: number; key: number } | null>(null);
   const [gameEvent, setGameEvent] = useState<{ event: GameEvent; key: number } | null>(null);
+  // the boss fight in the world: a tick for every hit and every miss (the Muddle reacts to each)
+  const [bossTicks, setBossTicks] = useState({ hit: 0, miss: 0 });
   const followTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastMessage = useRef<{ text: string; pasted: boolean } | null>(null);
   const beatShown = useRef(0);
@@ -256,6 +258,8 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle, test = fa
       if (ev.game) {
         setEncounter(ev.game.view);
         if (ev.game.event) setGameEvent({ event: ev.game.event, key: Date.now() });
+        const hit = ev.game.event === "hit" || ev.game.event === "defeated";
+        if (hit || ev.game.event === "miss") setBossTicks((b) => (hit ? { ...b, hit: Date.now() } : { ...b, miss: Date.now() }));
       }
       if (ev.fireflies) {
         setFireflies((n) => n + ev.fireflies!);
@@ -543,6 +547,7 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle, test = fa
     fireflies,
     caught,
     gameEvent,
+    bossTicks,
     typed,
     retry,
     onPeak,

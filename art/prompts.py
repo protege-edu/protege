@@ -134,3 +134,31 @@ YOUNG_GLOAMS = {
     "stylised indie animation character design, bold shapes, gouache texture, dramatic twilight rim light, "
     "isolated on a plain flat deep twilight blue background, no text, no watermark",
 }
+
+
+# ---- The rivals (Phase 5): the recurring character who is always confidently wrong ----
+# One per age, painted like the Gloams (front three-quarter view, full body, plain background) so the chosen one
+# can be cut out and animated in code. Smug, never mean: they pick on Gloam, never on students.
+RIVALS = {
+    # 9-12: Corvin, a deadpan crow in a turtleneck with a rust scarf (#b4472e), sure of everything, wrong about it
+    "rival_senior": "character concept art of a small plump crow with glossy blue-black feathers, wearing a charcoal grey knitted turtleneck sweater "
+    "and a short rust-red knitted scarf, half-lidded unimpressed eyes, beak slightly raised in a smug know-it-all pose, one wing lifted as if making a point, "
+    "standing upright on two thin legs, full body, centered, front three-quarter view, "
+    "hand-painted, gouache and oil brushwork, soft feather texture, Spiritfarer and Hollow Knight style, moody moonlight rim light, "
+    "isolated on a plain flat very dark green background, no text, no watermark",
+    # 6-8: Count Contrary, a theatrical magpie with a tiny cape
+    "rival_middle": "character concept art of a small round magpie with black and white feathers and a shimmering teal tail, wearing a tiny dramatic purple velvet cape "
+    "and a gold monocle, one wing raised dramatically, chest puffed out, an over-the-top proud expression, standing upright, full body, centered, front three-quarter view, "
+    "stylised indie animation character design, bold shapes, gouache texture, dramatic twilight rim light, "
+    "isolated on a plain flat deep twilight blue background, no text, no watermark",
+    # 3-5: Know-It-Owl, a round little owl with huge glasses and a book
+    "rival_junior": "character concept art of a small round fluffy brown owl with enormous round glasses, holding a tiny book upside down under one wing, "
+    "a confident cheeky know-it-all smile, big round eyes behind the glasses, standing upright, full body, centered, front view, "
+    "storybook illustration, gouache and coloured pencil texture, warm golden dusk light, "
+    "isolated on a plain flat soft dusky lavender background, no text, no watermark",
+    # K-2: Fib, a silly fluffy goose with a lopsided paper hat
+    "rival_little": "character concept art of a small round fluffy white goose with an orange beak, wearing a lopsided folded paper hat, "
+    "a silly proud honking expression with its beak open, chest puffed out, standing on orange feet, full body, centered, front view, "
+    "cheerful children's picture book illustration, soft watercolour and gouache, bright warm sunny daylight colours, "
+    "isolated on a plain flat soft pale sky-blue background, no text, no watermark",
+}

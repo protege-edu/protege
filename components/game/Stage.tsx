@@ -26,6 +26,17 @@ export interface JourneyState {
   onWalking?: (walking: boolean) => void;
   /** test mode: goes up by one to make Gloam doze off right away */
   dozeTick?: number;
+  /** the game layer's boss fight: the Muddle in the world */
+  boss?: BossState;
+}
+
+/** The Muddle, while the boss fight is on: how much of it is left (0..1), and a tick for each hit and miss */
+export interface BossState {
+  on: boolean;
+  left: number;
+  hitTick: number;
+  missTick: number;
+  combo: number;
 }
 
 // Each Gloam skin's proportions: width/height, and where its feet and lantern are (fractions of its height;
@@ -206,6 +217,7 @@ export function Stage({
           onGloamBox={onJourneyBox}
           onWalking={journey.onWalking}
           dozeTick={journey.dozeTick}
+          boss={journey.boss}
         />
       ) : (
         <Diorama brightness={brightness} />

@@ -158,3 +158,17 @@ export function vignetteCanvas(w = 512, h = 512) {
   g.fillRect(0, 0, w, h);
   return c;
 }
+
+/** A soft, full puff of smoke (the Muddle's body is made of these): dense in the middle, no hard edge */
+export function puffCanvas(size = 192) {
+  const [c, g] = canvas(size, size);
+  const r = size / 2;
+  const grad = g.createRadialGradient(r, r, 0, r, r, r);
+  grad.addColorStop(0, "rgba(255,255,255,1)");
+  grad.addColorStop(0.6, "rgba(255,255,255,0.96)");
+  grad.addColorStop(0.84, "rgba(255,255,255,0.45)");
+  grad.addColorStop(1, "rgba(255,255,255,0)");
+  g.fillStyle = grad;
+  g.fillRect(0, 0, size, size);
+  return c;
+}
