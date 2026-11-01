@@ -120,6 +120,9 @@ export interface StudentRow {
   lastActive: Date | null;
   /** on Protégé right now (seen in the last 90 seconds) */
   online: boolean;
+  /** the game layer: each idea's challenge (won or skipped) and whether they beat the Muddle. Never a score. */
+  challenges: Record<string, "won" | "skipped">;
+  beatBoss: boolean;
 }
 
 export interface Dashboard {
@@ -128,6 +131,8 @@ export interface Dashboard {
   insights: { conceptId: string; count: number; total: number; text: string }[];
   /** How many students have each idea lit */
   litCount: Record<string, number>;
+  /** fireflies the whole class has caught (one number for everyone: no names, no ranking) */
+  fireflies: number;
 }
 
 /**
@@ -147,6 +152,8 @@ export async function dashboard(classId: string, lesson: LessonBlueprint): Promi
   const events = sessions.length
     ? await db.select().from(conceptEvents).where(inArray(conceptEvents.sessionId, sessions.map((s) => s.id))).all()
     : [];
+  const played = sessions.length ? await db.select().from(encounters).where(inArray(encounters.sessionId, sessions.map((s) => s.id))).all() : [];
+  const jar = kids.length ? await db.select({ n: sql<number>`coalesce(sum(${gloams.fireflies}), 0)` }).from(gloams).where(inArray(gloams.studentId, kids.map((k) => k.id))).get() : null;
 
   const rows: StudentRow[] = kids.map((k) => {
     const s = sessionByStudent.get(k.id);
@@ -167,6 +174,8 @@ export async function dashboard(classId: string, lesson: LessonBlueprint): Promi
       finished: !!s?.finishedAt,
       lastActive: s?.updatedAt ?? null,
       online: !!k.lastSeenAt && Date.now() - k.lastSeenAt.getTime() < 90_000,
+      challenges: Object.fromEntries(played.filter((e) => s && e.sessionId === s.id && e.kind !== "boss" && e.conceptId).map((e) => [e.conceptId!, e.outcome])),
+      beatBoss: played.some((e) => s && e.sessionId === s.id && e.kind === "boss" && e.outcome === "won"),
     };
   });
 
@@ -181,7 +190,7 @@ export async function dashboard(classId: string, lesson: LessonBlueprint): Promi
     .sort((a, b) => b.count - a.count);
 
   const litCount = Object.fromEntries(lesson.concepts.map((c) => [c.id, rows.filter((r) => (r.understanding[c.id] ?? 0) === 3).length]));
-  return { students: rows, insights, litCount };
+  return { students: rows, insights, litCount, fireflies: Number(jar?.n ?? 0) };
 }
 
 /** One student's conversation, for the teacher to read */

@@ -29,11 +29,36 @@ interface Info {
 interface Data {
   class: { id: string; name: string; grade: number };
   lesson: { id: string; title: string; concepts: { id: string; name: string; misconception: string }[] };
-  students: { id: string; nickname: string; understanding: Record<string, number>; stuck: string[]; messages: number; finished: boolean; lastActive: string | null; online: boolean }[];
+  students: {
+    id: string;
+    nickname: string;
+    understanding: Record<string, number>;
+    stuck: string[];
+    messages: number;
+    finished: boolean;
+    lastActive: string | null;
+    online: boolean;
+    /** the game layer: each idea's challenge, and the boss fight */
+    challenges?: Record<string, "won" | "skipped">;
+    beatBoss?: boolean;
+  }[];
   /** Gloam's line right now: answering, and waiting */
   line: { active: number; waiting: number; live: number };
   insights: { conceptId: string; count: number; total: number; text: string }[];
   litCount: Record<string, number>;
+  /** fireflies the whole class has caught (one number: no names, no ranking) */
+  fireflies?: number;
+}
+
+/** A student's challenges in words (never a score): "Won 3 challenges, skipped 1" */
+function challengeLine(s: Data["students"][number]): string | null {
+  const all = Object.values(s.challenges ?? {});
+  const won = all.filter((o) => o === "won").length;
+  const skipped = all.length - won;
+  if (!all.length && !s.beatBoss) return null;
+  const parts = [won ? `won ${won} challenge${won === 1 ? "" : "s"}` : "", skipped ? `skipped ${skipped}` : "", s.beatBoss ? "beat the Muddle" : ""].filter(Boolean);
+  const text = parts.length > 1 ? `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}` : parts[0];
+  return text[0].toUpperCase() + text.slice(1);
 }
 
 /**
@@ -139,6 +164,11 @@ export function ClassDashboard() {
             Updated {updated ? updated.toLocaleTimeString([], { hour: "numeric", minute: "2-digit", second: "2-digit" }) : ""}
           </p>
           <p className="mt-1 text-xs text-ink-dim">Candles are Gloam&apos;s AI estimate of each explanation, not marks. Open a student to read their conversation and correct any candle.</p>
+          {!!data.fireflies && (
+            <p className="mt-1 text-sm text-ink">
+              Your class has caught <span className="font-bold">{data.fireflies.toLocaleString()} fireflies</span> by teaching Gloam. (Students only see their own jar and this total, never anyone else&apos;s.)
+            </p>
+          )}
 
           {/* What the class thinks: the most useful thing a teacher can act on right now */}
           {data.insights.length > 0 && (
@@ -214,6 +244,7 @@ export function ClassDashboard() {
                       ) : (
                         <span className="text-ink-dim">Teaching</span>
                       )}
+                      {challengeLine(s) && <span className="block text-xs text-ink-dim">{challengeLine(s)}</span>}
                     </td>
                   </tr>
                 ))}

@@ -41,6 +41,9 @@ export const BlueprintInput = z.object({
         giveaways: z.array(z.string().max(40)).max(12),
         evidence: z.array(z.string().max(30)).max(24),
         recap: z.string().max(500),
+        // the game layer's challenges (optional: older lessons don't have them)
+        notebook: z.object({ right: z.tuple([z.string().max(200), z.string().max(200)]), wrong: z.string().max(200) }).optional(),
+        whatIf: z.object({ scenario: z.string().max(260), truth: z.string().max(500), misconception: z.string().max(400) }).optional(),
       }),
     )
     .min(1)
@@ -48,4 +51,5 @@ export const BlueprintInput = z.object({
   storyBeats: z.array(z.string().max(160)).max(8),
   finale: z.string().max(600),
   reviewNotes: z.array(z.object({ conceptId: z.string().optional(), note: z.string() })).optional(),
+  sequence: z.object({ conceptId: z.string(), cards: z.array(z.string().max(100)).min(3).max(6), why: z.string().max(500) }).optional(),
 });

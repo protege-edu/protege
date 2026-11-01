@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { chatJSON } from "./client";
 import { checkSafety } from "./safety";
-import { almostPrompt, beliefCheckPrompt, conceptPrompt, factCheckPrompt, fixQuestionPrompt, outlinePrompt, questionCheckPrompt, storyPrompt } from "./prompts/blueprint";
+import { almostPrompt, beliefCheckPrompt, conceptPrompt, factCheckPrompt, fixQuestionPrompt, outlinePrompt, questionCheckPrompt, storyPrompt, challengesPrompt } from "./prompts/blueprint";
 import { getAgeStyle, styleForGrade } from "@/lib/age-styles";
 import { detectLanguage } from "@/lib/lesson/language";
 import type { Concept, LessonBlueprint } from "@/lib/lesson/types";
@@ -48,6 +48,21 @@ const Story = z.object({
 });
 
 const FixedQuestion = z.object({ question: z.string().min(5).max(200) });
+
+// the game layer's challenges (one call for the whole lesson; the lesson still works without them)
+const Challenges = z.object({
+  ideas: z.array(
+    z.object({
+      name: z.string(),
+      notebookRight: z.array(z.string().min(3).max(160)).min(2).max(3),
+      notebookWrong: z.string().min(3).max(160),
+      whatIf: z.string().min(5).max(240),
+      whatIfTruth: z.string().min(5).max(400),
+      whatIfWrong: z.string().min(5).max(300),
+    }),
+  ),
+  sequence: z.object({ idea: z.string(), cards: z.array(z.string().min(2).max(90)).min(3).max(6), why: z.string().min(5).max(400) }).nullable(),
+});
 
 const QuestionCheck = (n: number) => z.object({ checks: z.array(z.object({ revealsAnswer: z.boolean() })).length(n) });
 
@@ -172,6 +187,30 @@ export async function draftBlueprint(opts: { source: string; grade: number; titl
     (st) => unsafe([st.opener, st.finale, ...st.storyBeats]),
   );
 
+  // The game layer: each idea's notebook page and "what if?", and the cards if the lesson is a process.
+  // Optional: if this step fails, the lesson still has the rival, the recital and the boss fight.
+  onProgress?.("Writing Gloam's notebook, its what-ifs, and the boss fight");
+  let sequence: LessonBlueprint["sequence"];
+  try {
+    const ch = await ask(
+      "challenges",
+      Challenges,
+      challengesPrompt({ style, lessonTitle: outline.title, ideas: concepts.map((c) => ({ name: c.name, truth: c.truth, misconception: c.misconception })) }),
+      2,
+      (x) => unsafe([...x.ideas.flatMap((i) => [...i.notebookRight, i.notebookWrong, i.whatIf]), ...(x.sequence?.cards ?? [])]),
+    );
+    for (const [i, c] of concepts.entries()) {
+      const mine = ch.ideas.find((x) => x.name.trim().toLowerCase() === c.name.trim().toLowerCase()) ?? ch.ideas[i];
+      if (!mine) continue;
+      c.notebook = { right: [mine.notebookRight[0], mine.notebookRight[1]], wrong: mine.notebookWrong };
+      c.whatIf = { scenario: mine.whatIf, truth: mine.whatIfTruth, misconception: mine.whatIfWrong };
+    }
+    const owner = ch.sequence && concepts.find((c) => c.name.trim().toLowerCase() === ch.sequence!.idea.trim().toLowerCase());
+    if (ch.sequence && owner) sequence = { conceptId: owner.id, cards: ch.sequence.cards.slice(0, 5), why: ch.sequence.why };
+  } catch {
+    // (no challenges this time: the teacher can still approve the lesson, and Gloam's other challenges work)
+  }
+
   // "Answer words" are checked across the whole lesson, so one can't be a word Gloam needs just to talk:
   // nothing from any idea's name, any wrong idea, Gloam's two confused belief stages, or its opening theory
   const talkText = [story.opener, ...concepts.flatMap((c) => [c.name, c.misconception, c.beliefs[0], c.beliefs[1]])].join(" ").toLowerCase();
@@ -201,6 +240,7 @@ export async function draftBlueprint(opts: { source: string; grade: number; titl
     concepts,
     storyBeats: story.storyBeats,
     finale: story.finale,
+    ...(sequence ? { sequence } : {}),
   };
 
   // A second look at the facts. Doubts become notes on the teacher's review screen (the teacher decides).

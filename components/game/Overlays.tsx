@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ReadAloudButton } from "@/components/access/ReadAloud";
 import { WaysToPlayButton } from "@/components/access/WaysToPlay";
 import { InkButton } from "@/components/ui/InkButton";
@@ -119,16 +119,19 @@ export function TitleScreen({
 
 /* ---------------- Top bar while teaching ---------------- */
 
-export function TopBar({ style, lesson, levels, current, onPause }: { style: AgeStyle; lesson: ClientLesson; levels: Level[]; current: number; onPause: () => void }) {
+export function TopBar({ style, lesson, levels, current, onPause, jar }: { style: AgeStyle; lesson: ClientLesson; levels: Level[]; current: number; onPause: () => void; jar?: ReactNode }) {
   return (
     <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-4 bg-[linear-gradient(180deg,rgb(var(--t-scrim)/calc(0.7_+_var(--scrim-boost))),transparent)] px-4 pt-3 pb-10 sm:px-6">
       <div className="min-w-0">
         <h1 className="truncate text-sm font-bold text-ink">{lesson.title}</h1>
         <TrailStrip style={style} concepts={lesson.concepts} levels={levels} current={Math.min(current, lesson.concepts.length - 1)} />
       </div>
-      <InkButton variant="quiet" onClick={onPause} aria-keyshortcuts="Escape" className="pointer-events-auto">
-        {style.copy.pause}
-      </InkButton>
+      <span className="flex items-center gap-4">
+        {jar}
+        <InkButton variant="quiet" onClick={onPause} aria-keyshortcuts="Escape" className="pointer-events-auto">
+          {style.copy.pause}
+        </InkButton>
+      </span>
     </div>
   );
 }

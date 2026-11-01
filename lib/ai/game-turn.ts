@@ -74,7 +74,11 @@ export async function playTurn(input: GameTurnInput, hooks: { onJudged?: (e: Jud
     const lines = eventLines(res.event, enc, res.open, g, f);
     play = { ...play, open: res.open };
     const conceptId = enc.kind === "boss" ? null : enc.conceptId;
-    const base = { understanding, improved: [], clicked: [], judged: [], intent: "explaining" as const, onTopic: true, finished: false, about: null, ms: 0 };
+    // what the student said in a challenge counts as explaining its idea (the teacher's dashboard sees it:
+    // falling for the rival's claim shows up in "what the class thinks", like any wrong explanation)
+    const about = enc.kind === "boss" ? (enc.rounds[enc.round]?.conceptId ?? null) : enc.conceptId;
+    const judged = quality && about ? [{ id: about, quality }] : [];
+    const base = { understanding, improved: [], clicked: [], judged, intent: "explaining" as const, onTopic: true, finished: false, about: null, ms: 0 };
 
     if (res.event === "skipped" && conceptId) {
       play = { ...play, done: { ...play.done, [conceptId]: "skipped" } };

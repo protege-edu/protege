@@ -8,9 +8,15 @@ import type { AgeStyle } from "@/lib/age-styles";
 import { gameLines } from "@/lib/age-styles/game-lines";
 import { useCalmMotion } from "@/lib/useCalmMotion";
 
-/** Each age's rival, painted like its Gloam (art/prompts.py RIVALS): it faces left in the painting */
-const ART: Partial<Record<AgeStyle["id"], { src: string; w: number; h: number }>> = {
-  senior: { src: "/art/senior/rival.webp", w: 517, h: 640 },
+/**
+ * Each age's rival, painted like its Gloam (art/prompts.py RIVALS; gold turned silver by art/no_gold.py).
+ * `facesLeft`: which way it looks in the painting (it stands left of Gloam, so it's turned to face it).
+ */
+const ART: Partial<Record<AgeStyle["id"], { src: string; w: number; h: number; facesLeft: boolean }>> = {
+  senior: { src: "/art/senior/rival.webp", w: 517, h: 640, facesLeft: true },
+  middle: { src: "/art/middle/rival.webp", w: 484, h: 640, facesLeft: false },
+  junior: { src: "/art/junior/rival.webp", w: 504, h: 640, facesLeft: false },
+  little: { src: "/art/little/rival.webp", w: 330, h: 640, facesLeft: false },
 };
 
 /**
@@ -51,7 +57,7 @@ export function Rival({ s, style, gloam }: { s: TeachSession; style: AgeStyle; g
           transition={{ type: "spring", stiffness: 160, damping: 14 }}
           onAnimationComplete={() => leaving && setLeaving(false)}
         >
-          <Bird src={art.src} s={s} calm={calm} name={gameLines(style.id, style.language).rival} />
+          <Bird src={art.src} flip={art.facesLeft} s={s} calm={calm} name={gameLines(style.id, style.language).rival} />
         </motion.div>
       )}
     </AnimatePresence>
@@ -59,7 +65,7 @@ export function Rival({ s, style, gloam }: { s: TeachSession; style: AgeStyle; g
 }
 
 /** The painting itself, with its reactions (a separate layer, so they add to the entrance and the idle bob) */
-function Bird({ src, s, calm, name }: { src: string; s: TeachSession; calm: boolean; name: string }) {
+function Bird({ src, flip, s, calm, name }: { src: string; flip: boolean; s: TeachSession; calm: boolean; name: string }) {
   const react = useAnimationControls();
   const ev = s.gameEvent;
   useEffect(() => {
@@ -74,7 +80,7 @@ function Bird({ src, s, calm, name }: { src: string; s: TeachSession; calm: bool
         src={src}
         alt={name}
         className="h-full w-full object-contain drop-shadow-[0_10px_8px_rgb(0_0_0/0.45)]"
-        style={{ scaleX: -1, transformOrigin: "50% 100%" }}
+        style={{ scaleX: flip ? -1 : 1, transformOrigin: "50% 100%" }}
         animate={calm ? undefined : { y: [0, -4, 0], rotate: [0, -1.5, 0] }}
         transition={calm ? undefined : { duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
         draggable={false}

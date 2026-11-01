@@ -397,9 +397,50 @@ export function LessonReview({ id }: { id: string }) {
                 </div>
               </details>
 
+              {(c.notebook || c.whatIf) && (
+                <details className="mt-6">
+                  <summary className="min-h-11 cursor-pointer content-center text-sm font-bold text-ink-dim">Gloam&apos;s challenges for this idea</summary>
+                  <p className="mt-1 max-w-[70ch] text-sm text-ink-dim">
+                    Before this idea&apos;s candle lights, students get one challenge: they find the wrong line in Gloam&apos;s notes and fix it, or predict a &ldquo;what if?&rdquo;. Check that the true lines are true and the wrong one is really wrong.
+                  </p>
+                  {c.notebook && (
+                    <div className="mt-3 grid gap-x-8 md:grid-cols-2">
+                      {c.notebook.right.map((line, ri) => (
+                        <Field key={ri} label={`Gloam's notes: a true line (${ri + 1} of 2)`} value={line} onChange={(v) => edit((b) => void (b.concepts[ci].notebook!.right[ri] = v))} readOnly={readOnly} rows={2} voice />
+                      ))}
+                      <Field label="Gloam's notes: the wrong line students must spot" value={c.notebook.wrong} onChange={(v) => edit((b) => void (b.concepts[ci].notebook!.wrong = v))} readOnly={readOnly} rows={2} voice />
+                    </div>
+                  )}
+                  {c.whatIf && (
+                    <div className="mt-3 grid gap-x-8 md:grid-cols-2">
+                      <Field label="What if? (Gloam asks it)" value={c.whatIf.scenario} onChange={(v) => edit((b) => void (b.concepts[ci].whatIf!.scenario = v))} readOnly={readOnly} rows={2} voice />
+                      <Field label="What would really happen, and why" value={c.whatIf.truth} onChange={(v) => edit((b) => void (b.concepts[ci].whatIf!.truth = v))} readOnly={readOnly} rows={2} />
+                      <Field label="What someone with the wrong idea would predict" value={c.whatIf.misconception} onChange={(v) => edit((b) => void (b.concepts[ci].whatIf!.misconception = v))} readOnly={readOnly} rows={2} />
+                    </div>
+                  )}
+                </details>
+              )}
+
               <Field label="Recap shown to students at the end (plain, correct)" value={c.recap} onChange={(v) => edit((b) => void (b.concepts[ci].recap = v))} readOnly={readOnly} rows={2} />
             </section>
           ))}
+
+          {bp.sequence && (
+            <section className="mt-10 border-t border-line pt-6">
+              <h2 className="text-lg font-bold text-ink">Put it in order</h2>
+              <p className="mt-1 max-w-[70ch] text-sm text-ink-dim">
+                For &ldquo;{bp.concepts.find((c) => c.id === bp.sequence!.conceptId)?.name ?? "one idea"}&rdquo;, Gloam drops these cards and students put them back in order, then explain why one leads to the next. Write them here in the right order: students get them shuffled.
+              </p>
+              <ol className="mt-3 space-y-2">
+                {bp.sequence.cards.map((card, ki) => (
+                  <li key={ki}>
+                    <Field label={`Card ${ki + 1}`} value={card} onChange={(v) => edit((b) => void (b.sequence!.cards[ki] = v))} readOnly={readOnly} rows={1} />
+                  </li>
+                ))}
+              </ol>
+              <Field label="Why they happen in this order" value={bp.sequence.why} onChange={(v) => edit((b) => void (b.sequence!.why = v))} readOnly={readOnly} rows={2} />
+            </section>
+          )}
 
           <section className="mt-10 border-t border-line pt-6">
             <h2 className="text-lg font-bold text-ink">The ending</h2>

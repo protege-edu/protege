@@ -112,6 +112,43 @@ True ideas (for the finale only): ${opts.truths.join(" ")}${writeIn(style.langua
   ];
 }
 
+/**
+ * The game layer's challenges for a whole lesson, in one go: each idea's notebook page (two true lines and
+ * one confidently wrong one) and "what if?" twist, and, if the lesson is about a process or a chain of
+ * causes, the cards to put in order. All of it is checked by the teacher before students see it.
+ */
+export function challengesPrompt(opts: { style: AgeStyle; lessonTitle: string; ideas: { name: string; truth: string; misconception: string }[] }) {
+  const { style } = opts;
+  return [
+    {
+      role: "system" as const,
+      content: `You write challenges for Gloam, a confused character a student teaches. School-appropriate, for this age group.
+${style.voice.persona}
+Gloam's voice: ${voiceRules(style)}
+
+For the lesson "${opts.lessonTitle}", return JSON:
+- ideas: one item per idea, in the same order:
+   - name: the idea's name, exactly as given
+   - notebookRight: exactly 2 short TRUE facts about this idea, in Gloam's voice, as notes Gloam wrote (under 15 words each).
+     Facts that support the idea, but NOT the idea's key answer itself.
+   - notebookWrong: 1 short note in Gloam's voice that confidently says this idea's WRONG version (under 15 words).
+   - whatIf: a "what if?" question in Gloam's voice that twists this idea, so a student who really understands it can
+     predict what would happen (e.g. "what if earth had no tilt?"). Under 25 words. It must not contain the answer.
+   - whatIfTruth: the correct prediction and why, in plain words (1 or 2 sentences, for the judge only).
+   - whatIfWrong: the prediction someone with the wrong idea would make (1 sentence).
+- sequence: ONLY if the lesson describes a process or a chain of causes with a clear order (steps, stages, a cycle
+  cut open, cause then effect). Otherwise null.
+   - idea: the name of the idea it belongs to
+   - cards: 3 to 5 very short steps (under 9 words each), in the RIGHT order, plain words
+   - why: why they happen in this order (1 or 2 sentences, for the judge only)
+
+The ideas:
+${opts.ideas.map((c, i) => `${i + 1}. ${c.name}\n   TRUE: ${c.truth}\n   WRONG: ${c.misconception}`).join("\n")}${writeIn(style.language)}`,
+    },
+    { role: "user" as const, content: "Write the challenges." },
+  ];
+}
+
 /** Rewrite only Gloam's "almost" line: it already has the TRUE idea, it just can't say why yet */
 export function almostPrompt(opts: { style: AgeStyle; truth: string; misconception: string; gotIt: string }) {
   const { style } = opts;

@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { Jar } from "@/components/encounters/Jar";
 import { Rival } from "@/components/encounters/Rival";
 import { EurekaMoment } from "@/components/scene/EurekaMoment";
 import { getAgeStyle, pickLine } from "@/lib/age-styles";
@@ -216,7 +217,15 @@ export function GameScreen({ lesson, account = "preview", access = null }: { les
             },
           }}
         >
-          {(s.phase === "teach" || s.phase === "intro") && <TopBar style={style} lesson={lesson} levels={levels} current={world ? walkLit : litCount} onPause={() => setOverlay("pause")} />}
+          {(s.phase === "teach" || s.phase === "intro") && <TopBar
+              style={style}
+              lesson={lesson}
+              levels={levels}
+              current={world ? walkLit : litCount}
+              onPause={() => setOverlay("pause")}
+              // the game layer: Gloam's jar (only once there's a firefly in it)
+              jar={s.fireflies > 0 ? <Jar style={style} count={s.fireflies} caught={s.caught} gloam={gloamBox} /> : undefined}
+            />}
           <StoryCaption text={s.phase === "teach" && !world ? caption : null} />
           {world && <TravelQuip text={s.phase === "teach" ? quip : null} gloam={gloamBox} />}
           {world && <ChapterCard style={style} chapter={s.phase === "teach" ? chapter : null} total={lesson.concepts.length} beat={beat} />}

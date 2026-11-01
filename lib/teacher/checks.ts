@@ -36,6 +36,14 @@ export function checkBlueprint(bp: LessonBlueprint): BlueprintProblem[] {
   bp.storyBeats.forEach((b, i) => {
     if (checkSafety(b, style) !== "ok") out.push({ field: `storyBeats.${i}`, message: `Story beat ${i + 1} has words that aren't right for school. Please rewrite it.` });
   });
+  // the game layer's cards: in order, none empty, and a reason students' explanations are judged against
+  if (bp.sequence) {
+    const owner = bp.concepts.find((c) => c.id === bp.sequence!.conceptId);
+    if (!owner) out.push({ field: "sequence", message: "The \"put it in order\" cards belong to an idea that was removed. Delete the cards or move them to another idea." });
+    if (bp.sequence.cards.length < 3 || bp.sequence.cards.some((c) => !c.trim())) out.push({ field: "sequence", message: "\"Put it in order\" needs at least 3 cards, none of them empty." });
+    if (!bp.sequence.why.trim()) out.push({ field: "sequence", message: "\"Put it in order\" needs the reason the cards go in that order." });
+    if (bp.sequence.cards.some((c) => checkSafety(c, style) !== "ok")) out.push({ field: "sequence", message: "A \"put it in order\" card has words that aren't right for school. Please rewrite it." });
+  }
   return out;
 }
 
@@ -48,6 +56,17 @@ export function checkConcept(c: Concept, bp: LessonBlueprint, nothing: Record<st
   if (c.questions.length === 0) at("questions", `"${c.name}" needs at least one question for Gloam to ask.`);
   if (c.evidence.length < 3) at("evidence", `"${c.name}" needs more evidence words (words a student would use to explain it).`);
   if (!c.recap.trim()) at("recap", `"${c.name}" needs a plain-language recap for the end of the lesson.`);
+  // the game layer's challenges for this idea: nothing left empty, everything school-appropriate
+  const style = getAgeStyle(bp.ageStyle, bp.language);
+  if (c.notebook) {
+    const lines = [...c.notebook.right, c.notebook.wrong];
+    if (lines.some((l) => !l.trim())) at("notebook", `Gloam's notes for "${c.name}" need all 3 lines (2 true, 1 wrong).`);
+    if (lines.some((l) => checkSafety(l, style) !== "ok")) at("notebook", `A line in Gloam's notes for "${c.name}" has words that aren't right for school. Please rewrite it.`);
+  }
+  if (c.whatIf) {
+    if (!c.whatIf.scenario.trim() || !c.whatIf.truth.trim() || !c.whatIf.misconception.trim()) at("whatIf", `The "what if?" for "${c.name}" needs the question, what would really happen, and the wrong prediction.`);
+    if (checkSafety(c.whatIf.scenario, style) !== "ok") at("whatIf", `The "what if?" for "${c.name}" has words that aren't right for school. Please rewrite it.`);
+  }
   const lesson = { ...bp, concepts: bp.concepts };
   c.questions.forEach((q, i) => {
     const leak = findGiveaway(lesson, nothing, q, "");
@@ -62,7 +81,6 @@ export function checkConcept(c: Concept, bp: LessonBlueprint, nothing: Record<st
   });
 
   // Everything Gloam says has to be school-appropriate (the same filter students' messages go through)
-  const style = getAgeStyle(bp.ageStyle, bp.language);
   c.beliefs.forEach((b, i) => {
     if (checkSafety(b, style) !== "ok") at(`beliefs.${i}`, `One of Gloam's lines for "${c.name}" has words that aren't right for school. Please rewrite it.`);
   });

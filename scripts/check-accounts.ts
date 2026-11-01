@@ -399,6 +399,16 @@ async function main() {
     assert.ok(row.keyHash && !text.includes(row.keyHash), "no key hash");
     await C.deleteClass(k);
   });
+  await test("a teacher saving a lesson keeps its challenges (notebook, what ifs, cards)", async () => {
+    const { BlueprintInput } = await import("@/lib/teacher/api");
+    const { seasons } = await import("@/lib/lesson/seasons");
+    // (as a teacher's own lesson: the built-in one has more answer words than a teacher's may)
+    const asTeachers = { ...seasons, concepts: seasons.concepts.map((c) => ({ ...c, giveaways: c.giveaways.slice(0, 12) })) };
+    const saved = BlueprintInput.parse(JSON.parse(JSON.stringify(asTeachers)));
+    assert.deepEqual(saved.concepts[0].notebook, seasons.concepts[0].notebook);
+    assert.deepEqual(saved.concepts[0].whatIf, seasons.concepts[0].whatIf);
+    assert.deepEqual(saved.sequence, seasons.sequence);
+  });
   await test("the game layer: a student's challenges and fireflies are in their download, and erased with them", async () => {
     const { studentExport } = await import("@/lib/privacy/export");
     const { encounters, gloams, teachSessions } = await import("@/lib/db/schema");
