@@ -57,6 +57,8 @@ export const classes = sqliteTable("classes", {
   code: text("code").unique(),
   /** "Continue with Google" for students: off unless the teacher's school allows it */
   googleSignIn: integer("google_sign_in", { mode: "boolean" }).notNull().default(false),
+  /** the game layer (challenges, the rival, the boss fight, fireflies): on unless the teacher switches it off */
+  game: integer("game", { mode: "boolean" }).notNull().default(true),
   /** the teacher paused the class (every Gloam falls asleep) */
   pausedAt: integer("paused_at", { mode: "timestamp_ms" }),
   /**

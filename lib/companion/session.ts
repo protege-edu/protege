@@ -17,6 +17,8 @@ export interface SessionState {
   lessonId: string;
   /** the (fake, nickname-only) student, so their Gloam can grow across lessons */
   studentId: string;
+  /** the class this session is in (null: practice) */
+  classId: string | null;
   nickname: string;
   understanding: Understanding;
   /** ideas fully understood, in the order they were lit: the journey's checkpoints */
@@ -88,6 +90,7 @@ export async function getSession(id: string): Promise<SessionState | null> {
     id: row.s.id,
     lessonId: row.s.lessonId,
     studentId: row.s.studentId,
+    classId: row.s.classId,
     nickname: row.nickname,
     understanding: row.s.understanding,
     checkpoints: row.s.checkpoints,

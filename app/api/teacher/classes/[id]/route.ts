@@ -51,6 +51,7 @@ const Change = z.union([
   z.object({ removeLessonId: z.string() }),
   z.object({ moveLessonId: z.string(), by: z.union([z.literal(-1), z.literal(1)]) }),
   z.object({ googleSignIn: z.boolean() }),
+  z.object({ game: z.boolean() }),
   z.object({ paused: z.boolean() }),
   z.object({ name: z.string().trim().min(1).max(60) }),
   z.object({ language: z.enum(["en", "fr"]) }),
@@ -89,6 +90,8 @@ export async function POST(request: Request, ctx: RouteContext<"/api/teacher/cla
     await moveLesson(id, c.moveLessonId, c.by);
   } else if ("googleSignIn" in c) {
     await db.update(classes).set({ googleSignIn: c.googleSignIn }).where(eq(classes.id, id)).run();
+  } else if ("game" in c) {
+    await db.update(classes).set({ game: c.game }).where(eq(classes.id, id)).run();
   } else if ("paused" in c) {
     await db.update(classes).set({ pausedAt: c.paused ? new Date() : null }).where(eq(classes.id, id)).run();
   } else if ("language" in c) {

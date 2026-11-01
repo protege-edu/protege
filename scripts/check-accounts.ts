@@ -399,6 +399,15 @@ async function main() {
     assert.ok(row.keyHash && !text.includes(row.keyHash), "no key hash");
     await C.deleteClass(k);
   });
+  await test("the game layer is on for a class until its teacher switches it off (practice always has it)", async () => {
+    const { gameOn } = await import("@/lib/game/config");
+    const k = await C.createClass("Game switch", 9, a.id);
+    assert.equal(await gameOn(k), true);
+    await db.update(classes).set({ game: false }).where(eq(classes.id, k)).run();
+    assert.equal(await gameOn(k), false);
+    assert.equal(await gameOn(null), true);
+    await C.deleteClass(k);
+  });
   await test("a teacher saving a lesson keeps its challenges (notebook, what ifs, cards)", async () => {
     const { BlueprintInput } = await import("@/lib/teacher/api");
     const { seasons } = await import("@/lib/lesson/seasons");

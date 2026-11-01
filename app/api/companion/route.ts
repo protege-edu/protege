@@ -69,6 +69,8 @@ export async function POST(request: Request) {
     return new Response(`${JSON.stringify(event)}\n`, { headers: { "Content-Type": "application/x-ndjson; charset=utf-8", "Cache-Control": "no-store" } });
   }
 
+  // the game layer, unless the teacher switched it off for this class
+  const game = await gameOn(session.classId);
   const stream = new ReadableStream({
     async start(controller) {
       const send = (event: object) => controller.enqueue(encoder.encode(JSON.stringify(event) + "\n"));
@@ -86,7 +88,7 @@ export async function POST(request: Request) {
             allowCopied: parsed.data.test === true && process.env.NODE_ENV !== "production",
             play: session.play,
             action: parsed.data.action,
-            gameOn: gameOn(),
+            gameOn: game,
           },
           { onJudged: (e) => send({ type: "judged", ...e }) },
           ),

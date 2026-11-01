@@ -15,7 +15,7 @@ import { ShowCode } from "./ShowCode";
 
 /** The class itself (no lesson): settings, its lessons, who's in it, and where students go */
 interface Info {
-  class: { id: string; name: string; grade: number; code: string; googleSignIn: boolean; pausedAt: string | null; language: "en" | "fr"; deleteOn: string | null };
+  class: { id: string; name: string; grade: number; code: string; googleSignIn: boolean; game: boolean; pausedAt: string | null; language: "en" | "fr"; deleteOn: string | null };
   /** in the order students see them; latest = the one given most recently (what the class is probably on) */
   lessons: { id: string; title: string; latest: boolean }[];
   roster: { id: string; nickname: string; google: boolean; hasKey: boolean }[];
@@ -134,6 +134,7 @@ export function ClassDashboard() {
           onShowCode={() => setShowCode(true)}
           onPause={() => void change({ paused: !paused })}
           onGoogle={(on) => void change({ googleSignIn: on })}
+          onGame={(on) => void change({ game: on })}
           onLanguage={(language) => void change({ language })}
           onGrade={(grade) => void change({ grade })}
           onDeleteOn={(deleteOn) => void change({ deleteOn })}
@@ -450,6 +451,7 @@ function ClassHeader({
   onShowCode,
   onPause,
   onGoogle,
+  onGame,
   onLanguage,
   onGrade,
   onDeleteOn,
@@ -459,6 +461,7 @@ function ClassHeader({
   onShowCode: () => void;
   onPause: () => void;
   onGoogle: (on: boolean) => void;
+  onGame: (on: boolean) => void;
   onLanguage: (language: "en" | "fr") => void;
   onGrade: (grade: number) => void;
   onDeleteOn: (when: number | null) => void;
@@ -504,6 +507,13 @@ function ClassHeader({
             </span>
           </label>
         )}
+        <label className="flex min-h-11 cursor-pointer items-center gap-2 text-ink">
+          <input type="checkbox" checked={info.class.game} onChange={(e) => onGame(e.target.checked)} className="h-5 w-5 accent-[var(--t-accent)]" />
+          <span>
+            <span className="font-bold">Challenges and the boss fight</span>
+            <span className="block text-xs text-ink-dim">Gloam&apos;s notebook, the rival, the boss and fireflies. Switch off for plain teaching only.</span>
+          </span>
+        </label>
         <label className="flex items-center gap-2 font-bold text-ink">
           Grade
           <select value={grade ?? info.class.grade} onChange={(e) => pickGrade(Number(e.target.value))} className="min-h-11 rounded-md border border-line bg-panel px-3 font-normal">

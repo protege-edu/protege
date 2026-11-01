@@ -113,6 +113,13 @@
       "when": 1793563260656,
       "tag": "0015_game_layer",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "6",
+      "when": 1793569258404,
+      "tag": "0016_class_game_switch",
+      "breakpoints": true
     }
   ]
 }

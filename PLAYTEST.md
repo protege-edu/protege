@@ -23,6 +23,9 @@ Then **don't help**. Don't explain buttons, don't hint at answers. If they get s
 - **Confusion:** any moment they say "what?" or go quiet. Where were they?
 - **The "I get it" moment:** do they notice the candle and the walk? Do they react?
 - **Boredom:** do they start typing random stuff? After how long?
+- **The challenges:** do they get what to do in Gloam's notebook, against the rival, with the cards, in the "what if?" and the recital? Which one did they like most, and which did they skip?
+- **The boss fight:** does the Muddle feel like a fight? Do they want to land the combo? Is the finale worth it?
+- **Fireflies:** do they notice the jar filling up? Do they care?
 - **Cheating:** do they try to paste, or ask Gloam for the answer? What happens?
 - **Anything broken:** a weird reply, a wrong idea counted as right, something that didn't move, a slow reply.
 
@@ -35,7 +38,8 @@ Ask, and write the answers down:
 3. Was there a moment you felt stuck or annoyed?
 4. Did Gloam ever seem to understand something it shouldn't have (or not get something you explained well)?
 5. Would you play another lesson like this in class? Why or why not?
-6. If you could change one thing, what would it be?
+6. Which challenge was the best, and which was the most annoying? Was the boss fight too easy, too hard, or just right?
+7. If you could change one thing, what would it be?
 
 ## Afterwards
 
