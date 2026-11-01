@@ -55,6 +55,20 @@ export const frSenior: FrenchStyle = {
       "ok. donc. {question}",
       "apprécié. inutile, mais apprécié. {question}",
     ],
+    skip: [
+      "bon. autre question. {question}",
+      "on passe. audacieux. ok : {question}",
+      "noté. on y reviendra. {question}",
+      "suivante. pas de problème, j'ai de la confusion en réserve. {question}",
+      "ok, nouveau sujet. même niveau de perdu. {question}",
+    ],
+    nextIdea: [
+      "ok. je suis sur une lancée. prochain truc qui me mêle : {question}",
+      "une de faite. voici ce qui me chicote encore : {question}",
+      "t'habitue pas. {question}",
+      "c'était incroyable. bref, nouveau problème : {question}",
+      "parfait, je suis intelligent maintenant. alors explique-moi ça : {question}",
+    ],
     stuck: [
       "pareil, honnêtement. on y va plus petit. {question}",
       "pas de stress. je suis perdu depuis le début et ça va. à peu près. {question}",
@@ -306,7 +320,15 @@ export function frStorybook(big: boolean): FrenchStyle {
       thinking: big ? ["Hmm…", "Je réfléchis…", "Laisse-moi penser!"] : ["hmm…", "je réfléchis tellement fort que ma tige fait mal", "traitement… traitement… aïe."],
       almost: ["Ooh?", "Attends…"],
       clicking: ["ATTENDS.", "Ooh ooh ooh!"],
-      nudge: ["D'accord! {question}", "Ooh, dis-m'en plus! {question}", "Je t'écoute! {question}"],
+      nudge: big
+        ? ["D'accord! {question}", "Ooh, dis-m'en plus! {question}", "Je t'écoute! {question}", "Hmm! Tu peux m'aider? {question}", "Tu m'aides bien! {question}"]
+        : ["ok! {question}", "ooh, continue. {question}", "j'écoute! très fort. {question}", "hmm. ma tige picote. {question}", "noté! mais je suis encore perdu. {question}"],
+      skip: big
+        ? ["D'accord, une nouvelle! {question}", "Essayons une autre! {question}", "Ooh, la suivante! {question}"]
+        : ["la suivante? bon. {question}", "on passe! dramatique. ok : {question}", "une nouvelle question, ça arrive. {question}"],
+      nextIdea: big
+        ? ["Youpi! Aide-moi avec celle-là maintenant! {question}", "J'ai compris! Prochaine énigme : {question}", "Ma lanterne brille plus! Mais je me demande encore : {question}"]
+        : ["une de faite! mais là je suis mêlé avec ça : {question}", "ok je suis un génie maintenant. prochain problème : {question}", "c'était INCROYABLE. mais attends : {question}"],
       stuck: ["C'est correct! Moi aussi, je bloque. {question}", "Essayons une plus facile. {question}"],
       askedForAnswer: ["Je le sais pas! C'est pour ça que j'ai besoin de toi. {question}", "Si je savais, ma lanterne brillerait! {question}"],
       offTopic: ["Ha! On revient à {topic}? {question}", "Ça a l'air amusant! Mais je bloque encore sur {topic}. {question}"],

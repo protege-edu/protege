@@ -15,7 +15,8 @@ import type { z } from "zod";
 export interface TurnInput {
   lesson: LessonBlueprint;
   understanding: Understanding;
-  history: { from: "student" | "gloam"; text: string }[];
+  /** `about`: on Gloam's lines, the idea its question was about */
+  history: { from: "student" | "gloam"; text: string; about?: string | null }[];
   message: string;
   /** Most of the message was pasted into the box, not typed */
   pasted?: boolean;
@@ -40,6 +41,10 @@ export interface TurnOutput extends JudgedEvent {
   /** Where the reply came from. "line" = hand-written, "offline" = the model isn't running. */
   /** busy: a hand-written line because the class's AI line was long (the judging was still the AI) */
   source: "ai" | "line" | "safety" | "fallback" | "offline" | "busy";
+  /** The idea Gloam's question in `reply` is about */
+  about: string | null;
+  /** Gloam's next line, said straight after a candle lights (its next question) */
+  followUp?: { text: string; about: string };
   ms: number;
 }
 
@@ -58,20 +63,25 @@ export async function runTurn(input: TurnInput, hooks: { onJudged?: (e: JudgedEv
   const style = getAgeStyle(lesson.ageStyle, lesson.language);
   const start = Date.now();
   const gloamSaid = history.filter((m) => m.from === "gloam").map((m) => m.text);
+  // what Gloam just said, and the idea its question was about (a short answer is judged against it)
+  const lastGloam = history.findLast((m) => m.from === "gloam");
+  const asked = lastGloam?.about && understanding[lastGloam.about] !== undefined ? lastGloam.about : null;
   const done = (o: Omit<TurnOutput, "ms">): TurnOutput => ({ ...o, ms: Date.now() - start });
   const unchanged = { understanding, improved: [], clicked: [], judged: [], finished: false };
+  // a hand-written line with Gloam's next question in it, and the idea that question is about
+  const withQuestion = (lines: string[]) => {
+    const q = nextQuestion(lesson, understanding, gloamSaid);
+    const text = pickLine(lines, { topic: topicOf(lesson), question: q.text }, gloamSaid.slice(-6));
+    return { reply: voice(text, style), about: q.text && text.includes(q.text) ? q.about : null };
+  };
 
   // 1. Safety
   const safety = checkSafety(message, style);
   if (safety !== "ok") {
-    const fill = { topic: topicOf(lesson), question: nextQuestion(lesson, understanding, gloamSaid) };
-    const reply =
-      safety === "care"
-        ? style.lines.care
-        : pickLine(safety === "blocked" ? style.lines.blocked : style.lines.insulted, fill, gloamSaid.slice(-6));
+    const said = safety === "care" ? { reply: voice(style.lines.care, style), about: null } : withQuestion(safety === "blocked" ? style.lines.blocked : style.lines.insulted);
     return done({
       ...unchanged,
-      reply: voice(reply, style),
+      ...said,
       emotion: safety === "care" ? "curious" : safety === "insulted" ? "skeptical" : "redirect",
       intent: safety === "insulted" ? "chatting" : "off_topic",
       onTopic: safety === "insulted",
@@ -81,21 +91,23 @@ export async function runTurn(input: TurnInput, hooks: { onJudged?: (e: JudgedEv
 
   // 1b. Pasted from somewhere: ask for their own words (no AI, no candles)
   if (!input.allowCopied && looksCopied(message, input.pasted)) {
-    const reply = pickLine(style.lines.copied, { topic: topicOf(lesson), question: nextQuestion(lesson, understanding, gloamSaid) }, gloamSaid.slice(-6));
-    return done({ ...unchanged, reply: voice(reply, style), emotion: "skeptical", intent: "chatting", onTopic: true, source: "line" });
+    return done({ ...unchanged, ...withQuestion(style.lines.copied), emotion: "skeptical", intent: "chatting", onTopic: true, source: "line" });
   }
 
   // 2. Judge: one call reads the message against every idea in the lesson
   const judged: { id: string; quality: Quality }[] = [];
   const candidates = candidateConcepts(lesson, message);
   const quick = quickIntent(message);
+  // An answer to Gloam's question ("in ontario", "the GTA") is about that idea, even in words the lesson didn't expect
+  const answering = asked && quick === null && message.trim().split(/\s+/).length >= 2 && !candidates.some((c) => c.id === asked);
+  if (answering) candidates.push(lesson.concepts.find((c) => c.id === asked)!);
   let intent: Intent = "chatting";
   if (candidates.length === 0 && quick !== null) {
     // "idk", "lol", "just tell me": plain code already knows, so no AI (and no tokens)
     intent = quick;
   } else {
     const ids = lesson.concepts.map((c) => c.id) as [string, ...string[]];
-    const res = await ask(judgeSchema(ids), "judge", judgePrompt(lesson), judgeMessage(message));
+    const res = await ask(judgeSchema(ids), "judge", judgePrompt(lesson), judgeMessage(message, lastGloam?.text));
     if (res === "offline") return done({ ...offline(understanding) });
     const said = new Map((res?.ideas ?? []).map((i) => [i.id, i]));
     // Only ideas whose evidence words the message uses can count, so the judge can't file an answer under the wrong idea
@@ -121,7 +133,7 @@ export async function runTurn(input: TurnInput, hooks: { onJudged?: (e: JudgedEv
 
   // 3. Progress + director
   const progress = applyProgress(understanding, judged);
-  const beat = directBeat({ lesson, style, before: understanding, progress, intent, judged, gloamSaid });
+  const beat = directBeat({ lesson, style, before: understanding, progress, intent, judged, gloamSaid, asked });
   hooks.onJudged?.({ understanding: progress.understanding, improved: progress.improved, clicked: progress.clicked, emotion: beat.emotion });
   const result = {
     understanding: progress.understanding,
@@ -132,6 +144,8 @@ export async function runTurn(input: TurnInput, hooks: { onJudged?: (e: JudgedEv
     intent,
     onTopic: intent !== "off_topic",
     finished: beat.finished,
+    about: beat.about,
+    ...(beat.followUp ? { followUp: { text: voice(beat.followUp.line, style), about: beat.followUp.about } } : {}),
   };
 
   // 4a. Hand-written line: instant
@@ -157,6 +171,8 @@ export async function runTurn(input: TurnInput, hooks: { onJudged?: (e: JudgedEv
     },
   ];
 
+  // "I get it!" moments say back the whole idea: they get a bit more room than a normal reply
+  const maxWords = Math.round(style.voice.maxWords * (beat.emotion === "eureka" ? 1.5 : 1));
   for (let attempt = 0; attempt < 3; attempt++) {
     // (a reply is about 50 tokens: the cap only stops a runaway answer from costing much)
     const res = await chatJSON({ name: "gloam", schema: performSchema, maxTokens: 200, messages });
@@ -166,23 +182,35 @@ export async function runTurn(input: TurnInput, hooks: { onJudged?: (e: JudgedEv
       if (res.reason === "busy" || res.reason === "refused") return done({ ...result, reply: voice(beat.line, style), source: "busy" });
       continue;
     }
-    const problem = checkReply(res.data.reply, { lesson, style, understanding: progress.understanding, allowed, gloamSaid, usedComparisons });
+    const problem = checkReply(res.data.reply, { lesson, style, understanding: progress.understanding, allowed, gloamSaid, usedComparisons, maxWords });
     if (problem) {
       messages.push({ role: "assistant", content: JSON.stringify(res.data) }, { role: "user", content: problem });
       continue;
     }
-    return done({ ...result, reply: voice(tidy(res.data.reply, style), style), source: "ai" });
+    const reply = tidy(res.data.reply, style, maxWords);
+    // (cut down to a lone "Oh!", it says nothing: the hand-written line does better)
+    if (wordsIn(reply) < MIN_WORDS) break;
+    return done({ ...result, reply: voice(reply, style), source: "ai" });
   }
   return done({ ...result, reply: voice(beat.line, style), source: "fallback" });
 }
 
+/** A reply is never just "Oh!" */
+const MIN_WORDS = 4;
+const wordsIn = (s: string) => s.split(/\s+/).filter(Boolean).length;
+
 /** Everything a reply must pass before a student sees it. Returns what to fix, or null if it's fine. */
 function checkReply(
   reply: string,
-  ctx: { lesson: LessonBlueprint; style: AgeStyle; understanding: Understanding; allowed: string; gloamSaid: string[]; usedComparisons: string[] },
+  ctx: { lesson: LessonBlueprint; style: AgeStyle; understanding: Understanding; allowed: string; gloamSaid: string[]; usedComparisons: string[]; maxWords: number },
 ): string | null {
   // Gloam's own words go through the same safety filter as the student's
   if (checkSafety(reply, ctx.style) !== "ok") return "Keep it school-appropriate and kind. Rewrite it.";
+
+  // A little long gets trimmed (tidy keeps the question); far too long gets asked again
+  const max = ctx.maxWords;
+  if (wordsIn(reply) > max * 1.5) return `That's ${wordsIn(reply)} words: too long. Say it in at most ${max} words, and keep your question.`;
+  if (wordsIn(reply) < MIN_WORDS) return "That's too short. Say it in a full sentence.";
 
   const leak = findGiveaway(ctx.lesson, ctx.understanding, reply, ctx.allowed);
   if (leak) return `You said "${leak}", but you don't know that yet. The student has to teach you. Rewrite it without that.`;
@@ -210,7 +238,7 @@ async function ask<T>(schema: z.ZodType<T>, name: string, system: string, user: 
 }
 
 function offline(understanding: Understanding): Omit<TurnOutput, "ms"> {
-  return { understanding, improved: [], clicked: [], judged: [], reply: "", emotion: "confused", intent: "chatting", onTopic: true, finished: false, source: "offline" };
+  return { understanding, improved: [], clicked: [], judged: [], reply: "", emotion: "confused", intent: "chatting", onTopic: true, finished: false, source: "offline", about: null };
 }
 
 const topicOf = (lesson: LessonBlueprint) => lesson.topic;
@@ -254,7 +282,8 @@ export function voice(text: string, style: AgeStyle): string {
   return out;
 }
 
-function tidy(reply: string, style: AgeStyle): string {
+/** Clean up a reply and fit it to the age style's word limit, keeping Gloam's question */
+export function tidy(reply: string, style: AgeStyle, maxWords = style.voice.maxWords): string {
   const text = reply
     .replace(/^gloam:\s*/i, "")
     .replace(/[*_]{1,2}([^*_]+)[*_]{1,2}/g, "$1") // no markdown *emphasis*
@@ -265,9 +294,17 @@ function tidy(reply: string, style: AgeStyle): string {
   // "vs." and "e.g." aren't the end of a sentence: swap their dots for a look-alike so the splitter ignores them
   const safe = text.replace(/\b(vs|e\.g|i\.e|etc)\./gi, (m) => m.replace(/\./g, "․"));
   let sentences: string[] = safe.match(/[^.!?…]+[.!?…]+["')]*|[^.!?…]+$/g) ?? [safe];
-  // Never longer than the age style allows: keep it under the age style's word limit (always at least one sentence)
+  // Never longer than the age style allows. Gloam's question is the point of the reply, so it stays:
+  // drop sentences from the middle first, then from the start (never down to a lone "Oh!" when there's more)
   const count = (xs: string[]) => xs.join(" ").split(/\s+/).filter(Boolean).length;
-  while (sentences.length > 1 && count(sentences) > style.voice.maxWords) sentences = sentences.slice(0, -1);
+  const asks = (s: string) => /\?["')]*\s*$/.test(s.trim());
+  while (sentences.length > 1 && count(sentences) > maxWords) {
+    const last = sentences.length - 1;
+    const keepLast = asks(sentences[last]);
+    if (!keepLast) sentences = sentences.slice(0, -1);
+    else if (sentences.length > 2) sentences = [sentences[0], ...sentences.slice(2)];
+    else sentences = wordsIn(sentences[last]) >= MIN_WORDS ? [sentences[last]] : sentences.slice(0, -1);
+  }
   // Drop a dangling "So…" fragment at the end
   const dangling = (s: string) => s.trim().split(/\s+/).length <= 2 && !/[!?]["')]*$/.test(s.trim()) && /(\.\.\.|…|[^.!?…"')])$/.test(s.trim());
   while (sentences.length > 1 && dangling(sentences[sentences.length - 1])) sentences.pop();

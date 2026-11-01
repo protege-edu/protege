@@ -58,6 +58,20 @@ export const senior: AgeStyle = {
       "ok. so. {question}",
       "appreciated. unhelpful, but appreciated. {question}",
     ],
+    skip: [
+      "fine. different question. {question}",
+      "skipping. bold. ok: {question}",
+      "noted. we'll circle back to that one. {question}",
+      "next. sure. i have plenty of confusion to go around. {question}",
+      "ok, new topic. same level of lost. {question}",
+    ],
+    nextIdea: [
+      "ok. i'm riding high. next confusing thing: {question}",
+      "one down. here's what's still bugging me: {question}",
+      "don't get comfortable. {question}",
+      "that felt amazing. anyway, new problem: {question}",
+      "great, i'm smart now. so explain this: {question}",
+    ],
     stuck: [
       "same, honestly. let's go smaller. {question}",
       "no pressure. i've been confused this whole time and i'm fine. mostly. {question}",

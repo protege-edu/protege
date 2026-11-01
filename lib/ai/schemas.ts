@@ -18,7 +18,7 @@ export const QUALITIES = ["wrong", "vague", "partial", "clear"] as const;
 export type Quality = (typeof QUALITIES)[number];
 
 /** What the student is doing with their message */
-export const INTENTS = ["explaining", "stuck", "asking_for_answer", "off_topic", "chatting"] as const;
+export const INTENTS = ["explaining", "stuck", "asking_for_answer", "skip", "off_topic", "chatting"] as const;
 export type Intent = (typeof INTENTS)[number];
 
 /** How the judge sees one idea in a message. NEITHER: the message isn't about it. */

@@ -14,6 +14,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "eval": "tsx --env-file-if-exists=.env scripts/companion-eval.ts",
+    "eval:replay": "tsx --env-file-if-exists=.env scripts/chat-replay.ts",
     "screenshots": "tsx scripts/screenshot.ts",
     "test:logic": "tsx scripts/check-logic.ts",
     "test:accounts": "tsx --conditions=react-server scripts/check-accounts.ts",

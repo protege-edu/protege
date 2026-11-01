@@ -243,6 +243,10 @@ export interface AgeStyle {
     clicking: Line[];
     /** Student said nothing to work with ("yea", "hey", "ok") */
     nudge: Line[];
+    /** "next", "skip": a question about something else */
+    skip: Line[];
+    /** Straight after a candle lights: on to the next thing Gloam is confused about (always has {question}) */
+    nextIdea: Line[];
     stuck: Line[];
     askedForAnswer: Line[];
     offTopic: Line[];

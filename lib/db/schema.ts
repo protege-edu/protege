@@ -204,6 +204,8 @@ export const messages = sqliteTable("messages", {
   from: text("from", { enum: ["student", "gloam"] }).notNull(),
   text: text("text").notNull(),
   emotion: text("emotion"),
+  /** Gloam's lines only: the idea its question was about (so a short answer to it is judged against that idea) */
+  about: text("about"),
   createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
 });
 

@@ -3,7 +3,7 @@
  *   npm run test:logic
  */
 import assert from "node:assert/strict";
-import { findGiveaway, voice } from "@/lib/ai/companion";
+import { findGiveaway, tidy, voice } from "@/lib/ai/companion";
 import { AGE_STYLES, getAgeStyle } from "@/lib/age-styles";
 import { detectLanguage } from "@/lib/lesson/language";
 import { looksCopied, quickIntent } from "@/lib/companion/intent";
@@ -178,6 +178,81 @@ test("after the finale, Gloam takes a victory lap", () => {
 });
 test("every scripted question is giveaway-free", () => {
   for (const c of seasons.concepts) for (const q of c.questions) assert.equal(findGiveaway(seasons, zero, q, ""), null, q);
+});
+
+console.log("a long, messy chat (the repeats a play-tester found)");
+// a lesson with only two ideas: the hardest case for not repeating (fewer questions to go around)
+const two = { ...seasons, concepts: seasons.concepts.slice(0, 2) };
+const zeroTwo = startingUnderstanding(two.concepts.map((c) => c.id));
+const questionIn = (lesson: typeof seasons, text: string) => lesson.concepts.flatMap((c) => c.questions).find((q) => text.toLowerCase().includes(q.toLowerCase().slice(0, 30)));
+for (const [name, lesson, start] of [["2 ideas", two, zeroTwo], ["5 ideas", seasons, zero]] as const) {
+  test(`30 turns of "ok", "idk", "next", "shut it": no hand-written question repeats within 6 lines (${name})`, () => {
+    const history: string[] = [];
+    const intents = ["chatting", "stuck", "skip", "chatting", "off_topic", "asking_for_answer"] as const;
+    let asked: string | null = null;
+    for (let i = 0; i < 30; i++) {
+      const b = directBeat({ lesson, style: hs, before: start, progress: applyProgress(start, []), intent: intents[i % intents.length], judged: [], gloamSaid: history, asked, seed: (i * 0.37) % 1 });
+      const q = questionIn(lesson, b.line);
+      // a hand-written line never repeats a recent question: when they've all been asked, the AI asks in new words
+      if (b.kind === "line" && q) assert.ok(!history.slice(-6).some((h) => h.toLowerCase().includes(q.toLowerCase().slice(0, 30))), `turn ${i}: "${q}" again`);
+      history.push(b.line);
+      asked = b.about;
+    }
+  });
+}
+test("at the start, every idea has at least 2 questions to ask (not just one)", () => {
+  const seen = new Set<string>();
+  const history: string[] = [];
+  for (let i = 0; i < 8; i++) {
+    const b = directBeat({ lesson: two, style: hs, before: zeroTwo, progress: applyProgress(zeroTwo, []), intent: "chatting", judged: [], gloamSaid: history, seed: (i * 0.61) % 1 });
+    const q = questionIn(two, b.line);
+    if (q) seen.add(q);
+    history.push(b.line);
+  }
+  assert.ok(seen.size >= 4, `only ${seen.size} different questions`);
+});
+test("'next' asks about a different idea", () => {
+  for (const seed of [0, 0.3, 0.6, 0.9]) {
+    const b = directBeat({ lesson: two, style: hs, before: zeroTwo, progress: applyProgress(zeroTwo, []), intent: "skip", judged: [], gloamSaid: [], asked: two.concepts[0].id, seed });
+    assert.equal(b.about, two.concepts[1].id);
+  }
+});
+test("'next', 'skip', 'another one', 'suivant' mean skip", () => {
+  for (const m of ["next", "Next!", "skip", "skip this", "another one", "different question", "ask me something else", "suivant", "la suivante", "une autre question"]) assert.equal(quickIntent(m), "skip", m);
+  for (const m of ["next to the sun", "the next season is winter", "passive"]) assert.notEqual(quickIntent(m), "skip", m);
+});
+test("when a candle lights, Gloam asks its next question straight away (a different idea)", () => {
+  const before = { ...zero, tilt: 2 as const };
+  const progress = applyProgress(before, [{ id: "tilt", quality: "clear" }]);
+  const b = directBeat({ lesson: seasons, style: hs, before, progress, intent: "explaining", judged: [{ id: "tilt", quality: "clear" }], gloamSaid: [] });
+  assert.ok(b.followUp, "no follow-up");
+  assert.notEqual(b.followUp!.about, "tilt");
+  assert.ok(questionIn(seasons, b.followUp!.line), b.followUp!.line);
+});
+test("the finale has no follow-up question", () => {
+  const before = Object.fromEntries(seasons.concepts.map((c) => [c.id, 3])) as typeof zero;
+  before.hemispheres = 2;
+  const progress = applyProgress(before, [{ id: "hemispheres", quality: "clear" }]);
+  assert.equal(directBeat({ lesson: seasons, style: hs, before, progress, intent: "explaining", judged: [{ id: "hemispheres", quality: "clear" }], gloamSaid: [] }).followUp, undefined);
+});
+test("a too-long reply keeps its question, and is never cut down to 'Oh!'", () => {
+  for (const id of Object.keys(AGE_STYLES) as (keyof typeof AGE_STYLES)[]) {
+    const st = getAgeStyle(id);
+    const long = `Oh! ${"That is a really very interesting thing you said there about it all. ".repeat(3)}But why would everyone pick the same spot to live?`;
+    const out = tidy(long, st);
+    assert.ok(out.split(/\s+/).length >= 4, `${id}: "${out}"`);
+    assert.ok(out.trim().endsWith("?"), `${id} lost the question: "${out}"`);
+    assert.ok(out.split(/\s+/).length <= st.voice.maxWords, `${id}: too long`);
+  }
+});
+test("every age style has 'skip' and 'next idea' lines with Gloam's question in them", () => {
+  for (const id of Object.keys(AGE_STYLES) as (keyof typeof AGE_STYLES)[]) {
+    for (const lang of ["en", "fr"] as const) {
+      const st = getAgeStyle(id, lang);
+      assert.ok(st.lines.skip.length >= 3 && st.lines.skip.every((l) => l.includes("{question}")), `${id} ${lang} skip`);
+      assert.ok(st.lines.nextIdea.length >= 3 && st.lines.nextIdea.every((l) => l.includes("{question}")), `${id} ${lang} nextIdea`);
+    }
+  }
 });
 
 console.log("voice");

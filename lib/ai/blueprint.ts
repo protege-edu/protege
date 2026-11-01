@@ -35,7 +35,8 @@ const ConceptLines = z.object({
   }),
   questions: z.array(z.string().min(5).max(200)).min(2).max(4),
   giveaways: z.array(z.string().min(2).max(40)).min(2).max(8),
-  evidence: z.array(z.string().min(2).max(30)).min(3).max(16),
+  // (the model can list more than asked: the clean-up below keeps the best 20)
+  evidence: z.array(z.string().min(2).max(30)).min(3).max(40),
   recap: z.string().min(10).max(400),
 });
 
@@ -184,7 +185,7 @@ export async function draftBlueprint(opts: { source: string; grade: number; titl
   const shared = (w: string) => (uses.get(w) ?? 0) >= 3;
   for (const c of concepts) {
     const kept = c.evidence.filter((w) => !topic.includes(w) && !shared(w));
-    c.evidence = kept.length >= 3 ? kept : c.evidence;
+    c.evidence = (kept.length >= 3 ? kept : c.evidence).slice(0, 20);
   }
 
   const bp: LessonBlueprint = {

@@ -18,6 +18,7 @@ intent: what the message is doing.
 - "explaining": trying to explain something about the lesson, even if it's wrong
 - "stuck": "idk", "i'm confused", giving up
 - "asking_for_answer": wants to be told the answer ("just tell me", "you explain it")
+- "skip": wants a different question ("next", "skip", "another one", "ask me something else")
 - "off_topic": not about the lesson at all (games, food, people, other subjects)
 - "chatting": greetings, "ok", "lol", short reactions, being rude
 
@@ -25,9 +26,12 @@ ideas: only the ideas the message actually says something about. Leave out every
 - matches "TRUE" if it agrees with the TRUE version. Saying the WRONG version is false ("it's NOT because...") also counts as TRUE.
 - matches "WRONG" if it agrees with the WRONG version.
 - Slang, typos, short answers and other languages still count. Judge what they mean, not how well it's written.
+- The student is often answering the question Gloam just asked. Judge a short answer in that context: "in ontario" answering
+  "where do most people live?" says where people live.
 - gaveReason: true only if the message also says WHY or HOW (because, so, which means).`;
 }
 
-export function judgeMessage(message: string): string {
-  return `STUDENT'S MESSAGE: "${message}"`;
+/** The message, and what Gloam just said (a short answer only makes sense next to its question) */
+export function judgeMessage(message: string, gloamJustSaid?: string): string {
+  return `${gloamJustSaid ? `GLOAM JUST SAID: "${gloamJustSaid}"\n` : ""}STUDENT'S MESSAGE: "${message}"`;
 }

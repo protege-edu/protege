@@ -78,6 +78,8 @@ interface ReplyEvent {
   recap?: RecapItem[];
   gloam?: GloamLevel;
   levelUp?: boolean;
+  /** Straight after a candle lights: Gloam's next question (said once the moment is over) */
+  followUp?: string;
 }
 
 export function useTeachSession(lesson: ClientLesson, style: AgeStyle, test = false) {
@@ -104,7 +106,8 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle, test = fa
   const [levelUp, setLevelUp] = useState<GloamLevel | null>(null);
   const [talking, setTalking] = useState(false);
   const talkTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pending = useRef<{ reply: string; emotion: Emotion; understanding: Understanding; checkpoints?: string[] } | null>(null);
+  const pending = useRef<{ reply: string; emotion: Emotion; understanding: Understanding; checkpoints?: string[]; followUp?: string } | null>(null);
+  const followTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastMessage = useRef<{ text: string; pasted: boolean } | null>(null);
   const beatShown = useRef(0);
   const shownRef = useRef(shown);
@@ -236,7 +239,7 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle, test = fa
       if (ev.clicked.length) {
         const concept = lesson.concepts.find((c) => c.id === ev.clicked[0]);
         const firstEver = lesson.concepts.every((c) => (shownRef.current[c.id] ?? 0) < 3);
-        pending.current = { reply: ev.reply, emotion: ev.emotion, understanding: ev.understanding, checkpoints: ev.checkpoints };
+        pending.current = { reply: ev.reply, emotion: ev.emotion, understanding: ev.understanding, checkpoints: ev.checkpoints, followUp: ev.followUp };
         setFlash(ev.clicked[0]);
         setMoment({
           key: Date.now(),
@@ -368,12 +371,23 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle, test = fa
 
   const onMomentDone = useCallback(() => {
     const wasFinal = moment?.final;
+    const followUp = pending.current?.followUp;
     pending.current = null;
     setMoment(null);
     setFlash(null);
     setEmotion("proud");
-    setStatus("ready");
     if (wasFinal) setPhase("ending");
+    if (!followUp || wasFinal) return setStatus("ready");
+    // a beat to enjoy the light, then Gloam's straight on to the next thing it's confused about (no waiting)
+    if (followTimer.current) clearTimeout(followTimer.current);
+    followTimer.current = setTimeout(() => {
+      setEmotion("curious");
+      setTalking(true);
+      if (talkTimer.current) clearTimeout(talkTimer.current);
+      talkTimer.current = setTimeout(() => setTalking(false), Math.min(6000, followUp.length * 24 + 200));
+      setEntries((xs) => [...xs, { id: nextId(), kind: "gloam", text: followUp, emotion: "curious", fresh: true }]);
+      setStatus("ready");
+    }, 900);
   }, [moment]);
 
   const typed = useCallback(() => {

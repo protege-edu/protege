@@ -67,7 +67,7 @@ export async function POST(request: Request) {
           {
             lesson,
             understanding: session.understanding,
-            history: session.messages.map((m) => ({ from: m.from, text: m.text })),
+            history: session.messages.map((m) => ({ from: m.from, text: m.text, about: m.about })),
             message: parsed.data.message,
             pasted: parsed.data.pasted,
             allowCopied: parsed.data.test === true && process.env.NODE_ENV !== "production",
@@ -84,6 +84,8 @@ export async function POST(request: Request) {
             studentText: parsed.data.message,
             reply: out.reply,
             emotion: out.emotion,
+            about: out.about,
+            followUp: out.followUp,
             before: session.understanding,
             after: out.understanding,
             judged: out.judged,
@@ -99,6 +101,8 @@ export async function POST(request: Request) {
             improved: out.improved,
             clicked: out.clicked,
             finished: out.finished,
+            // the next question, straight after a candle lights
+            ...(out.followUp ? { followUp: out.followUp.text } : {}),
             checkpoints: saved.checkpoints,
             gloam: saved.after,
             levelUp: saved.after.level > saved.before.level,

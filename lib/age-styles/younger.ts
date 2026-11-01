@@ -194,7 +194,15 @@ const storybookLines = (simple: boolean): AgeStyle["lines"] => ({
   thinking: simple ? ["Hmm…", "Thinking…", "Let me think!"] : ["hmm…", "thinking so hard my stalk hurts", "processing… processing… ow."],
   almost: ["Ooh?", "Wait…"],
   clicking: ["WAIT.", "Ooh ooh ooh!"],
-  nudge: ["Okay! {question}", "Ooh, tell me more! {question}", "I'm listening! {question}"],
+  nudge: simple
+    ? ["Okay! {question}", "Ooh, tell me more! {question}", "I'm listening! {question}", "Hmm! Can you help me? {question}", "You're a good helper! {question}"]
+    : ["ok! {question}", "ooh, go on. {question}", "i'm listening! very hard. {question}", "hmm. my stalk is tingling. {question}", "noted! but i'm still lost. {question}"],
+  skip: simple
+    ? ["Okay, a new one! {question}", "Let's try a different one! {question}", "Ooh, next! {question}"]
+    : ["next? fine. {question}", "skipping! dramatic. ok: {question}", "a new question, coming right up. {question}"],
+  nextIdea: simple
+    ? ["Yay! Now help me with this one! {question}", "I got it! Next puzzle: {question}", "My lantern is brighter! But I still wonder: {question}"]
+    : ["one down! but now i'm confused about this: {question}", "ok i'm basically a genius now. next problem: {question}", "that was AMAZING. but wait: {question}"],
   stuck: ["That's okay! I'm stuck too. {question}", "Let's try an easier one. {question}"],
   askedForAnswer: ["I don't know it! That's why I need you. {question}", "If I knew, my lantern would glow! {question}"],
   offTopic: ["Ha! Back to {topic}? {question}", "That sounds fun! But I'm still stuck on {topic}. {question}"],

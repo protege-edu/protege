@@ -24,7 +24,8 @@ export interface SessionState {
   finished: boolean;
   /** Only present once the lesson is finished */
   recap?: RecapItem[];
-  messages: { from: "student" | "gloam"; text: string; emotion: string | null }[];
+  /** `about`: on Gloam's lines, the idea its question was about */
+  messages: { from: "student" | "gloam"; text: string; emotion: string | null; about: string | null }[];
 }
 
 /**
@@ -68,7 +69,7 @@ export async function getSession(id: string): Promise<SessionState | null> {
   if (!row) return null;
 
   const msgs = await db
-    .select({ from: messages.from, text: messages.text, emotion: messages.emotion })
+    .select({ from: messages.from, text: messages.text, emotion: messages.emotion, about: messages.about })
     .from(messages)
     .where(eq(messages.sessionId, id))
     .orderBy(asc(messages.id))
@@ -100,6 +101,10 @@ export async function recordTurn(opts: {
   studentText: string;
   reply: string;
   emotion: Emotion;
+  /** the idea Gloam's question in the reply is about */
+  about?: string | null;
+  /** Gloam's next line straight after a candle lights (saved after the reply) */
+  followUp?: { text: string; about: string };
   before: Understanding;
   after: Understanding;
   judged: { id: string; quality: Quality }[];
@@ -115,7 +120,8 @@ export async function recordTurn(opts: {
   const moreLessons = firstFinish ? 1 : 0;
   await together([
     db.insert(messages).values({ sessionId: opts.sessionId, from: "student", text: opts.studentText, createdAt: now }),
-    db.insert(messages).values({ sessionId: opts.sessionId, from: "gloam", text: opts.reply, emotion: opts.emotion, createdAt: now }),
+    db.insert(messages).values({ sessionId: opts.sessionId, from: "gloam", text: opts.reply, emotion: opts.emotion, about: opts.about ?? null, createdAt: now }),
+    ...(opts.followUp ? [db.insert(messages).values({ sessionId: opts.sessionId, from: "gloam", text: opts.followUp.text, emotion: "curious", about: opts.followUp.about, createdAt: now })] : []),
     ...opts.judged.map((j) =>
       db.insert(conceptEvents).values({ sessionId: opts.sessionId, conceptId: j.id, quality: j.quality, levelBefore: opts.before[j.id] ?? 0, levelAfter: opts.after[j.id] ?? 0, createdAt: now }),
     ),

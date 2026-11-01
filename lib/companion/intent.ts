@@ -34,6 +34,10 @@ export function quickIntent(message: string): Intent | null {
     return "asking_for_answer";
   }
   if (/^(just |js |jus |pls |please |plz |bro |bruh )*(tell me|tell us|say it|explain|answer)( pls| please| bro)?\s*\??$/.test(m)) return "asking_for_answer";
+  // "next", "skip", "another one": a different question, please (the whole message: "next to the sun" is an answer)
+  if (/^(ok |okay |um |uh )?(next( one| question)?|skip( it| this( one)?| that)?|pass|another( one| question)?|(a )?different (one|question)|new question|ask (me )?(something|smth|sth) else|something else|move on)( pls| please| plz)?\s*\??$/.test(m)) {
+    return "skip";
+  }
   if (/^(idk|i dk|idek|dunno|i dunno|i don'?t know|i dont know|no idea|no clue|not sure|im not sure|i'?m confused|confused|help|i'?m stuck|stuck|huh|what\??|wdym|i give up|bro what|wait what)\b/.test(m)) {
     return "stuck";
   }
@@ -50,6 +54,9 @@ function quickIntentFr(m: string): Intent | null {
     /\b(juste |stp |svp |s'il te plait )?(dis|donne|montre)( |-)?(moi|nous) (la |ta )?(reponse|solution|raison)\b|\bc'?est quoi la (vraie )?(reponse|raison)\b|\bquelle est la (bonne )?reponse\b|\b(juste )?dis( |-)?le\b|\bexplique( |-)?moi\b|\btoi explique\b/.test(m)
   ) {
     return "asking_for_answer";
+  }
+  if (/^(ok |bon |euh )?(suivant(e)?|la suivante|passe|je passe|on passe|une autre( question)?|autre question|(une )?nouvelle question|(la )?prochaine( question)?|autre chose)( stp| svp)?\s*\??$/.test(m)) {
+    return "skip";
   }
   if (/^(je sais pas|j'?sais pas|je ne sais pas|jsp|chais pas|sais pas|aucune idee|pas d'?idee|je comprends pas|j'?comprends pas|jcomprends pas|je suis perdu|chui perdu|perdu|aide|a l'?aide|je bloque|bloque|hein|quoi\??|j'?abandonne|euh)\b/.test(m)) {
     return "stuck";

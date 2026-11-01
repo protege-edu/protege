@@ -69,14 +69,15 @@ For ONE idea in the lesson "${opts.lessonTitle}", return JSON:
    doubting: starting to doubt the wrong idea, a vague hint of the truth
    almost: almost there, has the TRUE idea but is missing the reason why
    gotIt: fully gets the TRUE idea, in its own words. This one must be CORRECT.
-- questions: exactly 3 questions Gloam asks to get the student explaining, in Gloam's voice, ordered from
-   [0] neutral (does NOT mention the answer at all) to [2] more specific. Never answer them.
+- questions: exactly 3 questions Gloam asks to get the student explaining, in Gloam's voice, each a different angle.
+   [0] and [1] are neutral (they do NOT mention the answer at all), [2] is more specific. Never answer them.
    Gloam asks them while it STILL believes the wrong idea. A question must never contain the answer,
    and never say or hint that Gloam's idea is wrong (so never "why is it NOT ...?").
 - giveaways: 3 to 6 key phrases of 1 to 4 words each (lowercase) that only someone who already KNOWS the true idea would say,
    like the key result, the key number, or the rule itself. Never a full sentence. NOT everyday topic words Gloam needs just to talk
    about this idea, and nothing from the idea's name or the wrong idea.
-- evidence: 5 to 12 short lowercase word stems a student would almost certainly use when explaining this idea, right OR wrong (words from this idea and these notes)
+- evidence: 6 to 16 short lowercase word stems a student would almost certainly use when explaining this idea, right OR wrong (words from this idea and these notes),
+   including the short forms, place names and everyday words a teenager would actually type (like "gta" for the Greater Toronto Area)
 - recap: the correct idea in 1 or 2 plain, friendly sentences for students (not in Gloam's voice)
 
 Other ideas in this lesson (don't mix them in): ${opts.otherIdeas.join("; ") || "none"}${writeIn(style.language)}`,
