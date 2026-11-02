@@ -7,7 +7,9 @@ import { InkButton } from "@/components/ui/InkButton";
 import { Sheet } from "@/components/ui/Sheet";
 import type { AgeStyle } from "@/lib/age-styles";
 import { gameUi } from "@/lib/age-styles/game-ui";
-import { MAX_OUT, STASH, stashArt, type StashId } from "@/lib/game/stash";
+import { MAX_OUT, OUTFIT_SHOP, STASH, stashArt, type OutfitId, type StashId } from "@/lib/game/stash";
+import { outfitsFor, wearColors } from "@/components/gloam/rig/outfit";
+import { OutfitPicture } from "./OutfitPicture";
 import type { StashState } from "@/lib/student/stash";
 import { useCalmMotion } from "@/lib/useCalmMotion";
 
@@ -26,7 +28,8 @@ export function Props({ placed, age, gloam, fresh, minX = 0 }: { placed: string[
   let left = gloam.cx - gloam.w * 0.42;
   let right = gloam.cx + gloam.w * 0.42;
   // (the biggest prizes get the spots nearest Gloam; the small ones fit in at the edges)
-  const spots = [...STASH].filter((s) => placed.includes(s.id)).sort((a, b) => b.price - a.price).flatMap((s) => {
+  const spots: { s: (typeof STASH)[number]; h: number; cx: number; lift: number }[] = [];
+  for (const s of [...STASH].filter((x) => placed.includes(x.id)).sort((a, b) => b.price - a.price)) {
     const sides: (-1 | 1)[] = s.side < 0 ? [-1, 1] : [1, -1];
     for (const side of sides) {
       const depth = side < 0 ? Math.max(0, (gloam.cx - left) / gloam.w - 0.6) : Math.max(0, (right - gloam.cx) / gloam.w - 0.6);
@@ -37,10 +40,10 @@ export function Props({ placed, age, gloam, fresh, minX = 0 }: { placed: string[
       if (x0 < minX + 8 || x0 + w > gloam.stageW - 8) continue;
       if (side < 0) left = x0;
       else right = x0 + w;
-      return [{ s, h, cx: x0 + w / 2, lift: Math.round((1 - k) * gloam.h * 0.25) }];
+      spots.push({ s, h, cx: x0 + w / 2, lift: Math.round((1 - k) * gloam.h * 0.25) });
+      break;
     }
-    return [];
-  });
+  }
   return (
     <>
       {spots.map(({ s, h, cx, lift }) => (
@@ -63,7 +66,7 @@ export function Props({ placed, age, gloam, fresh, minX = 0 }: { placed: string[
 }
 
 /** Gloam's stash: a drawer of painted things to get with fireflies, and to put out or away */
-export function StashDrawer({ style, stash, onChange, onClose }: { style: AgeStyle; stash: StashState; onChange: (s: StashState, bought?: StashId) => void; onClose: () => void }) {
+export function StashDrawer({ style, stash, onChange, onClose }: { style: AgeStyle; stash: StashState; onChange: (s: StashState, bought?: StashId | OutfitId) => void; onClose: () => void }) {
   const ui = gameUi(style.id, style.language);
   const calm = useCalmMotion();
   const [busy, setBusy] = useState(false);
@@ -79,7 +82,11 @@ export function StashDrawer({ style, stash, onChange, onClose }: { style: AgeSty
       opener?.focus?.({ preventScroll: true });
     };
   }, [onClose]);
-  const send = async (body: object, bought?: StashId) => {
+  // what this age's Gloam can wear, in the colours it wears them in
+  const rig = style.look.rig;
+  const colors = wearColors(rig);
+  const canWear = rig ? outfitsFor(rig) : [];
+  const send = async (body: object, bought?: StashId | OutfitId) => {
     setBusy(true);
     setProblem(null);
     const r = await fetch("/api/me/stash", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).catch(() => null);
@@ -120,27 +127,59 @@ export function StashDrawer({ style, stash, onChange, onClose }: { style: AgeSty
               {problem}
             </p>
           )}
-          <ul className="mt-4 flex-1 space-y-3 overflow-y-auto px-6 pb-6">
+          <div className="mt-4 flex-1 overflow-y-auto px-6 pb-6">
+          {canWear.length > 0 && (
+            <>
+              <h3 className="text-md font-bold text-ink">{ui.wearTitle}</h3>
+              <ul className="mt-2 mb-5 space-y-3">
+                {OUTFIT_SHOP.filter((o) => canWear.includes(o.id)).map((o) => {
+                  const owned = stash.owned.includes(o.id);
+                  const on = stash.dressed.includes(o.id);
+                  const short = o.price - stash.jar;
+                  return (
+                    <li key={o.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-lg border border-line px-3 py-2">
+                      <OutfitPicture id={o.id} c={colors} className="h-16 w-16 shrink-0" />
+                      <div className="min-w-0 flex-[1_1_6rem]">
+                        <p className="text-md font-bold text-ink">{ui.outfits[o.id]}</p>
+                        {!owned && short > 0 && <p className="text-sm text-ink-dim">{ui.need(short)}</p>}
+                      </div>
+                      {owned ? (
+                        <InkButton variant="quiet" className="ml-auto" disabled={busy} aria-pressed={on} onClick={() => void send({ wear: o.id, on: !on })}>
+                          {on ? ui.takeOff : ui.putOn}
+                        </InkButton>
+                      ) : (
+                        <InkButton className="ml-auto" disabled={busy || short > 0} onClick={() => void send({ buy: o.id }, o.id)}>
+                          {ui.buy(o.price)}
+                        </InkButton>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+              <h3 className="text-md font-bold text-ink">{ui.placeTitle}</h3>
+            </>
+          )}
+          <ul className="mt-2 space-y-3">
             {STASH.map((s) => {
               const owned = stash.owned.includes(s.id);
               const out = stash.placed.includes(s.id);
               const short = s.price - stash.jar;
               const full = !out && stash.placed.length >= MAX_OUT;
               return (
-                <li key={s.id} className="flex items-center gap-4 rounded-xl border border-line px-3 py-2">
+                <li key={s.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-lg border border-line px-3 py-2">
                   {/* eslint-disable-next-line @next/next/no-img-element -- small local painted props, no optimisation needed */}
                   <img src={stashArt(s.id, style.id)} alt="" className="h-16 w-16 shrink-0 object-contain" />
-                  <div className="min-w-0 flex-1">
+                  <div className="min-w-0 flex-[1_1_6rem]">
                     <p className="text-md font-bold text-ink">{ui.stash[s.id]}</p>
                     {!owned && short > 0 && <p className="text-sm text-ink-dim">{ui.need(short)}</p>}
                     {owned && full && <p className="text-sm text-ink-dim">{ui.full}</p>}
                   </div>
                   {owned ? (
-                    <InkButton variant="quiet" disabled={busy || full} onClick={() => void send({ place: s.id, on: !out })}>
+                    <InkButton variant="quiet" className="ml-auto" disabled={busy || full} onClick={() => void send({ place: s.id, on: !out })}>
                       {out ? ui.putAway : ui.putOut}
                     </InkButton>
                   ) : (
-                    <InkButton disabled={busy || short > 0} onClick={() => void send({ buy: s.id }, s.id)}>
+                    <InkButton className="ml-auto" disabled={busy || short > 0} onClick={() => void send({ buy: s.id }, s.id)}>
                       {ui.buy(s.price)}
                     </InkButton>
                   )}
@@ -148,6 +187,7 @@ export function StashDrawer({ style, stash, onChange, onClose }: { style: AgeSty
               );
             })}
           </ul>
+          </div>
           </div>
         </Sheet>
       </motion.div>

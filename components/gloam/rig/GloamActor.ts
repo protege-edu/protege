@@ -2,6 +2,7 @@ import type * as PixiNS from "pixi.js";
 import { GloamBrain, type BrainInput, type Frame } from "@/lib/gloam-rig/brain";
 import { Pendulum, Stalk } from "@/lib/gloam-rig/physics";
 import type { RigSpec } from "@/lib/gloam-rig/spec";
+import { Outfit, type Profile, type WearFrame } from "./outfit";
 
 type Pixi = typeof PixiNS;
 
@@ -47,6 +48,10 @@ export class GloamActor {
   private legs: PixiNS.Sprite[];
   private arms: PixiNS.Sprite[];
   private face: PixiNS.Graphics;
+  private scarfG: PixiNS.Graphics;
+  private capeG: PixiNS.Graphics;
+  private headWear: PixiNS.Graphics;
+  private outfit: Outfit;
   private cheeks: PixiNS.Sprite[];
   private stalkG: PixiNS.Graphics;
   private lanternBox: PixiNS.Container;
@@ -67,7 +72,9 @@ export class GloamActor {
     PIXI: Pixi,
     spec: RigSpec,
     tex: { body: PixiNS.Texture; lit: PixiNS.Texture; dark: PixiNS.Texture; glow: PixiNS.Texture; arms: [PixiNS.Texture, PixiNS.Texture]; legs: [PixiNS.Texture, PixiNS.Texture] },
+    profile: Profile | null = null,
   ) {
+    this.outfit = new Outfit(spec, profile);
     this.spec = spec;
     this.bodyTex = tex.body;
     this.Matrix = PIXI.Matrix;
@@ -78,6 +85,10 @@ export class GloamActor {
     this.shadow.anchor.set(0.5);
     this.shadow.tint = 0x000000;
     c.addChild(this.shadow);
+
+    // a cape, if it's wearing one: behind everything
+    this.capeG = new PIXI.Graphics();
+    c.addChild(this.capeG);
 
     // painted legs, behind the body
     this.legs = [spec.legs.l, spec.legs.r].map((limb, i) => {
@@ -116,6 +127,11 @@ export class GloamActor {
     });
     this.face = new PIXI.Graphics();
     c.addChild(this.face);
+    // what it's wearing: the scarf under its arms, the hat and glasses over its face (and under the stalk)
+    this.scarfG = new PIXI.Graphics();
+    c.addChild(this.scarfG);
+    this.headWear = new PIXI.Graphics();
+    c.addChild(this.headWear);
     // painted arms, in front, swinging from the shoulders
     this.arms = [spec.arms.l, spec.arms.r].map((limb, i) => {
       const sp = new PIXI.Sprite(tex.arms[i]);
@@ -168,6 +184,16 @@ export class GloamActor {
     const hangLen = Math.hypot(spec.lantern.flame[0] - spec.lantern.hang[0], spec.lantern.flame[1] - spec.lantern.hang[1]);
     this.pendulum = new Pendulum(Math.max(30, hangLen * 2.2), 1.4);
     this.setHeight(300);
+  }
+
+  /** What Gloam is wearing (outfit ids from its stash; anything else is ignored) */
+  setOutfit(ids: string[]) {
+    this.outfit.set(ids);
+    if (!this.outfit.wearing) {
+      this.scarfG.clear();
+      this.headWear.clear();
+      this.capeG.clear();
+    }
   }
 
   /** How tall Gloam should be on screen, from feet to the top of its body (px) */
@@ -345,6 +371,18 @@ export class GloamActor {
       ch.scale.set(r * f.squashX, r * 0.7 * f.squashY);
       ch.alpha = Math.min(0.85, f.cheek * 0.9);
     });
+
+    // ---- what it's wearing ----
+    if (this.outfit.wearing) {
+      const wf: WearFrame = { at: (x, y) => this.deform(x, y, f), s, squashX: f.squashX, squashY: f.squashY, t: this.brain.t, calm: !!inp.calm };
+      this.scarfG.clear();
+      this.headWear.clear();
+      this.capeG.clear();
+      this.outfit.drawCape(this.capeG, wf);
+      this.outfit.drawCapeTies(this.scarfG, wf);
+      this.outfit.drawScarf(this.scarfG, wf);
+      this.outfit.drawHead(this.headWear, wf);
+    }
 
     // ---- arms: the painted arms swing out from their shoulders ----
     const restA = (sp.arms.rest * Math.PI) / 180;

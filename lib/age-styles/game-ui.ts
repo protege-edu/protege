@@ -1,5 +1,5 @@
 import type { Feat } from "@/lib/game/feats";
-import type { StashId } from "@/lib/game/stash";
+import type { OutfitId, StashId } from "@/lib/game/stash";
 import { gameLines } from "./game-lines";
 import type { AgeStyleId, Language } from "./types";
 
@@ -54,6 +54,21 @@ export interface GameUi {
   youHave: (n: number) => string;
   /** all the spots beside Gloam are taken */
   full: string;
+  /** things Gloam wears (it can wear all of them at once), and things for its place */
+  wearTitle: string;
+  placeTitle: string;
+  outfits: Record<OutfitId, string>;
+  putOn: string;
+  takeOff: string;
+  /** what Gloam says when it puts on something new (hand-written, in its voice) */
+  wore: string[];
+  /** the whole-class boss the teacher starts from the projector */
+  classBoss: string;
+  classBossHint: string;
+  /** this student's explanation hit it */
+  classBossHit: string;
+  /** the class beat it: this student helped, and gets fireflies for it */
+  classBossBeaten: (n: number) => string;
 }
 
 const en = (age: AgeStyleId): GameUi => {
@@ -97,6 +112,26 @@ const en = (age: AgeStyleId): GameUi => {
     need: (n) => `${n} more ${n === 1 ? "firefly" : "fireflies"}`,
     youHave: (n) => `You have ${n} ${n === 1 ? "firefly" : "fireflies"}`,
     full: little ? "Gloam's spot is full! Put something away first." : "Three things fit beside Gloam. Put one away to put this out.",
+    wearTitle: age === "senior" ? "Things Gloam will grudgingly wear" : little ? "Dress up Gloam!" : "Things for Gloam to wear",
+    placeTitle: age === "senior" ? "Things for Gloam's spot" : little ? "Presents for Gloam's home" : "Things for Gloam's place",
+    outfits:
+      age === "senior"
+        ? { glasses: "Round glasses", scarf: "A knitted scarf", beanie: "A slouchy beanie", cape: "A cape (for drama)" }
+        : age === "middle"
+          ? { glasses: "Giant glasses", scarf: "A scarf", beanie: "A beanie", cape: "A DRAMATIC CAPE" }
+          : { glasses: "Funny glasses", scarf: "A stripy scarf", beanie: "A hat with a pom-pom", cape: "A super cape" },
+    putOn: little ? "Put it on Gloam" : "Put it on",
+    takeOff: "Take it off",
+    wore:
+      age === "senior"
+        ? ["i look ridiculous. i love it. tell no one.", "fine. it's warm. that's the only reason.", "do not take a picture. ...okay, one picture."]
+        : age === "middle"
+          ? ["BEHOLD. THE NEW ME.", "I have never looked this good. Ever.", "This changes EVERYTHING."]
+          : ["Ooh! Do I look fancy?", "I love it! Thank you!", "I feel so cozy!"],
+    classBoss: age === "little" ? "The class cloud" : "The class Muddle",
+    classBossHint: age === "senior" ? "It's on the projector. Every clear explanation in your class hits it." : little ? "Teach Gloam well to help your class zap it!" : "It's on the projector! Every clear explanation in your class blasts it!",
+    classBossHit: age === "senior" ? "Hit. The class Muddle felt that." : age === "middle" ? "BAM! You hit the class Muddle!" : age === "little" ? "Zap! You helped your class!" : "You hit the class Muddle!",
+    classBossBeaten: (n) => (age === "senior" ? `Your class beat the Muddle. +${n} fireflies for helping.` : age === "middle" ? `YOUR CLASS DESTROYED THE MUDDLE! +${n} fireflies!` : `Your class did it! +${n} fireflies!`),
   };
 };
 
@@ -179,6 +214,26 @@ const fr = (age: AgeStyleId): GameUi => {
     need: (n) => `encore ${n} ${n <= 1 ? "luciole" : "lucioles"}`,
     youHave: (n) => `Tu as ${n} ${n <= 1 ? "luciole" : "lucioles"}`,
     full: little ? "Le coin de Gloam est plein! Range quelque chose d'abord." : "Trois choses tiennent à côté de Gloam. Ranges-en une pour sortir celle-ci.",
+    wearTitle: age === "senior" ? "Ce que Gloam acceptera de porter (à contrecœur)" : little ? "Habille Gloam!" : "Des choses à porter pour Gloam",
+    placeTitle: age === "senior" ? "Pour le coin de Gloam" : little ? "Des cadeaux pour la maison de Gloam" : "Des choses pour le coin de Gloam",
+    outfits:
+      age === "senior"
+        ? { glasses: "Des lunettes rondes", scarf: "Un foulard tricoté", beanie: "Une tuque", cape: "Une cape (pour le drame)" }
+        : age === "middle"
+          ? { glasses: "Des lunettes géantes", scarf: "Un foulard", beanie: "Une tuque", cape: "UNE CAPE DRAMATIQUE" }
+          : { glasses: "Des lunettes rigolotes", scarf: "Un foulard à rayures", beanie: "Une tuque à pompon", cape: "Une super cape" },
+    putOn: little ? "La mettre à Gloam" : "La mettre",
+    takeOff: "L'enlever",
+    wore:
+      age === "senior"
+        ? ["j'ai l'air ridicule. j'adore. dis-le à personne.", "bon. c'est chaud. c'est la seule raison.", "pas de photo. ...bon, une photo."]
+        : age === "middle"
+          ? ["CONTEMPLEZ. LE NOUVEAU MOI.", "J'ai jamais été aussi beau. Jamais.", "Ça change TOUT."]
+          : ["Oh! Je suis chic?", "J'adore! Merci!", "Je me sens tout douillet!"],
+    classBoss: age === "little" ? "Le nuage de la classe" : "La Brume de la classe",
+    classBossHint: age === "senior" ? "Elle est au projecteur. Chaque explication claire de ta classe la frappe." : little ? "Enseigne bien à Gloam pour aider ta classe à le chasser!" : "Elle est au projecteur! Chaque explication claire de ta classe la frappe!",
+    classBossHit: age === "senior" ? "Touché. La Brume de la classe l'a senti." : age === "middle" ? "BAM! Tu as frappé la Brume de la classe!" : age === "little" ? "Zap! Tu as aidé ta classe!" : "Tu as frappé la Brume de la classe!",
+    classBossBeaten: (n) => (age === "senior" ? `Ta classe a vaincu la Brume. +${n} lucioles pour ton aide.` : age === "middle" ? `TA CLASSE A PULVÉRISÉ LA BRUME! +${n} lucioles!` : `Ta classe a réussi! +${n} lucioles!`),
   };
 };
 

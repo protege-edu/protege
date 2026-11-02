@@ -16,6 +16,14 @@ export interface GameTurnInput extends TurnInput {
   action?: Action;
   /** is the game layer on for this class */
   gameOn: boolean;
+  /** what the rival remembers about this student from earlier lessons (null: never met) */
+  rival?: RivalMemory | null;
+}
+
+export interface RivalMemory {
+  met: number;
+  beaten: number;
+  lastTopic: string;
 }
 
 export interface GameTurnOutput extends TurnOutput {
@@ -32,6 +40,8 @@ export interface GameTurnOutput extends TurnOutput {
   };
   /** a challenge or the boss that just ended (for the teacher's dashboard) */
   resolved?: { kind: ChallengeKind | "boss"; conceptId: string | null; outcome: "won" | "skipped"; tries: number };
+  /** the rival's memory of this student, when this turn changed it (it arrived, or it lost) */
+  rival?: RivalMemory;
 }
 
 /**
@@ -50,7 +60,8 @@ export async function playTurn(input: GameTurnInput, hooks: { onJudged?: (e: Jud
   const gloamSaid = history.filter((m) => m.from === "gloam").map((m) => m.text);
   const lastGloam = history.findLast((m) => m.from === "gloam");
   let play: Play = input.play ?? newPlay(lesson);
-  const fill = (u: Understanding) => ({ topic: lesson.topic, question: nextQuestion(lesson, u, gloamSaid).text, recent: gloamSaid.slice(-6) });
+  const fill = (u: Understanding) => ({ topic: lesson.topic, question: nextQuestion(lesson, u, gloamSaid).text, recent: gloamSaid.slice(-6), rival: input.rival ?? null });
+  const memory = input.rival ?? { met: 0, beaten: 0, lastTopic: lesson.topic };
   const tidySaid = (said: Said[]) => said.map((s) => ({ ...s, text: voice(s.text, style) }));
   const allLit = (u: Understanding) => lesson.concepts.every((c) => u[c.id] === 3);
   const bossPending = () => play.boss !== "won";
@@ -133,6 +144,8 @@ export async function playTurn(input: GameTurnInput, hooks: { onJudged?: (e: Jud
         // (the rival storms off before Gloam's big line)
         game: { event: res.event, view: play.open ? view(play.open) : null, said: tidySaid(lines.said.filter((s) => s.who !== "gloam")), ...(afterSaid ? { after: afterSaid } : {}) },
         resolved: { kind: enc.kind as ChallengeKind, conceptId, outcome: "won", tries: enc.tries },
+        // the rival remembers losing (to this student, about this topic)
+        ...(enc.kind === "rival" ? { rival: { ...memory, beaten: memory.beaten + 1, lastTopic: lesson.topic } } : {}),
         ms: Date.now() - start,
       };
     }
@@ -188,7 +201,14 @@ export async function playTurn(input: GameTurnInput, hooks: { onJudged?: (e: Jud
     play = { ...play, open: openChallenge(lesson, play.plan[id], id) };
     const o = openingLines(play.open!, g, fill(out.understanding));
     const said = tidySaid(o.said);
-    return { ...out, ...firstGloam(said, o.emotion), play, fireflies, game: { view: view(play.open!), said } };
+    return {
+      ...out,
+      ...firstGloam(said, o.emotion),
+      play,
+      fireflies,
+      game: { view: view(play.open!), said },
+      ...(play.open!.kind === "rival" ? { rival: { ...memory, met: memory.met + 1 } } : {}),
+    };
   }
   // the last candle lit by ordinary teaching (its challenge was skipped): the boss comes next
   if (allLit(out.understanding) && bossPending() && out.clicked.length) {

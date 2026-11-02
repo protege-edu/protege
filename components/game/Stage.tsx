@@ -28,6 +28,8 @@ export interface JourneyState {
   dozeTick?: number;
   /** the game layer's boss fight: the Muddle in the world */
   boss?: BossState;
+  /** what Gloam is wearing (from its stash) */
+  outfit?: string[];
 }
 
 /** The Muddle, while the boss fight is on: how much of it is left (0..1), and a tick for each hit and miss */
@@ -218,6 +220,7 @@ export function Stage({
           onWalking={journey.onWalking}
           dozeTick={journey.dozeTick}
           boss={journey.boss}
+          outfit={journey.outfit}
         />
       ) : (
         <Diorama brightness={brightness} />

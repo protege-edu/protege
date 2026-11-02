@@ -62,6 +62,13 @@
   --radius-lg: 1.25rem;
   --radius-full: 9999px;
 
+  /* line heights and letter spacing the screens use (wiped above with everything else, so they're named here) */
+  --leading-none: 1;
+  --leading-tight: 1.2;
+  --leading-snug: 1.35;
+  --tracking-tight: -0.02em;
+  --tracking-wider: 0.06em;
+
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -475,4 +482,31 @@ html[data-reading="dyslexic"] [data-theme="teacher"] {
   --t-panel: #fffdf6;
   --t-panel-2: #fffaf0;
   --t-chip: #f4efe2;
+}
+
+/*
+  Scrollbars: never the thick grey system bar with arrows. Anything that scrolls gets a thin one in the
+  world's own colours, on no track, with no arrow buttons. Chrome, Edge and Safari use the ::-webkit-scrollbar
+  rules below; Firefox only knows the standard properties. (Chrome ignores the ::-webkit- rules on anything
+  that also has scrollbar-width set, and its own "thin" bar keeps the arrows, so only Firefox gets those.)
+*/
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--t-ink-dim, #9fb2a8) 55%, transparent) transparent;
+  }
+}
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--t-ink-dim, #9fb2a8) 55%, transparent);
+  border-radius: 8px;
+}
+::-webkit-scrollbar-button {
+  display: none;
 }

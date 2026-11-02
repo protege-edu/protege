@@ -273,36 +273,35 @@ body {
   }
 }
 
-/* ---------- Gloam's scrollbar: rust orange on the night (paper-coloured on the reading pages) ---------- */
+/* ---------- scrollbars: slim and quiet, on no track, with no arrows (never the thick system bar) ---------- */
 @supports not selector(::-webkit-scrollbar) {
   html {
-    scrollbar-color: #e2661d #0b1411;
+    scrollbar-width: thin;
+    scrollbar-color: rgb(211 221 214 / 0.35) transparent;
   }
   html.page-doc {
-    scrollbar-color: #e2661d #dfe6df;
+    scrollbar-color: rgb(35 64 47 / 0.35) transparent;
   }
 }
 ::-webkit-scrollbar {
-  width: 14px;
+  width: 8px;
   height: 0;
 }
 ::-webkit-scrollbar-track {
-  background: #0b1411;
+  background: transparent;
+}
+::-webkit-scrollbar-button {
+  display: none;
 }
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #ffa25a, #e2661d 45%, #b14d18);
-  border: 3px solid #0b1411;
-  border-radius: 10px;
-  box-shadow: inset 0 1px 0 rgb(255 226 190 / 0.55), inset 0 -2px 0 rgb(80 24 4 / 0.35);
+  background: rgb(211 221 214 / 0.35);
+  border-radius: 8px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #ffb878, #f07a34 45%, #c35a1f);
-}
-.page-doc::-webkit-scrollbar-track {
-  background: #dfe6df;
+  background: rgb(211 221 214 / 0.55);
 }
 .page-doc::-webkit-scrollbar-thumb {
-  border-color: #dfe6df;
+  background: rgb(35 64 47 / 0.35);
 }
 
 /* ---------- the stage (fixed behind the story, privacy and the finale) ---------- */

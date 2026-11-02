@@ -13,9 +13,22 @@ export const STASH = [
   { id: "tent", price: 150, side: 1, size: 0.8, aspect: 1.05 },
 ] as const;
 export type StashId = (typeof STASH)[number]["id"];
+
+/**
+ * Things Gloam wears (drawn on it in code, so they move with it: components/gloam/rig/outfit.ts). It can wear
+ * all of them at once. A Gloam whose painting already has a scarf (grades 6-8) doesn't get another.
+ */
+export const OUTFIT_SHOP = [
+  { id: "glasses", price: 30 },
+  { id: "scarf", price: 45 },
+  { id: "beanie", price: 70 },
+  { id: "cape", price: 110 },
+] as const;
+export type OutfitId = (typeof OUTFIT_SHOP)[number]["id"];
+export const isOutfit = (id: string): id is OutfitId => OUTFIT_SHOP.some((o) => o.id === id);
 /** How many stand around Gloam at once (there's room for about three beside it, even on a laptop) */
 export const MAX_OUT = 3;
-export const stashItem = (id: string) => STASH.find((s) => s.id === id) ?? null;
+export const stashItem = (id: string): { id: string; price: number } | null => STASH.find((s) => s.id === id) ?? OUTFIT_SHOP.find((o) => o.id === id) ?? null;
 
 /** The painting for an item in an age style's world (night for high school, daylight for the younger ones) */
 export const stashArt = (id: StashId, age: string) => `/art/stash/${age === "senior" ? "night" : "day"}-${id}.webp`;

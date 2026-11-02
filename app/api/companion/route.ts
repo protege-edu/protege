@@ -6,7 +6,9 @@ import { gameOn } from "@/lib/game/config";
 import { getAgeStyle, pickLine } from "@/lib/age-styles";
 import { hearingLine } from "@/lib/ai/queue";
 import { clientIp, forbidden, limit, sameOrigin, tooMany } from "@/lib/auth/request";
-import { featsOf, getSession, recordTurn } from "@/lib/companion/session";
+import { featsOf, getSession, recordTurn, rememberRival, rivalOf } from "@/lib/companion/session";
+import { hitsFromTurn } from "@/lib/game/class-boss";
+import { claimClassBossReward, hitClassBoss } from "@/lib/student/class-boss";
 import { classPaused, maySeeStudent } from "@/lib/student/auth";
 import { lessonRecap } from "@/lib/lesson";
 import { getApprovedLesson, playedBy } from "@/lib/teacher/lessons";
@@ -71,6 +73,7 @@ export async function POST(request: Request) {
 
   // the game layer, unless the teacher switched it off for this class
   const game = await gameOn(session.classId);
+  const rival = game ? await rivalOf(session.studentId) : null;
   const stream = new ReadableStream({
     async start(controller) {
       const send = (event: object) => controller.enqueue(encoder.encode(JSON.stringify(event) + "\n"));
@@ -89,6 +92,7 @@ export async function POST(request: Request) {
             play: session.play,
             action: parsed.data.action,
             gameOn: game,
+            rival,
           },
           { onJudged: (e) => send({ type: "judged", ...e }) },
           ),
@@ -113,6 +117,10 @@ export async function POST(request: Request) {
             judged: out.judged,
             finished: out.finished,
           });
+          if (out.rival) await rememberRival(session.studentId, out.rival);
+          // the whole-class boss on the projector (if the teacher started one): this turn's teaching hits it
+          const classBoss = game && session.classId ? await hitClassBoss(session.classId, session.studentId, hitsFromTurn(out.improved, out.game?.event)) : null;
+          const reward = game && session.classId ? await claimClassBossReward(session.studentId) : 0;
           send({
             type: "reply",
             reply: out.reply,
@@ -127,7 +135,8 @@ export async function POST(request: Request) {
             ...(out.followUp ? { followUp: out.followUp.text } : {}),
             // the game layer: the challenge or boss fight as the browser may see it, and who said what
             ...(out.game ? { game: out.game } : {}),
-            fireflies: out.fireflies,
+            fireflies: out.fireflies + reward,
+            ...(classBoss || reward ? { classBoss: { ...(classBoss ?? { left: 0, beaten: true, on: false, hit: false }), reward } } : {}),
             checkpoints: saved.checkpoints,
             gloam: saved.after,
             levelUp: saved.after.level > saved.before.level,

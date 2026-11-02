@@ -18,6 +18,7 @@ import { inLine, queueStats } from "@/lib/ai/queue";
 import { seasons } from "@/lib/lesson/seasons";
 import { act, FIREFLIES, firefliesForTeaching, openBoss, openChallenge, ORDER_ID, planChallenges, targetsOf, view, whatIfId } from "@/lib/game/engine";
 import { gameLines } from "@/lib/age-styles/game-lines";
+import { eventLines, openingLines } from "@/lib/game/say";
 import { gameUi } from "@/lib/age-styles/game-ui";
 import { FEATS, featsFor } from "@/lib/game/feats";
 import { judgePrompt } from "@/lib/ai/prompts/judge";
@@ -391,9 +392,22 @@ test("every age style has every game line, in English and French, and they're al
         } else if (x && typeof x === "object") for (const [k, v] of Object.entries(x)) walk(v, `${path}.${k}`);
       };
       walk(g, "game");
-      assert.ok(g.rivalSays.arrive.every((l) => l.includes("{claim}")) && g.bossSays.round.every((l) => l.includes("{claim}")), `${id} ${lang}: the rival and the Muddle must say the lesson's wrong idea`);
+      assert.ok([...g.rivalSays.arrive, ...g.rivalSays.returning].every((l) => l.includes("{claim}")) && g.bossSays.round.every((l) => l.includes("{claim}")), `${id} ${lang}: the rival and the Muddle must say the lesson's wrong idea`);
     }
   }
+});
+test("the rival remembers a student who beat it in an earlier lesson (and how often)", () => {
+  const g = gameLines("senior", "en");
+  const rival = openChallenge(seasons, "rival", "tilt");
+  const f = { topic: "seasons", question: "why?", recent: [] as string[], seed: 1 };
+  const fresh = openingLines(rival, g, { ...f, rival: null }).said[0].text;
+  const metOnly = openingLines(rival, g, { ...f, rival: { met: 2, beaten: 0, lastTopic: "volcanoes" } }).said[0].text;
+  const back = openingLines(rival, g, { ...f, rival: { met: 2, beaten: 1, lastTopic: "volcanoes" } }).said[0].text;
+  assert.ok(!/again|remembers|lucky|fluke/.test(fresh) && !/lucky|fluke/.test(metOnly), "only a student who won is told they got lucky");
+  assert.ok(g.rivalSays.returning.some((l) => back === l.replace("{last}", "volcanoes").replace("{claim}", rival.kind === "rival" ? rival.claim : "").replace(/\s+/g, " ").trim()), back);
+  assert.ok(!back.includes("{"), back);
+  const lost = eventLines("won", rival, null, g, { ...f, rival: { met: 3, beaten: 2, lastTopic: "volcanoes" } }).said[0].text;
+  assert.match(lost, /3 times/);
 });
 
 console.log("voice");

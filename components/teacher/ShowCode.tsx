@@ -92,7 +92,7 @@ export function ShowCode({
               and type the class code
             </p>
             <p
-              className="text-[clamp(3rem,min(8.5vw,17vh),10rem)] leading-[1] font-bold tracking-[0.05em] whitespace-nowrap text-[#f4f1e8]"
+              className="mt-1 text-[clamp(3rem,min(8.5vw,17vh),10rem)] leading-[1.12] font-bold tracking-[0.05em] whitespace-nowrap text-[#f4f1e8]"
               aria-label={`Code ${code.split("").join(" ")}`}
             >
               {code}

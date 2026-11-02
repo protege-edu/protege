@@ -120,6 +120,27 @@
       "when": 1793569258404,
       "tag": "0016_class_game_switch",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "6",
+      "when": 1793576098767,
+      "tag": "0017_rival_memory",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "6",
+      "when": 1793576469147,
+      "tag": "0018_class_boss",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "6",
+      "when": 1793578161346,
+      "tag": "0019_gloam_outfits",
+      "breakpoints": true
     }
   ]
 }

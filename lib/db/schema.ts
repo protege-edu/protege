@@ -204,8 +204,46 @@ export const gloams = sqliteTable("gloams", {
   /** JSON: the stash items this student owns, and the ones Gloam is wearing */
   owned: text("owned", { mode: "json" }).$type<string[]>().notNull().default([]),
   wearing: text("wearing", { mode: "json" }).$type<string[]>().notNull().default([]),
+  /** JSON: the outfits Gloam has on (glasses, a scarf, a beanie, a cape), bought in its stash */
+  dressed: text("dressed", { mode: "json" }).$type<string[]>().notNull().default([]),
+  /** JSON: what the rival remembers about this student across lessons (game facts only: never anything personal) */
+  rival: text("rival", { mode: "json" }).$type<{ met: number; beaten: number; lastTopic: string }>(),
   updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
 });
+
+/**
+ * A whole-class boss: the teacher starts it from the projector, and every student's clear explanations (in any
+ * of the class's lessons) hit the same Muddle until the class beats it. `need`: how many hits it takes (set from
+ * the class's size). Never a ranking: the projector only ever shows the class, not who hit it.
+ */
+export const classBosses = sqliteTable("class_bosses", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  classId: text("class_id")
+    .notNull()
+    .references(() => classes.id),
+  need: integer("need").notNull(),
+  hits: integer("hits").notNull().default(0),
+  startedAt: integer("started_at", { mode: "timestamp_ms" }).notNull(),
+  /** when it ended: beaten by the class, or ended by the teacher */
+  endedAt: integer("ended_at", { mode: "timestamp_ms" }),
+  beaten: integer("beaten", { mode: "boolean" }).notNull().default(false),
+});
+
+/** Who helped beat a class boss (for their own reward: fireflies, once). Never shown to anyone else. */
+export const classBossHits = sqliteTable(
+  "class_boss_hits",
+  {
+    bossId: integer("boss_id")
+      .notNull()
+      .references(() => classBosses.id),
+    studentId: text("student_id")
+      .notNull()
+      .references(() => students.id),
+    hits: integer("hits").notNull().default(0),
+    rewarded: integer("rewarded", { mode: "boolean" }).notNull().default(false),
+  },
+  (t) => [primaryKey({ columns: [t.bossId, t.studentId] })],
+);
 
 /**
  * Every challenge and boss fight that ended: which kind, which idea, won or skipped, and how many tries.

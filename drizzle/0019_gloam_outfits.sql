@@ -1,0 +1,1 @@
+ALTER TABLE `gloams` ADD `dressed` text DEFAULT '[]' NOT NULL;

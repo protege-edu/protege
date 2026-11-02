@@ -1,8 +1,19 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import * as sfx from "@/lib/sound";
 import { useCalmMotion } from "@/lib/useCalmMotion";
+import { ProjectorMuddle } from "./ProjectorMuddle";
+
+/** The whole-class boss, as the projector sees it (how much fog is left and how many have helped: never who) */
+export interface ProjectorBoss {
+  left: number;
+  beaten: boolean;
+  on: boolean;
+  startedAt: number;
+  helpers: number;
+}
 
 const FIREFLY = "#d6ee8a";
 
@@ -24,9 +35,36 @@ const GOALS = [50, 100, 250, 500, 1000, 2000, 5000, 10000];
  * teaches, with the class's latest wins, without names. One shared goal, so nobody is ever ranked.
  * Calm motion: the fireflies sit still and the numbers just change.
  */
-export function ClassJar({ total, moments, className, onClose }: { total: number; moments: { id: number; kind: string; at: number }[]; className: string; onClose: () => void }) {
+export function ClassJar({
+  total,
+  moments,
+  className,
+  onClose,
+  boss,
+  bossName,
+  onBoss,
+}: {
+  total: number;
+  moments: { id: number; kind: string; at: number }[];
+  className: string;
+  onClose: () => void;
+  /** the whole-class boss (null: none going), and starting or ending one (undefined: challenges are off) */
+  boss: ProjectorBoss | null;
+  bossName: string;
+  onBoss?: (action: "start" | "end") => Promise<void>;
+}) {
   const calm = useCalmMotion();
   const close = useRef<HTMLButtonElement>(null);
+  const [busy, setBusy] = useState(false);
+  // a beaten boss stays up for the dawn until the teacher goes back to the jar
+  const [doneWith, setDoneWith] = useState<number | null>(null);
+  const fight = boss && !(boss.beaten && doneWith === boss.startedAt) ? boss : null;
+  const act = async (a: "start" | "end") => {
+    if (!onBoss) return;
+    setBusy(true);
+    if (a === "start") sfx.bossArrive();
+    await onBoss(a).finally(() => setBusy(false));
+  };
   useEffect(() => {
     const opener = document.activeElement as HTMLElement | null;
     close.current?.focus({ preventScroll: true });
@@ -63,7 +101,10 @@ export function ClassJar({ total, moments, className, onClose }: { total: number
       exit={calm ? undefined : { opacity: 0, transition: { duration: 0.25 } }}
     >
       {/* (on a phone it starts at the top: centring a column taller than the screen would cut the jar off) */}
-      <div className="mx-auto flex min-h-full max-w-6xl flex-col items-center gap-8 px-6 py-10 md:flex-row md:justify-center md:gap-16">
+      {fight ? (
+        <BossFight boss={fight} bossName={bossName} className={className} busy={busy} onEnd={() => void act("end")} onBack={() => setDoneWith(fight.startedAt)} closeRef={close} onClose={onClose} />
+      ) : (
+      <div className="mx-auto flex min-h-full max-w-[72rem] flex-col items-center gap-8 px-6 py-10 md:flex-row md:justify-center md:gap-16">
         {/* the jar */}
         <div className="relative w-[min(52vw,340px,46vh)] shrink-0" aria-hidden="true">
           <svg viewBox="0 0 100 130" className="w-full overflow-visible">
@@ -98,7 +139,7 @@ export function ClassJar({ total, moments, className, onClose }: { total: number
           </svg>
         </div>
 
-        <div className="max-w-xl text-center md:text-left">
+        <div className="max-w-[42rem] text-center md:text-left">
           <p className="text-lg font-bold text-[#9fb2a8]">{className}</p>
           <h2 id="jar-title" className="mt-1 font-bold tracking-tight" style={{ fontSize: "clamp(3rem, 9vw, 6.5rem)", lineHeight: 1, color: FIREFLY }}>
             <motion.span key={total} initial={calm ? false : { scale: 1.12 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 300, damping: 15 }} className="inline-block tabular-nums">
@@ -109,7 +150,7 @@ export function ClassJar({ total, moments, className, onClose }: { total: number
           <p className="mt-4 text-lg text-[#9fb2a8]">
             Next goal: <span className="font-bold text-[#d3ddd6]">{goal.toLocaleString()}</span>. Together, {(goal - total).toLocaleString()} to go.
           </p>
-          <ul className="mt-8 inline-block space-y-2 text-left text-lg" aria-live="polite" aria-label="What just happened">
+          <ul className="mt-6 inline-block space-y-2 text-left text-lg" aria-live="polite" aria-label="What just happened">
             <AnimatePresence initial={false}>
               {moments.slice(0, 4).map((m) => (
                 <motion.li key={m.id} initial={calm ? false : { opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} className="flex items-center gap-3">
@@ -119,17 +160,102 @@ export function ClassJar({ total, moments, className, onClose }: { total: number
               ))}
             </AnimatePresence>
           </ul>
-          <p className="mt-8 text-sm text-[#9fb2a8]">No names and no rankings: the jar is everyone&apos;s.</p>
-          <button
-            ref={close}
-            type="button"
-            onClick={onClose}
-            className="mt-6 min-h-11 cursor-pointer rounded-md border border-[#2c4844] px-5 font-bold text-[#d3ddd6] hover:bg-[#172723] focus-visible:outline-3 focus-visible:outline-[#8ec5dc]"
-          >
+          <p className="mt-6 text-sm text-[#9fb2a8]">No names and no rankings: the jar is everyone&apos;s.</p>
+          <div className="mt-6 flex flex-wrap justify-center gap-3 md:justify-start">
+            {onBoss && (
+              <button type="button" disabled={busy} onClick={() => void act("start")} className={`${BTN} bg-[#d6ee8a] text-[#0d1613] hover:bg-[#e4f4a8] disabled:opacity-60`}>
+                Start a class boss fight
+              </button>
+            )}
+            <button ref={close} type="button" onClick={onClose} className={`${BTN} border border-[#2c4844] text-[#d3ddd6] hover:bg-[#172723]`}>
+              Close
+            </button>
+          </div>
+          {onBoss && <p className="mt-3 max-w-[28rem] text-sm text-[#9fb2a8]">{bossName} appears up here, and every clear explanation anyone in the class gives Gloam hits it. About two each beats it.</p>}
+        </div>
+      </div>
+      )}
+    </motion.div>
+  );
+}
+
+const BTN = "min-h-11 cursor-pointer rounded-md px-5 font-bold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[#8ec5dc]";
+
+/**
+ * The class boss fight on the projector: the Muddle, its fog thinning live as students' explanations land, and
+ * how many students have helped (a count, never names). When it falls: dawn, and everyone who helped gets fireflies.
+ */
+function BossFight({
+  boss,
+  bossName,
+  className,
+  busy,
+  onEnd,
+  onBack,
+  onClose,
+  closeRef,
+}: {
+  boss: ProjectorBoss;
+  bossName: string;
+  className: string;
+  busy: boolean;
+  onEnd: () => void;
+  onBack: () => void;
+  onClose: () => void;
+  closeRef: RefObject<HTMLButtonElement | null>;
+}) {
+  // a hit: the fog got thinner since the last look (several hits between looks land as one)
+  const [seen, setSeen] = useState({ left: boss.left, key: 0, beaten: boss.beaten });
+  if (boss.left < seen.left - 1e-9 || boss.beaten !== seen.beaten) setSeen({ left: boss.left, key: seen.key + 1, beaten: boss.beaten });
+  const hitKey = seen.key;
+  useEffect(() => {
+    if (!hitKey) return;
+    if (boss.beaten) sfx.bossDefeated();
+    else sfx.bossHit(2);
+  }, [hitKey, boss.beaten]);
+  const stage = boss.beaten ? "beaten" : boss.left > 0.66 ? "fresh" : boss.left > 0.33 ? "hurt" : "nearly";
+  const line = {
+    fresh: "Every clear explanation anyone gives Gloam hits it. Keep teaching.",
+    hurt: "It's thinning. Keep explaining.",
+    nearly: "It's almost gone. A few more good explanations.",
+    beaten: "Everyone who hit it gets 15 fireflies in their jar.",
+  }[stage];
+  return (
+    <div className="mx-auto flex min-h-full max-w-[72rem] flex-col items-center gap-6 px-6 py-10 md:flex-row md:justify-center md:gap-14">
+      <div className="w-[min(78vw,460px,58vh)] shrink-0">
+        <ProjectorMuddle left={boss.left} beaten={boss.beaten} hitKey={hitKey} />
+      </div>
+      <div className="max-w-[42rem] text-center md:text-left">
+        <p className="text-lg font-bold text-[#9fb2a8]">{className}</p>
+        <h2 id="jar-title" className="mt-1 font-bold tracking-tight" style={{ fontSize: "clamp(2.4rem, 6vw, 4.75rem)", lineHeight: 1.02, color: boss.beaten ? FIREFLY : "#e8e4c9" }}>
+          {boss.beaten ? "Your class beat it!" : bossName}
+        </h2>
+        <p className="mt-4 text-xl" aria-live="polite">
+          {line}
+        </p>
+        <p className="mt-3 text-lg text-[#9fb2a8]">
+          {boss.beaten
+            ? `${boss.helpers} ${boss.helpers === 1 ? "student" : "students"} helped.`
+            : boss.helpers === 0
+              ? "Nobody has hit it yet."
+              : `${boss.helpers} ${boss.helpers === 1 ? "student has" : "students have"} hit it so far.`}
+        </p>
+        <div className="mt-8 flex flex-wrap justify-center gap-3 md:justify-start">
+          {boss.beaten ? (
+            <button type="button" onClick={onBack} className={`${BTN} bg-[#d6ee8a] text-[#0d1613] hover:bg-[#e4f4a8]`}>
+              Back to the class jar
+            </button>
+          ) : (
+            <button type="button" disabled={busy} onClick={onEnd} className={`${BTN} border border-[#2c4844] text-[#d3ddd6] hover:bg-[#172723] disabled:opacity-60`}>
+              End the fight for today
+            </button>
+          )}
+          <button ref={closeRef} type="button" onClick={onClose} className={`${BTN} border border-[#2c4844] text-[#d3ddd6] hover:bg-[#172723]`}>
             Close
           </button>
         </div>
+        <p className="mt-6 text-sm text-[#9fb2a8]">No names and no rankings: the whole class fights it together.</p>
       </div>
-    </motion.div>
+    </div>
   );
 }

@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { readSigned } from "@/lib/auth/cookies";
 import { JoinScreen } from "@/components/join/JoinScreen";
 import { classPreview, currentStudent } from "@/lib/student/auth";
+import { classByCode } from "@/lib/teacher/classes";
 
 /**
  * Students join their class here. The teacher's QR code opens /join?code=GLOW-42 (straight in).
@@ -22,8 +23,12 @@ async function Join({ searchParams }: { searchParams: PageProps<"/join">["search
   await connection();
   const q = await searchParams;
   const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
-  // already signed in on this device: straight to their Gloam (?switch lets someone else sign in)
-  if ((await currentStudent()) && one(q.switch) === undefined) redirect("/me");
+  // already signed in on this device: straight to their Gloam (?switch lets someone else sign in),
+  // unless the link is for ANOTHER class (a student in two classes, or a shared Chromebook): then join that one
+  const me = await currentStudent();
+  const code = one(q.code);
+  const linked = code ? await classByCode(code) : null;
+  if (me && one(q.switch) === undefined && (!linked || linked.id === me.classId)) redirect("/me");
   let googleFor = undefined;
   if (one(q.google) === "1") {
     const pending = await readSigned("protege_google_pending");

@@ -39,6 +39,8 @@ export interface JourneyProps {
   dozeTick?: number;
   /** the boss fight: the Muddle gathers in the valley */
   boss?: BossState;
+  /** what Gloam is wearing (from its stash) */
+  outfit?: string[];
 }
 
 /**
@@ -318,6 +320,7 @@ export function JourneyWorld(props: JourneyProps) {
       let lastEureka = live.current.eurekaTick;
       let lastDoze = live.current.dozeTick ?? 0;
       let lastLevel = live.current.level;
+      let lastDressed: string | null = null;
       let push = 0;
       let slowFrames = 0;
       let checked = 0;
@@ -326,6 +329,11 @@ export function JourneyWorld(props: JourneyProps) {
       app.ticker.add((ticker) => {
         const dt = Math.min(ticker.deltaMS / 1000, 0.05);
         const L = live.current;
+        const dressed = (L.outfit ?? []).join(",");
+        if (dressed !== lastDressed) {
+          lastDressed = dressed;
+          actor.setOutfit(L.outfit ?? []);
+        }
         const still = L.calm;
         t += dt;
         if (!lite && checked < 180) {

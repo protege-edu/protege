@@ -8,6 +8,8 @@ import { randomUUID } from "node:crypto";
 import { eq, inArray, like } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import {
+  classBosses,
+  classBossHits,
   classLessons,
   classes,
   conceptEvents, encounters,
@@ -87,6 +89,8 @@ async function main() {
         .where(inArray(teachSessions.id, sess))
         .run();
     }
+    if (kids.length) await db.delete(classBossHits).where(inArray(classBossHits.studentId, kids)).run();
+    await db.delete(classBosses).where(eq(classBosses.classId, old.id)).run();
     if (kids.length)
       await db.delete(students).where(inArray(students.id, kids)).run();
     await db.delete(classLessons).where(eq(classLessons.classId, old.id)).run();

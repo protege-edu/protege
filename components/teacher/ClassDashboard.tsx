@@ -1,6 +1,7 @@
 "use client";
 
-import { ClassJar } from "./ClassJar";
+import { ClassJar, type ProjectorBoss } from "./ClassJar";
+import { gameUi } from "@/lib/age-styles/game-ui";
 import { AnimatePresence } from "motion/react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
@@ -51,6 +52,8 @@ interface Data {
   fireflies?: number;
   /** the class's latest challenge wins, without names (for the class jar) */
   moments?: { id: number; kind: string; at: number }[];
+  /** the whole-class boss on the projector (null: none going) */
+  classBoss?: ProjectorBoss | null;
 }
 
 /** A student's challenges in words (never a score): "Won 3 challenges, skipped 1" */
@@ -102,9 +105,10 @@ export function ClassDashboard() {
 
   useEffect(() => {
     void Promise.resolve().then(load);
-    const t = setInterval(load, 5000);
+    // (quicker while a class boss fight is on the projector, so every hit shows up fast)
+    const t = setInterval(load, showJar && data?.classBoss?.on ? 2000 : 5000);
     return () => clearInterval(t);
-  }, [load]);
+  }, [load, showJar, data?.classBoss?.on]);
 
   // the class's settings and roster: quickly while the code is up (students arriving), slowly otherwise
   useEffect(() => {
@@ -169,10 +173,17 @@ export function ClassDashboard() {
             Updated {updated ? updated.toLocaleTimeString([], { hour: "numeric", minute: "2-digit", second: "2-digit" }) : ""}
           </p>
           <p className="mt-1 text-xs text-ink-dim">Candles are Gloam&apos;s AI estimate of each explanation, not marks. Open a student to read their conversation and correct any candle.</p>
-          {!!data.fireflies && (
+          {(!!data.fireflies || info?.class.game) && (
             <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-ink">
               <span>
-                Your class has caught <span className="font-bold">{data.fireflies.toLocaleString()} fireflies</span> by teaching Gloam. (Students only see their own jar and this total, never anyone else&apos;s.)
+                {data.classBoss?.on ? (
+                  <span className="font-bold">A class boss fight is on.</span>
+                ) : (
+                  <>
+                    Your class has caught <span className="font-bold">{(data.fireflies ?? 0).toLocaleString()} fireflies</span> by teaching Gloam.
+                  </>
+                )}{" "}
+                (Students only see their own jar and this total, never anyone else&apos;s.)
               </span>
               <Button variant="quiet" onClick={() => setShowJar(true)}>
                 Show the class jar
@@ -289,7 +300,26 @@ export function ClassDashboard() {
       )}
       {info && <ClassData classId={id} className={info.class.name} lessonId={lessonId} />}
       <AnimatePresence>
-        {showJar && data && info && <ClassJar key="jar" total={data.fireflies ?? 0} moments={data.moments ?? []} className={info.class.name} onClose={() => setShowJar(false)} />}
+        {showJar && data && info && (
+          <ClassJar
+            key="jar"
+            total={data.fireflies ?? 0}
+            moments={data.moments ?? []}
+            className={info.class.name}
+            onClose={() => setShowJar(false)}
+            boss={data.classBoss ?? null}
+            bossName={gameUi(styleForGrade(info.class.grade).id, "en").classBoss}
+            onBoss={
+              info.class.game
+                ? async (action) => {
+                    const res = await api<{ classBoss: ProjectorBoss | null }>(`/api/teacher/classes/${id}`, json("POST", { classBoss: action }));
+                    if (res.ok) setData((d) => (d ? { ...d, classBoss: res.data.classBoss } : d));
+                    else setError(res.error);
+                  }
+                : undefined
+            }
+          />
+        )}
         {showCode && info && (
           <ShowCode
             key="code"

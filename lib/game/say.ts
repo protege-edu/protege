@@ -16,6 +16,8 @@ interface Fill {
   question: string;
   recent: string[];
   seed?: number;
+  /** what the rival remembers about this student (from earlier lessons) */
+  rival?: { met: number; beaten: number; lastTopic: string } | null;
 }
 
 /** Hand-written lines with the encounter's own words filled in ({claim}, {scenario}, {a}, {b}) */
@@ -25,7 +27,7 @@ function line(lines: string[], f: Fill, e?: Encounter | null): string {
   const scenario = e?.kind === "whatif" ? e.scenario : "";
   const [a, b] = e?.kind === "order" ? linkOf(e) : ["", ""];
   const n = e?.kind === "boss" ? String(e.combo) : "";
-  return raw.replaceAll("{n}", n).replaceAll("{claim}", claim).replaceAll("{scenario}", scenario).replaceAll("{a}", a).replaceAll("{b}", b).replace(/\s+/g, " ").trim();
+  return raw.replaceAll("{last}", f.rival?.lastTopic ?? f.topic).replaceAll("{times}", String((f.rival?.beaten ?? 0) + 1)).replaceAll("{n}", n).replaceAll("{claim}", claim).replaceAll("{scenario}", scenario).replaceAll("{a}", a).replaceAll("{b}", b).replace(/\s+/g, " ").trim();
 }
 
 
@@ -47,7 +49,8 @@ export function openingLines(e: Encounter, g: GameLines, f: Fill): { said: Said[
     case "notebook":
       return { said: [{ who: "gloam", text: line(g.notebook.open, f, e) }], emotion: "proud" };
     case "rival":
-      return { said: [{ who: "rival", text: line(g.rivalSays.arrive, f, e) }, { who: "gloam", text: line(g.rivalGloam.tempted, f, e) }], emotion: "confused" };
+      // it remembers a student who's beaten it before (and is still sore about it)
+      return { said: [{ who: "rival", text: line(f.rival?.beaten ? g.rivalSays.returning : g.rivalSays.arrive, f, e) }, { who: "gloam", text: line(g.rivalGloam.tempted, f, e) }], emotion: "confused" };
     case "whatif":
       return { said: [{ who: "gloam", text: line(g.whatif.open, f, e) }], emotion: "curious" };
     case "order":
@@ -101,7 +104,7 @@ export function eventLines(event: GameEvent, before: Encounter, after: Encounter
       return gloam(event === "glance" ? b.glance : event === "miss" ? b.miss : b.nothing, event === "miss" ? "skeptical" : "curious");
     }
     case "rival": {
-      if (event === "won") return { said: [{ who: "rival", text: line(g.rivalSays.defeated, f, e) }], emotion: "eureka" };
+      if (event === "won") return { said: [{ who: "rival", text: line(f.rival?.beaten ? g.rivalSays.beatenAgain : g.rivalSays.defeated, f, e) }], emotion: "eureka" };
       const r = event === "glance" ? g.rivalSays.glance : event === "miss" ? g.rivalSays.miss : g.rivalSays.nothing;
       return { said: [{ who: "rival", text: line(r, f, e) }], emotion: event === "miss" ? "confused" : "curious" };
     }

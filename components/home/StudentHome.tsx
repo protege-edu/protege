@@ -103,7 +103,7 @@ export function StudentHome({ home }: { home: Home }) {
           stand
           showCandles={false}
           onGloamBox={setGloamBox}
-          journey={{ talking: !!line, waiting: !home.paused, level, levels: [], stop: 0 }}
+          journey={{ talking: !!line, waiting: !home.paused, level, levels: [], stop: 0, outfit: stash.dressed }}
         >
           <TravelQuip text={line} gloam={gloamBox} ceiling={headerH + 8} />
           {/* (on a wide screen the page's words are on the left: the things stay in the valley beside them) */}
@@ -209,11 +209,19 @@ export function StudentHome({ home }: { home: Home }) {
             style={style}
             stash={stash}
             onChange={(next, bought) => {
+              // something new to wear: Gloam puts it on (and has opinions about it)
+              const wore = next.dressed.filter((d) => !stash.dressed.includes(d));
               setStash(next);
               // a new thing: close the drawer so it can be seen dropping in next to Gloam
               if (bought && next.placed.includes(bought)) {
                 setFresh(bought);
                 setStashOpen(false);
+              }
+              if (wore.length) {
+                const lines = gameUi(style.id, style.language).wore;
+                setStashOpen(false);
+                setLine(lines[next.dressed.length % lines.length]);
+                setTimeout(() => setLine(null), 5000);
               }
             }}
             onClose={() => setStashOpen(false)}

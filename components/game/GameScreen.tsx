@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { BossMoments } from "@/components/encounters/BossMoments";
+import { ClassBossMark } from "@/components/encounters/ClassBossMark";
 import { Jar } from "@/components/encounters/Jar";
 import { Rival } from "@/components/encounters/Rival";
 import { EurekaMoment } from "@/components/scene/EurekaMoment";
@@ -208,6 +209,7 @@ export function GameScreen({ lesson, account = "preview", access = null }: { les
             stop: walkLit,
             onWalking,
             dozeTick,
+            outfit: s.dressed,
             // the boss fight: the Muddle gathers in the valley, and shrinks with every wrong idea cleared
             boss: {
               on: s.encounter?.kind === "boss",
@@ -225,7 +227,15 @@ export function GameScreen({ lesson, account = "preview", access = null }: { les
               current={world ? walkLit : litCount}
               onPause={() => setOverlay("pause")}
               // the game layer: Gloam's jar (only once there's a firefly in it)
-              jar={s.fireflies > 0 ? <Jar style={style} count={s.fireflies} caught={s.caught} gloam={gloamBox} /> : undefined}
+              // and the whole-class boss, while the teacher has it on the projector
+              jar={
+                s.fireflies > 0 || s.classBoss ? (
+                  <>
+                    {s.classBoss && <ClassBossMark style={style} boss={s.classBoss} news={s.classNews} />}
+                    {s.fireflies > 0 && <Jar style={style} count={s.fireflies} caught={s.caught} gloam={gloamBox} />}
+                  </>
+                ) : undefined
+              }
             />}
           <StoryCaption text={s.phase === "teach" && !world ? caption : null} />
           {world && <TravelQuip text={s.phase === "teach" ? quip : null} gloam={gloamBox} />}

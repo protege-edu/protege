@@ -77,4 +77,5 @@ export const littleGloam: RigSpec = {
     hang: [146, 36],
     flame: [97, 120],
   },
+  wear: { scarf: "#d8443a", stripe: "#fff4e2", hat: "#3d7fd6", cuff: "#5c99e6", frame: "#3a1c0b", pompom: "#fff4e2", cape: "#5b3fa8", capeIn: "#8e6fe0" },
 };

@@ -10,6 +10,7 @@ import { queueStats } from "@/lib/ai/queue";
 import { bad, notYours, requireTeacher } from "@/lib/teacher/api";
 import { assignLesson, classLessonList, dashboard, deleteClass, getClass, moveLesson, setClassGrade, unassignLesson } from "@/lib/teacher/classes";
 import { getUnit } from "@/lib/teacher/units";
+import { classBossForTeacher, endClassBoss, startClassBoss } from "@/lib/student/class-boss";
 import { canSee, getApprovedLesson, getLessonRow } from "@/lib/teacher/lessons";
 
 /** The live dashboard for one class and one lesson: ?lesson=<id> (no lesson: just the class) */
@@ -41,6 +42,8 @@ export async function GET(request: Request, ctx: RouteContext<"/api/teacher/clas
     class: cls,
     lesson: { id: lesson.id, title: lesson.title, concepts: lesson.concepts.map((c) => ({ id: c.id, name: c.name, misconception: c.misconception })) },
     ...await dashboard(id, lesson),
+    // the whole-class boss on the projector (how much fog is left, and how many students helped: never who)
+    classBoss: cls.game ? await classBossForTeacher(id) : null,
   });
 }
 
@@ -52,6 +55,8 @@ const Change = z.union([
   z.object({ moveLessonId: z.string(), by: z.union([z.literal(-1), z.literal(1)]) }),
   z.object({ googleSignIn: z.boolean() }),
   z.object({ game: z.boolean() }),
+  // the whole-class boss on the projector: start one, or end it before the class beats it
+  z.object({ classBoss: z.enum(["start", "end"]) }),
   z.object({ paused: z.boolean() }),
   z.object({ name: z.string().trim().min(1).max(60) }),
   z.object({ language: z.enum(["en", "fr"]) }),
@@ -92,6 +97,11 @@ export async function POST(request: Request, ctx: RouteContext<"/api/teacher/cla
     await db.update(classes).set({ googleSignIn: c.googleSignIn }).where(eq(classes.id, id)).run();
   } else if ("game" in c) {
     await db.update(classes).set({ game: c.game }).where(eq(classes.id, id)).run();
+  } else if ("classBoss" in c) {
+    if (c.classBoss === "start" && !(await getClass(id, me.id))?.game) return bad("Switch on challenges and boss fights for this class first.");
+    if (c.classBoss === "start") await startClassBoss(id);
+    else await endClassBoss(id);
+    return Response.json({ ok: true, classBoss: await classBossForTeacher(id) });
   } else if ("paused" in c) {
     await db.update(classes).set({ pausedAt: c.paused ? new Date() : null }).where(eq(classes.id, id)).run();
   } else if ("language" in c) {

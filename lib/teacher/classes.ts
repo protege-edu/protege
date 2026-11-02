@@ -2,7 +2,7 @@ import "server-only";
 import { randomInt, randomUUID } from "node:crypto";
 import { and, asc, eq, inArray, isNotNull, sql } from "drizzle-orm";
 import { db, together } from "@/lib/db/client";
-import { classLessons, classes, conceptEvents, encounters, gloams, messages, students, teachSessions } from "@/lib/db/schema";
+import { classBosses, classBossHits, classLessons, classes, conceptEvents, encounters, gloams, messages, students, teachSessions } from "@/lib/db/schema";
 import type { Level, LessonBlueprint } from "@/lib/lesson/types";
 import { keySize } from "@/lib/student/pictures";
 import { newClassDeleteOn } from "@/lib/privacy/retention";
@@ -231,6 +231,7 @@ export async function eraseStudent(studentId: string) {
         ]
       : []),
     db.delete(gloams).where(eq(gloams.studentId, studentId)),
+    db.delete(classBossHits).where(eq(classBossHits.studentId, studentId)),
     db.delete(students).where(eq(students.id, studentId)),
   ]);
 }
@@ -254,7 +255,12 @@ export async function correctCandle(classId: string, studentId: string, lessonId
 /** Delete a class and everything in it: its students, what they taught Gloam, their Gloams, and the class itself */
 export async function deleteClass(classId: string) {
   for (const k of await db.select({ id: students.id }).from(students).where(eq(students.classId, classId)).all()) await removeStudent(classId, k.id);
-  await together([db.delete(classLessons).where(eq(classLessons.classId, classId)), db.delete(classes).where(eq(classes.id, classId))]);
+  const bosses = (await db.select({ id: classBosses.id }).from(classBosses).where(eq(classBosses.classId, classId)).all()).map((b) => b.id);
+  await together([
+    ...(bosses.length ? [db.delete(classBossHits).where(inArray(classBossHits.bossId, bosses)), db.delete(classBosses).where(inArray(classBosses.id, bosses))] : []),
+    db.delete(classLessons).where(eq(classLessons.classId, classId)),
+    db.delete(classes).where(eq(classes.id, classId)),
+  ]);
 }
 
 /**

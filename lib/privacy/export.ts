@@ -4,6 +4,7 @@ import { db } from "@/lib/db/client";
 import { classes, encounters, gloams, messages, students, teachSessions } from "@/lib/db/schema";
 import { getApprovedLesson } from "@/lib/teacher/lessons";
 import { studentAccessParts } from "@/lib/student/access";
+import { classBossHitsOf } from "@/lib/student/class-boss";
 
 const LEVELS = ["not yet", "a spark", "flickering", "lit"];
 
@@ -43,7 +44,8 @@ export async function studentExport(studentId: string) {
       lastSeen: s.lastSeenAt?.toISOString() ?? null,
       signsInWith: s.googleIdHash ? "Google (only a scrambled account number is stored: no name, email or photo)" : "secret pictures (stored scrambled, can't be read back)",
       waysToPlay: { theirOwnChoices: access.own ?? "none", switchedOnByTheirTeacher: access.accommodations ?? "none" },
-      gloam: { ideasTaught: g?.light ?? 0, lessonsFinished: g?.lessons ?? 0, firefliesCaught: g?.fireflies ?? 0, firefliesSpent: g?.spent ?? 0, owns: g?.owned ?? [], wearing: g?.wearing ?? [] },
+      gloam: { ideasTaught: g?.light ?? 0, lessonsFinished: g?.lessons ?? 0, firefliesCaught: g?.fireflies ?? 0, firefliesSpent: g?.spent ?? 0, owns: g?.owned ?? [], aroundItsHome: g?.wearing ?? [], wearing: g?.dressed ?? [], rivalRemembers: g?.rival ?? null },
+      classBossFights: (await classBossHitsOf(studentId)).map((h) => ({ hitsLanded: h.hits, gotFireflies: h.rewarded })),
     },
     lessons: await Promise.all(
       sessions.map(async (x) => {

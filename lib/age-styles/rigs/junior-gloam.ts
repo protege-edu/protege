@@ -75,4 +75,5 @@ export const juniorGloam: RigSpec = {
     hang: [95, 7],
     flame: [101, 127],
   },
+  wear: { scarf: "#2f8a6b", stripe: "#f3ead8", hat: "#2f6fb8", cuff: "#4a88cc", frame: "#2a1208", pompom: "#f3ead8", cape: "#8a2f2f", capeIn: "#c84b4b" },
 };

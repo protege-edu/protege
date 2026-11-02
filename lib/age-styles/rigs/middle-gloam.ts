@@ -76,4 +76,5 @@ export const middleGloam: RigSpec = {
     hang: [105, 12],
     flame: [107, 114],
   },
+  wear: { scarf: "#7a3f8a", stripe: "#f1e6d4", hat: "#24476b", cuff: "#335d86", frame: "#1e140c", cape: "#141b2a", capeIn: "#8a1f33", paintedScarf: true },
 };

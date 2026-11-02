@@ -16,6 +16,8 @@ import type { GameEvent } from "@/lib/game/engine";
 import type { Said } from "@/lib/game/say";
 import type { Feat } from "@/lib/game/feats";
 import type { Action, EncounterView } from "@/lib/game/types";
+import type { ClassBossView } from "@/lib/game/class-boss";
+import { gameUi } from "@/lib/age-styles/game-ui";
 
 export type Phase = "loading" | "title" | "intro" | "teach" | "ending";
 /** paused: the teacher paused the class (Gloam sleeps until they wake it) */
@@ -90,6 +92,8 @@ interface ReplyEvent {
   /** the game layer: the challenge or boss fight now (null: none), who said what, and what comes after the big moment */
   game?: { event?: GameEvent; view: EncounterView | null; said: Said[]; after?: Said[] };
   fireflies?: number;
+  /** the whole-class boss (if the teacher has one on): how it is now, whether this turn hit it, and fireflies for helping beat it */
+  classBoss?: ClassBossView & { hit: boolean; reward: number };
   /** the lesson's feats, once it's finished */
   feats?: Feat[];
 }
@@ -159,10 +163,21 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle, test = fa
   // (the encounter a reply happened in, for its sound: state would be a render behind)
   const encounterRef = useRef<EncounterView | null>(null);
   const [fireflies, setFireflies] = useState(0);
+  const [dressed, setDressed] = useState<string[]>([]);
   const [caught, setCaught] = useState<{ n: number; key: number } | null>(null);
   const [gameEvent, setGameEvent] = useState<{ event: GameEvent; key: number } | null>(null);
   // the boss fight in the world: a tick for every hit and every miss (the Muddle reacts to each)
   const [bossTicks, setBossTicks] = useState({ hit: 0, miss: 0 });
+  // the whole-class boss on the projector, and the last thing it did here (a hit, the class winning, it arriving)
+  const [classBoss, setClassBoss] = useState<ClassBossView | null>(null);
+  const classBossRef = useRef<ClassBossView | null>(null);
+  const [classNews, setClassNews] = useState<{ text: string; key: number } | null>(null);
+  const classNewsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const tellClass = useCallback((text: string, ms = 3500) => {
+    setClassNews({ text, key: Date.now() });
+    if (classNewsTimer.current) clearTimeout(classNewsTimer.current);
+    classNewsTimer.current = setTimeout(() => setClassNews(null), ms);
+  }, []);
   const followTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastMessage = useRef<{ text: string; pasted: boolean } | null>(null);
   const beatShown = useRef(0);
@@ -199,6 +214,11 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle, test = fa
       setEncounter(session.encounter ?? null);
       encounterRef.current = session.encounter ?? null;
       setFireflies(session.fireflies ?? 0);
+      setDressed(session.dressed ?? []);
+      classBossRef.current = session.classBoss?.on ? session.classBoss : null;
+      setClassBoss(classBossRef.current);
+      // (arriving while the class is fighting one: say what it is)
+      if (classBossRef.current) tellClass(gameUi(style.id, style.language).classBossHint, 6000);
       if (session.gloam) setGloam(session.gloam);
       setSessionId(session.id);
       setFinished(session.finished);
@@ -222,7 +242,7 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle, test = fa
       const last = [...session.messages].reverse().find((m) => m.from === "gloam");
       setEmotion(resumed ? ((last?.emotion as Emotion) ?? "curious") : "asleep");
     },
-    [lesson.storyBeats],
+    [lesson.storyBeats, style.id, style.language, tellClass],
   );
 
   useEffect(() => {
@@ -306,6 +326,16 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle, test = fa
         const hit = ev.game.event === "hit" || ev.game.event === "defeated";
         if (hit || ev.game.event === "miss") setBossTicks((b) => (hit ? { ...b, hit: Date.now() } : { ...b, miss: Date.now() }));
       }
+      if (ev.classBoss) {
+        const cb = ev.classBoss;
+        const ui = gameUi(style.id, style.language);
+        if (cb.reward) tellClass(ui.classBossBeaten(cb.reward), 6000);
+        else if (cb.on && !classBossRef.current) tellClass(ui.classBossHint, 6000);
+        else if (cb.hit) tellClass(ui.classBossHit);
+        classBossRef.current = cb.on || cb.reward ? { left: cb.left, beaten: cb.beaten, on: cb.on } : null;
+        setClassBoss(classBossRef.current);
+        if (sound && cb.hit) sfx.bossHit(1);
+      }
       if (ev.fireflies) {
         if (sound) sfx.caughtFireflies(ev.fireflies);
         setFireflies((n) => n + ev.fireflies!);
@@ -355,7 +385,7 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle, test = fa
         setStatus("ready");
       }
     },
-    [lesson.concepts, showReply, sound, style, fill, saidEntries, beatsFor],
+    [lesson.concepts, showReply, sound, style, fill, saidEntries, beatsFor, tellClass],
   );
 
   const send = useCallback(
@@ -593,6 +623,9 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle, test = fa
     act,
     encounter,
     fireflies,
+    dressed,
+    classBoss,
+    classNews,
     caught,
     gameEvent,
     bossTicks,

@@ -6,6 +6,7 @@ import { conceptEvents, encounters, gloams, messages, students, teachSessions } 
 import { view } from "@/lib/game/engine";
 import { featsFor, type Feat } from "@/lib/game/feats";
 import type { ChallengeKind, EncounterView, Play } from "@/lib/game/types";
+import type { ClassBossView } from "@/lib/game/class-boss";
 import { lessonRecap } from "@/lib/lesson";
 import { getApprovedLesson } from "@/lib/teacher/lessons";
 import type { RecapItem } from "@/lib/lesson/types";
@@ -37,6 +38,8 @@ export interface SessionState {
   encounter: EncounterView | null;
   /** fireflies in this student's jar (all lessons) */
   fireflies: number;
+  /** what Gloam is wearing (bought in its stash) */
+  dressed: string[];
   /** once the lesson is finished: the feats earned in it */
   feats?: Feat[];
 }
@@ -104,6 +107,7 @@ export async function getSession(id: string): Promise<SessionState | null> {
     play: row.s.play ?? null,
     encounter: row.s.play?.open ? view(row.s.play.open) : null,
     fireflies: await firefliesOf(row.s.studentId),
+    dressed: (await db.select({ dressed: gloams.dressed }).from(gloams).where(eq(gloams.studentId, row.s.studentId)).get())?.dressed ?? [],
     ...(row.s.finishedAt !== null ? { feats: await featsOf(row.s.id) } : {}),
   };
 }
@@ -115,11 +119,25 @@ export async function featsOf(sessionId: string): Promise<Feat[]> {
 }
 
 /** What the browser gets: everything but the game's answer key (which notebook line is wrong, the cards' order) */
-export type ClientSession = Omit<SessionState, "play">;
+export type ClientSession = Omit<SessionState, "play"> & {
+  /** the whole-class boss, while the teacher has one on the projector (app/api/session adds it) */
+  classBoss?: ClassBossView | null;
+};
 export function forBrowser(session: SessionState): ClientSession {
   const { play: _answers, ...rest } = session;
   void _answers;
   return rest;
+}
+
+/** What the rival remembers about a student across lessons (game facts only) */
+export async function rivalOf(studentId: string): Promise<{ met: number; beaten: number; lastTopic: string } | null> {
+  const g = await db.select({ rival: gloams.rival }).from(gloams).where(eq(gloams.studentId, studentId)).get();
+  return g?.rival ?? null;
+}
+
+export async function rememberRival(studentId: string, rival: { met: number; beaten: number; lastTopic: string }) {
+  const now = new Date();
+  await db.insert(gloams).values({ studentId, rival, updatedAt: now }).onConflictDoUpdate({ target: gloams.studentId, set: { rival, updatedAt: now } }).run();
 }
 
 /** Fireflies in a student's jar (caught minus spent) */

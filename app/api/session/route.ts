@@ -6,6 +6,16 @@ import { db } from "@/lib/db/client";
 import { classLessons } from "@/lib/db/schema";
 import { DEFAULT_LESSON_ID } from "@/lib/lesson";
 import { currentStudent, maySeeStudent } from "@/lib/student/auth";
+import { gameOn } from "@/lib/game/config";
+import { classBossView } from "@/lib/game/class-boss";
+import { classBossOf } from "@/lib/student/class-boss";
+import type { SessionState } from "@/lib/companion/session";
+
+/** The session for the browser, with the class's boss if the teacher has one on the projector */
+async function withClassBoss(session: SessionState) {
+  const boss = session.classId && (await gameOn(session.classId)) ? await classBossOf(session.classId) : null;
+  return { ...forBrowser(session), classBoss: boss ? classBossView(boss) : null };
+}
 
 /** Resume a session */
 export async function GET(request: Request) {
@@ -13,7 +23,7 @@ export async function GET(request: Request) {
   const session = id ? await getSession(id) : null;
   // someone else's session (e.g. the last student on this Chromebook): the browser then asks for its own
   if (!session || !(await maySeeStudent(session.studentId))) return Response.json({ error: "We couldn't find that session. Starting a fresh one is fine!" }, { status: 404 });
-  return Response.json(forBrowser(session));
+  return Response.json(await withClassBoss(session));
 }
 
 const Body = z.object({ lessonId: z.string().optional(), studentId: z.string().max(64).optional(), fresh: z.boolean().optional() });
@@ -32,7 +42,7 @@ export async function POST(request: Request) {
     const assigned = student && await db.select().from(classLessons).where(and(eq(classLessons.classId, student.classId), eq(classLessons.lessonId, lessonId))).get();
     if (student && assigned) {
       const existing = body.success && body.data.fresh ? null : await findSession(student.id, lessonId);
-      return Response.json(forBrowser(existing ?? (await createSession(lessonId, student.id, student.classId))));
+      return Response.json(await withClassBoss(existing ?? (await createSession(lessonId, student.id, student.classId))));
     }
     // the browser's practice student, so their Gloam keeps growing across lessons
     return Response.json(forBrowser(await createSession(lessonId, body.success ? body.data.studentId : undefined)));

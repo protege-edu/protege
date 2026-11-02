@@ -335,6 +335,45 @@ async function main() {
     assert.deepEqual(parts.own, { reading: "dyslexic" });
     await C.deleteClass(k);
   });
+  await test("the class boss: one Muddle for the whole class, beaten once, rewards claimed once, erased with the class", async () => {
+    const B = await import("@/lib/student/class-boss");
+    const { hitsNeeded, hitsFromTurn } = await import("@/lib/game/class-boss");
+    const { gloams, classBosses, classBossHits } = await import("@/lib/db/schema");
+    const k = await C.createClass("Class boss", 9, a.id);
+    const kids: string[] = [];
+    for (const n of ["Bold Fern", "Swift Moth", "Grey Wren", "Tall Pine"]) {
+      const r = await S.createStudent(k, n, ["moon", "owl", "fern"]);
+      assert.ok(r.ok);
+      kids.push(r.student.id);
+    }
+    assert.equal(await B.hitClassBoss(k, kids[0], 2), null, "no boss going: nothing happens");
+    const boss = (await B.startClassBoss(k))!;
+    assert.equal(boss.need, hitsNeeded(4));
+    assert.equal((await B.startClassBoss(k))!.id, boss.id, "starting again gets the same one");
+    assert.equal(hitsFromTurn(["a", "b", "c"], "won"), 2, "one turn can't hit more than twice");
+    assert.equal(hitsFromTurn([], undefined), 0);
+    // three students hit it at once, a few times each: every hit counts, and exactly one finishes it
+    const all = await Promise.all(Array.from({ length: boss.need }, (_, i) => B.hitClassBoss(k, kids[i % 3], 1)));
+    assert.equal(all.filter((h) => h?.justBeaten).length, 1, "beaten exactly once");
+    const view = (await B.classBossForTeacher(k))!;
+    assert.ok(view.beaten && view.left === 0 && view.helpers === 3, "the projector sees the count of helpers, never who");
+    assert.equal(await B.hitClassBoss(k, kids[3], 2), null, "a beaten boss can't be hit");
+    assert.equal(await B.claimClassBossReward(kids[0]), 15);
+    assert.equal(await B.claimClassBossReward(kids[0]), 0, "only once");
+    assert.equal(await B.claimClassBossReward(kids[3]), 0, "they didn't hit it");
+    assert.equal((await db.select().from(gloams).where(eq(gloams.studentId, kids[0])).get())?.fireflies, 15);
+    // a teacher can end one before the class beats it: nobody gets anything, nobody loses anything
+    const second = (await B.startClassBoss(k))!;
+    assert.notEqual(second.id, boss.id);
+    await B.hitClassBoss(k, kids[1], 1);
+    await B.endClassBoss(k);
+    assert.equal(await B.claimClassBossReward(kids[1]), 15, "the first boss's reward only");
+    assert.ok((await B.classBossForTeacher(k))?.beaten, "the projector still shows the beaten one's dawn for a while");
+    await C.removeStudent(k, kids[2]);
+    assert.equal((await db.select().from(classBossHits).where(eq(classBossHits.studentId, kids[2])).all()).length, 0, "erased with the student");
+    await C.deleteClass(k);
+    assert.equal((await db.select().from(classBosses).where(eq(classBosses.classId, k)).all()).length, 0, "erased with the class");
+  });
   console.log("privacy");
   await test("retention is the board's rule: a year after last use by default, or the end of the school year", async () => {
     const { endOfSchoolYear } = await import("@/lib/privacy/retention");

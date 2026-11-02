@@ -61,11 +61,13 @@ export function TitleScreen({
   const rise = (delay: number) => (calm ? {} : { initial: { opacity: 0, y: 14 }, animate: { opacity: 1, y: 0 }, transition: { delay, duration: 0.8, ease: [0.22, 1, 0.36, 1] as const } });
 
   return (
-    <motion.div className="absolute inset-0 z-20 flex items-end min-[56rem]:items-center" exit={calm ? undefined : { opacity: 0, transition: { duration: 0.5 } }}>
+    // (centred only while it fits: on a short screen it starts at the top instead of being cut off)
+    <motion.div className="absolute inset-0 z-20 flex items-end overflow-y-auto min-[56rem]:items-center-safe" exit={calm ? undefined : { opacity: 0, transition: { duration: 0.5 } }}>
       {/* darken the left side so the title reads, keep the right side (Gloam) clear */}
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgb(var(--t-scrim)/calc(0.85_+_var(--scrim-boost)))_0%,rgb(var(--t-scrim)/calc(0.55_+_var(--scrim-boost)))_38%,transparent_65%)] max-[56rem]:bg-[linear-gradient(0deg,rgb(var(--t-scrim)/calc(0.92_+_var(--scrim-boost)))_0%,rgb(var(--t-scrim)/calc(0.6_+_var(--scrim-boost)))_45%,transparent_70%)]" />
-      <div ref={wordsRef} className="relative w-full px-6 pb-10 min-[56rem]:w-auto min-[56rem]:px-[7vw] min-[56rem]:pb-0" style={room ? { maxWidth: room } : undefined}>
-        <motion.h1 {...rise(0.35)} className="mt-3 text-[4rem] text-ink min-[56rem]:text-[min(6.5rem,8vw)]">
+      {/* (on a narrow screen, room at the bottom for the teachers' link, so the words never run into it) */}
+      <div ref={wordsRef} className={`relative w-full px-6 min-[56rem]:w-auto min-[56rem]:px-[7vw] min-[56rem]:py-8 ${account !== "student" ? "pb-20" : "pb-10"}`} style={room ? { maxWidth: room } : undefined}>
+        <motion.h1 {...rise(0.35)} className="mt-3 text-[min(4rem,14vw)] text-ink min-[56rem]:text-[min(6.5rem,8vw,12vh)]">
           <Wordmark tone={style.look.tone} mark={false} />
         </motion.h1>
         <motion.p {...rise(0.5)} className="mt-5 max-w-[24ch] text-lg text-ink">
@@ -125,7 +127,8 @@ export function TopBar({ style, lesson, levels, current, onPause, jar }: { style
   return (
     <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-4 bg-[linear-gradient(180deg,rgb(var(--t-scrim)/calc(0.7_+_var(--scrim-boost))),transparent)] px-4 pt-3 pb-10 sm:px-6">
       <div className="min-w-0">
-        <h1 className="truncate text-sm font-bold text-ink">{lesson.title}</h1>
+        {/* (two lines on a phone, so a long title isn't chopped short) */}
+        <h1 className="line-clamp-2 text-sm font-bold text-ink sm:line-clamp-1">{lesson.title}</h1>
         <TrailStrip style={style} concepts={lesson.concepts} levels={levels} current={Math.min(current, lesson.concepts.length - 1)} />
       </div>
       <span className="flex items-center gap-4">
@@ -445,7 +448,7 @@ function Feats({ style, feats, delay }: { style: AgeStyle; feats: Feat[]; delay:
         {feats.map((f, i) => (
           <motion.li
             key={f}
-            className="max-w-[15rem] rounded-xl border-2 border-dashed px-3 py-2"
+            className="max-w-[15rem] rounded-lg border-2 border-dashed px-3 py-2"
             style={{ borderColor: "#8ec5dc", rotate: `${((i * 37) % 7) - 3}deg` }}
             initial={calm ? false : { scale: 1.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}

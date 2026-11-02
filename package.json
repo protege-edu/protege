@@ -24,6 +24,7 @@
     "licenses": "tsx scripts/licenses.ts",
     "access-log": "tsx --conditions=react-server scripts/admin.ts access-log",
     "site": "tsx scripts/site.ts",
+    "app:check": "tsx scripts/app-check.ts",
     "site:check": "tsx scripts/site-check.ts",
     "db:migrate": "tsx scripts/migrate.ts",
     "lint:promises": "eslint -c eslint.promises.mjs lib app components scripts/*.ts"

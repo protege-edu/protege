@@ -43,6 +43,8 @@ export function RigLab() {
       el.appendChild(app.canvas);
       const actor = await loadActor(PIXI, rig);
       actorRef.current = actor;
+      // ?wear=glasses,scarf,beanie shows its outfits
+      actor.setOutfit((q.get("wear") ?? "").split(",").filter(Boolean));
       app.stage.addChild(actor.container);
       // ?trick=firefly shows that trick, again every 5 seconds
       const trick = q.get("trick") as TrickName | null;

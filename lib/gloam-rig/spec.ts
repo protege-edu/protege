@@ -66,6 +66,8 @@ export interface RigSpec {
     /** the flame's centre, in its own image (where the light comes from) */
     flame: [number, number];
   };
+  /** the colours of the outfits this Gloam can wear (components/gloam/rig/outfit.ts; never lantern gold) */
+  wear?: Partial<{ scarf: string; stripe: string; hat: string; cuff: string; frame: string; pompom: string; cape: string; capeIn: string; paintedScarf: boolean }>;
 }
 
 export interface Limb {

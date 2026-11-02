@@ -6,7 +6,7 @@ type Line = string;
  * Everything the game layer says: the rival, the boss (the Muddle) and Gloam's reactions in each challenge.
  * Hand-written for each age (no AI, no cost, always kid-safe). The rival and the Muddle only ever say the
  * lesson's own wrong ideas ({claim}) and these lines, and they pick on Gloam, never on the student.
- * Placeholders: {claim} {scenario} {question} {a} {b} {n} (hits in a row) {topic}
+ * Placeholders: {claim} {scenario} {question} {a} {b} {n} (hits in a row) {topic} {last} {times}
  */
 export interface GameLines {
   /** the recurring rival who's always confidently wrong */
@@ -15,7 +15,17 @@ export interface GameLines {
   boss: string;
   notebook: { open: Line[]; wrongPick: Line[]; spotted: Line[]; glance: Line[]; miss: Line[]; nothing: Line[]; won: Line[] };
   /** rival.* are said BY the rival, except tempted (Gloam, wavering) and won (Gloam, won back) */
-  rivalSays: { arrive: Line[]; glance: Line[]; miss: Line[]; defeated: Line[]; nothing: Line[] };
+  rivalSays: {
+    arrive: Line[];
+    /** it remembers this student from an earlier lesson ({last}: that lesson's topic, {times}: how often it lost) */
+    returning: Line[];
+    /** beaten again by someone who's beaten it before */
+    beatenAgain: Line[];
+    glance: Line[];
+    miss: Line[];
+    defeated: Line[];
+    nothing: Line[];
+  };
   rivalGloam: { tempted: Line[]; won: Line[] };
   whatif: { open: Line[]; glance: Line[]; miss: Line[]; nothing: Line[]; won: Line[] };
   order: { open: Line[]; misordered: Line[]; ordered: Line[]; glance: Line[]; miss: Line[]; nothing: Line[]; won: Line[] };
@@ -41,6 +51,8 @@ const senior: GameLines = {
   },
   rivalSays: {
     arrive: ["corvin here. small correction to everything you've learned: {claim} you're welcome.", "oh, gloam's being taught? adorable. anyway, facts: {claim}", "corvin is never wrong. so, listen: {claim}"],
+    returning: ["oh. you again. you got lucky with {last}. this time, facts: {claim}", "corvin remembers you. {last} was a fluke. anyway: {claim}", "we meet again. corvin has been practising. {claim}"],
+    beatenAgain: ["that's {times} times. corvin is keeping count. corvin is also leaving.", "{times} times. you know what, corvin respects it. quietly. goodbye.", "again? {times} times? corvin needs a minute. a long one."],
     glance: ["that's a point. a small one. why though?", "hm. you've almost said something. finish the thought.", "interesting. unconvincing. explain the why."],
     miss: ["see? even your teacher agrees with corvin. as everyone eventually does.", "exactly what i said. great minds.", "ha. told you, gloam."],
     defeated: ["...fine. FINE. you're right. this is unbearable. corvin is leaving.", "this is a temporary setback for corvin. goodbye.", "i'm not wrong, i'm... early. to being right. later."],
@@ -107,6 +119,8 @@ const storybook = (big: boolean, age: AgeStyleId): GameLines => {
     },
     rivalSays: {
       arrive: [S(`${age === "little" ? "Honk!" : "Hoo hoo!"} I'm ${rival}! Everybody knows: {claim}`, `behold! it is i, ${rival}! the truth is: {claim}`), S(`${age === "little" ? "Honk honk!" : "Hoo!"} ${rival} knows best: {claim}`, `${rival} has arrived to correct you: {claim}`)],
+      returning: [S(`${age === "little" ? "Honk!" : "Hoo!"} It's you again! You beat me with {last}. Not this time! {claim}`, `YOU! we meet again! {last} was just luck. behold: {claim}`), S(`I remember you! Okay, this one is true for sure: {claim}`, `${rival} returns! stronger! wiser! {claim}`)],
+      beatenAgain: [S(`You beat me {times} times! You're really good at this!`, `{times} times?! ${rival} will train harder! farewell!`)],
       glance: [S("Hmm! Maybe. But why?", "a fair point… but WHY?")],
       miss: [S("See? I'm right!", "ha! you agree with me!")],
       defeated: [S(`Oh! You're right. ${rival} is going home now. Bye!`, `noooo! defeated! ${rival} will return!`), S("Okay, okay, I was wrong!", "fine! i was wrong! this time!")],
@@ -171,6 +185,8 @@ const frSenior: GameLines = {
   },
   rivalSays: {
     arrive: ["corvin ici. petite correction à tout ce que t'as appris : {claim} de rien.", "oh, on enseigne à gloam? mignon. bref, les faits : {claim}", "corvin a jamais tort. alors, écoute : {claim}"],
+    returning: ["oh. encore toi. t'as eu de la chance avec {last}. cette fois, les faits : {claim}", "corvin se souvient de toi. {last}, c'était un coup de chance. bref : {claim}", "on se retrouve. corvin s'est entraîné. {claim}"],
+    beatenAgain: ["ça fait {times} fois. corvin compte. corvin s'en va aussi.", "{times} fois. tu sais quoi, corvin te respecte. en silence. au revoir.", "encore? {times} fois? corvin a besoin d'une minute. une longue."],
     glance: ["c'est un argument. un petit. mais pourquoi?", "hm. t'as presque dit quelque chose. finis ta pensée.", "intéressant. pas convaincant. explique le pourquoi."],
     miss: ["tu vois? même ton prof est d'accord avec corvin. comme tout le monde, éventuellement.", "exactement ce que j'ai dit. les grands esprits.", "ha. je te l'avais dit, gloam."],
     defeated: ["…bon. BON. t'as raison. c'est insupportable. corvin s'en va.", "c'est un revers temporaire pour corvin. au revoir.", "j'ai pas tort, je suis… en avance. pour avoir raison. plus tard."],
@@ -237,6 +253,8 @@ const frStorybook = (big: boolean, age: AgeStyleId): GameLines => {
     },
     rivalSays: {
       arrive: [S(`${age === "little" ? "Coin!" : "Hou hou!"} Je suis ${rival}! Tout le monde le sait : {claim}`, `voici! c'est moi, ${rival}! la vérité, c'est : {claim}`), S(`${age === "little" ? "Coin coin!" : "Hou!"} ${rival} sait tout : {claim}`, `${rival} est arrivé pour te corriger : {claim}`)],
+      returning: [S(`${age === "little" ? "Coin!" : "Hou!"} Encore toi! Tu m'as battu avec {last}. Pas cette fois! {claim}`, `TOI! on se retrouve! {last}, c'était de la chance. voici : {claim}`), S(`Je me souviens de toi! Bon, celle-là est vraie pour sûr : {claim}`, `${rival} est de retour! plus fort! plus sage! {claim}`)],
+      beatenAgain: [S(`Tu m'as battu {times} fois! T'es vraiment bon!`, `{times} fois?! ${rival} va s'entraîner plus fort! adieu!`)],
       glance: [S("Hmm! Peut-être. Mais pourquoi?", "bon argument… mais POURQUOI?")],
       miss: [S("Tu vois? J'ai raison!", "ha! t'es d'accord avec moi!")],
       defeated: [S(`Oh! T'as raison. ${rival} rentre à la maison. Bye!`, `noooon! vaincu! ${rival} reviendra!`), S("D'accord, d'accord, je me suis trompé!", "bon! je me suis trompé! cette fois!")],

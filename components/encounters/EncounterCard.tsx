@@ -213,7 +213,7 @@ function Cards({ e, s, style, busy, title, skip }: { e: Extract<EncounterView, {
       </Header>
       {!settled && <p className="text-xs text-ink-dim">{ui.orderHint}</p>}
       {/* one row of cards (on a phone it scrolls sideways, so Gloam stays in view) */}
-      <ol className="-mx-1 mt-2 flex snap-x gap-2 overflow-x-auto px-1 pt-1 pb-2 [scrollbar-width:thin]">
+      <ol className="-mx-1 mt-2 flex snap-x gap-2 overflow-x-auto px-1 pt-1 pb-2">
         <AnimatePresence initial={false}>
           {shown.map((cardIndex, k) => (
             <motion.li

@@ -1,11 +1,12 @@
 import { z } from "zod";
 import { forbidden, limit, sameOrigin, tooMany } from "@/lib/auth/request";
-import { STASH } from "@/lib/game/stash";
-import { buy, place, stashOf } from "@/lib/student/stash";
+import { OUTFIT_SHOP, STASH } from "@/lib/game/stash";
+import { buy, dress, place, stashOf } from "@/lib/student/stash";
 import { currentStudent } from "@/lib/student/auth";
 
 const ids = STASH.map((s) => s.id) as [string, ...string[]];
-const Change = z.union([z.object({ buy: z.enum(ids) }), z.object({ place: z.enum(ids), on: z.boolean() })]);
+const outfits = OUTFIT_SHOP.map((o) => o.id) as [string, ...string[]];
+const Change = z.union([z.object({ buy: z.enum([...ids, ...outfits] as [string, ...string[]]) }), z.object({ place: z.enum(ids), on: z.boolean() }), z.object({ wear: z.enum(outfits), on: z.boolean() })]);
 
 /** Gloam's stash: what this student has, and their jar */
 export async function GET() {
@@ -14,7 +15,7 @@ export async function GET() {
   return Response.json({ stash: await stashOf(me.id) });
 }
 
-/** Buy something for Gloam's home with fireflies, or put something out or away */
+/** Buy something for Gloam's home (or for Gloam to wear) with fireflies, put something out or away, or dress Gloam */
 export async function POST(request: Request) {
   if (!sameOrigin(request)) return forbidden();
   const me = await currentStudent();
@@ -26,5 +27,6 @@ export async function POST(request: Request) {
     const r = await buy(me.id, body.data.buy);
     return r.ok ? Response.json({ stash: r.stash }) : Response.json({ error: r.error }, { status: 409 });
   }
+  if ("wear" in body.data) return Response.json({ stash: await dress(me.id, body.data.wear, body.data.on) });
   return Response.json({ stash: await place(me.id, body.data.place, body.data.on) });
 }
