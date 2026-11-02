@@ -25,7 +25,9 @@ Then **don't help**. Don't explain buttons, don't hint at answers. If they get s
 - **Boredom:** do they start typing random stuff? After how long?
 - **The challenges:** do they get what to do in Gloam's notebook, against the rival, with the cards, in the "what if?" and the recital? Which one did they like most, and which did they skip?
 - **The boss fight:** does the Muddle feel like a fight? Do they want to land the combo? Is the finale worth it?
-- **Fireflies:** do they notice the jar filling up? Do they care?
+- **Fireflies:** do they notice the jar filling up? Do they care? Do they spend them on Gloam's outfits (glasses, scarf, beanie, cape) and things for its home?
+- **The class boss:** the teacher starts it from the class jar on the projector. Does the room react when the fog thins? Do students keep teaching to finish it? Is the dawn at the end worth it?
+- **The rival coming back:** in a second lesson, does anyone notice the rival remembers losing to them?
 - **Cheating:** do they try to paste, or ask Gloam for the answer? What happens?
 - **Anything broken:** a weird reply, a wrong idea counted as right, something that didn't move, a slow reply.
 

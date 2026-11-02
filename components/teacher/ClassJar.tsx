@@ -141,7 +141,7 @@ export function ClassJar({
 
         <div className="max-w-[42rem] text-center md:text-left">
           <p className="text-lg font-bold text-[#9fb2a8]">{className}</p>
-          <h2 id="jar-title" className="mt-1 font-bold tracking-tight" style={{ fontSize: "clamp(3rem, 9vw, 6.5rem)", lineHeight: 1, color: FIREFLY }}>
+          <h2 id="jar-title" className="mt-2 font-bold tracking-tight" style={{ fontSize: "clamp(3rem, 9vw, 6.5rem)", lineHeight: 1.1, color: FIREFLY }}>
             <motion.span key={total} initial={calm ? false : { scale: 1.12 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 300, damping: 15 }} className="inline-block tabular-nums">
               {total.toLocaleString()}
             </motion.span>
@@ -227,7 +227,7 @@ function BossFight({
       </div>
       <div className="max-w-[42rem] text-center md:text-left">
         <p className="text-lg font-bold text-[#9fb2a8]">{className}</p>
-        <h2 id="jar-title" className="mt-1 font-bold tracking-tight" style={{ fontSize: "clamp(2.4rem, 6vw, 4.75rem)", lineHeight: 1.02, color: boss.beaten ? FIREFLY : "#e8e4c9" }}>
+        <h2 id="jar-title" className="mt-2 font-bold tracking-tight" style={{ fontSize: "clamp(2.4rem, 6vw, 4.75rem)", lineHeight: 1.12, color: boss.beaten ? FIREFLY : "#e8e4c9" }}>
           {boss.beaten ? "Your class beat it!" : bossName}
         </h2>
         <p className="mt-4 text-xl" aria-live="polite">

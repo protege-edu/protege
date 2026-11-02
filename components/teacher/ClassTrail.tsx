@@ -52,10 +52,11 @@ export function ClassTrail({ concepts, students }: { concepts: { id: string; nam
               <path d={`M${x - 15} ${y + 8} Q ${x - 16} ${y - 10} ${x - 9} ${y - 14} L ${x + 9} ${y - 14} Q ${x + 16} ${y - 10} ${x + 15} ${y + 8} Z`} fill="#6f8279" />
               <rect x={x - 3.5} y={y - 30} width={7} height={16} rx={2} fill={count ? "#f3e5c7" : "#cfd6cf"} stroke="#8d9a93" strokeWidth={0.8} />
               {count > 0 && <path d={`M${x} ${y - 44} C ${x + 5} ${y - 37}, ${x + 4.5} ${y - 32}, ${x} ${y - 31} C ${x - 4.5} ${y - 32}, ${x - 5} ${y - 37}, ${x} ${y - 44} Z`} fill="var(--color-lantern)" />}
-              <text x={x} y={y + 34} textAnchor="middle" className="fill-[var(--t-ink)] text-[15px] font-bold">
+              {/* (the first idea's name starts at its shrine instead of centring on it, so it isn't cut at the edge) */}
+              <text x={i === 0 ? x - 18 : x} y={y + 34} textAnchor={i === 0 ? "start" : "middle"} className="fill-[var(--t-ink)] text-[15px] font-bold">
                 {c.name}
               </text>
-              <text x={x} y={y + 52} textAnchor="middle" className="fill-[var(--t-ink-dim)] text-[13px]">
+              <text x={i === 0 ? x - 18 : x} y={y + 52} textAnchor={i === 0 ? "start" : "middle"} className="fill-[var(--t-ink-dim)] text-[13px]">
                 {count} lit
               </text>
             </g>

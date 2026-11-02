@@ -241,6 +241,7 @@ All AI code is in `lib/ai/`; the model is one setting (`AI_MODEL`, default `clau
 | `npm run test:accounts` | Tests of accounts, schools, privacy and retention, on a throwaway database |
 | `npm run lint:promises` | A stricter check for a missing `await` (run it after changing database code) |
 | `npm run eval` | Pretend students (good, wrong, rude, off-topic) talk to Gloam; prints transcripts and the cost |
+| `npm run app:check` | The app's quality gate: every student and teacher screen, every age, 5 screen sizes (`--lang fr` for French) |
 | `npm run licenses` | Checks every library's licence and writes `THIRD-PARTY-NOTICES.md` |
 | `npm run access-log` / `reset-teacher` | Jobs for whoever runs Protégé (on the database `TURSO_*` points at) |
 | `npm run load-test -- --code GLOW-42` | 30 pretend students teaching at once, with the real AI (costs a little) |
@@ -249,7 +250,15 @@ All AI code is in `lib/ai/`; the model is one setting (`AI_MODEL`, default `clau
 | `npm run typecheck`, `npm run lint` | TypeScript and style |
 
 **Test mode** (development only): `/?test` lets pasted answers teach Gloam, and a panel jumps to any moment.
-Development pages: `/dev/style`, `/dev/rig`, `/dev/journey`.
+Development pages: `/dev/style`, `/dev/rig` (`?wear=glasses,scarf,beanie,cape` dresses Gloam), `/dev/journey`,
+`/dev/jar` (`?boss=0.6` shows a class boss fight on the projector).
+
+**`npm run app:check`** is the app's quality gate, like the website's. With the dev server on port 3100, it adds a
+test class and lesson per age style, then walks every screen (title, intro, teaching, each challenge, the boss,
+the ending, joining, Gloam's home, the stash, the class boss, and the teacher's pages and projector) at the
+screen sizes people really use, with real scrollbars. It fails on sideways scrolling, words cut off, words on
+top of words, thick scrollbars and page errors, and removes everything it added at the end. Screenshots go to
+`screenshots/app-check/`. Run it before saying a screen is done.
 
 **Testing sign-up, joining or load:** use a throwaway database (`PROTEGE_DATA_DIR=<folder>`). The first
 sign-up becomes the owner. Never run `next build` beside `next dev` (they share `.next`).

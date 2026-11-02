@@ -93,7 +93,7 @@ interface ReplyEvent {
   game?: { event?: GameEvent; view: EncounterView | null; said: Said[]; after?: Said[] };
   fireflies?: number;
   /** the whole-class boss (if the teacher has one on): how it is now, whether this turn hit it, and fireflies for helping beat it */
-  classBoss?: ClassBossView & { hit: boolean; reward: number };
+  classBoss?: (ClassBossView & { hit: boolean; reward: number }) | null;
   /** the lesson's feats, once it's finished */
   feats?: Feat[];
 }
@@ -325,6 +325,11 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle, test = fa
         if (ev.game.event) setGameEvent({ event: ev.game.event, key: Date.now() });
         const hit = ev.game.event === "hit" || ev.game.event === "defeated";
         if (hit || ev.game.event === "miss") setBossTicks((b) => (hit ? { ...b, hit: Date.now() } : { ...b, miss: Date.now() }));
+      }
+      // the fight's over (ended by the teacher, or won a while ago): the class Muddle leaves the top bar
+      if (ev.classBoss === null && classBossRef.current) {
+        classBossRef.current = null;
+        setClassBoss(null);
       }
       if (ev.classBoss) {
         const cb = ev.classBoss;

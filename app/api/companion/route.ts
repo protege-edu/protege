@@ -136,7 +136,8 @@ export async function POST(request: Request) {
             // the game layer: the challenge or boss fight as the browser may see it, and who said what
             ...(out.game ? { game: out.game } : {}),
             fireflies: out.fireflies + reward,
-            ...(classBoss || reward ? { classBoss: { ...(classBoss ?? { left: 0, beaten: true, on: false, hit: false }), reward } } : {}),
+            // (null: no fight going any more, e.g. the teacher ended it or the class won it a while ago)
+            ...(game && session.classId ? { classBoss: classBoss || reward ? { ...(classBoss ?? { left: 0, beaten: true, on: false, hit: false }), reward } : null } : {}),
             checkpoints: saved.checkpoints,
             gloam: saved.after,
             levelUp: saved.after.level > saved.before.level,

@@ -26,7 +26,7 @@ import type { LessonBlueprint } from "../lib/lesson/types";
 const BASE = process.env.APP_URL ?? "http://localhost:3100";
 const args = process.argv.slice(2);
 const arg = (k: string) => (args.includes(k) ? args[args.indexOf(k) + 1] : null);
-const OUT = path.join(process.cwd(), "screenshots", "app-check");
+const OUT = path.join(process.cwd(), "screenshots", process.argv.includes("fr") ? "app-check-fr" : "app-check");
 fs.rmSync(OUT, { recursive: true, force: true });
 fs.mkdirSync(OUT, { recursive: true });
 
@@ -43,6 +43,8 @@ type Age = (typeof AGES)[number];
 const GRADE: Record<Age, number> = { little: 1, junior: 4, middle: 7, senior: 10 };
 const sizes = arg("--only") ? SIZES.filter(([w, h]) => `${w}x${h}` === arg("--only")) : SIZES;
 const ages = arg("--age") ? AGES.filter((a) => a === arg("--age")) : AGES;
+// --lang fr: every screen in French (longer words: the layouts have to hold them too)
+const LANG = arg("--lang") === "fr" ? "fr" : "en";
 
 const db = createClient({ url: `file:${path.join(process.env.PROTEGE_DATA_DIR ?? path.join(process.env.LOCALAPPDATA!, "Protege"), "protege.db").split(path.sep).join("/")}` });
 const base = JSON.parse(fs.readFileSync("data/replay/canada-grade-4.json", "utf8")) as LessonBlueprint;
@@ -53,13 +55,13 @@ async function fixtures() {
   const teacher = (await db.execute("select id from teachers limit 1")).rows[0]?.id as string | undefined;
   const now = Date.now();
   for (const [i, age] of AGES.entries()) {
-    const lesson = { ...base, id: `check-${age}`, ageStyle: age, grade: GRADE[age], language: "en" };
+    const lesson = { ...base, id: `check-${age}`, ageStyle: age, grade: GRADE[age], language: LANG };
     await db.execute({ sql: "delete from class_lessons where lesson_id = ?", args: [lesson.id] });
     await db.execute({ sql: "delete from lessons where id = ?", args: [lesson.id] });
     // (the teacher's own lesson, so their dashboard can show it)
     await db.execute({ sql: "insert into lessons (id, title, grade, status, blueprint, teacher_id, created_at, updated_at, approved_at) values (?, ?, ?, 'approved', ?, ?, ?, ?, ?)", args: [lesson.id, lesson.title, lesson.grade, JSON.stringify(lesson), teacher ?? null, now, now, now] });
     await db.execute({ sql: "delete from classes where id = ?", args: [`check-class-${age}`] });
-    await db.execute({ sql: "insert into classes (id, name, grade, teacher_id, code, game, language, created_at) values (?, ?, ?, ?, ?, 1, 'en', ?)", args: [`check-class-${age}`, `Check ${age}`, GRADE[age], teacher ?? null, `CHECK-${10 + i}`, now] });
+    await db.execute({ sql: "insert into classes (id, name, grade, teacher_id, code, game, language, created_at) values (?, ?, ?, ?, ?, 1, ?, ?)", args: [`check-class-${age}`, `Check ${age}`, GRADE[age], teacher ?? null, `CHECK-${10 + i}`, LANG, now] });
     await db.execute({ sql: "insert into class_lessons (class_id, lesson_id, assigned_at, position) values (?, ?, ?, 0)", args: [`check-class-${age}`, lesson.id, now] });
   }
 }
@@ -151,8 +153,13 @@ async function check(p: Page, where: string, errors: string[]) {
     };
     const pageScrolls = document.documentElement.scrollHeight > vh + 2;
     const label = (el: Element) => `"${(el.textContent ?? "").trim().slice(0, 40)}"`;
+    // text in a closed <details> isn't shown (only its summary is), though Chrome still gives it boxes
+    const folded = (el: Element) => {
+      const d = el.closest("details:not([open])");
+      return !!d && !el.closest("summary");
+    };
     const boxes = texts
-      .filter((el) => !srOnly(el))
+      .filter((el) => !srOnly(el) && !folded(el))
       .map((el) => {
         const r = rectOf(el);
         return { el, r, v: seen(el, r) };
@@ -211,7 +218,8 @@ async function session(lessonId: string): Promise<{ id: string; studentId: strin
   made.students.add(s.studentId);
   return s;
 }
-const START = /Start teaching|Keep teaching|Keep playing|Let's play|Let's go|Start|Continue|Practice first/;
+const START = /Start teaching|Keep teaching|Keep playing|Let's play|Let's go|Start|Continue|Practice first|Commencer|Continuer|On joue|Juste jouer|M'entraîner/;
+const SKIP = /skip|passer/i;
 
 async function playScreens(p: Page, age: Age, size: string, errors: string[]) {
   const lesson = { ...base, id: `check-${age}`, ageStyle: age, grade: GRADE[age] };
@@ -230,12 +238,12 @@ async function playScreens(p: Page, age: Age, size: string, errors: string[]) {
   await p.getByRole("button", { name: START }).first().click();
   await p.waitForTimeout(1500);
   await check(p, `${tag} intro`, errors);
-  await p.getByRole("button", { name: /skip/i }).first().click({ timeout: 15_000 }).catch(() => {});
+  await p.getByRole("button", { name: SKIP }).first().click({ timeout: 15_000 }).catch(() => {});
   await p.locator("#teach").waitFor({ timeout: 60_000 });
   await p.waitForTimeout(3000);
   await check(p, `${tag} teach`, errors);
   // each challenge, and the boss, opened on the session (as the game would), then the page reloaded
-  const g = (await import("../lib/age-styles/game-lines")).gameLines(age, "en");
+  const g = (await import("../lib/age-styles/game-lines")).gameLines(age, LANG);
   const first = lesson.concepts[0].id;
   const kinds = ["rival", "notebook", "whatif", "recital", "order", "boss"] as const;
   for (const kind of kinds) {
@@ -263,7 +271,7 @@ async function playScreens(p: Page, age: Age, size: string, errors: string[]) {
 
 async function homeScreens(p: Page, age: Age, size: string, errors: string[]) {
   const tag = `${size} ${age}`;
-  const j = getAgeStyle(age, "en").copy.join;
+  const j = getAgeStyle(age, LANG).copy.join;
   await p.goto(`${BASE}/join?code=CHECK-${10 + AGES.indexOf(age)}&switch=1`, { waitUntil: "load", timeout: 180_000 });
   await p.getByRole("button", { name: j.whoNew }).or(p.getByRole("button", { name: j.nickSurprise })).first().waitFor({ timeout: 90_000 });
   await p.waitForTimeout(1200);
@@ -284,13 +292,13 @@ async function homeScreens(p: Page, age: Age, size: string, errors: string[]) {
   await p.reload({ waitUntil: "load" });
   await p.waitForTimeout(3500);
   await check(p, `${tag} home`, errors);
-  const ui = (await import("../lib/age-styles/game-ui")).gameUi(age, "en");
+  const ui = (await import("../lib/age-styles/game-ui")).gameUi(age, LANG);
   await p.getByRole("button", { name: ui.stashTitle }).click();
   await p.waitForTimeout(1200);
   await check(p, `${tag} stash`, errors);
   await p.keyboard.press("Escape");
   await p.waitForTimeout(600);
-  await p.getByRole("button", { name: getAgeStyle(age, "en").copy.home.journalTitle }).click();
+  await p.getByRole("button", { name: getAgeStyle(age, LANG).copy.home.journalTitle }).click();
   await p.waitForTimeout(1200);
   await check(p, `${tag} journal`, errors);
   await p.keyboard.press("Escape");
@@ -300,7 +308,7 @@ async function homeScreens(p: Page, age: Age, size: string, errors: string[]) {
   await p.goto(`${BASE}/play/check-${age}`, { waitUntil: "load", timeout: 180_000 });
   await p.getByRole("button", { name: START }).first().click({ timeout: 90_000 });
   await p.waitForTimeout(1200);
-  await p.getByRole("button", { name: /skip/i }).first().click({ timeout: 15_000 }).catch(() => {});
+  await p.getByRole("button", { name: SKIP }).first().click({ timeout: 15_000 }).catch(() => {});
   await p.locator("#teach").waitFor({ timeout: 60_000 });
   await p.waitForTimeout(3000);
   await check(p, `${tag} classboss`, errors);
@@ -340,6 +348,28 @@ async function teacherScreens(p: Page, _age: Age, size: string, errors: string[]
   await p.getByRole("button", { name: "Back to the class jar" }).waitFor({ timeout: 30_000 });
   await p.waitForTimeout(2500);
   await check(p, `${tag} boss beaten`, errors);
+  // the rest of the teacher's pages: reviewing a lesson, new lessons from notes, help, the owner's page
+  for (const [name, url] of [
+    ["review", "/teacher/lessons/check-senior"],
+    ["new lessons", "/teacher/lessons/new"],
+    ["help", "/teacher/help"],
+    ["owner", "/teacher/owner"],
+  ] as const) {
+    await p.goto(`${BASE}${url}`, { waitUntil: "load", timeout: 180_000 });
+    await p.waitForTimeout(3500);
+    await check(p, `${tag} ${name}`, errors);
+    // and with every folded section opened (what a teacher reads when they check a draft)
+    if (await p.locator("details:not([open])").count()) {
+      await p.evaluate(() => document.querySelectorAll("details").forEach((d) => (d.open = true)));
+      await p.waitForTimeout(600);
+      await check(p, `${tag} ${name} opened`, errors);
+    }
+  }
+  // signed out: the sign-in page
+  await p.context().clearCookies();
+  await p.goto(`${BASE}/teacher`, { waitUntil: "load", timeout: 180_000 });
+  await p.waitForTimeout(2500);
+  await check(p, `${tag} sign in`, errors);
 }
 
 async function main() {

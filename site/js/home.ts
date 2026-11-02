@@ -242,9 +242,9 @@ function story(stage: Stage, speak: Speak, setScene: (s: Scene) => void): Scroll
       // no room at all: Gloam steps out of the way (its answer is in the words, under the choices)
       return { focus: 0.5, height: 0.15, ground: 1.45 };
     }
-    // words at the bottom: Gloam above them, its bubble above it
-    const ground = (top - 12) / vh;
-    const height = Math.max(0.12, Math.min(0.3, (top - 12 - BUBBLE_ROOM) / 1.02 / vh));
+    // words at the bottom: Gloam above them, its bubble above it (with room for a heading's accents: É, è)
+    const ground = (top - 22) / vh;
+    const height = Math.max(0.12, Math.min(0.3, (top - 22 - BUBBLE_ROOM) / 1.02 / vh));
     return { focus: 0.5, height, ground };
   };
   /** the top bar's and the teach box's real heights (they wrap differently on every screen) */
