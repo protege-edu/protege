@@ -15,8 +15,8 @@ export interface RosterEntry {
 
 /**
  * "Show the code": made for the classroom projector, readable from the back row.
- * Students go to Protégé's /j (short, and the same every class) and type the class code.
- * The QR code and the copied link open the class's join page directly.
+ * Students go to Protégé's /j/ followed by the class code (protege-edu.vercel.app/j/HAZE-40), which takes them
+ * straight into joining. The QR code and the copied link are that same short link.
  * Nicknames pop in as students join, so the class watches itself arrive (ask them to tell you theirs).
  * The QR is drawn right here (the qrcode package), nothing is sent anywhere.
  */
@@ -28,7 +28,7 @@ export function ShowCode({
   onClose,
 }: {
   code: string;
-  /** where Protégé lives (students type the code at /j; the QR code and the copied link go straight in) */
+  /** where Protégé lives (students go to its /j/ plus the code; the QR code and the copied link are that link) */
   app: string;
   /** a French class goes to the French page */
   french: boolean;
@@ -38,7 +38,7 @@ export function ShowCode({
   const calm = useCalmMotion();
   const [svg, setSvg] = useState<string>("");
   const close = useRef<HTMLButtonElement>(null);
-  const joinUrl = `${app}/join?code=${encodeURIComponent(code)}`;
+  const joinUrl = `${app}${french ? "/fr" : ""}/j/${encodeURIComponent(code)}`;
   // nicknames already here when the screen opened don't pop; new ones do
   const [firstSeen] = useState(() => new Set(roster.map((r) => r.id)));
 
@@ -57,7 +57,7 @@ export function ShowCode({
     };
   }, [onClose]);
 
-  const go = `${app.replace(/^https?:\/\//, "")}${french ? "/fr" : ""}/j`;
+  const go = `${app.replace(/^https?:\/\//, "")}${french ? "/fr" : ""}/j/`;
 
   return (
     <motion.div
@@ -89,7 +89,7 @@ export function ShowCode({
             <p className="text-[clamp(1rem,min(2vw,3.4vh),1.8rem)] text-[#9fb2a8]">Go to</p>
             <p className={`${go.length > 32 ? "text-[clamp(1.1rem,min(2.3vw,4.4vh),2.2rem)]" : "text-[clamp(1.4rem,min(3.4vw,6vh),3.2rem)]"} font-bold break-words`}>{breakable(go)}</p>
             <p id="show-code-title" className="mt-[3vh] text-[clamp(1rem,min(2vw,3.4vh),1.8rem)] text-[#9fb2a8]">
-              and type the class code
+              followed by the class code
             </p>
             <p
               className="mt-1 text-[clamp(3rem,min(8.5vw,17vh),10rem)] leading-[1.12] font-bold tracking-[0.05em] whitespace-nowrap text-[#f4f1e8]"
@@ -146,7 +146,7 @@ function QrCard({ svg }: { svg: string }) {
 
 /**
  * A long address wraps only after a dash or its first dot, and keeps the rest together
- * ("protege-edu." then "vercel.app/j", never "vercel.a" then "pp/j")
+ * ("protege-edu." then "vercel.app/j/", never "vercel.a" then "pp/j/")
  */
 function breakable(text: string) {
   const dot = text.indexOf(".");

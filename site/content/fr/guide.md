@@ -44,9 +44,10 @@ Ou commencez avec la leçon intégrée, « Pourquoi y a-t-il des saisons? »
 <h2 id="in-class">4. En classe</h2>
 
 1. Sur la page de votre classe, appuyez sur **Show the code** et projetez-le.
-2. Les élèves vont sur **protege-edu.vercel.app/fr/j** et tapent le code, comme GLOW-42. C'est le même lien à
-   chaque cours : ajoutez-le aux favoris ou épinglez-le dans Google Classroom. (Les téléphones et tablettes
-   peuvent balayer le code QR.)
+2. Les élèves vont sur **protege-edu.vercel.app/fr/j/** suivi du code, comme **protege-edu.vercel.app/fr/j/GLOW-42**,
+   et c'est parti. C'est le même lien toute l'année : épinglez-le dans Google Classroom (**Copy link for students**
+   le copie). Les téléphones et tablettes peuvent balayer le code QR. Aller sur /fr/j tout court fonctionne aussi :
+   la page demande le code.
 3. Ils choisissent un surnom et leurs images secrètes. La fois suivante, ils touchent leur surnom et leurs
    images, sur n'importe quel Chromebook.
 4. **Demandez à chaque élève de vous dire son surnom** la première fois, pour savoir qui est qui. Protégé ne

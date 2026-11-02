@@ -117,7 +117,7 @@ const en = {
     steps: [
       ["Sign up.", "With your school's staff code. Ask your principal for it, or a teacher at your school who already uses Protégé."],
       ["Add a lesson.", "Bring your notes. Gloam drafts the lesson, then you check it and approve it."],
-      ["Show the code.", "Students go to <span class=\"url\">protege-edu.vercel.app/j</span> and type it. They pick a nickname and secret pictures, and they're in."],
+      ["Show the code.", "Students go to <span class=\"url\">protege-edu.vercel.app/j/</span> followed by the code, like /j/GLOW-42. They pick a nickname and secret pictures, and they're in."],
     ] as [string, string][],
     others: (guide: string) => `No staff code yet? Your school has to be added first. <a href="${guide}">The guide</a> explains how, for teachers and for whoever runs Protégé.`,
   },
@@ -261,7 +261,7 @@ const fr: SiteCopy = {
     steps: [
       ["Inscrivez-vous.", "Avec le code du personnel de votre école. Demandez-le à votre direction, ou à un collègue de votre école qui utilise déjà Protégé."],
       ["Ajoutez une leçon.", "Apportez vos notes. Gloam prépare la leçon, puis vous la vérifiez et l'approuvez."],
-      ["Affichez le code.", "Les élèves vont sur <span class=\"url\">protege-edu.vercel.app/fr/j</span> et le tapent. Ils choisissent un surnom et des images secrètes, et c'est parti."],
+      ["Affichez le code.", "Les élèves vont sur <span class=\"url\">protege-edu.vercel.app/fr/j/</span> suivi du code, comme /fr/j/GLOW-42. Ils choisissent un surnom et des images secrètes, et c'est parti."],
     ],
     others: (guide) => `Pas encore de code du personnel? Votre école doit d'abord être ajoutée. <a href="${guide}">Le guide</a> explique comment, pour le personnel enseignant et pour la personne qui gère Protégé.`,
   },

@@ -39,8 +39,9 @@ Or start with the built-in lesson, "Why do we have seasons?"
 <h2 id="in-class">4. In class</h2>
 
 1. On your class page, press **Show the code** and put it on the projector.
-2. Students go to **protege-edu.vercel.app/j** and type the code, like GLOW-42. It's the same link every class,
-   so bookmark it or pin it in Google Classroom. (Phones and tablets can scan the QR code instead.)
+2. Students go to **protege-edu.vercel.app/j/** followed by the code, like **protege-edu.vercel.app/j/GLOW-42**,
+   and they're straight in. It's the same link all year, so pin it in Google Classroom (**Copy link for students**
+   copies it). Phones and tablets can scan the QR code instead. Going to /j on its own works too: it asks for the code.
 3. They pick a nickname and their secret pictures. Next time, they tap their nickname and their pictures, on
    any Chromebook.
 4. **Ask each student to tell you their nickname** the first time, so you know who's who. Protégé never

@@ -11,7 +11,7 @@ candle lights up, and when it gets everything, the whole valley glows.
 - **For every grade, K–12**, in English and French, with ways to play for every student.
 
 **Teachers:** [protege-edu.vercel.app/teacher](https://protege-edu.vercel.app/teacher).
-**Students:** [protege-edu.vercel.app/j](https://protege-edu.vercel.app/j) and type the class code.
+**Students:** protege-edu.vercel.app/j/ followed by the class code (like protege-edu.vercel.app/j/GLOW-42).
 The [guide](https://protege-edu.vercel.app/guide.html) explains it all.
 
 ![Gloam, holding its unlit lantern, explains its wrong theory of the seasons. A text box below says "Explain it to Gloam…"](site/img/teach.webp)
@@ -26,8 +26,9 @@ The [guide](https://protege-edu.vercel.app/guide.html) explains it all.
 2. **Make a class** and give it lessons: upload your notes (PDF, PowerPoint, Word or pasted text, one topic
    or a whole unit) or use the built-in one. Your file is read in your own browser and never uploaded. Review
    each lesson Gloam drafts, approve it, and give it to the class.
-3. **Press Show the code.** Students go to **protege-edu.vercel.app/j** and type the class code (like
-   GLOW-42), or scan the QR code. Or post the link from **Copy link for students** in Google Classroom once.
+3. **Press Show the code.** Students go to **protege-edu.vercel.app/j/** followed by the class code (like
+   protege-edu.vercel.app/j/GLOW-42), or scan the QR code. Or post the link from **Copy link for students** in Google
+   Classroom once.
 4. **Ask each student to tell you their nickname** the first time. Protégé never stores real names.
 
 **Your school** (on your teacher page) shows your school's staff code and everyone who signed up with it. If

@@ -48,6 +48,14 @@ const nextConfig: NextConfig = {
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
+  // a class's own link: protege-edu.vercel.app/j/HAZE-40 goes straight to joining that class (any spelling of the
+  // code works: the join page tidies it up, and tells them kindly if there's no such class)
+  async redirects() {
+    return [
+      { source: "/j/:code([^./]+)", destination: "/join?code=:code", permanent: false },
+      { source: "/fr/j/:code([^./]+)", destination: "/join?code=:code", permanent: false },
+    ];
+  },
   // the website (built into public/ by scripts/site.ts) at the short addresses: the home page and /j, in both languages
   async rewrites() {
     return [

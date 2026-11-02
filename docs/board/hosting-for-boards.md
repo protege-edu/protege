@@ -93,7 +93,7 @@ sent to Claude.
 
 ## Students reaching it
 
-- Students go to protege-edu.vercel.app/j and type the class code (or scan the QR code the teacher shows).
+- Students go to protege-edu.vercel.app/j/ followed by the class code, like /j/GLOW-42 (or scan the QR code the teacher shows).
 - The school network must allow **protege-edu.vercel.app** (or the board's own address), and
   **accounts.google.com** only if Google sign-in is used.
 - Nothing else is needed on the network: no ports to open, no tunnels, no devices that must see each other.
