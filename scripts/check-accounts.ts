@@ -335,6 +335,21 @@ async function main() {
     assert.deepEqual(parts.own, { reading: "dyslexic" });
     await C.deleteClass(k);
   });
+  await test("a teacher reads a student's latest go at a lesson (after 'start over'), the same one the dashboard shows", async () => {
+    const { messages, teachSessions } = await import("@/lib/db/schema");
+    const k = await C.createClass("Start over", 9, a.id);
+    const kid = await S.createStudent(k, "Twice Tried", ["moon", "owl", "fern"]);
+    assert.ok(kid.ok);
+    const t0 = Date.now() - 60_000;
+    // the first go (nothing said), then "start over" and a real conversation
+    await db.insert(teachSessions).values({ id: "go-1", studentId: kid.student.id, lessonId: "seasons", classId: k, understanding: { tilt: 0 }, createdAt: new Date(t0), updatedAt: new Date(t0) }).run();
+    await db.insert(teachSessions).values({ id: "go-2", studentId: kid.student.id, lessonId: "seasons", classId: k, understanding: { tilt: 2 }, createdAt: new Date(t0 + 30_000), updatedAt: new Date(t0 + 30_000) }).run();
+    await db.insert(messages).values({ sessionId: "go-2", from: "student", text: "the earth is tilted", createdAt: new Date() }).run();
+    assert.equal(await C.studentSessionId(k, kid.student.id, "seasons"), "go-2");
+    const d = await C.dashboard(k, (await getApprovedLesson("seasons"))!);
+    assert.equal(d.students.find((x) => x.nickname === "Twice Tried")?.understanding.tilt, 2, "the dashboard's candles come from the same go");
+    await C.deleteClass(k);
+  });
   await test("the class boss: one Muddle for the whole class, beaten once, rewards claimed once, erased with the class", async () => {
     const B = await import("@/lib/student/class-boss");
     const { hitsNeeded, hitsFromTurn } = await import("@/lib/game/class-boss");

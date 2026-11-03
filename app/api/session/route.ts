@@ -21,8 +21,11 @@ async function withClassBoss(session: SessionState) {
 export async function GET(request: Request) {
   const id = new URL(request.url).searchParams.get("id");
   const session = id ? await getSession(id) : null;
-  // someone else's session (e.g. the last student on this Chromebook): the browser then asks for its own
-  if (!session || !(await maySeeStudent(session.studentId))) return Response.json({ error: "We couldn't find that session. Starting a fresh one is fine!" }, { status: 404 });
+  // someone else's session (e.g. the last student on this Chromebook), or one from practising before joining a
+  // class: a student in a class only ever continues their own (so their teacher sees it). The browser then asks
+  // for theirs.
+  const me = await currentStudent();
+  if (!session || !(await maySeeStudent(session.studentId)) || (me && session.studentId !== me.id)) return Response.json({ error: "We couldn't find that session. Starting a fresh one is fine!" }, { status: 404 });
   return Response.json(await withClassBoss(session));
 }
 

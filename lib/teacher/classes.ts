@@ -1,6 +1,6 @@
 import "server-only";
 import { randomInt, randomUUID } from "node:crypto";
-import { and, asc, eq, inArray, isNotNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNotNull, sql } from "drizzle-orm";
 import { db, together } from "@/lib/db/client";
 import { classBosses, classBossHits, classLessons, classes, conceptEvents, encounters, gloams, messages, students, teachSessions } from "@/lib/db/schema";
 import type { Level, LessonBlueprint } from "@/lib/lesson/types";
@@ -147,9 +147,12 @@ export async function dashboard(classId: string, lesson: LessonBlueprint): Promi
     ? await db
         .select()
         .from(teachSessions)
-        .where(and(eq(teachSessions.lessonId, lesson.id), inArray(teachSessions.studentId, kids.map((k) => k.id))))
+        .where(and(eq(teachSessions.lessonId, lesson.id), eq(teachSessions.classId, classId), inArray(teachSessions.studentId, kids.map((k) => k.id))))
+        .orderBy(asc(teachSessions.createdAt))
         .all()
     : [];
+  // each student's latest go at this lesson ("start over" makes a new one; the newest wins), the same one their
+  // conversation is read from (studentSessionId)
   const sessionByStudent = new Map(sessions.map((s) => [s.studentId, s]));
   const events = sessions.length
     ? await db.select().from(conceptEvents).where(inArray(conceptEvents.sessionId, sessions.map((s) => s.id))).all()
@@ -203,11 +206,13 @@ export async function dashboard(classId: string, lesson: LessonBlueprint): Promi
 
 /** One student's conversation, for the teacher to read */
 export async function studentSessionId(classId: string, studentId: string, lessonId: string) {
+  // their latest go at the lesson in this class ("start over" makes a new one), the same one the dashboard shows
   return (
     (await db
       .select({ id: teachSessions.id })
       .from(teachSessions)
       .where(and(eq(teachSessions.studentId, studentId), eq(teachSessions.lessonId, lessonId), eq(teachSessions.classId, classId)))
+      .orderBy(desc(teachSessions.createdAt))
       .get())?.id ?? null
   );
 }
