@@ -435,6 +435,30 @@ test("Gloam stays on one idea until it's lit, instead of hopping every turn", ()
     said.push(beat.line);
   }
 });
+test("a student who answers each question finishes every idea and is never stuck on one", () => {
+  const hs = getAgeStyle("senior", "en");
+  const ids = seasons.concepts.map((c) => c.id);
+  let u = startingUnderstanding(ids);
+  const said: string[] = [];
+  const visited = new Set<string>();
+  let target: string | null = ids[0];
+  let turns = 0;
+  while (!ids.every((id) => u[id] === 3) && turns < 40) {
+    turns++;
+    const aim = target ?? ids.find((id) => u[id] < 3)!;
+    visited.add(aim);
+    const progress = applyProgress(u, [{ id: aim, quality: "clear" }]);
+    const beat = directBeat({ lesson: seasons, style: hs, before: u, progress, intent: "explaining", judged: [{ id: aim, quality: "clear" }], gloamSaid: said });
+    u = progress.understanding;
+    said.push(beat.line);
+    if (beat.followUp) said.push(beat.followUp.line);
+    // where Gloam points next: its follow-up after a candle lights, else the idea it's still on
+    target = beat.followUp?.about ?? beat.about;
+  }
+  assert.ok(ids.every((id) => u[id] === 3), `not all ideas lit after ${turns} turns: ${JSON.stringify(u)}`);
+  assert.equal(visited.size, ids.length, "Gloam should move through every idea, not lock onto one");
+  assert.ok(turns <= ids.length * 2 + 1, `took ${turns} turns for ${ids.length} ideas (should be about 2 each)`);
+});
 test("reaching 'almost' tells the student they're close (the on-the-edge beat)", () => {
   const hs = getAgeStyle("senior", "en");
   const ids = seasons.concepts.map((c) => c.id);
