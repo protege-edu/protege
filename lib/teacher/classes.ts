@@ -17,9 +17,28 @@ const WORDS = [
   "OAK", "BAY", "SKY", "DEW", "FOX", "ELM", "BRIM", "CLAY", "DUNE", "FAWN", "GALE", "HAZE", "KITE", "LARK", "MAPLE", "NEST", "PEAK", "ROOK", "TIDE", "WREN",
 ];
 
+/** True if a database error is "that code is already taken" (the unique index on classes.code caught a collision) */
+function codeTaken(e: unknown): boolean {
+  return /UNIQUE constraint failed: ?classes\.code/i.test(String((e as { message?: string })?.message ?? e));
+}
+
+/**
+ * A class code no class has yet, like GLOW-42. Checked against every class, so two classes never share one
+ * (the database's unique index is the real guarantee; this just picks a free one to try). Starts short and
+ * friendly (WORD-NN); if those are filling up it quietly widens (WORD-NNN, then WORD-NNNN), so codes can
+ * never run out however many classes exist.
+ */
 export async function newClassCode(): Promise<string> {
+  for (const digits of [2, 2, 2, 3, 4]) {
+    const lo = 10 ** (digits - 1);
+    for (let tries = 0; tries < 40; tries++) {
+      const code = `${WORDS[randomInt(WORDS.length)]}-${randomInt(lo, lo * 10)}`;
+      if (!await db.select({ id: classes.id }).from(classes).where(eq(classes.code, code)).get()) return code;
+    }
+  }
+  // (astronomically unlikely to reach here; a last resort that is still certainly unique)
   for (;;) {
-    const code = `${WORDS[randomInt(WORDS.length)]}-${randomInt(10, 100)}`;
+    const code = `${WORDS[randomInt(WORDS.length)]}-${randomInt(100000, 1000000)}`;
     if (!await db.select({ id: classes.id }).from(classes).where(eq(classes.code, code)).get()) return code;
   }
 }
@@ -57,9 +76,18 @@ export async function getClass(id: string, teacherId: string) {
 
 export async function createClass(name: string, grade: number, teacherId: string, language: "en" | "fr" = "en") {
   const id = randomUUID();
-  // the board's retention rule decides when it's cleared out (lib/privacy/retention.ts); the teacher can set a date
-  await db.insert(classes).values({ id, name, grade, teacherId, language, code: await newClassCode(), createdAt: new Date(), deleteOn: newClassDeleteOn() }).run();
-  return id;
+  // the board's retention rule decides when it's cleared out (lib/privacy/retention.ts); the teacher can set a date.
+  // if two classes are made at the very same instant and pick the same code, the database rejects the second: it
+  // just tries another, so a code is never shared and a teacher never sees an error
+  for (let tries = 0; ; tries++) {
+    try {
+      await db.insert(classes).values({ id, name, grade, teacherId, language, code: await newClassCode(), createdAt: new Date(), deleteOn: newClassDeleteOn() }).run();
+      return id;
+    } catch (e) {
+      if (tries < 5 && codeTaken(e)) continue;
+      throw e;
+    }
+  }
 }
 
 /**

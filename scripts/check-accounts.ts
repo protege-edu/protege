@@ -189,8 +189,16 @@ async function main() {
   console.log("class codes");
   await test("codes look like GLOW-42 and are all different", async () => {
     const codes = new Set((await C.listClasses(a.id)).map((c) => c.code));
-    for (const c of codes) assert.match(c ?? "", /^[A-Z]{3,5}-\d{2}$/);
+    for (const c of codes) assert.match(c ?? "", /^[A-Z]{3,5}-\d{2,4}$/);
     assert.equal(codes.size, (await C.listClasses(a.id)).length);
+  });
+  await test("every class gets its own code, even many made at once: no code is ever shared", async () => {
+    const { classes: classesTable } = await import("@/lib/db/schema");
+    // a burst of classes made together (the database's unique index is the real guarantee)
+    const ids = await Promise.all(Array.from({ length: 40 }, (_, i) => C.createClass(`Burst ${i}`, 9, a.id)));
+    const codes = (await db.select({ code: classesTable.code }).from(classesTable)).map((r) => r.code);
+    assert.equal(new Set(codes).size, codes.length, "no two classes share a code");
+    for (const id of ids) await C.deleteClass(id);
   });
   await test("students can type a code however they like", async () => {
     const code = (await C.getClass(classA, a.id))!.code!;
