@@ -15,9 +15,11 @@ export interface ProgressResult {
  * The model only SUGGESTS how good an explanation was. These rules decide what
  * actually changes, so a small model can't jump Gloam to "I get it!" from one word.
  *
- *   clear   → +2 from clueless, otherwise +1 (two great explanations = "I get it!")
- *   partial → +1, but only up to level 2 (you need a clear explanation to finish it)
+ *   clear   → +2 (one great explanation gets a candle to "almost"; a second lights it)
+ *   partial → +1 (a shorter on-topic explanation; once a candle is "almost" lit, any correct one finishes it)
  *   vague / wrong → no change (Gloam never "un-learns" in Phase 1, that would feel like punishment)
+ * So effort always pays off: a clear explanation then anything correct lights a candle, and even without a big
+ * "why" three on-topic explanations get there. Wrong answers never count, so a candle still means real teaching.
  */
 export function applyProgress(current: Understanding, judged: { id: string; quality: Quality }[]): ProgressResult {
   const next: Understanding = { ...current };
@@ -30,8 +32,8 @@ export function applyProgress(current: Understanding, judged: { id: string; qual
     seen.add(id);
     const level = next[id];
     let gain = 0;
-    if (quality === "clear") gain = level === 0 ? 2 : 1;
-    else if (quality === "partial" && level < 2) gain = 1;
+    if (quality === "clear") gain = 2;
+    else if (quality === "partial") gain = 1;
     if (gain === 0 || level >= 3) continue;
 
     const newLevel = Math.min(3, level + gain) as Level;

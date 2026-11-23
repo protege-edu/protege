@@ -86,10 +86,21 @@ test("clear from zero jumps to 2, the next clear clicks", () => {
   assert.equal(b.understanding.tilt, 3);
   assert.deepEqual(b.clicked, ["tilt"]);
 });
-test("partial alone can never finish an idea", () => {
+test("a clear explanation then any correct one lights a candle (effort pays off)", () => {
+  const a = applyProgress(zero, [{ id: "tilt", quality: "clear" }]); // 0 -> 2 (almost)
+  assert.equal(a.understanding.tilt, 2);
+  const b = applyProgress(a.understanding, [{ id: "tilt", quality: "partial" }]); // almost -> lit
+  assert.equal(b.understanding.tilt, 3);
+  assert.deepEqual(b.clicked, ["tilt"]);
+});
+test("partials alone still get there, but it takes three (a candle always means real teaching)", () => {
   let u = zero;
-  for (let i = 0; i < 5; i++) u = applyProgress(u, [{ id: "angle", quality: "partial" }]).understanding;
-  assert.equal(u.angle, 2);
+  const levels: number[] = [];
+  for (let i = 0; i < 3; i++) {
+    u = applyProgress(u, [{ id: "angle", quality: "partial" }]).understanding;
+    levels.push(u.angle);
+  }
+  assert.deepEqual(levels, [1, 2, 3]);
 });
 test("wrong never takes understanding away", () => {
   const u = { ...zero, tilt: 2 as const };
@@ -257,6 +268,7 @@ test("every age style has 'skip' and 'next idea' lines with Gloam's question in 
       const st = getAgeStyle(id, lang);
       assert.ok(st.lines.skip.length >= 3 && st.lines.skip.every((l) => l.includes("{question}")), `${id} ${lang} skip`);
       assert.ok(st.lines.nextIdea.length >= 3 && st.lines.nextIdea.every((l) => l.includes("{question}")), `${id} ${lang} nextIdea`);
+      assert.ok(st.lines.onEdge.length >= 3 && st.lines.onEdge.every((l) => l.includes("{question}")), `${id} ${lang} onEdge`);
     }
   }
 });
@@ -410,6 +422,31 @@ test("the rival remembers a student who beat it in an earlier lesson (and how of
   assert.match(lost, /3 times/);
 });
 
+test("Gloam stays on one idea until it's lit, instead of hopping every turn", () => {
+  const hs = getAgeStyle("senior", "en");
+  const ids = seasons.concepts.map((c) => c.id);
+  // the student has started the first idea (it's at level 1); the rest are untouched
+  const u = { ...startingUnderstanding(ids), [ids[0]]: 1 as const };
+  // a turn where nothing new was taught (e.g. "ok"): Gloam should keep asking about the idea in progress
+  const said: string[] = [];
+  for (let i = 0; i < 4; i++) {
+    const beat = directBeat({ lesson: seasons, style: hs, before: u, progress: { understanding: u, improved: [], clicked: [] }, intent: "chatting", judged: [], gloamSaid: said });
+    assert.equal(beat.about, ids[0], `turn ${i}: should still be on the first idea, not ${beat.about}`);
+    said.push(beat.line);
+  }
+});
+test("reaching 'almost' tells the student they're close (the on-the-edge beat)", () => {
+  const hs = getAgeStyle("senior", "en");
+  const ids = seasons.concepts.map((c) => c.id);
+  const before = { ...startingUnderstanding(ids), [ids[0]]: 0 as const };
+  const after = { ...before, [ids[0]]: 2 as const }; // a clear explanation just took it to "almost"
+  const beat = directBeat({ lesson: seasons, style: hs, before, progress: { understanding: after, improved: [ids[0]], clicked: [] }, intent: "explaining", judged: [{ id: ids[0], quality: "clear" }], gloamSaid: [] });
+  assert.equal(beat.about, ids[0]);
+  assert.equal(beat.emotion, "excited");
+  assert.equal(beat.kind, "perform");
+  // its hand-written fallback is one of the "almost there" lines (with the next question in it)
+  assert.ok(beat.line.length > 0 && !beat.line.includes("{question}"), beat.line);
+});
 console.log("voice");
 test("high school Gloam is lowercase but keeps SHOUTED words", () => {
   assert.equal(voice("Fine. FINE. You're right. I hate this!!", hs), "fine. FINE. you're right. i hate this!");

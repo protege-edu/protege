@@ -241,6 +241,8 @@ export interface AgeStyle {
     /** Gloam reacting before its words arrive, when the judge says something clicked */
     almost: Line[];
     clicking: Line[];
+    /** A candle is one good push from lit: Gloam shows it's on the edge and asks the last piece (has {question}) */
+    onEdge: Line[];
     /** Student said nothing to work with ("yea", "hey", "ok") */
     nudge: Line[];
     /** "next", "skip": a question about something else */

@@ -31,7 +31,9 @@ Return JSON:
 - title: a short question a student might wonder about, answered by these notes
 - topic: 1 to 3 lowercase words naming what the notes are about
 - subject: the grade and the school subject of these notes
-- concepts: 3 to 5 key ideas from the notes, in teaching order. For each:
+- concepts: 3 to 5 key ideas from the notes, in teaching order. They should all be facets of this lesson's ONE
+  main question (the title), so teaching flows from one to the next. If the notes clearly cover several separate
+  topics, make this lesson about the single most important one; the rest become their own lessons. For each:
   - name: 2 to 4 plain words a student would use to name this idea, taken from these notes
   - truth: the correct idea in 1 or 2 plain sentences, including WHY. Only facts that are in the notes or are standard for this grade.
   - misconception: the most common realistic WRONG idea students have about it, in one plain sentence.

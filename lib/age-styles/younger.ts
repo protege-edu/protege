@@ -194,6 +194,9 @@ const storybookLines = (simple: boolean): AgeStyle["lines"] => ({
   thinking: simple ? ["Hmm…", "Thinking…", "Let me think!"] : ["hmm…", "thinking so hard my stalk hurts", "processing… processing… ow."],
   almost: ["Ooh?", "Wait…"],
   clicking: ["WAIT.", "Ooh ooh ooh!"],
+  onEdge: simple
+    ? ["Ooh! My candle is almost on! One more: {question}", "I almost get it! Keep going! {question}", "So close! Tell me: {question}"]
+    : ["WAIT, i'm SO close! {question}", "ooh, almost! one more: {question}", "my lantern's flickering! don't stop: {question}"],
   nudge: simple
     ? ["Okay! {question}", "Ooh, tell me more! {question}", "I'm listening! {question}", "Hmm! Can you help me? {question}", "You're a good helper! {question}"]
     : ["ok! {question}", "ooh, go on. {question}", "i'm listening! very hard. {question}", "hmm. my stalk is tingling. {question}", "noted! but i'm still lost. {question}"],

@@ -46,6 +46,13 @@ export const frSenior: FrenchStyle = {
     thinking: ["je réfléchis.", "attends. je charge une pensée.", "traitement en cours. ça a intérêt à être bon.", "une seconde, ma lanterne bufferise", "ok ok ok", "je calcule. lentement. avec dignité.", "hm.", "deux secondes, je suis en train d'être intelligent"],
     almost: ["attends.", "minute.", "hein.", "...ok c'est intéressant"],
     clicking: ["oh.", "oh non.", "attends attends attends"],
+    onEdge: [
+      "ok ça— ça aide, là. je suis juste au bord de comprendre. encore un : {question}",
+      "oh. OH. c'est presque ça. arrête pas : {question}",
+      "ma lanterne vacille. c'est nouveau. continue : {question}",
+      "je le sens cliquer, pour vrai. dernière pièce : {question}",
+      "attends, je suis tellement proche. {question}",
+    ],
     nudge: [
       "cool. passionnant. bref : {question}",
       "je prends ça comme un encouragement. {question}",
@@ -320,6 +327,9 @@ export function frStorybook(big: boolean): FrenchStyle {
       thinking: big ? ["Hmm…", "Je réfléchis…", "Laisse-moi penser!"] : ["hmm…", "je réfléchis tellement fort que ma tige fait mal", "traitement… traitement… aïe."],
       almost: ["Ooh?", "Attends…"],
       clicking: ["ATTENDS.", "Ooh ooh ooh!"],
+      onEdge: big
+        ? ["Ooh! Ma bougie est presque allumée! Encore une : {question}", "Je comprends presque! Continue! {question}", "Si proche! Dis-moi : {question}"]
+        : ["ATTENDS, je suis TELLEMENT proche! {question}", "ooh, presque! encore un : {question}", "ma lanterne vacille! arrête pas : {question}"],
       nudge: big
         ? ["D'accord! {question}", "Ooh, dis-m'en plus! {question}", "Je t'écoute! {question}", "Hmm! Tu peux m'aider? {question}", "Tu m'aides bien! {question}"]
         : ["ok! {question}", "ooh, continue. {question}", "j'écoute! très fort. {question}", "hmm. ma tige picote. {question}", "noté! mais je suis encore perdu. {question}"],

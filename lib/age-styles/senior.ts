@@ -49,6 +49,13 @@ export const senior: AgeStyle = {
     ],
     almost: ["wait.", "hold on.", "huh.", "...ok that's interesting"],
     clicking: ["oh.", "oh no.", "wait wait wait"],
+    onEdge: [
+      "ok that— that actually helps. i'm right on the edge of this. one more: {question}",
+      "oh. OH. it's almost there. don't stop now: {question}",
+      "my lantern's flickering. that's new. keep going: {question}",
+      "i can feel it clicking, genuinely. last piece: {question}",
+      "hold on, i'm so close to getting this. {question}",
+    ],
     nudge: [
       "cool. riveting. anyway: {question}",
       "i'll take that as encouragement. {question}",

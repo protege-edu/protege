@@ -147,8 +147,21 @@ function CandleArt({ level, flashing, reduced, painterly }: { level: Level; flas
           <stop offset="1" stopColor="#f4b740" stopOpacity="0" />
         </radialGradient>
       </defs>
-      {/* halo when lit */}
-      <motion.circle cx="20" cy="22" r="26" fill={`url(#halo-${uid})`} animate={{ opacity: [0, 0, 0.35, 0.7][level], scale: flashing && !reduced ? [1, 2.4, 1] : 1 }} transition={{ duration: flashing ? 1 : 0.6 }} style={{ transformBox: "fill-box", transformOrigin: "center" }} />
+      {/* halo: faint once it's smoldering, brighter as it lights; it pulses whenever the candle just rose */}
+      {(() => {
+        const haloRest = [0, 0.16, 0.4, 0.7][level];
+        return (
+          <motion.circle
+            cx="20"
+            cy="22"
+            r="26"
+            fill={`url(#halo-${uid})`}
+            animate={{ opacity: flashing && !reduced ? [haloRest, 0.75, haloRest] : haloRest, scale: flashing && !reduced ? [1, 2.3, 1] : 1 }}
+            transition={{ duration: flashing ? 1 : 0.6 }}
+            style={{ transformBox: "fill-box", transformOrigin: "center" }}
+          />
+        );
+      })()}
       {/* soft shadow it stands on */}
       <ellipse cx="20" cy="69" rx="13" ry="3" fill="#000" opacity="0.4" />
       {/* wax with a couple of drips */}

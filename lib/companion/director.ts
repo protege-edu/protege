@@ -117,22 +117,25 @@ export function directBeat(opts: DirectInput): Beat {
     return asking("curious", style.lines.nudge);
   }
 
-  // Something improved
+  // Something improved: Gloam shows it clearly helped (so the student can tell they're winning), and at "almost"
+  // it says it's on the edge, so finishing feels within reach.
   if (progress.improved.length) {
     const c = byId(progress.improved[0]);
     const level = u[c.id];
     if (level === 1) {
       return perform(
         "sheepish",
-        `The student just made you doubt your old idea about "${c.name}". You used to think: "${c.beliefs[0]}". Now you're wondering: "${c.beliefs[1]}". React to what they said, then ask them WHY, in your style.`,
+        `The student just cracked your old idea about "${c.name}" (you were sure "${c.beliefs[0]}", now you're wondering "${c.beliefs[1]}"). Show it genuinely landed — you're a bit thrown, a bit impressed, in your style — then, curious, ask them WHY it works. Don't hint at the answer.`,
         `${c.beliefs[1]} ${style.lines.followUps.why}`,
         c.id,
       );
     }
+    // level 2: one good push from lit. Tell the student they're close, so the finish feels earned and near.
+    const q = bare(questionFor(c, level, gloamSaid, seed).text);
     return perform(
       "excited",
-      `Something is clicking about "${c.name}". You now think: "${c.beliefs[level]}". Say that back in your own words, not fully sure yet, then ask ONE question about the missing piece.`,
-      `${c.beliefs[level]} ${style.lines.followUps.missing}`,
+      `It's really clicking about "${c.name}" — you can almost feel the candle catch. Show it clearly helped and that you're right on the edge of getting it now, in your style, then ask the ONE last thing: "${q}". Don't hint at the answer.`,
+      line(style.lines.onEdge, { text: q, about: c.id, stale: false }),
       c.id,
     );
   }
@@ -184,8 +187,16 @@ export function nextQuestion(lesson: LessonBlueprint, u: Understanding, gloamSai
   let open = lesson.concepts.filter((c) => u[c.id] < 3);
   if (avoid && open.some((c) => c.id !== avoid)) open = open.filter((c) => c.id !== avoid);
   if (!open.length) return { text: "", about: null, stale: false };
+  // stay on an idea already in progress (level 1-2) until it's lit, so Gloam finishes one thing at a time
+  // instead of hopping onto a fresh idea. Only when nothing is started (or the student skipped the started one)
+  // does it open a new idea. If its gentle questions are used up, it asks that same idea in new words (stale).
+  const started = open.filter((c) => u[c.id] >= 1);
+  if (started.length) open = started;
   // least understood first: the ideas Gloam is most stuck on
-  const levels = [...new Set(open.map((c) => u[c.id]))].sort((a, b) => a - b);
+  // finish what's started: an idea already part-taught (level 1-2) comes before an untouched one (level 0),
+  // and the closest to lit first, so Gloam sticks with one idea instead of hopping to a new one every turn
+  const rank = (lv: number) => (lv === 0 ? 9 : 3 - lv);
+  const levels = [...new Set(open.map((c) => u[c.id]))].sort((a, b) => rank(a) - rank(b));
   for (const level of levels) {
     const group = open.filter((c) => u[c.id] === level).map((c) => ({ c, q: questionFor(c, level, gloamSaid, seed) }));
     const fresh = group.filter((g) => !g.q.stale);

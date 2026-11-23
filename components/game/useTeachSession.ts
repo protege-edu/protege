@@ -81,6 +81,8 @@ interface ReplyEvent {
   reply: string;
   emotion: Emotion;
   understanding: Understanding;
+  /** ideas whose candle went up this turn (so a rise is felt even before it's fully lit) */
+  improved: string[];
   clicked: string[];
   finished: boolean;
   checkpoints?: string[];
@@ -386,6 +388,12 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle, test = fa
       } else {
         showReply(ev.reply, ev.emotion, ev.understanding, ev.checkpoints);
         if (ev.game?.after?.length) setEntries((xs) => [...xs, ...saidEntries(ev.game!.after!, "confused")]);
+        // a candle rose but didn't fully light: a brief flash so the student plainly sees it counted
+        const rose = (ev.improved ?? []).find((id) => (ev.understanding[id] ?? 0) < 3);
+        if (rose) {
+          setFlash(rose);
+          setTimeout(() => setFlash((f) => (f === rose ? null : f)), 1100);
+        }
         if (sound) pip();
         setStatus("ready");
       }
