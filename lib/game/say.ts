@@ -59,7 +59,8 @@ export function openingLines(e: Encounter, g: GameLines, f: Fill): { said: Said[
       // (Gloam's presentation itself is on the challenge card, typed slowly enough to stop)
       return { said: [{ who: "gloam", text: line(g.recital.open, f, e) }], emotion: "proud" };
     case "boss":
-      return { said: [{ who: "muddle", text: line(g.bossSays.arrive, f, e) }], emotion: "confused" };
+      // Gloam realises it understands everything, then braces as the Muddle gathers (so the finale isn't abrupt)
+      return { said: [{ who: "gloam", text: line(g.bossGloam.handoff, f, e) }, { who: "muddle", text: line(g.bossSays.arrive, f, e) }], emotion: "skeptical" };
   }
 }
 

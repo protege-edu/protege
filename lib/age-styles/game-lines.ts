@@ -33,7 +33,7 @@ export interface GameLines {
   /** said BY the Muddle */
   bossSays: { arrive: Line[]; round: Line[]; glance: Line[]; miss: Line[]; hit: Line[]; nothing: Line[]; defeated: Line[] };
   /** Gloam, during the fight */
-  bossGloam: { flare: Line[]; hint: Line[] };
+  bossGloam: { flare: Line[]; hint: Line[]; handoff: Line[] };
   skipped: Line[];
 }
 
@@ -98,6 +98,11 @@ const senior: GameLines = {
   bossGloam: {
     flare: ["{n} in a row. my lantern is CHARGING.", "that's {n}. i feel powerful. weird.", "{n} hits. the fog is scared of us now.", "{n} in a row. don't stop. i'm glowing."],
     hint: ["i think this one's about {topic}. what did you teach me about it?", "remember what you taught me. say it again, out loud."],
+    handoff: [
+      "ok. i actually get all of it now. ...and something in the dark really hates that. stay with me.",
+      "that's everything. lantern's full. which is, naturally, exactly when the fog decides to move. of course.",
+      "i understand it. all of it. don't celebrate yet — look. something's coming for it.",
+    ],
   },
   skipped: ["fine. we'll come back to it. {question}", "skipping the drama. {question}"],
 };
@@ -166,6 +171,10 @@ const storybook = (big: boolean, age: AgeStyleId): GameLines => {
     bossGloam: {
       flare: [S("{n} in a row! My lantern is so bright!", "{n} in a row! my lantern is CHARGING!"), S("Wow, {n}! Keep going!", "{n} hits! COMBO!"), S("{n}! The cloud is scared!", "{n}! the storm is scared of us!")],
       hint: [S("Remember what you taught me about {topic}!", "remember what you taught me! say it again!")],
+      handoff: [
+        S("I know it all now! But... ooh, the fog is coming! Help me, okay?", "i get all of it now! but— uh oh. the fog's moving. stay with me!"),
+        S("My lantern is full! But something wants it! Let's be brave!", "that's everything! lantern's full! and NOW something wants it. we fight!"),
+      ],
     },
     skipped: [S("Okay! Let's try something else. {question}", "skipping! ok: {question}")],
   };
@@ -232,6 +241,11 @@ const frSenior: GameLines = {
   bossGloam: {
     flare: ["{n} de suite. ma lanterne se CHARGE.", "ça fait {n}. je me sens puissant. bizarre.", "{n} coups. la brume a peur de nous maintenant.", "{n} de suite. arrête pas. je brille."],
     hint: ["je pense que celle-là parle de {topic}. qu'est-ce que tu m'as appris là-dessus?", "rappelle-toi ce que tu m'as appris. redis-le, à voix haute."],
+    handoff: [
+      "ok. je comprends tout, là. ...et quelque chose dans le noir déteste ça. reste avec moi.",
+      "c'est tout. la lanterne est pleine. ce qui est, évidemment, exactement le moment où la brume bouge. bien sûr.",
+      "je comprends. tout. fête pas encore — regarde. quelque chose vient le chercher.",
+    ],
   },
   skipped: ["bon. on y reviendra. {question}", "on saute le drame. {question}"],
 };
@@ -300,6 +314,10 @@ const frStorybook = (big: boolean, age: AgeStyleId): GameLines => {
     bossGloam: {
       flare: [S("{n} de suite! Ma lanterne brille tellement!", "{n} de suite! ma lanterne se CHARGE!"), S("Wow, {n}! Continue!", "{n} coups! COMBO!"), S("{n}! Le nuage a peur!", "{n}! la tempête a peur de nous!")],
       hint: [S("Rappelle-toi ce que tu m'as appris sur {topic}!", "rappelle-toi ce que tu m'as appris! redis-le!")],
+      handoff: [
+        S("Je sais tout maintenant! Mais... ooh, la brume arrive! Aide-moi, d'accord?", "je comprends tout, là! mais— oh non. la brume bouge. reste avec moi!"),
+        S("Ma lanterne est pleine! Mais quelque chose la veut! Soyons courageux!", "c'est tout! la lanterne est pleine! et LÀ quelque chose la veut. on se bat!"),
+      ],
     },
     skipped: [S("D'accord! Essayons autre chose. {question}", "on passe! ok : {question}")],
   };
