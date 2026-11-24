@@ -343,19 +343,29 @@ async function main() {
     assert.deepEqual(parts.own, { reading: "dyslexic" });
     await C.deleteClass(k);
   });
-  await test("a teacher reads a student's latest go at a lesson (after 'start over'), the same one the dashboard shows", async () => {
+  await test("the teacher sees a student's most complete go: a replay of a finished lesson never shows as 'hasn't started'", async () => {
     const { messages, teachSessions } = await import("@/lib/db/schema");
+    const seasonsBp = (await getApprovedLesson("seasons"))!;
+    const lit = Object.fromEntries(seasonsBp.concepts.map((c) => [c.id, 3])) as Record<string, 0 | 1 | 2 | 3>;
     const k = await C.createClass("Start over", 9, a.id);
     const kid = await S.createStudent(k, "Twice Tried", ["moon", "owl", "fern"]);
     assert.ok(kid.ok);
     const t0 = Date.now() - 60_000;
-    // the first go (nothing said), then "start over" and a real conversation
+    // an empty first go, then "start over" and real teaching: the dashboard shows the go with the work
     await db.insert(teachSessions).values({ id: "go-1", studentId: kid.student.id, lessonId: "seasons", classId: k, understanding: { tilt: 0 }, createdAt: new Date(t0), updatedAt: new Date(t0) }).run();
     await db.insert(teachSessions).values({ id: "go-2", studentId: kid.student.id, lessonId: "seasons", classId: k, understanding: { tilt: 2 }, createdAt: new Date(t0 + 30_000), updatedAt: new Date(t0 + 30_000) }).run();
     await db.insert(messages).values({ sessionId: "go-2", from: "student", text: "the earth is tilted", createdAt: new Date() }).run();
     assert.equal(await C.studentSessionId(k, kid.student.id, "seasons"), "go-2");
-    const d = await C.dashboard(k, (await getApprovedLesson("seasons"))!);
-    assert.equal(d.students.find((x) => x.nickname === "Twice Tried")?.understanding.tilt, 2, "the dashboard's candles come from the same go");
+    const d1 = await C.dashboard(k, seasonsBp);
+    assert.equal(d1.students.find((x) => x.nickname === "Twice Tried")?.understanding.tilt, 2, "the go with real teaching shows");
+    // now they FINISH, then click "teach again" (a fresh empty go, the newest): the finished go must still show
+    await db.update(teachSessions).set({ understanding: lit, finishedAt: new Date(t0 + 40_000), updatedAt: new Date(t0 + 40_000) }).where(eq(teachSessions.id, "go-2")).run();
+    await db.insert(teachSessions).values({ id: "go-3", studentId: kid.student.id, lessonId: "seasons", classId: k, understanding: Object.fromEntries(seasonsBp.concepts.map((c) => [c.id, 0])) as Record<string, 0 | 1 | 2 | 3>, createdAt: new Date(t0 + 50_000), updatedAt: new Date(t0 + 50_000) }).run();
+    assert.equal(await C.studentSessionId(k, kid.student.id, "seasons"), "go-2", "the finished go, not the fresh replay");
+    const d2 = await C.dashboard(k, seasonsBp);
+    const row = d2.students.find((x) => x.nickname === "Twice Tried")!;
+    assert.ok(row.finished, "still shows as finished after clicking teach again");
+    assert.equal(row.understanding.tilt, 3, "candles stay lit, not reset to 'hasn't started'");
     await C.deleteClass(k);
   });
   await test("the class boss: one Muddle for the whole class, beaten once, rewards claimed once, erased with the class", async () => {

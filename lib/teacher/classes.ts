@@ -1,6 +1,6 @@
 import "server-only";
 import { randomInt, randomUUID } from "node:crypto";
-import { and, asc, desc, eq, inArray, isNotNull, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNotNull, sql } from "drizzle-orm";
 import { db, together } from "@/lib/db/client";
 import { classBosses, classBossHits, classLessons, classes, conceptEvents, encounters, gloams, messages, students, teachSessions } from "@/lib/db/schema";
 import type { Level, LessonBlueprint } from "@/lib/lesson/types";
@@ -179,9 +179,11 @@ export async function dashboard(classId: string, lesson: LessonBlueprint): Promi
         .orderBy(asc(teachSessions.createdAt))
         .all()
     : [];
-  // each student's latest go at this lesson ("start over" makes a new one; the newest wins), the same one their
-  // conversation is read from (studentSessionId)
-  const sessionByStudent = new Map(sessions.map((s) => [s.studentId, s]));
+  // each student's most complete go at this lesson (the same one their conversation is read from), so a replay
+  // of a finished lesson never shows up as "hasn't started"
+  const byStudent = new Map<string, typeof sessions>();
+  for (const s of sessions) byStudent.set(s.studentId, [...(byStudent.get(s.studentId) ?? []), s]);
+  const sessionByStudent = new Map([...byStudent].map(([id, rows]) => [id, bestSession(rows)!]));
   const events = sessions.length
     ? await db.select().from(conceptEvents).where(inArray(conceptEvents.sessionId, sessions.map((s) => s.id))).all()
     : [];
@@ -233,16 +235,28 @@ export async function dashboard(classId: string, lesson: LessonBlueprint): Promi
 }
 
 /** One student's conversation, for the teacher to read */
-export async function studentSessionId(classId: string, studentId: string, lessonId: string) {
-  // their latest go at the lesson in this class ("start over" makes a new one), the same one the dashboard shows
+/**
+ * A student's most complete go at a lesson: the one with the most candles lit, then the most recent. So when a
+ * student replays a finished lesson ("teach again" makes a fresh session), the teacher still sees their finished
+ * work, not a blank "hasn't started" — and an older empty go never hides a newer one with real teaching in it.
+ */
+function bestSession<T extends { understanding: Record<string, number>; finishedAt: Date | null; updatedAt: Date }>(sessions: T[]): T | null {
+  const lit = (s: T) => Object.values(s.understanding ?? {}).reduce<number>((a, b) => a + b, 0);
   return (
-    (await db
-      .select({ id: teachSessions.id })
-      .from(teachSessions)
-      .where(and(eq(teachSessions.studentId, studentId), eq(teachSessions.lessonId, lessonId), eq(teachSessions.classId, classId)))
-      .orderBy(desc(teachSessions.createdAt))
-      .get())?.id ?? null
+    [...sessions].sort(
+      (a, b) => lit(b) - lit(a) || (b.finishedAt ? 1 : 0) - (a.finishedAt ? 1 : 0) || b.updatedAt.getTime() - a.updatedAt.getTime(),
+    )[0] ?? null
   );
+}
+
+export async function studentSessionId(classId: string, studentId: string, lessonId: string) {
+  // their most complete go at the lesson in this class (the same one the dashboard shows)
+  const rows = await db
+    .select({ id: teachSessions.id, understanding: teachSessions.understanding, finishedAt: teachSessions.finishedAt, updatedAt: teachSessions.updatedAt })
+    .from(teachSessions)
+    .where(and(eq(teachSessions.studentId, studentId), eq(teachSessions.lessonId, lessonId), eq(teachSessions.classId, classId)))
+    .all();
+  return bestSession(rows)?.id ?? null;
 }
 
 /** Remove a student from a class, with everything they did (sessions, messages, candle history, their Gloam) */
