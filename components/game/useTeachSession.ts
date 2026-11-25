@@ -183,6 +183,8 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle, test = fa
   const followTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastMessage = useRef<{ text: string; pasted: boolean } | null>(null);
   const beatShown = useRef(0);
+  // the question Gloam is on when a returning student is welcomed back (so it asks without them typing first)
+  const resumeQ = useRef<string | null>(null);
   const shownRef = useRef(shown);
   const listenTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -224,6 +226,7 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle, test = fa
       if (session.gloam) setGloam(session.gloam);
       setSessionId(session.id);
       setFinished(session.finished);
+      resumeQ.current = session.resumeQuestion ?? null;
       setRecap(session.recap ?? null);
       setFeats(session.feats ?? []);
       setShown(session.understanding);
@@ -280,7 +283,9 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle, test = fa
       setPhase(finished ? "ending" : "teach");
       // Gloam waited at its checkpoint: it says hi (a hand-written line, not saved)
       if (!finished) {
-        const line = pickLine(style.lines.welcomeBack, fill, []);
+        // greet, then ask the question Gloam was on, so the student can answer right away
+        const q = resumeQ.current;
+        const line = pickLine(style.lines.welcomeBack, fill, []) + (q ? ` ${q}` : "");
         setEmotion("sheepish");
         setEntries((xs) => [...xs, { id: nextId(), kind: "gloam", text: line, emotion: "sheepish", fresh: true }]);
       }

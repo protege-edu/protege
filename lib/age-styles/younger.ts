@@ -197,6 +197,9 @@ const storybookLines = (simple: boolean): AgeStyle["lines"] => ({
   onEdge: simple
     ? ["Ooh! My candle is almost on! One more: {question}", "I almost get it! Keep going! {question}", "So close! Tell me: {question}"]
     : ["WAIT, i'm SO close! {question}", "ooh, almost! one more: {question}", "my lantern's flickering! don't stop: {question}"],
+  encourage: simple
+    ? ["Good start! Now tell me WHY! {question}", "Ooh, almost! What's the reason? {question}", "You're so close! A little more: {question}"]
+    : ["good start! now the WHY. {question}", "you're onto it! say the reason: {question}", "almost! give me the part that makes it make sense: {question}"],
   nudge: simple
     ? ["Okay! {question}", "Ooh, tell me more! {question}", "I'm listening! {question}", "Hmm! Can you help me? {question}", "You're a good helper! {question}"]
     : ["ok! {question}", "ooh, go on. {question}", "i'm listening! very hard. {question}", "hmm. my stalk is tingling. {question}", "noted! but i'm still lost. {question}"],

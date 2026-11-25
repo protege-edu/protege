@@ -368,6 +368,18 @@ async function main() {
     assert.equal(row.understanding.tilt, 3, "candles stay lit, not reset to 'hasn't started'");
     await C.deleteClass(k);
   });
+  await test("a returning student is welcomed back WITH Gloam's question (no need to type first)", async () => {
+    const { createSession, getSession } = await import("@/lib/companion/session");
+    const { messages } = await import("@/lib/db/schema");
+    const k = await C.createClass("Resume", 9, a.id);
+    const kid = await S.createStudent(k, "Back Again", ["moon", "owl", "fern"]);
+    assert.ok(kid.ok);
+    const sess = await createSession("seasons", kid.student.id, k);
+    await db.insert(messages).values({ sessionId: sess.id, from: "gloam", text: "so, is earth's path a big oval?", createdAt: new Date() }).run();
+    const got = await getSession(sess.id);
+    assert.ok(got?.resumeQuestion && got.resumeQuestion.length > 0, "an unfinished session carries the question Gloam is on");
+    await C.deleteClass(k);
+  });
   await test("the class boss: one Muddle for the whole class, beaten once, rewards claimed once, erased with the class", async () => {
     const B = await import("@/lib/student/class-boss");
     const { hitsNeeded, hitsFromTurn } = await import("@/lib/game/class-boss");

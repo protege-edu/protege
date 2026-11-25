@@ -56,6 +56,13 @@ export const senior: AgeStyle = {
       "i can feel it clicking, genuinely. last piece: {question}",
       "hold on, i'm so close to getting this. {question}",
     ],
+    encourage: [
+      "okay, you're circling it. i just need the actual why. {question}",
+      "that's a start, not the whole thing. give me the reason: {question}",
+      "i believe you, i just don't get it YET. say the part that makes it click: {question}",
+      "you're not wrong. you're just not done. {question}",
+      "closer. now the bit that actually explains it: {question}",
+    ],
     nudge: [
       "cool. riveting. anyway: {question}",
       "i'll take that as encouragement. {question}",

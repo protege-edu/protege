@@ -53,6 +53,13 @@ export const frSenior: FrenchStyle = {
       "je le sens cliquer, pour vrai. dernière pièce : {question}",
       "attends, je suis tellement proche. {question}",
     ],
+    encourage: [
+      "ok, tu tournes autour. il me manque juste le vrai pourquoi. {question}",
+      "c'est un début, pas le tout. donne-moi la raison : {question}",
+      "je te crois, je comprends juste pas ENCORE. dis la partie qui fait tilt : {question}",
+      "t'as pas tort. t'as juste pas fini. {question}",
+      "plus proche. maintenant le bout qui explique vraiment : {question}",
+    ],
     nudge: [
       "cool. passionnant. bref : {question}",
       "je prends ça comme un encouragement. {question}",
@@ -330,6 +337,9 @@ export function frStorybook(big: boolean): FrenchStyle {
       onEdge: big
         ? ["Ooh! Ma bougie est presque allumée! Encore une : {question}", "Je comprends presque! Continue! {question}", "Si proche! Dis-moi : {question}"]
         : ["ATTENDS, je suis TELLEMENT proche! {question}", "ooh, presque! encore un : {question}", "ma lanterne vacille! arrête pas : {question}"],
+      encourage: big
+        ? ["Bon début! Maintenant dis-moi POURQUOI! {question}", "Ooh, presque! C'est quoi la raison? {question}", "T'es si proche! Encore un peu : {question}"]
+        : ["bon début! maintenant le POURQUOI. {question}", "t'es sur la bonne voie! dis la raison : {question}", "presque! donne-moi le bout qui a du sens : {question}"],
       nudge: big
         ? ["D'accord! {question}", "Ooh, dis-m'en plus! {question}", "Je t'écoute! {question}", "Hmm! Tu peux m'aider? {question}", "Tu m'aides bien! {question}"]
         : ["ok! {question}", "ooh, continue. {question}", "j'écoute! très fort. {question}", "hmm. ma tige picote. {question}", "noté! mais je suis encore perdu. {question}"],

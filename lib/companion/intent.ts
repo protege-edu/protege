@@ -34,6 +34,10 @@ export function quickIntent(message: string): Intent | null {
     return "asking_for_answer";
   }
   if (/^(just |js |jus |pls |please |plz |bro |bruh )*(tell me|tell us|say it|explain|answer)( pls| please| bro)?\s*\??$/.test(m)) return "asking_for_answer";
+  // "continue", "go on", "keep going": proceed. NOT a skip — Gloam stays on the same idea and asks again.
+  if (/^(ok(ay)?|um|uh|so|and|then|mhm)?\s*(continue|carry ?on|go on|go ahead|keep going|keep it up|proceed)\s*[.!]*$/.test(m)) {
+    return "chatting";
+  }
   // "next", "skip", "another one": a different question, please (the whole message: "next to the sun" is an answer)
   if (/^(ok |okay |um |uh )?(next( one| question)?|skip( it| this( one)?| that)?|pass|another( one| question)?|(a )?different (one|question)|new question|ask (me )?(something|smth|sth) else|something else|move on)( pls| please| plz)?\s*\??$/.test(m)) {
     return "skip";
@@ -55,6 +59,7 @@ function quickIntentFr(m: string): Intent | null {
   ) {
     return "asking_for_answer";
   }
+  if (/^(ok|bon|euh|alors|et)?\s*(continue|continuez|vas( |-)?y|poursuis|poursuivez|la suite|ensuite)\s*[.!]*$/.test(m)) return "chatting";
   if (/^(ok |bon |euh )?(suivant(e)?|la suivante|passe|je passe|on passe|une autre( question)?|autre question|(une )?nouvelle question|(la )?prochaine( question)?|autre chose)( stp| svp)?\s*\??$/.test(m)) {
     return "skip";
   }

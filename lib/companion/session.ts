@@ -4,6 +4,7 @@ import { and, asc, desc, eq, sql } from "drizzle-orm";
 import { db, together } from "@/lib/db/client";
 import { conceptEvents, encounters, gloams, messages, students, teachSessions } from "@/lib/db/schema";
 import { view } from "@/lib/game/engine";
+import { nextQuestion } from "@/lib/companion/director";
 import { featsFor, type Feat } from "@/lib/game/feats";
 import type { ChallengeKind, EncounterView, Play } from "@/lib/game/types";
 import type { ClassBossView } from "@/lib/game/class-boss";
@@ -42,6 +43,8 @@ export interface SessionState {
   dressed: string[];
   /** once the lesson is finished: the feats earned in it */
   feats?: Feat[];
+  /** the question Gloam is on, so when a returning student is welcomed back it asks straight away (not finished only) */
+  resumeQuestion?: string;
 }
 
 /**
@@ -91,6 +94,15 @@ export async function getSession(id: string): Promise<SessionState | null> {
     .orderBy(asc(messages.id))
     .all();
   const finishedLesson = row.s.finishedAt !== null ? await getApprovedLesson(row.s.lessonId) : null;
+  // the question Gloam left off on, so a returning student is greeted WITH it (no need to type to get asked)
+  let resumeQuestion: string | undefined;
+  if (row.s.finishedAt === null) {
+    const lesson = await getApprovedLesson(row.s.lessonId).catch(() => null);
+    if (lesson) {
+      const gloamSaid = msgs.filter((m) => m.from === "gloam").map((m) => m.text);
+      resumeQuestion = nextQuestion(lesson, row.s.understanding, gloamSaid).text || undefined;
+    }
+  }
 
   return {
     id: row.s.id,
@@ -109,6 +121,7 @@ export async function getSession(id: string): Promise<SessionState | null> {
     fireflies: await firefliesOf(row.s.studentId),
     dressed: (await db.select({ dressed: gloams.dressed }).from(gloams).where(eq(gloams.studentId, row.s.studentId)).get())?.dressed ?? [],
     ...(row.s.finishedAt !== null ? { feats: await featsOf(row.s.id) } : {}),
+    ...(resumeQuestion ? { resumeQuestion } : {}),
   };
 }
 

@@ -132,10 +132,11 @@ export async function runTurn(input: TurnInput, hooks: { onJudged?: (e: JudgedEv
     }
     intent = judged.length > 0 ? "explaining" : (quick ?? res?.intent ?? "chatting");
   }
-  // "explaining" but it touched no idea: a vague attempt, not a lesson point
-  if (intent === "explaining" && judged.length === 0) intent = "chatting";
   // "the sun", "summer?" are about the lesson even if they explain nothing: never call them off topic
   if (intent === "off_topic" && mentionsLesson(lesson, message)) intent = "chatting";
+  // a real try (a whole sentence) that didn't land on an idea: Gloam encourages and asks for the why, instead of
+  // the dry nudge meant for "hey"/"ok" — so a genuine explanation is never treated like the student said nothing
+  if (judged.length === 0 && intent === "chatting" && message.trim().split(/\s+/).length >= 5) intent = "explaining";
 
   // 3. Progress + director
   const progress = applyProgress(understanding, judged);

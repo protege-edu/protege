@@ -114,6 +114,8 @@ export function directBeat(opts: DirectInput): Beat {
     if (intent === "asking_for_answer") return asking("sheepish", style.lines.askedForAnswer);
     if (intent === "stuck") return asking("curious", style.lines.stuck);
     if (intent === "skip") return asking("curious", style.lines.skip);
+    // they tried to explain but it didn't quite land: never imply they were wrong — credit the try, ask for the why
+    if (intent === "explaining") return asking("curious", style.lines.encourage);
     return asking("curious", style.lines.nudge);
   }
 

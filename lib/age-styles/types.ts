@@ -245,6 +245,8 @@ export interface AgeStyle {
     onEdge: Line[];
     /** Student said nothing to work with ("yea", "hey", "ok") */
     nudge: Line[];
+    /** They tried to explain but it didn't land: credit the try, ask for the why (never "you're wrong"). Has {question}. */
+    encourage: Line[];
     /** "next", "skip": a question about something else */
     skip: Line[];
     /** Straight after a candle lights: on to the next thing Gloam is confused about (always has {question}) */

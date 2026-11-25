@@ -150,6 +150,9 @@ test("curly apostrophes can't sneak a giveaway past the check", () => {
 console.log("real teen messages (no AI needed)");
 test("'yea', 'hey', 'ok', 'lol', 'bruh' are just chatting", () => {
   for (const m of ["yea!", "hey!", "ok", "lol", "bruh", "yeah", "fr"]) assert.equal(quickIntent(m), "chatting", m);
+  // "continue" / "go on" / "keep going" mean proceed, NOT skip (Gloam must stay on the idea it's close on)
+  for (const m of ["continue", "go on", "keep going", "carry on", "go ahead", "ok continue", "proceed"]) assert.equal(quickIntent(m), "chatting", m);
+  for (const m of ["continue", "go on", "keep going"]) assert.notEqual(quickIntent(m), "skip", m);
 });
 test("every way of asking for the answer is caught", () => {
   for (const m of ["JS TELL ME THE ANSWER", "just tell me", "whats the answer", "can u tell me the answer", "you explain it", "just say it", "what is the real reason, say it"]) assert.equal(quickIntent(m), "asking_for_answer", m);
@@ -269,6 +272,7 @@ test("every age style has 'skip' and 'next idea' lines with Gloam's question in 
       assert.ok(st.lines.skip.length >= 3 && st.lines.skip.every((l) => l.includes("{question}")), `${id} ${lang} skip`);
       assert.ok(st.lines.nextIdea.length >= 3 && st.lines.nextIdea.every((l) => l.includes("{question}")), `${id} ${lang} nextIdea`);
       assert.ok(st.lines.onEdge.length >= 3 && st.lines.onEdge.every((l) => l.includes("{question}")), `${id} ${lang} onEdge`);
+      assert.ok(st.lines.encourage.length >= 3 && st.lines.encourage.every((l) => l.includes("{question}")), `${id} ${lang} encourage`);
     }
   }
 });
@@ -434,6 +438,14 @@ test("Gloam stays on one idea until it's lit, instead of hopping every turn", ()
     assert.equal(beat.about, ids[0], `turn ${i}: should still be on the first idea, not ${beat.about}`);
     said.push(beat.line);
   }
+});
+test("a real explanation that didn't quite land is encouraged, never dismissed as wrong", () => {
+  const hs = getAgeStyle("senior", "en");
+  const b = directBeat({ lesson: seasons, style: hs, before: zero, progress: applyProgress(zero, []), intent: "explaining", judged: [], gloamSaid: [] });
+  const prefix = (t: string) => t.split("{question}")[0];
+  assert.ok(hs.lines.encourage.some((t) => b.line.startsWith(prefix(t))), `expected an encouraging line, got: "${b.line}"`);
+  assert.ok(!hs.lines.nudge.some((t) => b.line.startsWith(prefix(t))), "a genuine try must not get the dry 'you said nothing' nudge");
+  assert.ok(questionIn(seasons, b.line), "and it still asks a question");
 });
 test("a student who answers each question finishes every idea and is never stuck on one", () => {
   const hs = getAgeStyle("senior", "en");
