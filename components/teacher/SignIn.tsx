@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { AnimatePresence, motion } from "motion/react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { InkButton } from "@/components/ui/InkButton";
-import { LogoMark, Wordmark } from "@/components/ui/Logo";
+import { Wordmark } from "@/components/ui/Logo";
 import { Sheet } from "@/components/ui/Sheet";
+import { useCalmMotion } from "@/lib/useCalmMotion";
 
 type Mode = "signin" | "signup" | "recover";
 
@@ -27,7 +29,7 @@ async function post<T>(body: unknown): Promise<{ ok: true; data: T } | { ok: fal
 
 /**
  * The teacher's way in: sign in, make an account, or use a recovery code.
- * A calm two-panel page: a painted postcard of Gloam's valley, and the form.
+ * Set at night in Gloam's valley: the painted panorama, drifting fireflies, and the form on a torn-paper card.
  */
 export function SignIn({ status, onSignedIn }: { status: AuthStatus; onSignedIn: () => void }) {
   const [mode, setMode] = useState<Mode>(status.firstTeacher ? "signup" : "signin");
@@ -78,85 +80,107 @@ export function SignIn({ status, onSignedIn }: { status: AuthStatus; onSignedIn:
         : "Use the recovery code you saved when you made your account.";
 
   return (
-    <main className="mx-auto grid min-h-dvh max-w-[1100px] items-center gap-10 px-6 py-10 md:grid-cols-[1.1fr_1fr]">
-      <Postcard />
-      <section aria-labelledby="signin-title" className="w-full max-w-[420px] justify-self-center">
-        <p className="text-xl text-ink">
-          <Wordmark tone="light" />
-        </p>
-        <h1 id="signin-title" className="mt-6 text-lg font-bold text-ink">
-          {title}
-        </h1>
-        <p className="mt-1.5 text-sm text-ink-dim">{sub}</p>
+    <NightScene>
+      <motion.section
+        aria-labelledby="signin-title"
+        className="w-full max-w-[440px]"
+        initial={{ opacity: 0, y: 22 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+      >
+        <Sheet seed="signin" tone="night" radius={26} className="px-7 py-8 sm:px-9 sm:py-9">
+          <p className="text-2xl text-ink">
+            <Wordmark tone="dark" />
+          </p>
+          {/* a key change (sign in / make an account / recover) crossfades its words, so the card feels alive */}
+          <AnimatePresence mode="wait">
+            <motion.div key={`${mode}-${status.firstTeacher}`} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.28 }}>
+              <h1 id="signin-title" className="voice mt-6 text-xl leading-tight text-ink" style={{ ["--casual" as string]: 0.4 }}>
+                {title}
+              </h1>
+              <p className="mt-2 text-sm text-ink-dim">{sub}</p>
+            </motion.div>
+          </AnimatePresence>
 
-        {needsCode && (
-          <div className="mt-6">
-            {status.signUp === "setup" ? (
-              <Field
-                id="invite"
-                label="Setup code"
-                hint="It's in Protégé's logs: on Vercel, open Logs and search for setup code."
-                value={invite}
-                onChange={setInvite}
-                autoComplete="off"
-              />
-            ) : (
-              <Field
-                id="invite"
-                label="Staff code"
-                hint="Your school's code, like ABCD-EFGH-JKLM. Ask your principal, or a teacher at your school who uses Protégé. Type it first, then pick how to sign up."
-                value={invite}
-                onChange={setInvite}
-                autoComplete="off"
-              />
-            )}
-          </div>
-        )}
-
-        {status.google && mode !== "recover" && (
-          <>
-            <a
-              href={googleHref}
-              className="mt-6 flex min-h-12 items-center justify-center gap-3 rounded-md border border-line bg-panel px-4 text-sm font-bold text-ink hover:bg-chip"
-            >
-              <GoogleG /> Continue with Google
-            </a>
-            <p className="my-4 flex items-center gap-3 text-xs text-ink-dim">
-              <span className="h-px flex-1 bg-line" /> or with email <span className="h-px flex-1 bg-line" />
-            </p>
-          </>
-        )}
-
-        <form onSubmit={submit} className={`flex flex-col gap-3 ${status.google && mode !== "recover" ? "" : "mt-6"}`}>
-          {mode === "signup" && <Field id="name" label="Your name" hint="What students call you is fine." value={name} onChange={setName} autoComplete="name" />}
-          <Field id="email" label="Email" type="email" value={email} onChange={setEmail} autoComplete="email" />
-          {mode === "recover" && <Field id="code" label="Recovery code" hint="It looks like ABCD-EFGH-JKLM." value={code} onChange={setCode} autoComplete="off" />}
-          <Field
-            id="password"
-            label={mode === "recover" ? "New password" : "Password"}
-            type="password"
-            hint={mode === "signin" ? undefined : "At least 8 characters."}
-            value={password}
-            onChange={setPassword}
-            autoComplete={mode === "signin" ? "current-password" : "new-password"}
-          />
-          {error && (
-            <p role="alert" className="text-sm font-bold text-[#9b2c2c]">
-              {error}
-            </p>
+          {needsCode && (
+            <div className="mt-6">
+              {status.signUp === "setup" ? (
+                <Field
+                  id="invite"
+                  label="Setup code"
+                  hint="It's in Protégé's logs: on Vercel, open Logs and search for setup code."
+                  value={invite}
+                  onChange={setInvite}
+                  autoComplete="off"
+                />
+              ) : (
+                <Field
+                  id="invite"
+                  label="Staff code"
+                  hint="Your school's code, like ABCD-EFGH-JKLM. Ask your principal, or a teacher at your school who uses Protégé. Type it first, then pick how to sign up."
+                  value={invite}
+                  onChange={setInvite}
+                  autoComplete="off"
+                />
+              )}
+            </div>
           )}
-          <InkButton type="submit" size="lg" disabled={busy} className="mt-2 w-full">
-            {busy ? "One moment…" : mode === "signup" ? "Make my account" : mode === "signin" ? "Sign in" : "Set my new password"}
-          </InkButton>
-        </form>
 
-        <div className="mt-5 flex flex-wrap gap-x-4 gap-y-1 text-sm">
-          {mode !== "signin" && !status.firstTeacher && <Swap onClick={() => setMode("signin")}>I already have an account</Swap>}
-          {mode !== "signup" && <Swap onClick={() => setMode("signup")}>Make an account</Swap>}
-          {mode === "signin" && <Swap onClick={() => setMode("recover")}>Forgot your password?</Swap>}
-        </div>
-      </section>
-    </main>
+          {status.google && mode !== "recover" && (
+            <>
+              <a
+                href={googleHref}
+                className="mt-6 flex min-h-12 items-center justify-center gap-3 rounded-md border border-line bg-panel px-4 text-sm font-bold text-ink transition-colors hover:bg-chip focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[var(--t-focus)]"
+              >
+                <GoogleG /> Continue with Google
+              </a>
+              <p className="my-4 flex items-center gap-3 text-xs text-ink-dim">
+                <span className="h-px flex-1 bg-line" /> or with email <span className="h-px flex-1 bg-line" />
+              </p>
+            </>
+          )}
+
+          <form onSubmit={submit} className={`flex flex-col gap-3 ${status.google && mode !== "recover" ? "" : "mt-6"}`}>
+            {mode === "signup" && <Field id="name" label="Your name" hint="What students call you is fine." value={name} onChange={setName} autoComplete="name" />}
+            <Field id="email" label="Email" type="email" value={email} onChange={setEmail} autoComplete="email" />
+            {mode === "recover" && <Field id="code" label="Recovery code" hint="It looks like ABCD-EFGH-JKLM." value={code} onChange={setCode} autoComplete="off" />}
+            <Field
+              id="password"
+              label={mode === "recover" ? "New password" : "Password"}
+              type="password"
+              hint={mode === "signin" ? undefined : "At least 8 characters."}
+              value={password}
+              onChange={setPassword}
+              autoComplete={mode === "signin" ? "current-password" : "new-password"}
+            />
+            {error && (
+              <p role="alert" className="text-sm font-bold text-[#ffb4b4]">
+                {error}
+              </p>
+            )}
+            <InkButton type="submit" size="lg" disabled={busy} className="mt-2 w-full">
+              {busy ? "One moment…" : mode === "signup" ? "Make my account" : mode === "signin" ? "Sign in" : "Set my new password"}
+            </InkButton>
+          </form>
+
+          <div className="mt-5 flex flex-wrap gap-x-4 gap-y-1 text-sm">
+            {mode !== "signin" && !status.firstTeacher && <Swap onClick={() => setMode("signin")}>I already have an account</Swap>}
+            {mode !== "signup" && <Swap onClick={() => setMode("signup")}>Make an account</Swap>}
+            {mode === "signin" && <Swap onClick={() => setMode("recover")}>Forgot your password?</Swap>}
+          </div>
+        </Sheet>
+
+        <motion.p
+          className="voice mt-5 text-center text-sm text-[#9fb2a8]"
+          style={{ ["--casual" as string]: 1, ["--slant" as string]: -5 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5, duration: 0.8 }}
+        >
+          your students teach. gloam learns. you see what they think.
+        </motion.p>
+      </motion.section>
+    </NightScene>
   );
 }
 
@@ -197,7 +221,7 @@ export function Field({
         autoComplete={autoComplete}
         onChange={(e) => onChange(e.target.value)}
         aria-describedby={hint ? `${id}-hint` : undefined}
-        className="min-h-12 rounded-md border border-line bg-panel px-3 text-md text-ink focus:border-[var(--t-focus)] focus:outline-none"
+        className="min-h-12 rounded-md border border-line bg-panel px-3 text-md text-ink transition-colors focus:border-[var(--t-focus)] focus:outline-none"
       />
       {hint && (
         <p id={`${id}-hint`} className="text-xs text-ink-dim">
@@ -212,37 +236,92 @@ export function Field({
 function RecoveryCode({ code, onDone }: { code: string; onDone: () => void }) {
   const [saved, setSaved] = useState(false);
   return (
-    <main className="mx-auto flex min-h-dvh max-w-[480px] flex-col justify-center px-6">
-      <Sheet seed="recovery" tone="day" className="p-7">
-        <h1 className="text-lg font-bold text-ink">Save your recovery code</h1>
-        <p className="mt-2 text-sm text-ink-dim">If you ever forget your password, this code gets you back in. It&apos;s shown only once, and each code works once. Write it down or save it somewhere safe.</p>
-        <p className="mt-5 rounded-md border border-dashed border-line bg-[var(--t-panel-2)] px-4 py-4 text-center font-mono text-xl font-bold tracking-wider text-ink select-all">{code}</p>
-        <label className="mt-5 flex min-h-11 cursor-pointer items-center gap-3 text-sm text-ink">
-          <input type="checkbox" checked={saved} onChange={(e) => setSaved(e.target.checked)} className="h-5 w-5 accent-[var(--t-accent)]" />
-          I&apos;ve saved it somewhere safe
-        </label>
-        <InkButton size="lg" className="mt-4 w-full" disabled={!saved} onClick={onDone}>
-          Continue
-        </InkButton>
-      </Sheet>
+    <NightScene>
+      <motion.div className="w-full max-w-[440px]" initial={{ opacity: 0, y: 22 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}>
+        <Sheet seed="recovery" tone="night" radius={26} className="px-7 py-8 sm:px-9">
+          <h1 className="voice text-xl leading-tight text-ink" style={{ ["--casual" as string]: 0.4 }}>
+            Save your recovery code
+          </h1>
+          <p className="mt-2 text-sm text-ink-dim">If you ever forget your password, this code gets you back in. It&apos;s shown only once, and each code works once. Write it down or save it somewhere safe.</p>
+          <p className="mt-5 rounded-md border border-dashed border-line bg-panel px-4 py-4 text-center font-mono text-xl font-bold tracking-[0.12em] text-ink select-all">{code}</p>
+          <label className="mt-5 flex min-h-11 cursor-pointer items-center gap-3 text-sm text-ink">
+            <input type="checkbox" checked={saved} onChange={(e) => setSaved(e.target.checked)} className="h-5 w-5 accent-[var(--t-accent)]" />
+            I&apos;ve saved it somewhere safe
+          </label>
+          <InkButton size="lg" className="mt-4 w-full" disabled={!saved} onClick={onDone}>
+            Continue
+          </InkButton>
+        </Sheet>
+      </motion.div>
+    </NightScene>
+  );
+}
+
+/**
+ * Gloam's valley at night, behind the form: the painted panorama (very slowly drifting), a dark vignette so the
+ * card reads, and fireflies that drift up through the dark. Fireflies are moss-green, never lantern gold.
+ * Respects reduced motion: then nothing moves, it's just the painting.
+ */
+function NightScene({ children }: { children: ReactNode }) {
+  const calm = useCalmMotion();
+  // fixed positions (a deterministic hash, so the server and browser draw them in the same place)
+  const flies = useMemo(
+    () =>
+      Array.from({ length: 22 }, (_, i) => ({
+        left: 4 + 92 * rand(i),
+        top: 8 + 86 * rand(i + 40),
+        size: 2 + 4 * rand(i + 80),
+        delay: rand(i + 7) * 5,
+        dur: 6 + rand(i + 13) * 7,
+        drift: 8 + rand(i + 21) * 26,
+      })),
+    [],
+  );
+  return (
+    <main data-age-style="senior" className="relative min-h-dvh overflow-hidden bg-[#0b1512]">
+      {/* the painted valley, drifting ever so slightly */}
+      <motion.div
+        aria-hidden="true"
+        className="absolute inset-0 bg-cover bg-[position:55%_center]"
+        style={{ backgroundImage: "url(/art/senior/valley-0-dark.webp)" }}
+        initial={false}
+        animate={calm ? undefined : { scale: [1, 1.07], x: [0, -14] }}
+        transition={{ duration: 38, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
+      />
+      {/* depth: darker at the edges and bottom so the card and words read clearly */}
+      <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(130%_100%_at_50%_0%,transparent_38%,rgb(7_15_12/0.72)_100%)]" />
+      <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(180deg,rgb(7_15_12/0.55),transparent_30%,transparent_60%,rgb(7_15_12/0.8))]" />
+      {/* fireflies */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+        {flies.map((f, i) => (
+          <motion.span
+            key={i}
+            className="absolute rounded-full"
+            style={{
+              left: `${f.left}%`,
+              top: `${f.top}%`,
+              width: f.size,
+              height: f.size,
+              background: "#d6ee8a",
+              boxShadow: "0 0 8px 2px rgb(214 238 138 / 0.6)",
+            }}
+            initial={calm ? { opacity: 0.5 } : { opacity: 0 }}
+            animate={calm ? undefined : { opacity: [0, 0.9, 0.2, 0.8, 0], y: [0, -f.drift], x: [0, f.drift * 0.4, 0] }}
+            transition={{ duration: f.dur, repeat: Infinity, delay: f.delay, ease: "easeInOut" }}
+          />
+        ))}
+      </div>
+      {/* the card (centred, but on a short screen it scrolls so a tall form never gets clipped) */}
+      <div className="relative z-10 flex min-h-dvh items-center-safe justify-center overflow-y-auto px-5 py-10">{children}</div>
     </main>
   );
 }
 
-/** The left panel: a painted postcard of the lit valley, with Gloam's face */
-function Postcard() {
-  return (
-    <div aria-hidden="true" className="relative hidden aspect-[4/5] overflow-hidden rounded-[22px] shadow-[0_18px_50px_rgb(22_48_42/0.25)] md:block">
-      <div className="absolute inset-0 bg-cover bg-[position:62%_center]" style={{ backgroundImage: "url(/art/senior/journey-map-lit.webp)" }} />
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_45%,rgb(10_20_16/0.85))]" />
-      <div className="absolute inset-x-0 bottom-0 flex items-end gap-4 p-7">
-        <LogoMark tone="dark" className="h-16 w-16 shrink-0" />
-        <p className="voice text-lg text-[#e9efe9]" style={{ ["--casual" as string]: 1, ["--slant" as string]: -6 }}>
-          your students teach. gloam learns. you see what they think.
-        </p>
-      </div>
-    </div>
-  );
+/** The same "random" number for the same i every time and everywhere (so fireflies don't jump between server and browser) */
+function rand(i: number) {
+  let h = Math.imul(i + 0x9e37, 0x85ebca6b);
+  h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35);
+  return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
 }
 
 function GoogleG() {
