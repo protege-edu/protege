@@ -7,6 +7,7 @@ import { findGiveaway, tidy, voice } from "@/lib/ai/companion";
 import { AGE_STYLES, getAgeStyle } from "@/lib/age-styles";
 import { detectLanguage } from "@/lib/lesson/language";
 import { looksCopied, quickIntent } from "@/lib/companion/intent";
+import { pickBestVoice, type VoiceLike } from "@/lib/speech";
 import { checkSafety } from "@/lib/ai/safety";
 import { directBeat } from "@/lib/companion/director";
 import { candidateConcepts, gradeCheck } from "@/lib/companion/grade";
@@ -522,6 +523,25 @@ test("every age style has every line bank filled", () => {
       const filled = typeof v === "string" ? v.length > 0 : Array.isArray(v) ? v.length > 0 : Object.values(v).every((x) => x.length > 0);
       assert.ok(filled, `${st.id}.${k}`);
     }
+});
+
+test("read-aloud picks the most human on-device voice and never a robot or joke voice", () => {
+  const local = (name: string, lang: string): VoiceLike => ({ name, lang, localService: true });
+  // a typical mixed bag: pick the enhanced human voice over the flat Microsoft one and the Zarvox joke voice
+  assert.equal(
+    pickBestVoice([local("Microsoft David Desktop", "en-US"), local("Zarvox", "en-US"), local("Samantha (Enhanced)", "en-US"), local("Albert", "en-US")], "en")?.name,
+    "Samantha (Enhanced)",
+  );
+  // when the only human-sounding name is plain "Samantha", still beat the robotic David
+  assert.equal(pickBestVoice([local("Microsoft Zira", "en-US"), local("Samantha", "en-US")], "en")?.name, "Samantha");
+  // a Canadian voice wins a tie between two equally-good voices (Ontario first)
+  assert.equal(pickBestVoice([local("Daniel", "en-GB"), local("Nicky", "en-CA")], "en")?.name, "Nicky");
+  // French read-aloud never grabs an English voice; Amélie beats the robotic Hortense
+  assert.equal(pickBestVoice([local("Samantha", "en-US"), local("Microsoft Hortense", "fr-FR"), local("Amélie", "fr-CA")], "fr")?.name, "Amélie");
+  // online (not on-device) voices are never used, even if they sound great — privacy first
+  assert.equal(pickBestVoice([{ name: "Google US English (Natural)", lang: "en-US", localService: false }], "en"), null);
+  // a device with only robot voices still reads aloud (a robot beats silence)
+  assert.ok(pickBestVoice([local("eSpeak", "en-US"), local("Microsoft Mark", "en-US")], "en"));
 });
 
 test("pasted answers ask for the student's own words", () => {
