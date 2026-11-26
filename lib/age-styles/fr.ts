@@ -121,7 +121,7 @@ export const frSenior: FrenchStyle = {
       "gloam est fermé pour la journée. trop d'apprentissage. ma tige tombe. demain?",
       "j'ai atteint ma limite de réflexion pour aujourd'hui. franchement impressionnant. même heure demain?",
     ],
-    care: "hé. je mets la leçon de côté une seconde. ça a l'air vraiment lourd, et toi, tu comptes beaucoup plus que n'importe quelle leçon. parles-en à un prof, à la personne-ressource de ton école ou à un adulte en qui tu as confiance. au canada, tu peux appeler ou texter le 988, ou joindre jeunesse, j'écoute au 1-800-668-6868 (texto : 686868), jour et nuit.",
+    care: "d'accord — j'arrête la leçon. tu comptes bien plus que tout ce qu'on fait ici. parles-en tout de suite à un prof ou à un adulte en qui tu as confiance. si tu es en danger, appelle le 911. et Jeunesse, J'écoute est là jour et nuit : appelle le 1-800-668-6868 ou texte 686868. tu n'es pas seul.",
     victoryLap: [
       "regarde cette lanterne. c'est toi, ça. c'est toi qui as fait ça.",
       "je comprends {topic} maintenant. je vais être insupportable avec ça.",
@@ -357,7 +357,7 @@ export function frStorybook(big: boolean): FrenchStyle {
       tired: big
         ? ["J'ai TELLEMENT sommeil! Ma lanterne a besoin d'une sieste. Reviens demain!", "Bâille! Gloam doit dormir maintenant. À demain!"]
         : ["ma lanterne n'a plus de lumière pour aujourd'hui! on continue demain.", "j'ai appris TELLEMENT de choses aujourd'hui, j'ai besoin d'une sieste. reviens demain!"],
-      care: "Ça a l'air vraiment difficile. S'il te plaît, dis à ton prof ou à un adulte en qui tu as confiance comment tu te sens. Ils veulent t'aider. Tu peux aussi appeler Jeunesse, J'écoute au 1-800-668-6868, jour et nuit.",
+      care: "J'arrête notre jeu tout de suite, parce que tu comptes plus que tout. Dis-le tout de suite à ton prof ou à un adulte en qui tu as confiance. Si tu es en danger, appelle le 911. Jeunesse, J'écoute est là jour et nuit : 1-800-668-6868 ou texte 686868. Tu n'es pas seul.",
       victoryLap: ["Regarde comme ma lanterne brille! C'est grâce à toi!", "Je comprends maintenant, grâce à toi!"],
       welcomeBack: big ? ["Tu es revenu! Je t'ai attendu près de la bougie!"] : ["t'es revenu! je t'ai gardé ta place près de la bougie."],
       levelUp: big ? ["Ma lanterne est devenue PLUS GROSSE! Grâce à toi!"] : ["wow, ma lanterne a grandi! c'est tout ton enseignement!"],

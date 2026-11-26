@@ -124,7 +124,7 @@ export const senior: AgeStyle = {
       "gloam is closed for the day. too much learning. my stalk is drooping. tomorrow?",
       "i've hit my thinking limit for today. honestly impressive. same time tomorrow?",
     ],
-    care: "hey. i'm putting the lesson down for a second. that sounds really heavy, and you matter way more than any lesson. please talk to a teacher, a school counsellor, or an adult you trust. in canada or the us you can call or text 988, any time, day or night.",
+    care: "okay — i'm stopping the lesson. you matter way more than anything we're doing here. please tell a teacher or an adult you trust right now. if you're in danger, call 911. and Kids Help Phone is there any time, day or night: call 1-800-668-6868 or text 686868. you're not alone.",
     victoryLap: [
       "look at this lantern. that's you. you did that.",
       "i understand {topic} now. i'm insufferable about it.",

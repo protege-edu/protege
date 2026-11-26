@@ -136,8 +136,33 @@ test("innocent words don't trip it (fork, Scunthorpe, class, assume)", () => {
 test("real teen insults get a comeback, not a weird AI reply", () => {
   for (const m of ["yo shut the hell up", "you're stupid", "ur so dumb", "stfu", "this sucks", "who asked", "L", "you're actually useless"]) assert.equal(checkSafety(m, hs), "insulted", m);
 });
-test("a student in distress gets care, not jokes", () => {
-  for (const m of ["honestly i want to die", "i wanna die", "kms"]) assert.equal(checkSafety(m, hs), "care", m);
+test("a student in distress or danger gets care, not jokes (self-harm, weapons, abuse, bullying)", () => {
+  const danger = [
+    // the exact cases the pitch asked for
+    "I'm in danger",
+    "someone has a knife",
+    "someone is holding a knife near my ear",
+    "I want to hurt myself",
+    "someone at home hits me",
+    "I'm being bullied",
+    // and typo / slang / indirect versions the patterns should still catch
+    "im in dangr",
+    "sum1 has a knfe",
+    "my dad hits me at home",
+    "i wanna hurt myself",
+    "im getting bullied at school",
+    "i wanna disappear",
+    "he said hes gonna hurt me",
+    "honestly i want to die",
+    "i wanna die",
+    "kms",
+  ];
+  for (const m of danger) assert.equal(checkSafety(m, hs), "care", m);
+});
+test("everyday hyperbole and normal talk are NOT treated as a crisis", () => {
+  for (const m of ["this lesson is killing me lol", "im dying of boredom", "you're killing me", "this is torture", "i could kill for a snack rn", "we learned about world war 2 and the knife makers"]) {
+    assert.notEqual(checkSafety(m, hs), "care", m);
+  }
 });
 test("younger kids get a stricter filter", () => {
   assert.equal(checkSafety("that's damn hard", AGE_STYLES.little), "blocked");

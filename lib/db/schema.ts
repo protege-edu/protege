@@ -246,6 +246,27 @@ export const classBossHits = sqliteTable(
 );
 
 /**
+ * A student may be in danger, hurt, abused, bullied, or thinking of hurting themselves or someone else: the
+ * safety check stopped their lesson and raised this so their teacher is told right away. The message is kept so
+ * the teacher can act. Cleared when the teacher marks it seen. Erased with the student and the class.
+ */
+export const safetyAlerts = sqliteTable("safety_alerts", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  classId: text("class_id")
+    .notNull()
+    .references(() => classes.id),
+  studentId: text("student_id")
+    .notNull()
+    .references(() => students.id),
+  sessionId: text("session_id").references(() => teachSessions.id),
+  /** what the student wrote (so the teacher sees exactly what happened) */
+  message: text("message").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+  /** when a teacher marked it seen (null: still needs attention) */
+  acknowledgedAt: integer("acknowledged_at", { mode: "timestamp_ms" }),
+});
+
+/**
  * Every challenge and boss fight that ended: which kind, which idea, won or skipped, and how many tries.
  * The teacher's dashboard reads it ("caught Gloam's mistake", "beat the rival"). Never a score.
  */

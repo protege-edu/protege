@@ -368,6 +368,25 @@ async function main() {
     assert.equal(row.understanding.tilt, 3, "candles stay lit, not reset to 'hasn't started'");
     await C.deleteClass(k);
   });
+  await test("a safety concern raises a teacher alert, which can be marked seen and is erased with the student", async () => {
+    const A = await import("@/lib/teacher/alerts");
+    const { safetyAlerts } = await import("@/lib/db/schema");
+    const k = await C.createClass("Safety", 9, a.id);
+    const kid = await S.createStudent(k, "Quiet Robin", ["moon", "owl", "fern"]);
+    assert.ok(kid.ok);
+    await A.recordConcern(k, kid.student.id, null, "someone at home hits me");
+    const open = await A.openAlerts(k);
+    assert.equal(open.length, 1, "the alert is waiting for the teacher");
+    assert.equal(open[0].nickname, "Quiet Robin");
+    assert.equal(open[0].message, "someone at home hits me");
+    await A.acknowledgeAlert(k, open[0].id);
+    assert.equal((await A.openAlerts(k)).length, 0, "marked seen: off the needs-attention list");
+    await A.recordConcern(k, kid.student.id, null, "i wanna hurt myself");
+    assert.equal((await A.openAlerts(k)).length, 1);
+    await C.removeStudent(k, kid.student.id);
+    assert.equal((await db.select().from(safetyAlerts).where(eq(safetyAlerts.classId, k)).all()).length, 0, "erased with the student");
+    await C.deleteClass(k);
+  });
   await test("a returning student is welcomed back WITH Gloam's question (no need to type first)", async () => {
     const { createSession, getSession } = await import("@/lib/companion/session");
     const { messages } = await import("@/lib/db/schema");

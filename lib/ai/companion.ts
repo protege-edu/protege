@@ -2,7 +2,7 @@ import { chatJSON, type ChatMessage } from "./client";
 import { busy } from "./queue";
 import { comparisonsIn, gloamSystemPrompt, gloamTurnMessage } from "./prompts/gloam";
 import { judgeMessage, judgePrompt } from "./prompts/judge";
-import { checkSafety } from "./safety";
+import { checkSafety, concernPrompt, concernSchema } from "./safety";
 import { judgeSchema, performSchema, type Emotion, type Intent, type Quality } from "./schemas";
 import { getAgeStyle, pickLine, type AgeStyle } from "@/lib/age-styles";
 import { currentBeliefs, directBeat, nextQuestion, type Beat } from "@/lib/companion/director";
@@ -52,6 +52,8 @@ export interface TurnOutput extends JudgedEvent {
   followUp?: { text: string; about: string };
   /** The game layer: ideas held at "almost" until their challenge is won (the reply is then empty) */
   held?: string[];
+  /** The student may be in danger / being harmed: the lesson stopped, and the teacher must be alerted now */
+  concern?: boolean;
   ms: number;
 }
 
@@ -93,7 +95,20 @@ export async function runTurn(input: TurnInput, hooks: { onJudged?: (e: JudgedEv
       intent: safety === "insulted" ? "chatting" : "off_topic",
       onTopic: safety === "insulted",
       source: "safety",
+      ...(safety === "care" ? { concern: true } : {}),
     });
+  }
+
+  // 1a. AI safety: a SEPARATE Claude call that reads the message for danger, abuse, bullying, or self/other harm
+  // written indirectly or with typos — run BEFORE any canned, paste or quick-intent reply. Skipped only for a
+  // trivial greeting ("hey", "ok"). It errs toward caring; if Claude can't be reached we fall through, because the
+  // instant pattern check above already caught the clear cases.
+  const trivialSafe = quickIntent(message) === "chatting" && message.trim().split(/\s+/).length <= 2;
+  if (!trivialSafe) {
+    const concern = await ask(concernSchema, "safety", concernPrompt(), message);
+    if (concern !== "offline" && concern?.concern) {
+      return done({ ...unchanged, reply: voice(style.lines.care, style), about: null, emotion: "curious", intent: "off_topic", onTopic: false, source: "safety", concern: true });
+    }
   }
 
   // 1b. Pasted from somewhere: ask for their own words (no AI, no candles)

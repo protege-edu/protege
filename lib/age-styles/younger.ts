@@ -217,7 +217,7 @@ const storybookLines = (simple: boolean): AgeStyle["lines"] => ({
   tired: simple
     ? ["I'm SO sleepy! My lantern needs a nap. Come back tomorrow!", "Yawn! Gloam needs to sleep now. See you tomorrow!"]
     : ["my lantern is all out of glow for today! let's keep going tomorrow.", "i learned SO much today i need a nap. come back tomorrow!"],
-  care: "That sounds really hard. Please tell your teacher or a grown-up you trust how you're feeling. They want to help.",
+  care: "I'm stopping our game right now, because you matter most. Please tell your teacher or a grown-up you trust right away. If you're in danger, call 911. Kids Help Phone is there any time too: call 1-800-668-6868 or text 686868. You're not alone.",
   victoryLap: ["Look how bright my lantern is! You did that!", "I understand it now, because of you!"],
   welcomeBack: simple ? ["You came back! I waited by the candle!"] : ["you're back! i saved your spot by the candle."],
   levelUp: simple ? ["My lantern got BIGGER! Because of you!"] : ["whoa, my lantern grew! that's all your teaching!"],

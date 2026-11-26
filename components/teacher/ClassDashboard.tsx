@@ -26,6 +26,15 @@ interface Info {
   join: { app: string };
   /** the school board's rule for how long classes are kept (lib/privacy/retention.ts) */
   retention: "after-a-year" | "end-of-school-year" | "never";
+  /** students who may be in danger and need the teacher now (safety check) */
+  alerts: SafetyAlert[];
+}
+
+interface SafetyAlert {
+  id: number;
+  nickname: string;
+  message: string;
+  at: string;
 }
 
 interface Data {
@@ -57,6 +66,37 @@ interface Data {
 }
 
 /** A student's challenges in words (never a score): "Won 3 challenges, skipped 1" */
+/** A student may be in danger: the loudest thing on the dashboard, with their nickname and exact words. */
+export function SafetyBanner({ alerts, onAck }: { alerts: { id: number; nickname: string; message: string; at: string }[]; onAck: (id: number) => void }) {
+  return (
+    <section aria-label="Students who may need help" className="mt-6 overflow-hidden rounded-lg border-2 border-[#b4472e] bg-[#2a1512]">
+      <div className="flex items-center gap-2 bg-[#b4472e] px-4 py-2 text-sm font-bold text-[#fff4e2]">
+        <span aria-hidden="true">●</span> A student may need help right now
+      </div>
+      <ul className="divide-y divide-[#5a2a22]">
+        {alerts.map((a) => (
+          <li key={a.id} className="flex flex-wrap items-start gap-x-4 gap-y-2 px-4 py-3">
+            <div className="min-w-0 flex-1">
+              <p className="font-bold text-[#ffd9cc]">
+                {a.nickname} wrote something that may mean they&apos;re in danger, being hurt, or thinking of hurting themselves.
+              </p>
+              <p className="mt-1 break-words text-sm text-[#f1d4cc]">They wrote: &ldquo;{a.message}&rdquo;</p>
+              <p className="mt-1 text-sm text-[#e6b8ad]">Check on {a.nickname} now, or pass this to a counsellor. In danger: call 911. Kids Help Phone: 1-800-668-6868 or text 686868.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => onAck(a.id)}
+              className="min-h-11 shrink-0 cursor-pointer rounded-md bg-[#fff4e2] px-4 text-sm font-bold text-[#7a2330] hover:bg-white focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[#fff4e2]"
+            >
+              I&apos;ve got it
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 function challengeLine(s: Data["students"][number]): string | null {
   const all = Object.values(s.challenges ?? {});
   const won = all.filter((o) => o === "won").length;
@@ -113,7 +153,7 @@ export function ClassDashboard() {
   // the class's settings and roster: quickly while the code is up (students arriving), slowly otherwise
   useEffect(() => {
     void Promise.resolve().then(loadInfo);
-    const t = setInterval(loadInfo, showCode ? 2500 : 15000);
+    const t = setInterval(loadInfo, showCode ? 2500 : 5000);
     return () => clearInterval(t);
   }, [loadInfo, showCode]);
 
@@ -128,8 +168,11 @@ export function ClassDashboard() {
   const name = (cid: string) => data?.lesson.concepts.find((c) => c.id === cid)?.name ?? cid;
   const started = data?.students.filter((s) => s.messages > 0).length ?? 0;
 
+  const ackAlert = (id: number) => void change({ ackAlert: id });
+
   return (
     <Shell back={{ href: "/teacher", label: "All classes" }}>
+      {info && info.alerts.length > 0 && <SafetyBanner alerts={info.alerts} onAck={ackAlert} />}
       {error && (
         <p role="alert" className="mt-6 rounded-md bg-[#f3d6d6] px-4 py-3 text-sm font-bold text-[#7a2330]">
           {error}

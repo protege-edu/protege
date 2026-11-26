@@ -16,6 +16,7 @@
     "eval": "tsx --env-file-if-exists=.env scripts/companion-eval.ts",
     "eval:replay": "tsx --env-file-if-exists=.env scripts/chat-replay.ts",
     "eval:game": "tsx --env-file-if-exists=.env scripts/game-run.ts",
+    "eval:safety": "tsx --env-file-if-exists=.env scripts/safety-eval.ts",
     "screenshots": "tsx scripts/screenshot.ts",
     "test:logic": "tsx scripts/check-logic.ts",
     "test:accounts": "tsx --conditions=react-server scripts/check-accounts.ts",

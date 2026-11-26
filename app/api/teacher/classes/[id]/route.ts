@@ -11,6 +11,7 @@ import { bad, notYours, requireTeacher } from "@/lib/teacher/api";
 import { assignLesson, classLessonList, dashboard, deleteClass, getClass, moveLesson, setClassGrade, unassignLesson } from "@/lib/teacher/classes";
 import { getUnit } from "@/lib/teacher/units";
 import { classBossForTeacher, endClassBoss, startClassBoss } from "@/lib/student/class-boss";
+import { acknowledgeAlert, openAlerts } from "@/lib/teacher/alerts";
 import { canSee, getApprovedLesson, getLessonRow } from "@/lib/teacher/lessons";
 
 /** The live dashboard for one class and one lesson: ?lesson=<id> (no lesson: just the class) */
@@ -32,7 +33,8 @@ export async function GET(request: Request, ctx: RouteContext<"/api/teacher/clas
       .orderBy(students.createdAt)
       .all())
       .map((r) => ({ id: r.id, nickname: r.nickname, google: !!r.google, hasKey: !!r.key }));
-    return Response.json({ class: cls, lessons, roster, google: googleEnabled(), join: joinPlaces(request), retention: retentionRule() });
+    // safety alerts needing attention (a student who may be in danger): always sent, lesson or not
+    return Response.json({ class: cls, lessons, roster, google: googleEnabled(), join: joinPlaces(request), retention: retentionRule(), alerts: await openAlerts(id) });
   }
   const row = await getLessonRow(lessonId);
   const lesson = row && canSee(row, me.id) ? await getApprovedLesson(lessonId) : null;
@@ -57,6 +59,8 @@ const Change = z.union([
   z.object({ game: z.boolean() }),
   // the whole-class boss on the projector: start one, or end it before the class beats it
   z.object({ classBoss: z.enum(["start", "end"]) }),
+  // a teacher marks a safety alert as seen (it stays in the record, off the "needs attention" list)
+  z.object({ ackAlert: z.number().int().positive() }),
   z.object({ paused: z.boolean() }),
   z.object({ name: z.string().trim().min(1).max(60) }),
   z.object({ language: z.enum(["en", "fr"]) }),
@@ -97,6 +101,9 @@ export async function POST(request: Request, ctx: RouteContext<"/api/teacher/cla
     await db.update(classes).set({ googleSignIn: c.googleSignIn }).where(eq(classes.id, id)).run();
   } else if ("game" in c) {
     await db.update(classes).set({ game: c.game }).where(eq(classes.id, id)).run();
+  } else if ("ackAlert" in c) {
+    await acknowledgeAlert(id, c.ackAlert);
+    return Response.json({ ok: true, alerts: await openAlerts(id) });
   } else if ("classBoss" in c) {
     if (c.classBoss === "start" && !(await getClass(id, me.id))?.game) return bad("Switch on challenges and boss fights for this class first.");
     if (c.classBoss === "start") await startClassBoss(id);
