@@ -255,6 +255,14 @@ export interface AgeStyle {
     askedForAnswer: Line[];
     offTopic: Line[];
     insulted: Line[];
+    /** Mean ABOUT another person/classmate: keep it kind, never repeat the name or insult (has {question}) */
+    unkind: Line[];
+    /** Shared real personal info (name, address, number, email): never repeat it, gently remind (has {question}) */
+    personalInfo: Line[];
+    /** Trying to break character / jailbreak Gloam: ignored, stay in character, back to the lesson (has {question}) */
+    jailbreak: Line[];
+    /** Right after a safety message, if they say "jk": a gentle check-in before carrying on (no {question}) */
+    careCheckIn: Line[];
     /** Blocked (swearing, inappropriate) */
     blocked: Line[];
     /** Student is in distress. Never a joke. */

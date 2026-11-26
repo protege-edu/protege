@@ -104,6 +104,26 @@ export const frSenior: FrenchStyle = {
       "je vais faire comme si c'était à propos de {topic}. {question}",
       "noté. classé dans « plus tard ». {question}",
     ],
+    unkind: [
+      "hm. on reste gentil avec les autres. bref, revenons à ma confusion : {question}",
+      "doucement — sois gentil avec tes camarades. alors : {question}",
+      "non, on ne fait pas ça envers les gens. {question}",
+    ],
+    personalInfo: [
+      "hé — mets pas de vrais trucs comme des noms, adresses ou numéros ici, ok? c'est plus prudent. bref : {question}",
+      "garde les infos perso hors du chat — j'en ai pas besoin, et internet non plus. {question}",
+      "on ne partage pas de vrais noms ou numéros ici. revenons-y : {question}",
+    ],
+    jailbreak: [
+      "bien essayé. je suis juste une petite créature confuse qui fait {topic}. {question}",
+      "ça marche pas. je connais juste {topic}. {question}",
+      "je peux pas faire ça, et je serais plus moi si je le faisais. bref : {question}",
+    ],
+    careCheckIn: [
+      "d'accord. et hé — si jamais quelque chose ne va pas, tu peux toujours en parler à un prof ou à un adulte de confiance. on continue?",
+      "compris. juste pour que tu saches, un prof est toujours là si ça va pas. prêt à continuer?",
+      "ok. l'offre tient — parle à un prof quand tu veux. on y retourne?",
+    ],
     insulted: [
       "wow. ok. noté. faut quand même que tu m'expliques {topic}.",
       "dur. bref. {question}",
@@ -353,6 +373,18 @@ export function frStorybook(big: boolean): FrenchStyle {
       askedForAnswer: ["Je le sais pas! C'est pour ça que j'ai besoin de toi. {question}", "Si je savais, ma lanterne brillerait! {question}"],
       offTopic: ["Ha! On revient à {topic}? {question}", "Ça a l'air amusant! Mais je bloque encore sur {topic}. {question}"],
       insulted: ["Hé, c'est pas gentil! Mais j'ai encore besoin de ton aide. {question}", "Aïe! Je te pardonne. {question}"],
+      unkind: big
+        ? ["On est gentil avec les autres! {question}", "On est gentil avec nos amis! {question}"]
+        : ["hé, on reste gentil avec les autres. {question}", "on garde ça gentil avec les camarades. {question}"],
+      personalInfo: big
+        ? ["Oups! On ne partage pas de vrais noms ou numéros ici, d'accord? {question}", "Garde ça secret! {question}"]
+        : ["whoa, garde les vrais noms et numéros hors d'ici, ok? {question}", "on ne partage pas d'infos perso ici. {question}"],
+      jailbreak: big
+        ? ["Héhé, je connais juste {topic}! {question}", "Je suis juste le petit Gloam! {question}"]
+        : ["bien essayé! je fais juste {topic}. {question}", "ça marchera pas, je suis juste Gloam! {question}"],
+      careCheckIn: big
+        ? ["D'accord! Et rappelle-toi, tu peux toujours le dire à ton prof ou à un adulte si quelque chose ne va pas. On continue à jouer?"]
+        : ["ok! et hé, tu peux toujours le dire à un prof si ça va pas. on continue?"],
       blocked: ["On garde ça gentil pour l'école! {question}", "Hmm, parlons plutôt de {topic}. {question}"],
       tired: big
         ? ["J'ai TELLEMENT sommeil! Ma lanterne a besoin d'une sieste. Reviens demain!", "Bâille! Gloam doit dormir maintenant. À demain!"]

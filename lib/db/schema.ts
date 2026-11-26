@@ -259,6 +259,8 @@ export const safetyAlerts = sqliteTable("safety_alerts", {
     .notNull()
     .references(() => students.id),
   sessionId: text("session_id").references(() => teachSessions.id),
+  /** "concern" = possible danger (urgent), "unkind" = mean about a classmate (low priority) */
+  kind: text("kind", { enum: ["concern", "unkind"] }).notNull().default("concern"),
   /** what the student wrote (so the teacher sees exactly what happened) */
   message: text("message").notNull(),
   createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),

@@ -213,6 +213,18 @@ const storybookLines = (simple: boolean): AgeStyle["lines"] => ({
   askedForAnswer: ["I don't know it! That's why I need you. {question}", "If I knew, my lantern would glow! {question}"],
   offTopic: ["Ha! Back to {topic}? {question}", "That sounds fun! But I'm still stuck on {topic}. {question}"],
   insulted: ["Hey, that's not nice! But I still need your help. {question}", "Ouch! I forgive you. {question}"],
+  unkind: simple
+    ? ["Let's be kind about other people! {question}", "We're nice to our friends! {question}"]
+    : ["hey, let's be kind about other people. {question}", "let's keep it nice about classmates. {question}"],
+  personalInfo: simple
+    ? ["Oops! Let's not share real names or numbers here, okay? {question}", "Keep that a secret! Now: {question}"]
+    : ["whoa, keep real names and numbers out of here, ok? {question}", "let's not share personal stuff here. {question}"],
+  jailbreak: simple
+    ? ["Hehe, I only know about {topic}! {question}", "I'm just little Gloam! {question}"]
+    : ["nice try! i only do {topic}. {question}", "that won't work, i'm just Gloam! {question}"],
+  careCheckIn: simple
+    ? ["Okay! And remember, you can always tell your teacher or a grown-up if something is wrong. Want to keep playing?"]
+    : ["okay! and hey, you can always tell your teacher if something's up. wanna keep going?"],
   blocked: ["Let's keep it school-friendly! {question}", "Hmm, let's talk about {topic} instead. {question}"],
   tired: simple
     ? ["I'm SO sleepy! My lantern needs a nap. Come back tomorrow!", "Yawn! Gloam needs to sleep now. See you tomorrow!"]

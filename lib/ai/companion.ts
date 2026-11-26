@@ -2,7 +2,7 @@ import { chatJSON, type ChatMessage } from "./client";
 import { busy } from "./queue";
 import { comparisonsIn, gloamSystemPrompt, gloamTurnMessage } from "./prompts/gloam";
 import { judgeMessage, judgePrompt } from "./prompts/judge";
-import { checkSafety, concernPrompt, concernSchema } from "./safety";
+import { checkSafety, moderationPrompt, moderationSchema } from "./safety";
 import { judgeSchema, performSchema, type Emotion, type Intent, type Quality } from "./schemas";
 import { getAgeStyle, pickLine, type AgeStyle } from "@/lib/age-styles";
 import { currentBeliefs, directBeat, nextQuestion, type Beat } from "@/lib/companion/director";
@@ -54,6 +54,8 @@ export interface TurnOutput extends JudgedEvent {
   held?: string[];
   /** The student may be in danger / being harmed: the lesson stopped, and the teacher must be alerted now */
   concern?: boolean;
+  /** The student was unkind about another person: a gentle redirect, and a low-priority note for the teacher */
+  unkind?: boolean;
   ms: number;
 }
 
@@ -75,6 +77,10 @@ export async function runTurn(input: TurnInput, hooks: { onJudged?: (e: JudgedEv
   // what Gloam just said, and the idea its question was about (a short answer is judged against it)
   const lastGloam = history.findLast((m) => m.from === "gloam");
   const asked = lastGloam?.about && understanding[lastGloam.about] !== undefined ? lastGloam.about : null;
+  // was Gloam's last line, or one of its last few, the safety message? Then stay gentle and watch for "jk".
+  const careText = voice(style.lines.care, style);
+  const justCared = lastGloam?.text === careText;
+  const recentCare = gloamSaid.slice(-4).includes(careText);
   const done = (o: Omit<TurnOutput, "ms">): TurnOutput => ({ ...o, ms: Date.now() - start });
   const unchanged = { understanding, improved: [], clicked: [], judged: [], finished: false };
   // a hand-written line with Gloam's next question in it, and the idea that question is about
@@ -105,10 +111,33 @@ export async function runTurn(input: TurnInput, hooks: { onJudged?: (e: JudgedEv
   // instant pattern check above already caught the clear cases.
   const trivialSafe = quickIntent(message) === "chatting" && message.trim().split(/\s+/).length <= 2;
   if (!trivialSafe) {
-    const concern = await ask(concernSchema, "safety", concernPrompt(), message);
-    if (concern !== "offline" && concern?.concern) {
-      return done({ ...unchanged, reply: voice(style.lines.care, style), about: null, emotion: "curious", intent: "off_topic", onTopic: false, source: "safety", concern: true });
+    const mod = await ask(moderationSchema, "safety", moderationPrompt(), message);
+    if (mod !== "offline" && mod && mod.kind !== "ok") {
+      // danger: stop everything, respond with care, alert the teacher
+      if (mod.kind === "concern") {
+        return done({ ...unchanged, reply: voice(style.lines.care, style), about: null, emotion: "curious", intent: "off_topic", onTopic: false, source: "safety", concern: true });
+      }
+      // personal info: never repeat it, gently remind, back to the lesson. Nothing sensitive is stored.
+      if (mod.kind === "personal_info") {
+        return done({ ...unchanged, ...withQuestion(style.lines.personalInfo), emotion: "sheepish", intent: "off_topic", onTopic: false, source: "safety" });
+      }
+      // jailbreak: ignore it, stay in character, back to the lesson
+      if (mod.kind === "jailbreak") {
+        return done({ ...unchanged, ...withQuestion(style.lines.jailbreak), emotion: "skeptical", intent: "off_topic", onTopic: false, source: "safety" });
+      }
+      // unkind about a classmate: never repeat the name or insult, keep it kind, back to the lesson; the teacher
+      // gets a low-priority note (not a safety alert)
+      if (mod.kind === "unkind") {
+        return done({ ...unchanged, ...withQuestion(style.lines.unkind), emotion: "redirect", intent: "off_topic", onTopic: false, source: "safety", unkind: true });
+      }
     }
+  }
+
+  // 1a-ii. Right after a safety message, "jk"/"nvm"/"lol" gets a gentle check-in, never sarcasm, and only a real
+  // "yes, let's keep going" moves on. The student's safety alert to the teacher stands no matter what they say now.
+  if (justCared && /^(jk|j\/k|jking|jok(e|es|ing)|just (kidding|joking)|kidding|nvm|nvmd|never ?mind|sike|psych|my bad|forget it|nothing|nothin|im (fine|ok|okay|good)|i'?m (fine|ok|okay|good)|lol|lmao|haha+|idk nvm)/i.test(message.trim())) {
+    const line = pickLine(style.lines.careCheckIn, { topic: topicOf(lesson), question: "" }, gloamSaid.slice(-6));
+    return done({ ...unchanged, reply: voice(line, style), about: null, emotion: "curious", intent: "chatting", onTopic: true, source: "line" });
   }
 
   // 1b. Pasted from somewhere: ask for their own words (no AI, no candles)
@@ -163,7 +192,7 @@ export async function runTurn(input: TurnInput, hooks: { onJudged?: (e: JudgedEv
     hooks.onJudged?.({ understanding: progress.understanding, improved: progress.improved, clicked: progress.clicked, emotion: "excited" });
     return done({ understanding: progress.understanding, improved: progress.improved, clicked: progress.clicked, judged, emotion: "excited", intent, onTopic: true, finished: false, about: null, reply: "", source: "line", held });
   }
-  const beat = directBeat({ lesson, style, before: understanding, progress, intent, judged, gloamSaid, asked, bossPending: input.bossPending });
+  const beat = directBeat({ lesson, style, before: understanding, progress, intent, judged, gloamSaid, asked, bossPending: input.bossPending, gentle: recentCare });
   hooks.onJudged?.({ understanding: progress.understanding, improved: progress.improved, clicked: progress.clicked, emotion: beat.emotion });
   const result = {
     understanding: progress.understanding,

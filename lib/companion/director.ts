@@ -33,6 +33,8 @@ interface DirectInput {
   asked?: string | null;
   /** The game layer: the boss fight comes before the finale (the last candle is then a normal "I get it!") */
   bossPending?: boolean;
+  /** Just after a safety message: no dry/sarcastic lines for a few turns — use the gentle "no pressure" ones */
+  gentle?: boolean;
   seed?: number;
 }
 
@@ -116,7 +118,7 @@ export function directBeat(opts: DirectInput): Beat {
     if (intent === "skip") return asking("curious", style.lines.skip);
     // they tried to explain but it didn't quite land: never imply they were wrong — credit the try, ask for the why
     if (intent === "explaining") return asking("curious", style.lines.encourage);
-    return asking("curious", style.lines.nudge);
+    return asking("curious", opts.gentle ? style.lines.stuck : style.lines.nudge);
   }
 
   // Something improved: Gloam shows it clearly helped (so the student can tell they're winning), and at "almost"

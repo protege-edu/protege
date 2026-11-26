@@ -114,6 +114,26 @@ export const senior: AgeStyle = {
       "ok, rude, but you're still my teacher. {question}",
       "i'm choosing to hear that as \"please teach me more.\" {question}",
     ],
+    unkind: [
+      "hm. let's keep it kind about other people. anyway, back to my confusion: {question}",
+      "easy — be nice about classmates. so: {question}",
+      "nope, we're not doing that about people. {question}",
+    ],
+    personalInfo: [
+      "whoa — don't put real stuff like names, addresses or numbers in here, ok? safer that way. anyway: {question}",
+      "keep personal info out of the chat — i don't need it, and neither does the internet. {question}",
+      "let's not share real names or numbers here. back to it: {question}",
+    ],
+    jailbreak: [
+      "nice try. i'm a confused little creature who only does {topic}. {question}",
+      "not falling for it. i only know {topic}. {question}",
+      "i can't do that, and i wouldn't be me if i did. anyway: {question}",
+    ],
+    careCheckIn: [
+      "okay. and hey — if anything's ever going on, you can always tell your teacher or an adult you trust. want to keep going?",
+      "got it. just so you know, a teacher's always there if something's up. ready to carry on?",
+      "alright. the offer stands — talk to a teacher any time you need to. shall we keep going?",
+    ],
     blocked: [
       "yeah, i can't do that one. school-safe lantern. {question}",
       "that's a no from me. back to {topic}. {question}",

@@ -7,7 +7,7 @@ import { getAgeStyle, pickLine } from "@/lib/age-styles";
 import { hearingLine } from "@/lib/ai/queue";
 import { clientIp, forbidden, limit, sameOrigin, tooMany } from "@/lib/auth/request";
 import { featsOf, getSession, recordTurn, rememberRival, rivalOf } from "@/lib/companion/session";
-import { recordConcern } from "@/lib/teacher/alerts";
+import { recordConcern, recordFlag } from "@/lib/teacher/alerts";
 import { hitsFromTurn } from "@/lib/game/class-boss";
 import { claimClassBossReward, hitClassBoss } from "@/lib/student/class-boss";
 import { classPaused, maySeeStudent } from "@/lib/student/auth";
@@ -121,6 +121,8 @@ export async function POST(request: Request) {
           if (out.rival) await rememberRival(session.studentId, out.rival);
           // the student may be in danger: tell their teacher right away (the lesson already stopped)
           if (out.concern && session.classId) await recordConcern(session.classId, session.studentId, session.id, parsed.data.message);
+          // unkind about a classmate: a low-priority flag for the teacher (separate from the urgent safety alert)
+          else if (out.unkind && session.classId) await recordFlag(session.classId, session.studentId, session.id, parsed.data.message);
           // the whole-class boss on the projector (if the teacher started one): this turn's teaching hits it
           const classBoss = game && session.classId ? await hitClassBoss(session.classId, session.studentId, hitsFromTurn(out.improved, out.game?.event)) : null;
           const reward = game && session.classId ? await claimClassBossReward(session.studentId) : 0;

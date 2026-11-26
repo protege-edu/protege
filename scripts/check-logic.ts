@@ -298,6 +298,10 @@ test("every age style has 'skip' and 'next idea' lines with Gloam's question in 
       assert.ok(st.lines.nextIdea.length >= 3 && st.lines.nextIdea.every((l) => l.includes("{question}")), `${id} ${lang} nextIdea`);
       assert.ok(st.lines.onEdge.length >= 3 && st.lines.onEdge.every((l) => l.includes("{question}")), `${id} ${lang} onEdge`);
       assert.ok(st.lines.encourage.length >= 3 && st.lines.encourage.every((l) => l.includes("{question}")), `${id} ${lang} encourage`);
+      for (const bank of ["unkind", "personalInfo", "jailbreak"] as const) {
+        assert.ok(st.lines[bank].length >= 2 && st.lines[bank].every((l) => l.includes("{question}")), `${id} ${lang} ${bank} needs {question}`);
+      }
+      assert.ok(st.lines.careCheckIn.length >= 1 && st.lines.careCheckIn.every((l) => !l.includes("{question}")), `${id} ${lang} careCheckIn is a check-in, no question`);
     }
   }
 });

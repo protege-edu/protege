@@ -1,0 +1,1 @@
+ALTER TABLE `safety_alerts` ADD `kind` text DEFAULT 'concern' NOT NULL;

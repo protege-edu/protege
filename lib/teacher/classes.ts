@@ -22,6 +22,12 @@ function codeTaken(e: unknown): boolean {
   return /UNIQUE constraint failed: ?classes\.code/i.test(String((e as { message?: string })?.message ?? e));
 }
 
+/** A transient "the database is busy right now" error (many writes at once): worth a quick retry, not a failure */
+function dbBusy(e: unknown): boolean {
+  return /database is locked|SQLITE_BUSY|busy/i.test(String((e as { message?: string })?.message ?? e));
+}
+const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
 /**
  * A class code no class has yet, like GLOW-42. Checked against every class, so two classes never share one
  * (the database's unique index is the real guarantee; this just picks a free one to try). Starts short and
@@ -84,7 +90,10 @@ export async function createClass(name: string, grade: number, teacherId: string
       await db.insert(classes).values({ id, name, grade, teacherId, language, code: await newClassCode(), createdAt: new Date(), deleteOn: newClassDeleteOn() }).run();
       return id;
     } catch (e) {
-      if (tries < 5 && codeTaken(e)) continue;
+      if (tries < 8 && (codeTaken(e) || dbBusy(e))) {
+        if (dbBusy(e)) await wait(20 * (tries + 1));
+        continue;
+      }
       throw e;
     }
   }

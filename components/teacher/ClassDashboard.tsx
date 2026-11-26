@@ -32,6 +32,7 @@ interface Info {
 
 interface SafetyAlert {
   id: number;
+  kind: "concern" | "unkind";
   nickname: string;
   message: string;
   at: string;
@@ -67,6 +68,27 @@ interface Data {
 
 /** A student's challenges in words (never a score): "Won 3 challenges, skipped 1" */
 /** A student may be in danger: the loudest thing on the dashboard, with their nickname and exact words. */
+/** Low-priority: a student was unkind about a classmate. Quiet, not the red safety banner. */
+export function KindnessFlags({ flags, onAck }: { flags: { id: number; nickname: string; message: string; at: string }[]; onAck: (id: number) => void }) {
+  return (
+    <section aria-label="Kindness heads-up" className="mt-6 rounded-lg border border-line bg-chip/60 px-4 py-3">
+      <p className="text-sm font-bold text-ink-dim">Heads up (not urgent): a student was unkind about someone.</p>
+      <ul className="mt-2 space-y-2">
+        {flags.map((f) => (
+          <li key={f.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+            <span className="text-ink">
+              <span className="font-bold">{f.nickname}</span> wrote: &ldquo;{f.message}&rdquo;
+            </span>
+            <button type="button" onClick={() => onAck(f.id)} className="min-h-9 cursor-pointer rounded-md border border-line px-3 text-xs font-bold text-ink-dim hover:bg-chip">
+              Dismiss
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 export function SafetyBanner({ alerts, onAck }: { alerts: { id: number; nickname: string; message: string; at: string }[]; onAck: (id: number) => void }) {
   return (
     <section aria-label="Students who may need help" className="mt-6 overflow-hidden rounded-lg border-2 border-[#b4472e] bg-[#2a1512]">
@@ -172,7 +194,8 @@ export function ClassDashboard() {
 
   return (
     <Shell back={{ href: "/teacher", label: "All classes" }}>
-      {info && info.alerts.length > 0 && <SafetyBanner alerts={info.alerts} onAck={ackAlert} />}
+      {info && info.alerts.some((a) => a.kind === "concern") && <SafetyBanner alerts={info.alerts.filter((a) => a.kind === "concern")} onAck={ackAlert} />}
+      {info && info.alerts.some((a) => a.kind === "unkind") && <KindnessFlags flags={info.alerts.filter((a) => a.kind === "unkind")} onAck={ackAlert} />}
       {error && (
         <p role="alert" className="mt-6 rounded-md bg-[#f3d6d6] px-4 py-3 text-sm font-bold text-[#7a2330]">
           {error}

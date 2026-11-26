@@ -148,6 +148,13 @@
       "when": 1795654223627,
       "tag": "0020_safety_alerts",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "6",
+      "when": 1795657351266,
+      "tag": "0021_alert_kind",
+      "breakpoints": true
     }
   ]
 }
