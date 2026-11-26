@@ -8,6 +8,7 @@ import { AGE_STYLES, getAgeStyle } from "@/lib/age-styles";
 import { detectLanguage } from "@/lib/lesson/language";
 import { looksCopied, quickIntent } from "@/lib/companion/intent";
 import { pickBestVoice, type VoiceLike } from "@/lib/speech";
+import { signedInGoesToMyGloam } from "@/lib/student/join";
 import { checkSafety } from "@/lib/ai/safety";
 import { directBeat } from "@/lib/companion/director";
 import { candidateConcepts, gradeCheck } from "@/lib/companion/grade";
@@ -523,6 +524,22 @@ test("every age style has every line bank filled", () => {
       const filled = typeof v === "string" ? v.length > 0 : Array.isArray(v) ? v.length > 0 : Object.values(v).every((x) => x.length > 0);
       assert.ok(filled, `${st.id}.${k}`);
     }
+});
+
+test("a signed-in student never gets into a class with a wrong code, even from their own device", () => {
+  const MINE = "class-mine";
+  // a code that matches NO class must NOT drop a signed-in student into their existing class — show the error
+  assert.equal(signedInGoesToMyGloam({ myClassId: MINE, codeGiven: true, linkedClassId: null, switching: false }), false);
+  // no code at all → go to their own Gloam (that's the point of being signed in)
+  assert.equal(signedInGoesToMyGloam({ myClassId: MINE, codeGiven: false, linkedClassId: null, switching: false }), true);
+  // their own class's real code → their Gloam
+  assert.equal(signedInGoesToMyGloam({ myClassId: MINE, codeGiven: true, linkedClassId: MINE, switching: false }), true);
+  // a DIFFERENT real class's code → stay on join to switch into it
+  assert.equal(signedInGoesToMyGloam({ myClassId: MINE, codeGiven: true, linkedClassId: "class-other", switching: false }), false);
+  // ?switch always keeps the join screen (someone else signs in on a shared Chromebook)
+  assert.equal(signedInGoesToMyGloam({ myClassId: MINE, codeGiven: false, linkedClassId: null, switching: true }), false);
+  // not signed in → always the join screen
+  assert.equal(signedInGoesToMyGloam({ myClassId: null, codeGiven: false, linkedClassId: null, switching: false }), false);
 });
 
 test("read-aloud picks the most human on-device voice and never a robot or joke voice", () => {

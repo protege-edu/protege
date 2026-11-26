@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { readSigned } from "@/lib/auth/cookies";
 import { JoinScreen } from "@/components/join/JoinScreen";
 import { classPreview, currentStudent } from "@/lib/student/auth";
+import { signedInGoesToMyGloam } from "@/lib/student/join";
 import { classByCode } from "@/lib/teacher/classes";
 
 /**
@@ -24,11 +25,13 @@ async function Join({ searchParams }: { searchParams: PageProps<"/join">["search
   const q = await searchParams;
   const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
   // already signed in on this device: straight to their Gloam (?switch lets someone else sign in),
-  // unless the link is for ANOTHER class (a student in two classes, or a shared Chromebook): then join that one
+  // unless the link is for ANOTHER class (a student in two classes, or a shared Chromebook): then join that one.
+  // a code that was given but matches no class must NOT send them to /me — it has to show "that code isn't a
+  // class", or a random/typo'd code would silently drop a signed-in student into whatever class they're in.
   const me = await currentStudent();
   const code = one(q.code);
   const linked = code ? await classByCode(code) : null;
-  if (me && one(q.switch) === undefined && (!linked || linked.id === me.classId)) redirect("/me");
+  if (signedInGoesToMyGloam({ myClassId: me?.classId ?? null, codeGiven: !!code, linkedClassId: linked?.id ?? null, switching: one(q.switch) !== undefined })) redirect("/me");
   let googleFor = undefined;
   if (one(q.google) === "1") {
     const pending = await readSigned("protege_google_pending");
