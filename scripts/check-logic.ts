@@ -546,6 +546,23 @@ test("lesson deadlines: no deadline is never overdue, and the status matches how
   assert.equal(dueLabel(endOf(2026, 2, 11), now, "fr"), "à rendre demain");
 });
 
+test("a student telling Gloam their name is caught, so Gloam never repeats it", async () => {
+  const { sharesName } = await import("@/lib/ai/safety");
+  // the exact play-test case and its cousins
+  assert.ok(sharesName("my names bob"));
+  assert.ok(sharesName("my name is bob"));
+  assert.ok(sharesName("my name's Aiden"));
+  assert.ok(sharesName("i'm called Sam"));
+  assert.ok(sharesName("je m'appelle Thomas"));
+  assert.ok(sharesName("mon nom est Léa"));
+  // NOT a name-share: ordinary talk and confusion must never trip it
+  assert.ok(!sharesName("i'm confused"));
+  assert.ok(!sharesName("i am lost tbh"));
+  assert.ok(!sharesName("call me crazy but deca is only for business people"));
+  assert.ok(!sharesName("what's my name?")); // a question to Gloam, not a share (no name after)
+  assert.ok(!sharesName("the name of the contest is deca"));
+});
+
 test("a signed-in student never gets into a class with a wrong code, even from their own device", () => {
   const MINE = "class-mine";
   // a code that matches NO class must NOT drop a signed-in student into their existing class — show the error

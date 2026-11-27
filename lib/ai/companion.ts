@@ -2,7 +2,7 @@ import { chatJSON, type ChatMessage } from "./client";
 import { busy } from "./queue";
 import { comparisonsIn, gloamSystemPrompt, gloamTurnMessage } from "./prompts/gloam";
 import { judgeMessage, judgePrompt } from "./prompts/judge";
-import { checkSafety, moderationPrompt, moderationSchema } from "./safety";
+import { checkSafety, moderationPrompt, moderationSchema, sharesName } from "./safety";
 import { judgeSchema, performSchema, type Emotion, type Intent, type Quality } from "./schemas";
 import { getAgeStyle, pickLine, type AgeStyle } from "@/lib/age-styles";
 import { currentBeliefs, directBeat, nextQuestion, type Beat } from "@/lib/companion/director";
@@ -131,6 +131,12 @@ export async function runTurn(input: TurnInput, hooks: { onJudged?: (e: JudgedEv
         return done({ ...unchanged, ...withQuestion(style.lines.unkind), emotion: "redirect", intent: "off_topic", onTopic: false, source: "safety", unkind: true });
       }
     }
+  }
+
+  // The student telling Gloam their name ("my names bob"): deflect deterministically so the name can never slip
+  // into an AI reply as a joke. Placed AFTER the concern check so a worrying message is never missed first.
+  if (sharesName(message)) {
+    return done({ ...unchanged, ...withQuestion(style.lines.personalInfo), emotion: "sheepish", intent: "off_topic", onTopic: false, source: "safety" });
   }
 
   // 1a-ii. Right after a safety message, "jk"/"nvm"/"lol" gets a gentle check-in, never sarcasm, and only a real

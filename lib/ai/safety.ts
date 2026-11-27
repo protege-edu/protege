@@ -176,3 +176,14 @@ export function checkSafety(message: string, style: AgeStyle): SafetyKind {
   if (MEAN.some((r) => r.test(message)) || MEAN_FR.some((r) => r.test(fr))) return "insulted";
   return "ok";
 }
+
+/**
+ * The student is telling Gloam their (or someone's) name — "my name is bob", "my names bob", "call me bob",
+ * "je m'appelle...". A deterministic catch so Gloam deflects with its scripted personal-info line and the name
+ * can NEVER slip into an AI reply as a joke. It only looks for a clear "here is my name" phrasing (so a plain
+ * "i'm confused" or a name inside a history lesson is left to the AI classifier). Needs a word after, so a
+ * question like "what's my name?" doesn't match.
+ */
+export function sharesName(message: string): boolean {
+  return /\b(my name(['’]?s| is)?|the name['’]?s|i'?m called|je m'?appelle|mon nom (est|c'?est))\s+[a-z]/i.test(message.trim());
+}

@@ -289,8 +289,10 @@ export function useTeachSession(lesson: ClientLesson, style: AgeStyle, test = fa
       setPhase(finished ? "ending" : "teach");
       // Gloam waited at its checkpoint: it says hi (a hand-written line, not saved)
       if (!finished) {
-        // greet, then ask the question Gloam was on, so the student can answer right away
-        const q = resumeQ.current;
+        // greet, then ask the question Gloam was on, so the student can answer right away.
+        // lowercase styles keep the question lowercase too, so it matches Gloam's voice (like every other line)
+        const raw = resumeQ.current;
+        const q = raw && style.voice.lowercase ? raw.replace(/\b[A-Za-z][a-z'’]*\b|\bI\b/g, (w) => w.toLowerCase()) : raw;
         const line = pickLine(style.lines.welcomeBack, fill, []) + (q ? ` ${q}` : "");
         setEmotion("sheepish");
         setEntries((xs) => [...xs, { id: nextId(), kind: "gloam", text: line, emotion: "sheepish", fresh: true }]);
