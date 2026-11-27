@@ -53,7 +53,9 @@ const checkHealth = () =>
     .then((r) => r.json() as Promise<{ online: boolean }>)
     .catch(() => ({ online: false }));
 
-// One load per page view, even when React runs effects twice in development
+// Only dedupes loads that overlap in time (React runs the mount effect twice in development). Once a load
+// settles it's dropped, so RE-mounting — e.g. pausing to the home page, then "keep going" — fetches the
+// session fresh and shows the progress saved so far, instead of replaying the first, now-stale load.
 const sessionLoads = new Map<string, Promise<SessionState | null>>();
 function loadSession(lessonId: string, fresh = false): Promise<SessionState | null> {
   if (fresh) sessionLoads.delete(lessonId);
@@ -70,6 +72,10 @@ function loadSession(lessonId: string, fresh = false): Promise<SessionState | nu
     return r?.ok ? ((await r.json()) as SessionState) : null;
   })();
   sessionLoads.set(lessonId, load);
+  // drop it once settled so the next mount re-fetches the latest saved progress, not this cached result
+  void load.finally(() => {
+    if (sessionLoads.get(lessonId) === load) sessionLoads.delete(lessonId);
+  });
   return load;
 }
 
