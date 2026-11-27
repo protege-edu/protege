@@ -339,6 +339,7 @@ export const senior: AgeStyle = {
         "my lantern's bigger than last time. you did that. weird.",
         "i remembered everything you taught me. mostly.",
       ],
+      overdue: "this one was due and we didn't finish it. i've just been sitting out here in the dark with it. i'm not mad. i just... kept waiting. come back to it?",
     },
   },
 

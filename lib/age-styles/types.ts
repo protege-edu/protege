@@ -209,6 +209,8 @@ export interface HomeCopy {
   paused: string;
   /** Gloam greets the student (picked by the level, no randomness) */
   hello: (nickname: string) => string[];
+  /** Gloam's gentle line when a lesson's deadline has passed and it isn't finished: it misses them, no shame */
+  overdue: string;
 }
 
 export interface AgeStyle {

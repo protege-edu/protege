@@ -155,6 +155,13 @@
       "when": 1795657351266,
       "tag": "0021_alert_kind",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "6",
+      "when": 1795801584391,
+      "tag": "0022_lesson_deadline",
+      "breakpoints": true
     }
   ]
 }

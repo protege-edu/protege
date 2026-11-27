@@ -187,6 +187,9 @@ const storybookCopy = (big: boolean): AgeStyle["copy"] => ({
       big
         ? [`Hi ${nick}! Let's learn!`, "You're back! I missed you!", "Look, my lantern got bigger!", "I'm ready! Are you?"]
         : [`${nick}! finally. i have SO many wrong ideas to show you.`, "you're back! i practised. it didn't help.", "my lantern's bigger than last time. that's your fault.", "ready when you are. i am not ready."],
+    overdue: big
+      ? "This one was due and we didn't finish it. I waited and waited in the dark! Can we do it now? Please?"
+      : "this one was due and we never finished it. i've been sitting in the dark waiting for you. not mad! just... come back to it?",
   },
 });
 

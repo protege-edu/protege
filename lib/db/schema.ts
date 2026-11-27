@@ -163,6 +163,8 @@ export const classLessons = sqliteTable(
     assignedAt: integer("assigned_at", { mode: "timestamp_ms" }).notNull(),
     /** the order students see the class's lessons in (0 first; the teacher can move them) */
     position: integer("position"),
+    /** when this lesson is due for this class; null = no deadline (the default — nothing is ever forced) */
+    dueAt: integer("due_at", { mode: "timestamp_ms" }),
   },
   (t) => [primaryKey({ columns: [t.classId, t.lessonId] })],
 );

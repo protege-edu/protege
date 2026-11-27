@@ -8,7 +8,7 @@ import { retentionRule } from "@/lib/privacy/retention";
 import { joinPlaces } from "@/lib/hosting/app";
 import { queueStats } from "@/lib/ai/queue";
 import { bad, notYours, requireTeacher } from "@/lib/teacher/api";
-import { assignLesson, classLessonList, dashboard, deleteClass, getClass, moveLesson, setClassGrade, unassignLesson } from "@/lib/teacher/classes";
+import { assignLesson, classLessonList, dashboard, deleteClass, getClass, moveLesson, overdueCounts, setClassGrade, setLessonDeadline, unassignLesson } from "@/lib/teacher/classes";
 import { getUnit } from "@/lib/teacher/units";
 import { classBossForTeacher, endClassBoss, startClassBoss } from "@/lib/student/class-boss";
 import { acknowledgeAlert, openAlerts } from "@/lib/teacher/alerts";
@@ -33,8 +33,9 @@ export async function GET(request: Request, ctx: RouteContext<"/api/teacher/clas
       .orderBy(students.createdAt)
       .all())
       .map((r) => ({ id: r.id, nickname: r.nickname, google: !!r.google, hasKey: !!r.key }));
-    // safety alerts needing attention (a student who may be in danger): always sent, lesson or not
-    return Response.json({ class: cls, lessons, roster, google: googleEnabled(), join: joinPlaces(request), retention: retentionRule(), alerts: await openAlerts(id) });
+    // safety alerts needing attention (a student who may be in danger): always sent, lesson or not.
+    // overdue: how many students are past each lesson's deadline without finishing (quiet, never an alarm)
+    return Response.json({ class: cls, lessons, roster, google: googleEnabled(), join: joinPlaces(request), retention: retentionRule(), alerts: await openAlerts(id), overdue: await overdueCounts(id) });
   }
   const row = await getLessonRow(lessonId);
   const lesson = row && canSee(row, me.id) ? await getApprovedLesson(lessonId) : null;
@@ -55,6 +56,8 @@ const Change = z.union([
   z.object({ unitId: z.string() }),
   z.object({ removeLessonId: z.string() }),
   z.object({ moveLessonId: z.string(), by: z.union([z.literal(-1), z.literal(1)]) }),
+  // set or clear (null) a lesson's deadline for this class
+  z.object({ deadlineLessonId: z.string(), dueAt: z.number().int().positive().nullable() }),
   z.object({ googleSignIn: z.boolean() }),
   z.object({ game: z.boolean() }),
   // the whole-class boss on the projector: start one, or end it before the class beats it
@@ -97,6 +100,9 @@ export async function POST(request: Request, ctx: RouteContext<"/api/teacher/cla
     await unassignLesson(id, c.removeLessonId);
   } else if ("moveLessonId" in c) {
     await moveLesson(id, c.moveLessonId, c.by);
+  } else if ("deadlineLessonId" in c) {
+    if (c.dueAt && c.dueAt > Date.now() + 3 * 366 * 86_400_000) return bad("Pick a deadline within the next three years.");
+    await setLessonDeadline(id, c.deadlineLessonId, c.dueAt === null ? null : new Date(c.dueAt));
   } else if ("googleSignIn" in c) {
     await db.update(classes).set({ googleSignIn: c.googleSignIn }).where(eq(classes.id, id)).run();
   } else if ("game" in c) {

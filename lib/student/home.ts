@@ -19,7 +19,7 @@ export interface StudentHome {
   metGloam: boolean;
   paused: boolean;
   gloam: GloamLevel & { tricks: TrickName[]; lessonsFinished: number };
-  lessons: { id: string; title: string; ideas: number; lit: number; finished: boolean; started: boolean }[];
+  lessons: { id: string; title: string; ideas: number; lit: number; finished: boolean; started: boolean; dueAt: number | null }[];
   /** their Ways to play: their own choices and their teacher's accommodations (null: none) */
   access: { own: AccessPatch | null; accommodations: AccessPatch | null };
   /** every idea this student has taught Gloam, newest lesson first (Gloam's journal across the year) */
@@ -48,7 +48,7 @@ export async function studentHome(studentId: string): Promise<StudentHome | null
     if (!lesson) return [];
     const mine = sessions.find((x) => x.lessonId === a.id);
     const u = mine?.understanding ?? {};
-    return [{ id: lesson.id, title: lesson.title, ideas: lesson.concepts.length, lit: lesson.concepts.filter((x) => u[x.id] === 3).length, finished: !!mine?.finishedAt, started: !!mine }];
+    return [{ id: lesson.id, title: lesson.title, ideas: lesson.concepts.length, lit: lesson.concepts.filter((x) => u[x.id] === 3).length, finished: !!mine?.finishedAt, started: !!mine, dueAt: a.dueAt }];
   });
 
   const journal = sessions.flatMap((x) => {

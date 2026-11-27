@@ -9,6 +9,7 @@ import { detectLanguage } from "@/lib/lesson/language";
 import { looksCopied, quickIntent } from "@/lib/companion/intent";
 import { pickBestVoice, type VoiceLike } from "@/lib/speech";
 import { signedInGoesToMyGloam } from "@/lib/student/join";
+import { daysUntil, dueLabel, dueStatus } from "@/lib/lesson/deadline";
 import { checkSafety } from "@/lib/ai/safety";
 import { directBeat } from "@/lib/companion/director";
 import { candidateConcepts, gradeCheck } from "@/lib/companion/grade";
@@ -524,6 +525,25 @@ test("every age style has every line bank filled", () => {
       const filled = typeof v === "string" ? v.length > 0 : Array.isArray(v) ? v.length > 0 : Object.values(v).every((x) => x.length > 0);
       assert.ok(filled, `${st.id}.${k}`);
     }
+});
+
+test("lesson deadlines: no deadline is never overdue, and the status matches how close it is", () => {
+  const now = new Date(2026, 2, 10, 12, 0, 0).getTime(); // noon, Mar 10 2026 (local)
+  const endOf = (y: number, m: number, d: number) => new Date(y, m, d, 23, 59, 59).getTime();
+  assert.equal(dueStatus(null, now), "none"); // the default: nothing is ever forced
+  assert.equal(dueStatus(now - 1000, now), "overdue"); // one second past the deadline
+  assert.equal(dueStatus(endOf(2026, 2, 10), now), "today");
+  assert.equal(dueStatus(endOf(2026, 2, 11), now), "soon"); // tomorrow
+  assert.equal(dueStatus(endOf(2026, 2, 12), now), "soon"); // in 2 days
+  assert.equal(dueStatus(endOf(2026, 2, 15), now), "upcoming"); // in 5 days
+  assert.equal(daysUntil(endOf(2026, 2, 11), now), 1);
+  assert.equal(daysUntil(endOf(2026, 2, 15), now), 5);
+  // the friendly label the student sees (deterministic cases — no weekday/locale)
+  assert.equal(dueLabel(now - 1000, now, "en"), "overdue");
+  assert.equal(dueLabel(now - 1000, now, "fr"), "en retard");
+  assert.equal(dueLabel(endOf(2026, 2, 10), now, "en"), "due today");
+  assert.equal(dueLabel(endOf(2026, 2, 11), now, "en"), "due tomorrow");
+  assert.equal(dueLabel(endOf(2026, 2, 11), now, "fr"), "à rendre demain");
 });
 
 test("a signed-in student never gets into a class with a wrong code, even from their own device", () => {

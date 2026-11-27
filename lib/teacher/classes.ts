@@ -103,7 +103,7 @@ export async function createClass(name: string, grade: number, teacherId: string
  * A class's lessons, in the order its students see them (the teacher can move them), approved ones only.
  * `latest` is the one given most recently: what the class is probably on right now.
  */
-export async function classLessonList(classId: string): Promise<{ id: string; title: string; latest: boolean }[]> {
+export async function classLessonList(classId: string): Promise<{ id: string; title: string; latest: boolean; dueAt: number | null }[]> {
   const rows = await db
     .select()
     .from(classLessons)
@@ -115,8 +115,39 @@ export async function classLessonList(classId: string): Promise<{ id: string; ti
   const found = await Promise.all(rows.map((r) => getApprovedLesson(r.lessonId)));
   return rows.flatMap((r, i) => {
     const l = found[i];
-    return l ? [{ id: l.id, title: l.title, latest: r.assignedAt.getTime() === newest }] : [];
+    return l ? [{ id: l.id, title: l.title, latest: r.assignedAt.getTime() === newest, dueAt: r.dueAt?.getTime() ?? null }] : [];
   });
+}
+
+/** Set (or clear, with null) a lesson's deadline for one class. */
+export async function setLessonDeadline(classId: string, lessonId: string, dueAt: Date | null) {
+  await db.update(classLessons).set({ dueAt }).where(and(eq(classLessons.classId, classId), eq(classLessons.lessonId, lessonId))).run();
+}
+
+/**
+ * For the teacher: how many students are past a deadline without finishing, per lesson. Only lessons whose
+ * deadline has already passed appear. Quiet by design — a count the teacher can glance at, never an alarm.
+ */
+export async function overdueCounts(classId: string): Promise<Record<string, number>> {
+  const now = Date.now();
+  const due = (await db.select().from(classLessons).where(eq(classLessons.classId, classId)).all()).filter((r) => r.dueAt && r.dueAt.getTime() < now);
+  if (!due.length) return {};
+  const kids = await db.select({ id: students.id }).from(students).where(eq(students.classId, classId)).all();
+  if (!kids.length) return {};
+  const ids = kids.map((k) => k.id);
+  const out: Record<string, number> = {};
+  for (const r of due) {
+    const done = new Set(
+      (await db
+        .select({ sid: teachSessions.studentId })
+        .from(teachSessions)
+        .where(and(eq(teachSessions.lessonId, r.lessonId), inArray(teachSessions.studentId, ids), isNotNull(teachSessions.finishedAt)))
+        .all()).map((x) => x.sid),
+    );
+    const behind = ids.filter((id) => !done.has(id)).length;
+    if (behind > 0) out[r.lessonId] = behind;
+  }
+  return out;
 }
 
 /** Give a class a lesson: it goes at the end of the class's list (giving it again changes nothing) */

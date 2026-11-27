@@ -19,7 +19,9 @@ import { ShowCode } from "./ShowCode";
 interface Info {
   class: { id: string; name: string; grade: number; code: string; googleSignIn: boolean; game: boolean; pausedAt: string | null; language: "en" | "fr"; deleteOn: string | null };
   /** in the order students see them; latest = the one given most recently (what the class is probably on) */
-  lessons: { id: string; title: string; latest: boolean }[];
+  lessons: { id: string; title: string; latest: boolean; dueAt: number | null }[];
+  /** how many students are past each lesson's deadline without finishing (keyed by lesson id) */
+  overdue: Record<string, number>;
   roster: { id: string; nickname: string; google: boolean; hasKey: boolean }[];
   google: boolean;
   /** where Protégé lives: students type the class code at its /j (lib/hosting/app.ts) */
@@ -86,6 +88,51 @@ export function KindnessFlags({ flags, onAck }: { flags: { id: number; nickname:
         ))}
       </ul>
     </section>
+  );
+}
+
+/** A lesson's local date as the <input type="date"> value, and back to an end-of-that-day instant. */
+function dateInputValue(ms: number): string {
+  const d = new Date(ms);
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+function endOfDayMs(value: string): number | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 23, 59, 59).getTime() : null;
+}
+
+/** Set, change or clear a lesson's deadline for this class, with a quiet "N behind" once it's passed. */
+function LessonDeadline({ due, overdue, disabled, onSet }: { due: number | null; overdue: number; disabled: boolean; onSet: (ms: number | null) => void }) {
+  return (
+    <span className="flex flex-wrap items-center gap-2">
+      <label className="flex items-center gap-1.5 text-xs font-bold text-ink-dim">
+        Deadline
+        <input
+          type="date"
+          value={due != null ? dateInputValue(due) : ""}
+          disabled={disabled}
+          onChange={(e) => onSet(e.target.value ? endOfDayMs(e.target.value) : null)}
+          aria-label="Lesson deadline (leave empty for none)"
+          className="min-h-9 rounded-md border border-line bg-bg px-2 py-1 text-xs text-ink disabled:opacity-50"
+        />
+      </label>
+      {due != null && (
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={() => onSet(null)}
+          className="cursor-pointer text-xs font-bold text-ink-dim underline-offset-2 hover:text-ink hover:underline disabled:opacity-40"
+        >
+          No deadline
+        </button>
+      )}
+      {overdue > 0 && (
+        <span className="rounded-full bg-[var(--t-warn)]/15 px-2 py-0.5 text-xs font-bold text-[var(--t-warn)]">
+          {overdue} {overdue === 1 ? "student" : "students"} behind
+        </span>
+      )}
+    </span>
   );
 }
 
@@ -765,6 +812,12 @@ function ClassLessons({ info, lessonId, onShow, onChange }: { info: Info; lesson
                     </svg>
                   </button>
                 </span>
+                <LessonDeadline
+                  due={l.dueAt}
+                  overdue={info.overdue[l.id] ?? 0}
+                  disabled={working}
+                  onSet={(ms) => void act({ deadlineLessonId: l.id, dueAt: ms })}
+                />
                 <Button variant="quiet" className="border-0" disabled={working} onClick={() => void act({ removeLessonId: l.id })}>
                   Take away
                 </Button>
@@ -772,6 +825,11 @@ function ClassLessons({ info, lessonId, onShow, onChange }: { info: Info; lesson
             );
           })}
         </ol>
+      )}
+      {info.lessons.some((l) => l.dueAt != null) && (
+        <p className="mt-2 text-xs text-ink-dim">
+          A deadline is a gentle nudge, never a lock — students can always still finish. If one slips by, Gloam quietly lets them know it was waiting.
+        </p>
       )}
       <div className="mt-3 flex flex-wrap items-center gap-3">
         {library === null ? null : free.length ? (

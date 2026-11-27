@@ -15,6 +15,7 @@ import { Wordmark } from "@/components/ui/Logo";
 import { adoptAccess } from "@/lib/access/store";
 import { getAgeStyle, type AgeStyleId } from "@/lib/age-styles";
 import type { StudentHome as Home } from "@/lib/student/home";
+import { dueLabel, dueStatus } from "@/lib/lesson/deadline";
 import { useCalmMotion } from "@/lib/useCalmMotion";
 
 /**
@@ -39,6 +40,12 @@ export function StudentHome({ home }: { home: Home }) {
   const [line, setLine] = useState<string | null>(null);
   const level = home.gloam.level;
   const taught = home.journal.reduce((n, j) => n + j.ideas.length, 0);
+  // read the clock once after mount (null on the server) so a deadline label never differs between renders
+  const [now, setNow] = useState<number | null>(null);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time client-time read; no cascade
+  useEffect(() => setNow(Date.now()), []);
+  // a lesson past its deadline that this student never finished: Gloam has been waiting in the dark
+  const behind = now != null && home.lessons.some((l) => !l.finished && l.dueAt != null && dueStatus(l.dueAt, now) === "overdue");
 
   // the header's height (it wraps with longer words or bigger text): Gloam's hello stays below it
   const header = useRef<HTMLElement>(null);
@@ -63,17 +70,19 @@ export function StudentHome({ home }: { home: Home }) {
     return () => mq.removeEventListener("change", update);
   }, []);
 
-  // Gloam says hello (picked by level, so it changes as Gloam grows), then goes quiet
+  // Gloam says hello (picked by level, so it changes as Gloam grows), then goes quiet.
+  // if a lesson's deadline slipped by unfinished, Gloam says so instead — gently, and it stays up longer
   useEffect(() => {
+    const over = home.lessons.some((l) => !l.finished && l.dueAt != null && dueStatus(l.dueAt, Date.now()) === "overdue");
     const hellos = t.hello(home.nickname);
-    const show = setTimeout(() => setLine(home.paused ? null : hellos[level % hellos.length]), calm ? 0 : 1200);
-    const hide = setTimeout(() => setLine(null), 7000);
+    const show = setTimeout(() => setLine(home.paused ? null : over ? t.overdue : hellos[level % hellos.length]), calm ? 0 : 1200);
+    const hide = setTimeout(() => setLine(null), over ? 11000 : 7000);
     if (!home.metGloam) void fetch("/api/me", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ metGloam: true }) });
     return () => {
       clearTimeout(show);
       clearTimeout(hide);
     };
-  }, [t, home.nickname, home.paused, home.metGloam, level, calm]);
+  }, [t, home.nickname, home.paused, home.metGloam, home.lessons, level, calm]);
 
   const signOut = async () => {
     await fetch("/api/me", { method: "DELETE" });
@@ -85,7 +94,7 @@ export function StudentHome({ home }: { home: Home }) {
       <div className="absolute inset-0">
         <Stage
           style={style}
-          mood={home.paused ? "asleep" : "curious"}
+          mood={home.paused ? "asleep" : behind ? "sheepish" : "curious"}
           // the lantern only ever shows understanding: it glows with what this student has taught it
           brightness={taught ? Math.min(0.9, 0.25 + level * 0.08) : 0}
           concepts={[]}
@@ -157,9 +166,10 @@ export function StudentHome({ home }: { home: Home }) {
                   <li key={l.id} className="flex flex-wrap items-center gap-x-5 gap-y-2 py-3">
                     <div className="min-w-48 flex-1">
                       <p className="text-md font-bold text-ink">{l.title}</p>
-                      <div className="mt-1 flex items-center gap-3">
+                      <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
                         <Wicks lit={l.lit} total={l.ideas} />
                         <span className="text-sm text-ink-dim">{!l.started ? t.lessonNew : l.finished ? t.lessonDone : t.lessonProgress(l.lit, l.ideas)}</span>
+                        {now != null && !l.finished && l.dueAt != null && <DueChip dueAt={l.dueAt} now={now} lang={style.language ?? "en"} />}
                       </div>
                     </div>
                     {home.paused ? null : (
@@ -229,6 +239,18 @@ export function StudentHome({ home }: { home: Home }) {
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+/** A small deadline tag on a lesson: calm when it's coming up, a warm warn colour once it's overdue. Never gold. */
+function DueChip({ dueAt, now, lang }: { dueAt: number; now: number; lang: "en" | "fr" }) {
+  const over = dueStatus(dueAt, now) === "overdue";
+  return (
+    <span
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold ${over ? "bg-[var(--t-warn)]/15 text-[var(--t-warn)]" : "text-ink-dim"}`}
+    >
+      {dueLabel(dueAt, now, lang)}
+    </span>
   );
 }
 

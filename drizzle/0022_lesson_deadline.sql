@@ -1,0 +1,1 @@
+ALTER TABLE `class_lessons` ADD `due_at` integer;

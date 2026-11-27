@@ -318,6 +318,29 @@ async function main() {
     assert.equal((await playedBy(seasons, null)).ageStyle, "senior", "practice and teacher previews keep the lesson's own");
     await C.deleteClass(k);
   });
+  await test("lesson deadlines: only unfinished students past the deadline count as behind, and clearing it resets", async () => {
+    const k = await C.createClass("Deadlines", 9, a.id);
+    await C.assignLesson(k, "seasons");
+    const late = await S.createStudent(k, "Slow Snail", ["moon", "owl", "fern"]);
+    const done = await S.createStudent(k, "Keen Wren", ["moon", "owl", "fern"]);
+    assert.ok(late.ok && done.ok);
+    // one student finished the lesson, the other never did
+    await db.insert(sessionsTable).values({ id: "sess-done", studentId: done.student.id, lessonId: "seasons", classId: k, understanding: {}, createdAt: new Date(), updatedAt: new Date(), finishedAt: new Date() }).run();
+    assert.deepEqual(await C.overdueCounts(k), {}, "no deadline set yet: nobody is behind");
+    // a deadline in the future: still nobody behind
+    await C.setLessonDeadline(k, "seasons", new Date(Date.now() + 86_400_000));
+    assert.deepEqual(await C.overdueCounts(k), {}, "deadline is in the future");
+    // a deadline that has passed: only the student who didn't finish is behind
+    await C.setLessonDeadline(k, "seasons", new Date(Date.now() - 1000));
+    assert.deepEqual(await C.overdueCounts(k), { seasons: 1 }, "one unfinished student is behind");
+    // clearing the deadline takes everyone off the behind list
+    await C.setLessonDeadline(k, "seasons", null);
+    assert.deepEqual(await C.overdueCounts(k), {}, "no deadline: nobody is behind");
+    // it rides along in the class's lesson list for the student home and teacher page
+    await C.setLessonDeadline(k, "seasons", new Date(Date.now() - 1000));
+    assert.ok((await C.classLessonList(k)).find((l) => l.id === "seasons")?.dueAt, "the due date is exposed");
+    await C.deleteClass(k);
+  });
   await test("Ways to play: saved per student, merged, cleaned, and nobody else's change", async () => {
     const { studentAccess, updateStudentAccess } = await import("@/lib/student/access");
     const k = await C.createClass("Access", 9, a.id);

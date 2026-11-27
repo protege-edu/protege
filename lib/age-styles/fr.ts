@@ -334,6 +334,7 @@ export const frSenior: FrenchStyle = {
         "ma lanterne est plus grosse que la dernière fois. c'est toi. bizarre.",
         "je me souviens de tout ce que tu m'as appris. à peu près.",
       ],
+      overdue: "celle-ci était à rendre et on l'a pas finie. je suis resté là, dans le noir, à attendre. je suis pas fâché. j'ai juste... attendu. on la reprend?",
     },
   },
 };
@@ -589,6 +590,9 @@ export function frStorybook(big: boolean): FrenchStyle {
           big
             ? [`Salut ${nick}! On apprend?`, "Tu es revenu! Tu m'as manqué!", "Regarde, ma lanterne a grossi!", "Je suis prêt! Et toi?"]
             : [`${nick}! enfin. j'ai TELLEMENT de mauvaises idées à te montrer.`, "t'es revenu! j'ai pratiqué. ça a pas aidé.", "ma lanterne est plus grosse que la dernière fois. c'est de ta faute.", "prêt quand tu l'es. moi, je suis pas prêt."],
+        overdue: big
+          ? "Celle-ci était à rendre et on l'a pas finie. J'ai attendu et attendu dans le noir! On la fait maintenant? S'il te plaît?"
+          : "celle-ci était à rendre et on l'a jamais finie. je suis resté dans le noir à t'attendre. pas fâché! juste... on la reprend?",
       },
     },
   };
